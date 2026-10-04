@@ -1,0 +1,21 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.env
+
+# Node
+node_modules/
+dist/
+*.local
+
+# Editors / OS
+.DS_Store
+.idea/
+*.swp
+
+# Claude Code local settings
+.claude/settings.local.json
