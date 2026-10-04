@@ -5,6 +5,14 @@ adding an entity never silently produces an empty migration.
 """
 
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
+from storytool.domain.narrative.models import (
+    Chapter,
+    Scene,
+    chapter_beat,
+    scene_arc_advance,
+    scene_beat,
+    scene_thread,
+)
 from storytool.domain.story.models import Story
 from storytool.domain.structure.models import Act, Beat, Event, Thread
 
@@ -13,9 +21,15 @@ __all__ = (
     "Arc",
     "ArcStage",
     "Beat",
+    "Chapter",
     "Character",
     "Event",
     "Relationship",
+    "Scene",
     "Story",
     "Thread",
+    "chapter_beat",
+    "scene_arc_advance",
+    "scene_beat",
+    "scene_thread",
 )

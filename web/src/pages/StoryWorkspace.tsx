@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { Ladder, type AuthoringMode } from '../components/Ladder'
 import { HealthPanel } from '../components/HealthPanel'
+import { ChapterBriefCard } from '../components/ChapterBriefCard'
 
 const MODES: AuthoringMode[] = ['plotter', 'hybrid', 'pantser']
 
@@ -81,6 +82,20 @@ export default function StoryWorkspace() {
     queryKey: ['threads', storyId],
     queryFn: () => api.listThreads(storyId),
   })
+  const chapters = useQuery({
+    queryKey: ['chapters', storyId],
+    queryFn: () => api.listChapters(storyId),
+  })
+  const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
+
+  const [chapterId, setChapterId] = useState<string | null>(null)
+  const selectedChapter = chapterId ?? chapters.data?.[0]?.id ?? null
+
+  const brief = useQuery({
+    queryKey: ['brief', storyId, selectedChapter],
+    queryFn: () => api.getBrief(storyId, selectedChapter!),
+    enabled: Boolean(selectedChapter),
+  })
 
   // Any write can change readiness and health, so invalidate both every time.
   const refresh = () => {
@@ -116,6 +131,44 @@ export default function StoryWorkspace() {
     mutationFn: (title: string) => api.createThread(storyId, { type: 'a_story', title }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['threads', storyId] })
+      refresh()
+    },
+  })
+
+  const addChapter = useMutation({
+    mutationFn: (title: string) =>
+      api.createChapter(storyId, {
+        number: (chapters.data?.length ?? 0) + 1,
+        title,
+        // Default to the act the story is furthest into, so a new chapter is never
+        // orphaned when the author just wants to get moving.
+        act_id: acts.data?.[0]?.id,
+      }),
+    onSuccess: (created) => {
+      setChapterId(created.id)
+      void qc.invalidateQueries({ queryKey: ['chapters', storyId] })
+      refresh()
+    },
+  })
+
+  const addScene = useMutation({
+    mutationFn: (title: string) =>
+      api.createScene(storyId, {
+        title,
+        chapter_id: selectedChapter ?? undefined,
+        sort_key: (scenes.data?.length ?? 0) + 1,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['scenes', storyId] })
+      void qc.invalidateQueries({ queryKey: ['brief', storyId] })
+      refresh()
+    },
+  })
+
+  const linkBeat = useMutation({
+    mutationFn: (beatId: string) => api.linkChapterBeat(storyId, selectedChapter!, beatId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['brief', storyId] })
       refresh()
     },
   })
@@ -304,12 +357,95 @@ export default function StoryWorkspace() {
             </Panel>
           )}
 
-          {level >= 7 && (
-            <Panel title={level === 7 ? 'Chapters' : 'Scenes'} hint="Phase 2.">
-              <Empty>
-                Not built yet. This is where the Chapter Context Brief will live — the act,
-                the beat owed, the arc advancing, all computed from the levels above.
-              </Empty>
+          {level === 7 && (
+            <Panel title="Chapters" hint="Containers that exist to fulfil specific beats.">
+              <AddForm
+                placeholder="Chapter title…"
+                onAdd={(title) => addChapter.mutate(title)}
+                pending={addChapter.isPending}
+              />
+
+              {(chapters.data?.length ?? 0) > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {chapters.data?.map((chapter) => (
+                    <button
+                      key={chapter.id}
+                      onClick={() => setChapterId(chapter.id)}
+                      className={[
+                        'rounded px-2 py-1 text-xs',
+                        chapter.id === selectedChapter
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+                      ].join(' ')}
+                    >
+                      {chapter.number}. {chapter.title ?? 'untitled'}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {brief.data && (
+                <div className="mt-4">
+                  <ChapterBriefCard brief={brief.data} />
+
+                  {/* Declaring what a chapter owes is the one upward reference the
+                      author makes by hand; everything else is derived from it. */}
+                  <div className="mt-3">
+                    <p className="mb-1.5 text-xs text-slate-400">
+                      Declare a beat this chapter fulfils:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {beats.data
+                        ?.filter(
+                          (beat) => !brief.data?.beats.some((b) => b.beat_id === beat.id),
+                        )
+                        .map((beat) => (
+                          <button
+                            key={beat.id}
+                            onClick={() => linkBeat.mutate(beat.id)}
+                            className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+                          >
+                            + {beat.label}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {chapters.data?.length === 0 && <Empty>No chapters yet.</Empty>}
+            </Panel>
+          )}
+
+          {level === 8 && (
+            <Panel
+              title="Scenes"
+              hint={
+                selectedChapter
+                  ? 'New scenes attach to the chapter selected at level 7.'
+                  : 'No chapter selected — scenes will be created unattached, which is legal.'
+              }
+            >
+              <AddForm
+                placeholder="Scene title…"
+                onAdd={(title) => addScene.mutate(title)}
+                pending={addScene.isPending}
+              />
+              <ul className="mt-3 divide-y divide-slate-100">
+                {scenes.data?.map((scene) => (
+                  <li key={scene.id} className="flex items-center gap-2 py-2">
+                    <span className="text-sm text-slate-800">{scene.title ?? 'untitled'}</span>
+                    <span className="text-xs text-slate-400">{scene.type}</span>
+                    {!scene.chapter_id && (
+                      <span className="text-[10px] text-amber-700">no chapter</span>
+                    )}
+                    <span className="ml-auto">
+                      <Chip complete={scene.completeness.is_complete} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {scenes.data?.length === 0 && <Empty>No scenes yet.</Empty>}
             </Panel>
           )}
         </section>

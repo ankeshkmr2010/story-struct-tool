@@ -183,7 +183,7 @@ the same origin: no CORS, one domain, and httpOnly session cookies instead of to
 | --- | --- | --- |
 | **0** | Skeleton: uv + Litestar + SQLAlchemy + Alembic, Story CRUD, completeness framework, Vite/React app, type generation, Compose | **done** |
 | **1** | Levels 1–6 + readiness engine + level-scoped validation + ladder UI | **done** |
-| **2** | Levels 7–8, join tables, **Chapter Context Brief**, health dashboard | next |
+| **2** | Levels 7–8, join tables, **Chapter Context Brief**, health dashboard | **done** |
 | **3** | Editor: Markdown prose, autosave, revisions, annotations, compile/export | |
 | **4** | Pantser: deterministic mention-matching, suggestion engine; then LLM assists behind the same interface, degrading to deterministic with no API key | |
 

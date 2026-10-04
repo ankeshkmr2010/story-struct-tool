@@ -72,3 +72,23 @@ class Level(IntEnum):
     @property
     def label(self) -> str:
         return self.name.replace("_", " ").title()
+
+
+class SceneType(StrEnum):
+    """Scene = goal/conflict/outcome. Sequel = reaction/dilemma/decision."""
+
+    SCENE = "scene"
+    SEQUEL = "sequel"
+
+
+class DraftStatus(StrEnum):
+    """Authored, not derived.
+
+    Unlike completeness, "drafted" versus "revised" is a judgement the author makes about
+    their own work -- there is no fact in the data that distinguishes them.
+    """
+
+    PLACEHOLDER = "placeholder"
+    OUTLINED = "outlined"
+    DRAFTED = "drafted"
+    REVISED = "revised"

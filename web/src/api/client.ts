@@ -21,6 +21,11 @@ export type Beat = S['BeatOut']
 export type Thread = S['ThreadOut']
 export type Character = S['CharacterOut']
 
+export type Chapter = S['ChapterOut']
+export type Scene = S['SceneOut']
+export type ChapterBrief = S['ChapterBriefOut']
+export type Links = S['LinksOut']
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
@@ -75,4 +80,28 @@ export const api = {
   listThreads: (id: string) => request<Thread[]>(`/api/stories/${id}/threads`),
   createThread: (id: string, body: { type: string; title?: string }) =>
     post<Thread>(`/api/stories/${id}/threads`, body),
+
+  // Levels 7-8
+  listChapters: (id: string) => request<Chapter[]>(`/api/stories/${id}/chapters`),
+  createChapter: (id: string, body: { number: number; title?: string; act_id?: string }) =>
+    post<Chapter>(`/api/stories/${id}/chapters`, body),
+  updateChapter: (storyId: string, chapterId: string, body: Record<string, unknown>) =>
+    patch<Chapter>(`/api/stories/${storyId}/chapters/${chapterId}`, body),
+
+  // The flagship: derived entirely from the levels above the chapter.
+  getBrief: (storyId: string, chapterId: string) =>
+    request<ChapterBrief>(`/api/stories/${storyId}/chapters/${chapterId}/brief`),
+
+  linkChapterBeat: (storyId: string, chapterId: string, beatId: string) =>
+    post<Links>(`/api/stories/${storyId}/chapters/${chapterId}/beats`, { beat_id: beatId }),
+  unlinkChapterBeat: (storyId: string, chapterId: string, beatId: string) =>
+    request<void>(`/api/stories/${storyId}/chapters/${chapterId}/beats/${beatId}`, {
+      method: 'DELETE',
+    }),
+
+  listScenes: (id: string) => request<Scene[]>(`/api/stories/${id}/scenes`),
+  createScene: (id: string, body: { title?: string; chapter_id?: string; sort_key?: number }) =>
+    post<Scene>(`/api/stories/${id}/scenes`, body),
+  updateScene: (storyId: string, sceneId: string, body: Record<string, unknown>) =>
+    patch<Scene>(`/api/stories/${storyId}/scenes/${sceneId}`, body),
 }

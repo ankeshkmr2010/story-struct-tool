@@ -404,6 +404,254 @@ export interface paths {
         patch: operations["ApiArcsArcIdStagesStageIdUpdateStage"];
         trace?: never;
     };
+    "/api/stories/{story_id}/chapters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List chapters in order */
+        get: operations["ApiStoriesStoryIdChaptersListChapters"];
+        put?: never;
+        /** Create a chapter */
+        post: operations["ApiStoriesStoryIdChaptersCreateChapter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/chapters/{chapter_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a chapter */
+        get: operations["ApiStoriesStoryIdChaptersChapterIdGetChapter"];
+        put?: never;
+        post?: never;
+        /** Delete a chapter */
+        delete: operations["ApiStoriesStoryIdChaptersChapterIdDeleteChapter"];
+        options?: never;
+        head?: never;
+        /** Update a chapter */
+        patch: operations["ApiStoriesStoryIdChaptersChapterIdUpdateChapter"];
+        trace?: never;
+    };
+    "/api/stories/{story_id}/chapters/{chapter_id}/brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Chapter Context Brief
+         * @description Everything the chapter owes, computed from the levels above it: its act, the beats it must fulfil, the arcs its scenes advance, its threads and emotional shift. No field here is entered at chapter level.
+         */
+        get: operations["ApiStoriesStoryIdChaptersChapterIdBriefGetBrief"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/chapters/{chapter_id}/beats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Beats this chapter fulfils directly */
+        get: operations["ApiStoriesStoryIdChaptersChapterIdBeatsListChapterBeats"];
+        put?: never;
+        /** Declare a beat fulfilled */
+        post: operations["ApiStoriesStoryIdChaptersChapterIdBeatsLinkBeat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/chapters/{chapter_id}/beats/{beat_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw a beat fulfilment */
+        delete: operations["ApiStoriesStoryIdChaptersChapterIdBeatsBeatIdUnlinkBeat"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List scenes in order */
+        get: operations["ApiStoriesStoryIdScenesListScenes"];
+        put?: never;
+        /** Create a scene */
+        post: operations["ApiStoriesStoryIdScenesCreateScene"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a scene */
+        get: operations["ApiStoriesStoryIdScenesSceneIdGetScene"];
+        put?: never;
+        post?: never;
+        /** Delete a scene */
+        delete: operations["ApiStoriesStoryIdScenesSceneIdDeleteScene"];
+        options?: never;
+        head?: never;
+        /** Update a scene */
+        patch: operations["ApiStoriesStoryIdScenesSceneIdUpdateScene"];
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What this scene points at upward */
+        get: operations["ApiStoriesStoryIdScenesSceneIdLinksGetLinks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/arc-stages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** This scene advances a character arc to a stage */
+        post: operations["ApiStoriesStoryIdScenesSceneIdArcStagesLinkArcStage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/beats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** This scene fulfils a beat */
+        post: operations["ApiStoriesStoryIdScenesSceneIdBeatsLinkSceneBeat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** This scene advances a thread */
+        post: operations["ApiStoriesStoryIdScenesSceneIdThreadsLinkThread"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/arc-stages/{arc_stage_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw an arc advance */
+        delete: operations["ApiStoriesStoryIdScenesSceneIdArcStagesArcStageIdUnlinkArcStage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/beats/{beat_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw a beat link */
+        delete: operations["ApiStoriesStoryIdScenesSceneIdBeatsBeatIdUnlinkSceneBeat"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/threads/{thread_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw a thread link */
+        delete: operations["ApiStoriesStoryIdScenesSceneIdThreadsThreadIdUnlinkThread"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -452,6 +700,15 @@ export interface components {
             closing_turning_point_id?: string | null;
             sort_key?: number | null;
         };
+        /** ArcAdvanceOut */
+        ArcAdvanceOut: {
+            /** Format: uuid */
+            arc_id: string;
+            owner_name: string | null;
+            from_stage: string | null;
+            to_stage: string | null;
+            summary: string;
+        };
         /** ArcCreate */
         ArcCreate: {
             character_id?: string | null;
@@ -481,6 +738,11 @@ export interface components {
             description?: string | null;
             /** @default 0 */
             sort_key: number;
+        };
+        /** ArcStageLink */
+        ArcStageLink: {
+            /** Format: uuid */
+            arc_stage_id: string;
         };
         /** ArcStageOut */
         ArcStageOut: {
@@ -527,6 +789,19 @@ export interface components {
             /** @default 0 */
             sort_key: number;
         };
+        /** BeatLink */
+        BeatLink: {
+            /** Format: uuid */
+            beat_id: string;
+        };
+        /** BeatObligationOut */
+        BeatObligationOut: {
+            /** Format: uuid */
+            beat_id: string;
+            label: string;
+            framework_position: string | null;
+            is_fulfilled: boolean;
+        };
         /** BeatOut */
         BeatOut: {
             /** Format: uuid */
@@ -550,6 +825,73 @@ export interface components {
             description?: string | null;
             act_id?: string | null;
             framework_position?: string | null;
+            sort_key?: number | null;
+        };
+        /** ChapterBriefOut */
+        ChapterBriefOut: {
+            /** Format: uuid */
+            chapter_id: string;
+            number: number;
+            title: string | null;
+            status: string;
+            act_number: number | null;
+            act_title: string | null;
+            beats: components["schemas"]["BeatObligationOut"][];
+            arcs_advancing: components["schemas"]["ArcAdvanceOut"][];
+            threads: string[];
+            emotional_shift_from: string | null;
+            emotional_shift_to: string | null;
+            emotional_shift_inherited: boolean;
+            pov_character_name: string | null;
+            scenes: components["schemas"]["SceneLineOut"][];
+            placeholder_scene_count: number;
+            unfulfilled_beat_count: number;
+        };
+        /** ChapterCreate */
+        ChapterCreate: {
+            /** @default 1 */
+            number: number;
+            title?: string | null;
+            summary?: string | null;
+            act_id?: string | null;
+            pov_character_id?: string | null;
+            emotional_shift_from?: string | null;
+            emotional_shift_to?: string | null;
+            status?: components["schemas"]["DraftStatus"];
+            /** @default 0 */
+            sort_key: number;
+        };
+        /** ChapterOut */
+        ChapterOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            completeness: components["schemas"]["CompletenessOut"];
+            /** Format: uuid */
+            story_id: string;
+            act_id: string | null;
+            number: number;
+            title: string | null;
+            summary: string | null;
+            pov_character_id: string | null;
+            emotional_shift_from: string | null;
+            emotional_shift_to: string | null;
+            status: string;
+            sort_key: number;
+        };
+        /** ChapterUpdate */
+        ChapterUpdate: {
+            number?: number | null;
+            title?: string | null;
+            summary?: string | null;
+            act_id?: string | null;
+            pov_character_id?: string | null;
+            emotional_shift_from?: string | null;
+            emotional_shift_to?: string | null;
+            status?: components["schemas"]["DraftStatus"] | null;
             sort_key?: number | null;
         };
         /** CharacterCreate */
@@ -606,6 +948,16 @@ export interface components {
             required: string[];
             ratio: number;
         };
+        /**
+         * DraftStatus
+         * @description Authored, not derived.
+         *
+         *         Unlike completeness, "drafted" versus "revised" is a judgement the author makes about
+         *         their own work -- there is no fact in the data that distinguishes them.
+         * @default placeholder
+         * @enum {string}
+         */
+        DraftStatus: "placeholder" | "outlined" | "drafted" | "revised";
         /** EventCreate */
         EventCreate: {
             label: string;
@@ -671,6 +1023,14 @@ export interface components {
             levels: components["schemas"]["ReadinessOut"][];
             snapshot: components["schemas"]["SnapshotOut"];
         };
+        /** LinksOut */
+        LinksOut: {
+            beat_ids: string[];
+            /** @default [] */
+            thread_ids: string[];
+            /** @default [] */
+            arc_stage_ids: string[];
+        };
         /**
          * PovStyle
          * @enum {string}
@@ -726,6 +1086,86 @@ export interface components {
             acts_created: number;
             beats_created: number;
             changed: boolean;
+        };
+        /** SceneCreate */
+        SceneCreate: {
+            title?: string | null;
+            type?: components["schemas"]["SceneType"];
+            chapter_id?: string | null;
+            summary?: string | null;
+            location?: string | null;
+            story_time_ordinal?: number | null;
+            time_label?: string | null;
+            pov_character_id?: string | null;
+            goal?: string | null;
+            conflict?: string | null;
+            outcome?: string | null;
+            emotional_value_from?: string | null;
+            emotional_value_to?: string | null;
+            status?: components["schemas"]["DraftStatus"];
+            /** @default 0 */
+            sort_key: number;
+        };
+        /** SceneLineOut */
+        SceneLineOut: {
+            /** Format: uuid */
+            scene_id: string;
+            title: string | null;
+            type: string;
+            status: string;
+            is_complete: boolean;
+        };
+        /** SceneOut */
+        SceneOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            completeness: components["schemas"]["CompletenessOut"];
+            /** Format: uuid */
+            story_id: string;
+            chapter_id: string | null;
+            type: string;
+            title: string | null;
+            summary: string | null;
+            location: string | null;
+            story_time_ordinal: number | null;
+            time_label: string | null;
+            pov_character_id: string | null;
+            goal: string | null;
+            conflict: string | null;
+            outcome: string | null;
+            emotional_value_from: string | null;
+            emotional_value_to: string | null;
+            status: string;
+            sort_key: number;
+        };
+        /**
+         * SceneType
+         * @description Scene = goal/conflict/outcome. Sequel = reaction/dilemma/decision.
+         * @default scene
+         * @enum {string}
+         */
+        SceneType: "scene" | "sequel";
+        /** SceneUpdate */
+        SceneUpdate: {
+            title?: string | null;
+            type?: components["schemas"]["SceneType"] | null;
+            chapter_id?: string | null;
+            summary?: string | null;
+            location?: string | null;
+            story_time_ordinal?: number | null;
+            time_label?: string | null;
+            pov_character_id?: string | null;
+            goal?: string | null;
+            conflict?: string | null;
+            outcome?: string | null;
+            emotional_value_from?: string | null;
+            emotional_value_to?: string | null;
+            status?: components["schemas"]["DraftStatus"] | null;
+            sort_key?: number | null;
         };
         /** SnapshotOut */
         SnapshotOut: {
@@ -790,6 +1230,13 @@ export interface components {
             owner_character_id?: string | null;
             /** @default 0 */
             sort_key: number;
+        };
+        /** ThreadLink */
+        ThreadLink: {
+            /** Format: uuid */
+            thread_id: string;
+            /** @default false */
+            is_primary: boolean;
         };
         /** ThreadOut */
         ThreadOut: {
@@ -2635,6 +3082,824 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ArcStageOut"];
                 };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdChaptersListChapters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChapterOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdChaptersCreateChapter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChapterCreate"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChapterOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdChaptersChapterIdGetChapter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                chapter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChapterOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdChaptersChapterIdDeleteChapter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                chapter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdChaptersChapterIdUpdateChapter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                chapter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChapterUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChapterOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdChaptersChapterIdBriefGetBrief: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                chapter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChapterBriefOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdChaptersChapterIdBeatsListChapterBeats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                chapter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinksOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdChaptersChapterIdBeatsLinkBeat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                chapter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BeatLink"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinksOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdChaptersChapterIdBeatsBeatIdUnlinkBeat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                chapter_id: string;
+                beat_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesListScenes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesCreateScene: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SceneCreate"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdGetScene: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdDeleteScene: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdUpdateScene: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SceneUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdLinksGetLinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinksOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdArcStagesLinkArcStage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArcStageLink"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinksOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdBeatsLinkSceneBeat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BeatLink"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinksOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdThreadsLinkThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ThreadLink"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinksOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdArcStagesArcStageIdUnlinkArcStage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+                arc_stage_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdBeatsBeatIdUnlinkSceneBeat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+                beat_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdThreadsThreadIdUnlinkThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad request syntax or unsupported method */
             400: {

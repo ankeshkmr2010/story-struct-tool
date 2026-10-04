@@ -1,0 +1,192 @@
+"""DTOs for Levels 7 and 8, plus the Chapter Context Brief."""
+
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from storytool.domain.common import EntityOut
+from storytool.domain.enums import DraftStatus, SceneType
+
+# ------------------------------------------------------------------- Chapter
+
+
+class ChapterCreate(BaseModel):
+    number: int = Field(default=1, ge=1)
+    title: str | None = Field(default=None, max_length=200)
+    summary: str | None = None
+    act_id: UUID | None = None
+    pov_character_id: UUID | None = None
+    emotional_shift_from: str | None = Field(default=None, max_length=120)
+    emotional_shift_to: str | None = Field(default=None, max_length=120)
+    status: DraftStatus = DraftStatus.PLACEHOLDER
+    sort_key: float = 0.0
+
+
+class ChapterUpdate(BaseModel):
+    number: int | None = Field(default=None, ge=1)
+    title: str | None = Field(default=None, max_length=200)
+    summary: str | None = None
+    act_id: UUID | None = None
+    pov_character_id: UUID | None = None
+    emotional_shift_from: str | None = Field(default=None, max_length=120)
+    emotional_shift_to: str | None = Field(default=None, max_length=120)
+    status: DraftStatus | None = None
+    sort_key: float | None = None
+
+
+class ChapterOut(EntityOut):
+    story_id: UUID
+    act_id: UUID | None
+    number: int
+    title: str | None
+    summary: str | None
+    pov_character_id: UUID | None
+    emotional_shift_from: str | None
+    emotional_shift_to: str | None
+    status: str
+    sort_key: float
+
+
+# --------------------------------------------------------------------- Scene
+
+
+class SceneCreate(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+    type: SceneType = SceneType.SCENE
+    chapter_id: UUID | None = None
+    summary: str | None = None
+    location: str | None = Field(default=None, max_length=200)
+    story_time_ordinal: int | None = None
+    time_label: str | None = Field(default=None, max_length=200)
+    pov_character_id: UUID | None = None
+    goal: str | None = None
+    conflict: str | None = None
+    outcome: str | None = None
+    emotional_value_from: str | None = Field(default=None, max_length=120)
+    emotional_value_to: str | None = Field(default=None, max_length=120)
+    status: DraftStatus = DraftStatus.PLACEHOLDER
+    sort_key: float = 0.0
+
+
+class SceneUpdate(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+    type: SceneType | None = None
+    chapter_id: UUID | None = None
+    summary: str | None = None
+    location: str | None = Field(default=None, max_length=200)
+    story_time_ordinal: int | None = None
+    time_label: str | None = Field(default=None, max_length=200)
+    pov_character_id: UUID | None = None
+    goal: str | None = None
+    conflict: str | None = None
+    outcome: str | None = None
+    emotional_value_from: str | None = Field(default=None, max_length=120)
+    emotional_value_to: str | None = Field(default=None, max_length=120)
+    status: DraftStatus | None = None
+    sort_key: float | None = None
+
+
+class SceneOut(EntityOut):
+    story_id: UUID
+    chapter_id: UUID | None
+    type: str
+    title: str | None
+    summary: str | None
+    location: str | None
+    story_time_ordinal: int | None
+    time_label: str | None
+    pov_character_id: UUID | None
+    goal: str | None
+    conflict: str | None
+    outcome: str | None
+    emotional_value_from: str | None
+    emotional_value_to: str | None
+    status: str
+    sort_key: float
+
+
+# --------------------------------------------------------------- fulfilment
+
+
+class BeatLink(BaseModel):
+    beat_id: UUID
+
+
+class ThreadLink(BaseModel):
+    thread_id: UUID
+    is_primary: bool = False
+
+
+class ArcStageLink(BaseModel):
+    arc_stage_id: UUID
+
+
+class LinksOut(BaseModel):
+    """What a scene or chapter currently points at upward."""
+
+    beat_ids: list[UUID]
+    thread_ids: list[UUID] = []
+    arc_stage_ids: list[UUID] = []
+
+
+# ------------------------------------------------------------------- the brief
+
+
+class BeatObligationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    beat_id: UUID
+    label: str
+    framework_position: str | None
+    is_fulfilled: bool
+
+
+class ArcAdvanceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    arc_id: UUID
+    owner_name: str | None
+    from_stage: str | None
+    to_stage: str | None
+    summary: str
+
+
+class SceneLineOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    scene_id: UUID
+    title: str | None
+    type: str
+    status: str
+    is_complete: bool
+
+
+class ChapterBriefOut(BaseModel):
+    """Every field here is derived from the levels above the chapter.
+
+    None of it is entered at chapter level, which is what makes opening a brand-new
+    chapter informative rather than a blank form.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    chapter_id: UUID
+    number: int
+    title: str | None
+    status: str
+
+    act_number: int | None
+    act_title: str | None
+
+    beats: list[BeatObligationOut]
+    arcs_advancing: list[ArcAdvanceOut]
+    threads: list[str]
+
+    emotional_shift_from: str | None
+    emotional_shift_to: str | None
+    emotional_shift_inherited: bool
+
+    pov_character_name: str | None
+    scenes: list[SceneLineOut]
+    placeholder_scene_count: int
+    unfulfilled_beat_count: int

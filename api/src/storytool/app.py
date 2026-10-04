@@ -11,6 +11,7 @@ from storytool.domain.cast.controller import (
     CharacterController,
     RelationshipController,
 )
+from storytool.domain.narrative.controller import ChapterController, SceneController
 from storytool.domain.story.analysis_controller import StoryAnalysisController
 from storytool.domain.story.controller import StoryController
 from storytool.domain.structure.controller import (
@@ -41,6 +42,8 @@ def create_app() -> Litestar:
             RelationshipController,
             ArcController,
             ArcStageController,
+            ChapterController,
+            SceneController,
         ],
         plugins=[build_db_plugin()],
         debug=settings.debug,
