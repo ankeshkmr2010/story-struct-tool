@@ -21,14 +21,23 @@ class CompletenessOut(BaseModel):
     ratio: float
 
 
-class EntityOut(BaseModel):
-    """Fields every persisted entity exposes, including its derived completeness."""
+class TimestampedOut(BaseModel):
+    """Identity and timestamps, for records that have no completeness semantics.
+
+    Revisions and annotations are artefacts of the writing process, not entities the author
+    fills in, so asking whether they are "complete" is meaningless.
+    """
 
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     created_at: datetime
     updated_at: datetime
+
+
+class EntityOut(TimestampedOut):
+    """A ladder entity: identity, timestamps, and its derived completeness."""
+
     completeness: CompletenessOut
 
 

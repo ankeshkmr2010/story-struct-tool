@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from storytool.domain.common import EntityOut
+from storytool.domain.common import EntityOut, TimestampedOut
 from storytool.domain.enums import DraftStatus, SceneType
 
 # ------------------------------------------------------------------- Chapter
@@ -88,6 +88,7 @@ class SceneUpdate(BaseModel):
 
 class SceneOut(EntityOut):
     story_id: UUID
+    word_count: int
     chapter_id: UUID | None
     type: str
     title: str | None
@@ -190,3 +191,85 @@ class ChapterBriefOut(BaseModel):
     scenes: list[SceneLineOut]
     placeholder_scene_count: int
     unfulfilled_beat_count: int
+
+
+# ----------------------------------------------------------------- prose
+
+
+class SceneContentUpdate(BaseModel):
+    """Prose write. `word_count` is deliberately absent -- the server owns it."""
+
+    content: str | None = None
+    snapshot: bool = Field(
+        default=False,
+        description="Capture the previous content as a revision before overwriting.",
+    )
+    snapshot_label: str | None = Field(default=None, max_length=200)
+
+
+class SaveResultOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    word_count: int
+    revision_created: bool
+    annotations_reanchored: int
+    annotations_orphaned: int
+
+
+class SceneContentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    scene_id: UUID
+    content: str | None
+    word_count: int
+
+
+class SceneRevisionOut(TimestampedOut):
+    scene_id: UUID
+    content: str | None
+    word_count: int
+    label: str | None
+
+
+class AnnotationCreate(BaseModel):
+    start_offset: int = Field(ge=0)
+    end_offset: int = Field(ge=0)
+    quoted_text: str = Field(min_length=1)
+    note: str | None = None
+
+
+class AnnotationUpdate(BaseModel):
+    note: str | None = None
+    resolved: bool | None = None
+
+
+class AnnotationOut(TimestampedOut):
+    scene_id: UUID
+    start_offset: int
+    end_offset: int
+    quoted_text: str
+    note: str | None
+    is_orphaned: bool
+    resolved: bool
+
+
+class ChapterProgressOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    chapter_id: UUID
+    number: int
+    title: str | None
+    word_count: int
+    scene_count: int
+    drafted_scene_count: int
+
+
+class StoryProgressOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    story_id: UUID
+    word_count: int
+    scene_count: int
+    drafted_scene_count: int
+    unplaced_scene_word_count: int
+    chapters: list[ChapterProgressOut]

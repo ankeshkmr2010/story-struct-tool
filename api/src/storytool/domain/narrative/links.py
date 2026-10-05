@@ -20,9 +20,7 @@ from storytool.domain.narrative.models import (
 
 async def link_chapter_beat(session: AsyncSession, chapter_id: UUID, beat_id: UUID) -> None:
     await session.execute(
-        insert(chapter_beat)
-        .values(chapter_id=chapter_id, beat_id=beat_id)
-        .on_conflict_do_nothing()
+        insert(chapter_beat).values(chapter_id=chapter_id, beat_id=beat_id).on_conflict_do_nothing()
     )
 
 
@@ -49,9 +47,7 @@ async def link_scene_beat(session: AsyncSession, scene_id: UUID, beat_id: UUID) 
 
 async def unlink_scene_beat(session: AsyncSession, scene_id: UUID, beat_id: UUID) -> None:
     await session.execute(
-        delete(scene_beat).where(
-            scene_beat.c.scene_id == scene_id, scene_beat.c.beat_id == beat_id
-        )
+        delete(scene_beat).where(scene_beat.c.scene_id == scene_id, scene_beat.c.beat_id == beat_id)
     )
 
 
@@ -76,9 +72,7 @@ async def unlink_scene_thread(session: AsyncSession, scene_id: UUID, thread_id: 
     )
 
 
-async def link_scene_arc_stage(
-    session: AsyncSession, scene_id: UUID, arc_stage_id: UUID
-) -> None:
+async def link_scene_arc_stage(session: AsyncSession, scene_id: UUID, arc_stage_id: UUID) -> None:
     await session.execute(
         insert(scene_arc_advance)
         .values(scene_id=scene_id, arc_stage_id=arc_stage_id)
@@ -86,9 +80,7 @@ async def link_scene_arc_stage(
     )
 
 
-async def unlink_scene_arc_stage(
-    session: AsyncSession, scene_id: UUID, arc_stage_id: UUID
-) -> None:
+async def unlink_scene_arc_stage(session: AsyncSession, scene_id: UUID, arc_stage_id: UUID) -> None:
     await session.execute(
         delete(scene_arc_advance).where(
             scene_arc_advance.c.scene_id == scene_id,

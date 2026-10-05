@@ -46,9 +46,7 @@ class ChapterController(Controller):
     signature_namespace = {"AsyncSession": AsyncSession, "ChapterService": ChapterService}
 
     @get(summary="List chapters in order")
-    async def list_chapters(
-        self, chapters: ChapterService, story_id: UUID
-    ) -> list[ChapterOut]:
+    async def list_chapters(self, chapters: ChapterService, story_id: UUID) -> list[ChapterOut]:
         records = await chapters.get_many(
             Chapter.story_id == story_id, order_by=Chapter.sort_key.asc()
         )

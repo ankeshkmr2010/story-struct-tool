@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { Ladder, type AuthoringMode } from '../components/Ladder'
 import { HealthPanel } from '../components/HealthPanel'
 import { ChapterBriefCard } from '../components/ChapterBriefCard'
+// Lazy: CodeMirror is the largest dependency in the app and is only needed once the
+// author reaches level 8, so it should not sit in the initial bundle.
+const SceneEditor = lazy(() =>
+  import('../components/SceneEditor').then((m) => ({ default: m.SceneEditor })),
+)
 
 const MODES: AuthoringMode[] = ['plotter', 'hybrid', 'pantser']
 
@@ -95,6 +100,14 @@ export default function StoryWorkspace() {
     queryKey: ['brief', storyId, selectedChapter],
     queryFn: () => api.getBrief(storyId, selectedChapter!),
     enabled: Boolean(selectedChapter),
+  })
+
+  const [sceneId, setSceneId] = useState<string | null>(null)
+  const selectedScene = scenes.data?.find((s) => s.id === sceneId) ?? scenes.data?.[0] ?? null
+
+  const progress = useQuery({
+    queryKey: ['progress', storyId],
+    queryFn: () => api.getProgress(storyId),
   })
 
   // Any write can change readiness and health, so invalidate both every time.
@@ -201,6 +214,22 @@ export default function StoryWorkspace() {
           <p className="mt-0.5 text-xs text-slate-400">
             {story.data.structure_framework.replace('_', ' ')} · {story.data.authoring_mode}
           </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {progress.data && (
+            <span className="text-xs text-slate-500">
+              {progress.data.word_count.toLocaleString()} words ·{' '}
+              {progress.data.drafted_scene_count}/{progress.data.scene_count} scenes drafted
+            </span>
+          )}
+          {/* Export is first-class: this tool augments a writer's process, so the words
+              must always be able to leave. */}
+          <a
+            href={api.manuscriptUrl(storyId)}
+            className="rounded border border-slate-300 px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50"
+          >
+            Export .md
+          </a>
         </div>
         <div className="flex gap-1 rounded-md bg-slate-100 p-1">
           {MODES.map((m) => (
@@ -431,20 +460,45 @@ export default function StoryWorkspace() {
                 onAdd={(title) => addScene.mutate(title)}
                 pending={addScene.isPending}
               />
-              <ul className="mt-3 divide-y divide-slate-100">
-                {scenes.data?.map((scene) => (
-                  <li key={scene.id} className="flex items-center gap-2 py-2">
-                    <span className="text-sm text-slate-800">{scene.title ?? 'untitled'}</span>
-                    <span className="text-xs text-slate-400">{scene.type}</span>
-                    {!scene.chapter_id && (
-                      <span className="text-[10px] text-amber-700">no chapter</span>
-                    )}
-                    <span className="ml-auto">
-                      <Chip complete={scene.completeness.is_complete} />
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              {(scenes.data?.length ?? 0) > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {scenes.data?.map((scene) => (
+                    <button
+                      key={scene.id}
+                      onClick={() => setSceneId(scene.id)}
+                      className={[
+                        'rounded px-2 py-1 text-xs',
+                        scene.id === selectedScene?.id
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+                      ].join(' ')}
+                    >
+                      {scene.title ?? 'untitled'}
+                      {scene.word_count > 0 && (
+                        <span className="ml-1.5 opacity-60">{scene.word_count}w</span>
+                      )}
+                      {!scene.chapter_id && <span className="ml-1 text-amber-600">·</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {selectedScene && (
+                <div className="mt-4">
+                  <Suspense
+                    fallback={<p className="text-sm text-slate-400">Loading editor…</p>}
+                  >
+                  <SceneEditor
+                    storyId={storyId}
+                    scene={selectedScene}
+                    brief={
+                      selectedScene.chapter_id === selectedChapter ? brief.data : undefined
+                    }
+                  />
+                  </Suspense>
+                </div>
+              )}
+
               {scenes.data?.length === 0 && <Empty>No scenes yet.</Empty>}
             </Panel>
           )}

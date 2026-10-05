@@ -128,5 +128,52 @@ class Scene(StoryToolBase, CompletableMixin):
     status: Mapped[str] = mapped_column(String(20), default=DraftStatus.PLACEHOLDER)
     sort_key: Mapped[float] = mapped_column(Float, default=0.0)
 
-    # NOTE: prose `content`, `word_count` and annotations arrive in Phase 3.
-    # word_count will be derived from content, never authored.
+    # Prose, as Markdown. Portable, diffable, greppable for Phase 4 inference, and it
+    # exports without an intermediate representation.
+    content: Mapped[str | None] = mapped_column(Text, default=None)
+
+    # A *cache* of a derived value, not an authored field: recomputed server-side from
+    # content on every write and never settable by a client. Stored because a chapter or
+    # story word-count rollup would otherwise have to load every scene's full prose.
+    # server_default so this column can be added to a table that already has rows --
+    # NOT NULL with no default is rejected by Postgres on a populated table.
+    word_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+
+class SceneRevision(StoryToolBase):
+    """A prose snapshot.
+
+    Taken on a debounce (blur or interval), never per keystroke -- the point is to let an
+    author recover a paragraph they regret deleting, not to replay their typing.
+    """
+
+    __tablename__ = "scene_revision"
+
+    scene_id: Mapped[UUID] = mapped_column(ForeignKey("scene.id", ondelete="CASCADE"), index=True)
+    content: Mapped[str | None] = mapped_column(Text, default=None)
+    # server_default so this column can be added to a table that already has rows --
+    # NOT NULL with no default is rejected by Postgres on a populated table.
+    word_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Free-text label, e.g. "before rewriting Act 2".
+    label: Mapped[str | None] = mapped_column(String(200), default=None)
+
+
+class Annotation(StoryToolBase):
+    """A comment or highlight anchored to a span of a scene's prose.
+
+    Offsets drift as the author types above them. CodeMirror's position mapping keeps live
+    decorations correct within a session; `quoted_text` is the fallback for edits made
+    elsewhere. If the quoted text can no longer be found, the annotation is marked
+    **orphaned** rather than silently relocated -- a visibly broken annotation is far
+    better than one quietly pointing at the wrong sentence.
+    """
+
+    __tablename__ = "annotation"
+
+    scene_id: Mapped[UUID] = mapped_column(ForeignKey("scene.id", ondelete="CASCADE"), index=True)
+    start_offset: Mapped[int] = mapped_column(Integer)
+    end_offset: Mapped[int] = mapped_column(Integer)
+    quoted_text: Mapped[str] = mapped_column(Text)
+    note: Mapped[str | None] = mapped_column(Text, default=None)
+    is_orphaned: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    resolved: Mapped[bool] = mapped_column(Boolean, default=False)

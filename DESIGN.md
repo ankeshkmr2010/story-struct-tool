@@ -11,6 +11,17 @@ no duplicate data entry.
 
 ---
 
+## 0. What this is for
+
+An **augmentation** to the writer, not a replacement for their drafting environment and
+not a generator of prose. Its job is to hold the story structurally: to track what the
+story owes itself and keep that visible while the writer works. Scrivener and Word already
+win on editor features; competing there would be wasted effort. Two consequences:
+
+* The prose surface stays deliberately plain, and the *structural* context beside it is
+  maximal -- the beat a scene owes, the arc it moves, the shift it must deliver.
+* **Export is first-class.** The words must always be able to leave as plain Markdown.
+
 ## 1. Core principles
 
 1. **Flagged, never blocked.** Any entity can be created at any time, incomplete.
@@ -18,8 +29,11 @@ no duplicate data entry.
 2. **Gating is advisory and computed.** The API never refuses a write for structural
    reasons. `readiness` is a derived property the UI chooses how strictly to honour.
    This is what makes the three authoring modes one engine instead of three products.
-3. **Derived state is never stored.** Completeness, readiness, `is_fulfilled`,
-   word counts, arc current-stage and story status are all computed. Stored copies drift.
+3. **Derived state is never stored.** Completeness, readiness, `is_fulfilled`, arc
+   current-stage and story status are all computed. Stored copies drift.
+   *One deliberate exception:* `Scene.word_count` is a **cache** of a derived value --
+   recomputed server-side from the prose on every write and never settable by a client --
+   because a chapter or story rollup would otherwise load every scene's full text.
 4. **Upward references are the architecture.** Scene→Beat, Scene→ArcStage, Scene→Thread,
    Chapter→Act. Every generated brief and health finding is a traversal of these edges.
 
@@ -184,8 +198,8 @@ the same origin: no CORS, one domain, and httpOnly session cookies instead of to
 | **0** | Skeleton: uv + Litestar + SQLAlchemy + Alembic, Story CRUD, completeness framework, Vite/React app, type generation, Compose | **done** |
 | **1** | Levels 1–6 + readiness engine + level-scoped validation + ladder UI | **done** |
 | **2** | Levels 7–8, join tables, **Chapter Context Brief**, health dashboard | **done** |
-| **3** | Editor: Markdown prose, autosave, revisions, annotations, compile/export | |
-| **4** | Pantser: deterministic mention-matching, suggestion engine; then LLM assists behind the same interface, degrading to deterministic with no API key | |
+| **3** | Editor: Markdown prose, autosave, revisions, annotations, compile/export | **done** |
+| **4** | Pantser: deterministic mention-matching, suggestion engine; then LLM assists behind the same interface, degrading to deterministic with no API key | next |
 
 Phase 1 deliberately precedes the editor, accepting that the flagship brief lands last.
 

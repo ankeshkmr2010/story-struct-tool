@@ -652,6 +652,135 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/scenes/{scene_id}/annotations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List annotations on this scene */
+        get: operations["ApiStoriesStoryIdScenesSceneIdAnnotationsListAnnotations"];
+        put?: never;
+        /** Annotate a span of prose */
+        post: operations["ApiStoriesStoryIdScenesSceneIdAnnotationsCreateAnnotation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List prose snapshots, newest first */
+        get: operations["ApiStoriesStoryIdScenesSceneIdRevisionsListRevisions"];
+        put?: never;
+        /** Snapshot the current prose explicitly */
+        post: operations["ApiStoriesStoryIdScenesSceneIdRevisionsCreateRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/annotations/{annotation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an annotation */
+        delete: operations["ApiStoriesStoryIdScenesSceneIdAnnotationsAnnotationIdDeleteAnnotation"];
+        options?: never;
+        head?: never;
+        /** Update or resolve an annotation */
+        patch: operations["ApiStoriesStoryIdScenesSceneIdAnnotationsAnnotationIdUpdateAnnotation"];
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a scene's prose */
+        get: operations["ApiStoriesStoryIdScenesSceneIdContentGetContent"];
+        /** Save a scene's prose */
+        put: operations["ApiStoriesStoryIdScenesSceneIdContentSaveContent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/revisions/{revision_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore a snapshot
+         * @description Snapshots the current prose first, so restoring is itself undoable -- an author recovering old text must never lose the version they are replacing.
+         */
+        post: operations["ApiStoriesStoryIdScenesSceneIdRevisionsRevisionIdRestoreRestoreRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/manuscript": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compile the manuscript as Markdown
+         * @description Chapters in order, scenes in order, separated by a scene break. Undrafted chapters are marked rather than silently skipped, so the export doubles as a to-do list. This tool augments a writer's process; the words must always be able to leave.
+         */
+        get: operations["ApiStoriesStoryIdManuscriptGetManuscript"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Word counts rolled up the structure */
+        get: operations["ApiStoriesStoryIdProgressGetProgress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -699,6 +828,35 @@ export interface components {
             opening_turning_point_id?: string | null;
             closing_turning_point_id?: string | null;
             sort_key?: number | null;
+        };
+        /** AnnotationCreate */
+        AnnotationCreate: {
+            start_offset: number;
+            end_offset: number;
+            quoted_text: string;
+            note?: string | null;
+        };
+        /** AnnotationOut */
+        AnnotationOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: uuid */
+            scene_id: string;
+            start_offset: number;
+            end_offset: number;
+            quoted_text: string;
+            note: string | null;
+            is_orphaned: boolean;
+            resolved: boolean;
+        };
+        /** AnnotationUpdate */
+        AnnotationUpdate: {
+            note?: string | null;
+            resolved?: boolean | null;
         };
         /** ArcAdvanceOut */
         ArcAdvanceOut: {
@@ -881,6 +1039,16 @@ export interface components {
             emotional_shift_to: string | null;
             status: string;
             sort_key: number;
+        };
+        /** ChapterProgressOut */
+        ChapterProgressOut: {
+            /** Format: uuid */
+            chapter_id: string;
+            number: number;
+            title: string | null;
+            word_count: number;
+            scene_count: number;
+            drafted_scene_count: number;
         };
         /** ChapterUpdate */
         ChapterUpdate: {
@@ -1078,6 +1246,13 @@ export interface components {
             current_dynamic?: string | null;
             tension_notes?: string | null;
         };
+        /** SaveResultOut */
+        SaveResultOut: {
+            word_count: number;
+            revision_created: boolean;
+            annotations_reanchored: number;
+            annotations_orphaned: number;
+        };
         /** ScaffoldOut */
         ScaffoldOut: {
             /** Format: uuid */
@@ -1086,6 +1261,23 @@ export interface components {
             acts_created: number;
             beats_created: number;
             changed: boolean;
+        };
+        /** SceneContentOut */
+        SceneContentOut: {
+            /** Format: uuid */
+            scene_id: string;
+            content: string | null;
+            word_count: number;
+        };
+        /** SceneContentUpdate */
+        SceneContentUpdate: {
+            content?: string | null;
+            /**
+             * @description Capture the previous content as a revision before overwriting.
+             * @default false
+             */
+            snapshot: boolean;
+            snapshot_label?: string | null;
         };
         /** SceneCreate */
         SceneCreate: {
@@ -1126,6 +1318,7 @@ export interface components {
             completeness: components["schemas"]["CompletenessOut"];
             /** Format: uuid */
             story_id: string;
+            word_count: number;
             chapter_id: string | null;
             type: string;
             title: string | null;
@@ -1141,6 +1334,20 @@ export interface components {
             emotional_value_to: string | null;
             status: string;
             sort_key: number;
+        };
+        /** SceneRevisionOut */
+        SceneRevisionOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: uuid */
+            scene_id: string;
+            content: string | null;
+            word_count: number;
+            label: string | null;
         };
         /**
          * SceneType
@@ -1207,6 +1414,16 @@ export interface components {
             structure_framework: string;
             authoring_mode: string;
             parent_story_id: string | null;
+        };
+        /** StoryProgressOut */
+        StoryProgressOut: {
+            /** Format: uuid */
+            story_id: string;
+            word_count: number;
+            scene_count: number;
+            drafted_scene_count: number;
+            unplaced_scene_word_count: number;
+            chapters: components["schemas"]["ChapterProgressOut"][];
         };
         /** StoryUpdate */
         StoryUpdate: {
@@ -3900,6 +4117,439 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdAnnotationsListAnnotations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnotationOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdAnnotationsCreateAnnotation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnotationCreate"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnotationOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdRevisionsListRevisions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneRevisionOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdRevisionsCreateRevision: {
+        parameters: {
+            query?: {
+                label?: string | null;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneRevisionOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdAnnotationsAnnotationIdDeleteAnnotation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+                annotation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdAnnotationsAnnotationIdUpdateAnnotation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+                annotation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnotationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnotationOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdContentGetContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SceneContentOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdContentSaveContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SceneContentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveResultOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdRevisionsRevisionIdRestoreRestoreRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveResultOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdManuscriptGetManuscript: {
+        parameters: {
+            query?: {
+                include_unplaced?: boolean;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdProgressGetProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoryProgressOut"];
+                };
             };
             /** @description Bad request syntax or unsupported method */
             400: {

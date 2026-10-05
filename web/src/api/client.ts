@@ -26,6 +26,12 @@ export type Scene = S['SceneOut']
 export type ChapterBrief = S['ChapterBriefOut']
 export type Links = S['LinksOut']
 
+export type SceneContent = S['SceneContentOut']
+export type SaveResult = S['SaveResultOut']
+export type SceneRevision = S['SceneRevisionOut']
+export type Annotation = S['AnnotationOut']
+export type Progress = S['StoryProgressOut']
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
@@ -104,4 +110,43 @@ export const api = {
     post<Scene>(`/api/stories/${id}/scenes`, body),
   updateScene: (storyId: string, sceneId: string, body: Record<string, unknown>) =>
     patch<Scene>(`/api/stories/${storyId}/scenes/${sceneId}`, body),
+
+  // Prose. Note there is no way to send a word_count -- the server owns it.
+  getContent: (storyId: string, sceneId: string) =>
+    request<SceneContent>(`/api/stories/${storyId}/scenes/${sceneId}/content`),
+  saveContent: (
+    storyId: string,
+    sceneId: string,
+    body: { content: string | null; snapshot?: boolean; snapshot_label?: string },
+  ) =>
+    request<SaveResult>(`/api/stories/${storyId}/scenes/${sceneId}/content`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+
+  listRevisions: (storyId: string, sceneId: string) =>
+    request<SceneRevision[]>(`/api/stories/${storyId}/scenes/${sceneId}/revisions`),
+  snapshot: (storyId: string, sceneId: string, label?: string) =>
+    post<SceneRevision>(
+      `/api/stories/${storyId}/scenes/${sceneId}/revisions${label ? `?label=${encodeURIComponent(label)}` : ''}`,
+    ),
+  restoreRevision: (storyId: string, sceneId: string, revisionId: string) =>
+    post<SaveResult>(
+      `/api/stories/${storyId}/scenes/${sceneId}/revisions/${revisionId}/restore`,
+    ),
+
+  listAnnotations: (storyId: string, sceneId: string) =>
+    request<Annotation[]>(`/api/stories/${storyId}/scenes/${sceneId}/annotations`),
+  createAnnotation: (
+    storyId: string,
+    sceneId: string,
+    body: { start_offset: number; end_offset: number; quoted_text: string; note?: string },
+  ) => post<Annotation>(`/api/stories/${storyId}/scenes/${sceneId}/annotations`, body),
+  deleteAnnotation: (storyId: string, sceneId: string, annotationId: string) =>
+    request<void>(`/api/stories/${storyId}/scenes/${sceneId}/annotations/${annotationId}`, {
+      method: 'DELETE',
+    }),
+
+  getProgress: (storyId: string) => request<Progress>(`/api/stories/${storyId}/progress`),
+  manuscriptUrl: (storyId: string) => `/api/stories/${storyId}/manuscript`,
 }
