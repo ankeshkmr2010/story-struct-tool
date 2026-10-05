@@ -51,16 +51,14 @@ depends_on = ${repr(depends_on)}
 def upgrade() -> None:
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=UserWarning)
-        with op.get_context().autocommit_block():
-            schema_upgrades()
-            data_upgrades()
+        schema_upgrades()
+        data_upgrades()
 
 def downgrade() -> None:
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=UserWarning)
-        with op.get_context().autocommit_block():
-            data_downgrades()
-            schema_downgrades()
+        data_downgrades()
+        schema_downgrades()
 
 def schema_upgrades() -> None:
     """schema upgrade migrations go here."""

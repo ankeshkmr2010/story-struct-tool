@@ -191,6 +191,33 @@ the same origin: no CORS, one domain, and httpOnly session cookies instead of to
 
 ---
 
+## 7a. Migration policy
+
+Alembic is the migration manager. Three rules, each enforced by a test in
+`tests/test_migrations.py` rather than by memory:
+
+1. **Migrations are atomic.** advanced-alchemy's generated template wrapped every
+   migration in `op.get_context().autocommit_block()`, which discards Postgres's
+   transactional DDL -- so a mid-migration failure half-applies and leaves the version
+   table disagreeing with the schema. The template and all migrations have it removed, and
+   `env.py` sets `transaction_per_migration=True`. Autocommit is legitimate only for
+   statements that genuinely cannot be transactional (`CREATE INDEX CONCURRENTLY`), case
+   by case -- never as a default.
+2. **A new NOT NULL column must carry `server_default`.** `default=` is Python-side and
+   applies on INSERT only, so it does nothing for rows that already exist. A static guard
+   scans every migration for this, and the guard has its own test asserting it catches the
+   original offending fragment.
+3. **The test schema is built by running the migrations**, never by
+   `metadata.create_all()`. This is the one that actually mattered: with `create_all` the
+   suite validated the models and never executed a migration, so a broken migration passed
+   a fully green run. Every test session now also round-trips `downgrade base` ->
+   `upgrade head` and asserts zero drift between models and migrated schema.
+
+This was not theoretical. Adding `Scene.word_count` as NOT NULL with no server default was
+rejected against populated tables, half-applied, and 145 passing tests said nothing.
+
+---
+
 ## 8. Phases
 
 | Phase | Scope | Status |

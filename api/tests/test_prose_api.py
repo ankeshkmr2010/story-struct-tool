@@ -92,9 +92,7 @@ async def story_with_scene(client: AsyncTestClient) -> tuple[str, str, str]:
         await client.post(STORIES, json={"title": "Prose Story", "premise": "A premise."})
     ).json()["id"]
     chapter_id = (
-        await client.post(
-            f"{STORIES}/{story_id}/chapters", json={"number": 1, "title": "Landfall"}
-        )
+        await client.post(f"{STORIES}/{story_id}/chapters", json={"number": 1, "title": "Landfall"})
     ).json()["id"]
     scene_id = (
         await client.post(
@@ -201,9 +199,7 @@ async def test_restoring_a_revision_is_itself_undoable(client: AsyncTestClient) 
     revisions = (await client.get(f"{STORIES}/{story_id}/scenes/{scene_id}/revisions")).json()
     original = next(r for r in revisions if r["content"] == "The original.")
 
-    await client.post(
-        f"{STORIES}/{story_id}/scenes/{scene_id}/revisions/{original['id']}/restore"
-    )
+    await client.post(f"{STORIES}/{story_id}/scenes/{scene_id}/revisions/{original['id']}/restore")
 
     assert (await client.get(url)).json()["content"] == "The original."
     after = (await client.get(f"{STORIES}/{story_id}/scenes/{scene_id}/revisions")).json()
@@ -250,9 +246,7 @@ async def test_annotation_follows_prose_that_moved(client: AsyncTestClient) -> N
     assert result["annotations_reanchored"] == 1
     assert result["annotations_orphaned"] == 0
 
-    updated = (
-        await client.get(f"{STORIES}/{story_id}/scenes/{scene_id}/annotations")
-    ).json()[0]
+    updated = (await client.get(f"{STORIES}/{story_id}/scenes/{scene_id}/annotations")).json()[0]
     assert updated["is_orphaned"] is False
     assert moved[updated["start_offset"] : updated["end_offset"]] == "The causeway is gone."
 
@@ -277,9 +271,7 @@ async def test_annotation_is_orphaned_not_relocated_when_its_text_is_deleted(
     result = (await client.put(content_url, json={"content": "Something else entirely."})).json()
     assert result["annotations_orphaned"] == 1
 
-    annotation = (
-        await client.get(f"{STORIES}/{story_id}/scenes/{scene_id}/annotations")
-    ).json()[0]
+    annotation = (await client.get(f"{STORIES}/{story_id}/scenes/{scene_id}/annotations")).json()[0]
     assert annotation["is_orphaned"] is True
     assert annotation["note"] == "check this", "the note survives so the author can act on it"
 
@@ -408,9 +400,7 @@ async def test_unplaced_scenes_can_be_excluded_from_export(client: AsyncTestClie
     )
 
     included = (await client.get(f"{STORIES}/{story_id}/manuscript")).text
-    excluded = (
-        await client.get(f"{STORIES}/{story_id}/manuscript?include_unplaced=false")
-    ).text
+    excluded = (await client.get(f"{STORIES}/{story_id}/manuscript?include_unplaced=false")).text
     assert "Orphan prose." in included
     assert "Orphan prose." not in excluded
 
@@ -419,11 +409,7 @@ async def test_prose_endpoints_are_story_scoped(client: AsyncTestClient) -> None
     _, _, scene_id = await story_with_scene(client)
     other = (await client.post(STORIES, json={"title": "Other"})).json()["id"]
 
+    assert (await client.get(f"{STORIES}/{other}/scenes/{scene_id}/content")).status_code == 404
     assert (
-        await client.get(f"{STORIES}/{other}/scenes/{scene_id}/content")
-    ).status_code == 404
-    assert (
-        await client.put(
-            f"{STORIES}/{other}/scenes/{scene_id}/content", json={"content": "hijack"}
-        )
+        await client.put(f"{STORIES}/{other}/scenes/{scene_id}/content", json={"content": "hijack"})
     ).status_code == 404

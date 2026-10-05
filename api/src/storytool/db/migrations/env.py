@@ -42,6 +42,11 @@ def run_migrations_offline() -> None:
         user_module_prefix=config.user_module_prefix,
         render_as_batch=config.render_as_batch,
         process_revision_directives=writer,
+        # Each migration gets its own transaction, so a failure rolls back that
+        # migration entirely and leaves the version table consistent with the schema.
+        # Combined with removing the template's blanket autocommit_block, this is what
+        # makes migrations atomic on Postgres instead of half-applying.
+        transaction_per_migration=True,
     )
 
     with context.begin_transaction():
@@ -59,6 +64,11 @@ def do_run_migrations(connection: "Connection") -> None:
         user_module_prefix=config.user_module_prefix,
         render_as_batch=config.render_as_batch,
         process_revision_directives=writer,
+        # Each migration gets its own transaction, so a failure rolls back that
+        # migration entirely and leaves the version table consistent with the schema.
+        # Combined with removing the template's blanket autocommit_block, this is what
+        # makes migrations atomic on Postgres instead of half-applying.
+        transaction_per_migration=True,
     )
 
     with context.begin_transaction():
