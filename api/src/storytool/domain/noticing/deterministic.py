@@ -24,7 +24,11 @@ from storytool.domain.noticing.types import (
 # a dismissible question while a false negative means never noticing a character at all.
 # Noise is held down by the stoplist below and by requiring a name to recur across scenes
 # before it becomes a suggestion.
-CAPITALISED = re.compile(r"\b([A-Z][a-z]{2,})\b")
+#
+# Matches a *run* of capitalised words, so "Harbourmaster Enns" is one candidate person
+# rather than two. Matching words individually produced both noise (a title reported as a
+# name) and inaccuracy (one person reported twice).
+CAPITALISED = re.compile(r"\b[A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})*\b")
 
 # Capitalised words that are not names. Needed now that sentence-initial words are in scope.
 NOT_NAMES = frozenset(
@@ -167,6 +171,20 @@ NOT_NAMES = frozenset(
 EVIDENCE_WINDOW = 60
 
 
+def _trim_stopwords(run: str) -> str:
+    """Strip leading and trailing non-name words from a capitalised run.
+
+    "The Harbour" -> "Harbour"; "The Tide Then" -> "Tide"; "And But" -> "". Interior words
+    are left alone so a genuine multi-word name survives intact.
+    """
+    words = run.split()
+    while words and words[0] in NOT_NAMES:
+        words.pop(0)
+    while words and words[-1] in NOT_NAMES:
+        words.pop()
+    return " ".join(words)
+
+
 def _sentence_around(prose: str, index: int) -> str:
     """A short verbatim window of the author's text around a match, for evidence."""
     start = max(0, index - EVIDENCE_WINDOW // 2)
@@ -208,11 +226,15 @@ class DeterministicNoticer:
         # Capitalised words that match no known character: worth asking about, never acting on.
         unknown: dict[str, UnknownNameNotice] = {}
         for match in CAPITALISED.finditer(prose):
-            word = match.group(1)
-            if word in NOT_NAMES or word in matched_words or word in unknown:
+            candidate = _trim_stopwords(match.group(0))
+            if not candidate or candidate in matched_words or candidate in unknown:
                 continue
-            unknown[word] = UnknownNameNotice(
-                name=word, evidence=_sentence_around(prose, match.start())
+            # A run whose every word is already a known character's is that character, not a
+            # stranger -- e.g. "Maya Okonkwo" when both tokens matched above.
+            if all(word in matched_words for word in candidate.split()):
+                continue
+            unknown[candidate] = UnknownNameNotice(
+                name=candidate, evidence=_sentence_around(prose, match.start())
             )
 
         return SceneNotices(

@@ -239,9 +239,7 @@ async def test_api_error_degrades_to_deterministic() -> None:
 async def test_claude_is_called_with_low_effort_and_the_configured_model() -> None:
     """Noticing is extraction, not reasoning -- it should not be billed as the latter."""
     stub = StubClient(_SceneNoticeResponse())
-    await ClaudeNoticer(stub, "claude-sonnet-5-5", DeterministicNoticer()).notice_scene(
-        PROSE, ()
-    )
+    await ClaudeNoticer(stub, "claude-sonnet-5-5", DeterministicNoticer()).notice_scene(PROSE, ())
     assert stub.last_kwargs["model"] == "claude-sonnet-5-5"
     assert stub.last_kwargs["output_config"] == {"effort": "low"}
     assert stub.last_kwargs["output_format"] is _SceneNoticeResponse
@@ -276,12 +274,8 @@ async def story_with_prose(client: AsyncTestClient) -> dict:
     story_id = (
         await client.post(STORIES, json={"title": "Noticing", "premise": "A premise."})
     ).json()["id"]
-    maya = (
-        await client.post(f"{STORIES}/{story_id}/characters", json={"name": "Maya"})
-    ).json()
-    chapter = (
-        await client.post(f"{STORIES}/{story_id}/chapters", json={"number": 1})
-    ).json()
+    maya = (await client.post(f"{STORIES}/{story_id}/characters", json={"name": "Maya"})).json()
+    chapter = (await client.post(f"{STORIES}/{story_id}/chapters", json={"number": 1})).json()
 
     scene_ids = []
     for index in range(3):
@@ -444,3 +438,36 @@ async def test_each_unrecognised_name_gets_its_own_suggestion(client: AsyncTestC
     unknown = [s for s in suggestions if s["code"] == "character.recurring_unknown_name"]
 
     assert {s["subject_key"] for s in unknown} == {"Kess", "Brannoch", "Ilsabet"}
+
+
+async def test_a_titled_name_is_one_candidate_not_two() -> None:
+    """Regression: matching capitalised words individually reported "Harbourmaster" and
+    "Enns" as two strangers. A run of capitalised words is one candidate person.
+    """
+    notices = await DeterministicNoticer().notice_scene(
+        "Harbourmaster Enns watched from the wall.", ()
+    )
+    assert [n.name for n in notices.unknown_names] == ["Harbourmaster Enns"]
+
+
+async def test_a_known_full_name_is_not_also_reported_as_a_stranger() -> None:
+    maya = KnownCharacter(id=cid(), name="Maya Okonkwo")
+    notices = await DeterministicNoticer().notice_scene("Maya Okonkwo stood alone.", (maya,))
+    assert len(notices.characters) == 1
+    assert notices.unknown_names == ()
+
+
+@pytest.mark.parametrize(
+    ("run", "expected"),
+    [
+        ("The Harbour", "Harbour"),
+        ("The Tide Then", "Tide"),
+        ("And But", ""),
+        ("Harbourmaster Enns", "Harbourmaster Enns"),
+        ("Kess", "Kess"),
+    ],
+)
+def test_stopwords_are_trimmed_from_the_edges_only(run: str, expected: str) -> None:
+    from storytool.domain.noticing.deterministic import _trim_stopwords
+
+    assert _trim_stopwords(run) == expected

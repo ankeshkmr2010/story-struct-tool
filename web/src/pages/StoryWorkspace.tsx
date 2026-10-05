@@ -5,6 +5,7 @@ import { api } from '../api/client'
 import { Ladder, type AuthoringMode } from '../components/Ladder'
 import { HealthPanel } from '../components/HealthPanel'
 import { ChapterBriefCard } from '../components/ChapterBriefCard'
+import { SuggestionsPanel } from '../components/SuggestionsPanel'
 // Lazy: CodeMirror is the largest dependency in the app and is only needed once the
 // author reaches level 8, so it should not sit in the initial bundle.
 const SceneEditor = lazy(() =>
@@ -509,6 +510,10 @@ export default function StoryWorkspace() {
             Health · level ≤ {level}
           </h2>
           {health.data && <HealthPanel health={health.data} />}
+
+          <div className="mt-6">
+            <SuggestionsPanel storyId={storyId} />
+          </div>
         </aside>
       </div>
     </main>

@@ -781,6 +781,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/scenes/{scene_id}/mentions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who is in a scene */
+        get: operations["ApiStoriesStoryIdScenesSceneIdMentionsListMentions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List suggestions */
+        get: operations["ApiStoriesStoryIdSuggestionsListSuggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/notice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run a noticing pass over the story's prose
+         * @description Reads each scene with prose and records which known characters appear, which names match nobody, and which scenes read like turning points. Writes inferred mentions and suggestions only -- it never alters structure or prose. Rejected mentions and dismissed suggestions are never resurrected.
+         */
+        post: operations["ApiStoriesStoryIdNoticeNotice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/noticing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which noticer is active */
+        get: operations["ApiNoticingNoticerInfo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/mentions/{character_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Confirm or reject an inferred mention */
+        patch: operations["ApiStoriesStoryIdScenesSceneIdMentionsCharacterIdUpdateMention"];
+        trace?: never;
+    };
+    "/api/stories/{story_id}/suggestions/{suggestion_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Dismiss or restore a suggestion */
+        patch: operations["ApiStoriesStoryIdSuggestionsSuggestionIdUpdateSuggestion"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1199,6 +1304,41 @@ export interface components {
             /** @default [] */
             arc_stage_ids: string[];
         };
+        /** MentionOut */
+        MentionOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: uuid */
+            scene_id: string;
+            /** Format: uuid */
+            character_id: string;
+            source: string;
+            is_rejected: boolean;
+        };
+        /** MentionUpdate */
+        MentionUpdate: {
+            source?: string | null;
+            is_rejected?: boolean | null;
+        };
+        /** NoticerInfoOut */
+        NoticerInfoOut: {
+            noticer: string;
+            model: string | null;
+            claude_available: boolean;
+        };
+        /** PassResultOut */
+        PassResultOut: {
+            noticed_by: string;
+            scenes_read: number;
+            mentions_added: number;
+            unknown_names_found: number;
+            turning_points_flagged: number;
+            suggestions_added: number;
+        };
         /**
          * PovStyle
          * @enum {string}
@@ -1440,6 +1580,29 @@ export interface components {
          * @enum {string}
          */
         StructureFramework: "three_act" | "save_the_cat" | "custom";
+        /** SuggestionOut */
+        SuggestionOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: uuid */
+            story_id: string;
+            code: string;
+            message: string;
+            character_id: string | null;
+            scene_id: string | null;
+            thread_id: string | null;
+            is_dismissed: boolean;
+            noticed_by: string;
+            subject_key: string;
+        };
+        /** SuggestionUpdate */
+        SuggestionUpdate: {
+            is_dismissed: boolean;
+        };
         /** ThreadCreate */
         ThreadCreate: {
             type: components["schemas"]["ThreadType"];
@@ -4549,6 +4712,225 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StoryProgressOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdMentionsListMentions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentionOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSuggestionsListSuggestions: {
+        parameters: {
+            query?: {
+                include_dismissed?: boolean;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdNoticeNotice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PassResultOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiNoticingNoticerInfo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoticerInfoOut"];
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdMentionsCharacterIdUpdateMention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+                character_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MentionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentionOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSuggestionsSuggestionIdUpdateSuggestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                suggestion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuggestionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

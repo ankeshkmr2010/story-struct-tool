@@ -32,6 +32,10 @@ export type SceneRevision = S['SceneRevisionOut']
 export type Annotation = S['AnnotationOut']
 export type Progress = S['StoryProgressOut']
 
+export type Suggestion = S['SuggestionOut']
+export type PassResult = S['PassResultOut']
+export type NoticerInfo = S['NoticerInfoOut']
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
@@ -149,4 +153,14 @@ export const api = {
 
   getProgress: (storyId: string) => request<Progress>(`/api/stories/${storyId}/progress`),
   manuscriptUrl: (storyId: string) => `/api/stories/${storyId}/manuscript`,
+
+  // Noticing. A pass only ever records observations -- it never alters structure or prose.
+  noticerInfo: () => request<NoticerInfo>('/api/noticing'),
+  runNoticingPass: (storyId: string) => post<PassResult>(`/api/stories/${storyId}/notice`),
+  listSuggestions: (storyId: string) =>
+    request<Suggestion[]>(`/api/stories/${storyId}/suggestions`),
+  dismissSuggestion: (storyId: string, suggestionId: string) =>
+    patch<Suggestion>(`/api/stories/${storyId}/suggestions/${suggestionId}`, {
+      is_dismissed: true,
+    }),
 }
