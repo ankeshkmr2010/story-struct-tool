@@ -16,6 +16,7 @@ from storytool.domain.narrative.prose_controller import (
     ManuscriptController,
     SceneProseController,
 )
+from storytool.domain.noticing.controller import NoticingController
 from storytool.domain.story.analysis_controller import StoryAnalysisController
 from storytool.domain.story.controller import StoryController
 from storytool.domain.structure.controller import (
@@ -50,6 +51,7 @@ def create_app() -> Litestar:
             SceneController,
             SceneProseController,
             ManuscriptController,
+            NoticingController,
         ],
         plugins=[build_db_plugin()],
         debug=settings.debug,

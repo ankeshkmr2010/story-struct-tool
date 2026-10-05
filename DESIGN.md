@@ -191,6 +191,43 @@ the same origin: no CORS, one domain, and httpOnly session cookies instead of to
 
 ---
 
+## 7b. What the LLM is allowed to do
+
+**Noticing only.** The model reports what is already on the page: which known characters
+appear, which names match nobody, whether a scene reads like a turning point. It never
+proposes prose, plot, or a new beat.
+
+The reason is **anchoring**, not output quality. A writer shown a generated suggestion tends
+to write toward it, which replaces the judgement this tool exists to support. Noticing what
+is already written sharpens that judgement; proposing what should happen next substitutes
+for it.
+
+This is enforced by the **shape of the response**, not by instructing the model:
+
+1. **Closed sets.** Character names resolve against the story's existing cast and beat
+   labels against its existing beats. Anything that does not resolve is discarded, so a
+   hallucinated character or invented beat cannot survive.
+2. **Verbatim evidence only.** The single free-text field is a quote, checked as a literal
+   substring of the author's prose and dropped otherwise. The model can quote the writer
+   back to themselves and can do nothing else with words.
+3. **No generative field exists.** The response schema has no slot for prose, a
+   continuation, a recommendation, or a new label. There is nowhere for "what should happen
+   next" to go. A test asserts the field set directly.
+
+Model: `claude-sonnet-5-5` at `effort: low` (extraction, not reasoning). `claude-haiku-4-5`
+is a one-line swap if these calls prove simple enough.
+
+Refusals and API errors **degrade to the deterministic noticer**, never failing the author's
+save -- fiction routinely contains content a safety classifier may decline, and losing a
+save over that would be unacceptable. With no API key the deterministic noticer is used
+throughout, so the feature degrades rather than disappearing.
+
+Suggestions are persisted, deduplicated, and dismissible; a rejected mention is never
+resurrected and a confirmed one is never downgraded. Without that, re-running a pass would
+undo the author's curation every time.
+
+---
+
 ## 7a. Migration policy
 
 Alembic is the migration manager. Three rules, each enforced by a test in
@@ -226,7 +263,7 @@ rejected against populated tables, half-applied, and 145 passing tests said noth
 | **1** | Levels 1–6 + readiness engine + level-scoped validation + ladder UI | **done** |
 | **2** | Levels 7–8, join tables, **Chapter Context Brief**, health dashboard | **done** |
 | **3** | Editor: Markdown prose, autosave, revisions, annotations, compile/export | **done** |
-| **4** | Pantser: deterministic mention-matching, suggestion engine; then LLM assists behind the same interface, degrading to deterministic with no API key | next |
+| **4** | Pantser: deterministic mention-matching, suggestion engine, Claude noticing behind the same interface, degrading to deterministic with no API key | **done** |
 
 Phase 1 deliberately precedes the editor, accepting that the flagship brief lands last.
 

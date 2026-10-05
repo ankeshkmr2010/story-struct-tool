@@ -12,6 +12,7 @@ dependencies = [
     "pydantic>=2.10",
     "pydantic-settings>=2.7",
     "uuid-utils>=0.10",
+    "anthropic>=1.11.0",
 ]
 
 [dependency-groups]

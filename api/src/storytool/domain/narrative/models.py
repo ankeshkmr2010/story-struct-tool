@@ -13,7 +13,17 @@ either join table.
 
 from uuid import UUID
 
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import CompletableMixin, StoryToolBase, metadata
@@ -177,3 +187,81 @@ class Annotation(StoryToolBase):
     note: Mapped[str | None] = mapped_column(Text, default=None)
     is_orphaned: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     resolved: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class SceneCharacterMention(StoryToolBase):
+    """Which characters appear in a scene -- the table that *is* Pantser mode.
+
+    A deterministic pass matches known character names against the prose and writes rows
+    with `source="inferred"`; the author confirms or rejects them. `is_rejected` is
+    remembered so a later pass cannot resurrect a mention the author already dismissed.
+
+    DESIGN.md sketched this as a polymorphic `entity_mention(entity_type, entity_id)`.
+    Implemented as a character-specific table with a real foreign key instead, for the same
+    reason beat fulfilment uses two typed tables: a polymorphic id cannot carry one.
+    Locations get their own table when World/Location are built.
+    """
+
+    __tablename__ = "scene_character_mention"
+
+    scene_id: Mapped[UUID] = mapped_column(ForeignKey("scene.id", ondelete="CASCADE"), index=True)
+    character_id: Mapped[UUID] = mapped_column(
+        ForeignKey("character.id", ondelete="CASCADE"), index=True
+    )
+    # manual | inferred | confirmed
+    source: Mapped[str] = mapped_column(String(10), default="inferred")
+    is_rejected: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+
+    __table_args__ = (UniqueConstraint("scene_id", "character_id", name="one_per_pair"),)
+
+
+class Suggestion(StoryToolBase):
+    """A dismissible nudge.
+
+    Persisted and deduplicated on purpose: without memory the tool would re-raise the same
+    observation on every load, which would make Pantser mode insufferable rather than
+    helpful. A dismissed suggestion stays dismissed.
+
+    Suggestions only ever *notice* -- they describe what is already on the page. None of
+    them proposes prose or plot.
+    """
+
+    __tablename__ = "suggestion"
+
+    story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
+    code: Mapped[str] = mapped_column(String(60), index=True)
+    message: Mapped[str] = mapped_column(Text)
+    # Optional subjects, as real FKs rather than a polymorphic pair.
+    character_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("character.id", ondelete="CASCADE"), default=None
+    )
+    scene_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("scene.id", ondelete="CASCADE"), default=None
+    )
+    thread_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("thread.id", ondelete="CASCADE"), default=None
+    )
+    is_dismissed: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # "deterministic" or "claude" -- so the author can tell what noticed it.
+    noticed_by: Mapped[str] = mapped_column(String(20), default="deterministic")
+
+    # Discriminator for suggestions whose subject is not an entity -- an unrecognised name
+    # has no FK to point at, so without this every such name collapses into one row and the
+    # author only ever hears about the first.
+    subject_key: Mapped[str] = mapped_column(String(120), default="", server_default="")
+
+    __table_args__ = (
+        # NULLS NOT DISTINCT because most suggestions have no subject: Postgres treats
+        # NULLs as distinct by default, so (story, code, NULL, NULL, NULL) would never
+        # conflict with itself and every pass would duplicate the row.
+        UniqueConstraint(
+            "story_id",
+            "code",
+            "character_id",
+            "scene_id",
+            "thread_id",
+            "subject_key",
+            name="one_per_subject",
+            postgresql_nulls_not_distinct=True,
+        ),
+    )
