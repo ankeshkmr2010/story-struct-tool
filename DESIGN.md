@@ -246,6 +246,43 @@ Two consequences worth recording:
 
 Cost: no evidence quote on structural notices, because there is no text to quote.
 
+### Built to Jev's documented patterns and weaknesses
+
+* **Speculative fan-out** -- five questions per scene in one call (turning point, plus one
+  each for goal / conflict / outcome). Questions evaluate in parallel, so asking five costs
+  about what asking one costs, and the code decides what is worth reporting.
+* **Confidence-gated routing** -- a beat is pinned only above 0.6, the documented floor for
+  acting on a choice. Suggesting is low-risk, so it does not need the ~0.9 the docs reserve
+  for acting automatically.
+* **Confidence is not calibrated** -- it is a statistic over the distribution shape, and
+  **a noul returns no confidence at all**. Its documented equivalent is `|2p - 1|`, so a
+  noul probability is converted before it is ever compared with a choice confidence. A noul
+  of 0.7 means "probably yes", which is weak *certainty*, not 70% confidence.
+* **Literal interpretation** is Jev 1.13's first documented weakness, so every question
+  states its boundary cases in `criteria`, and beat options carry the framework's own
+  description rather than a bare label.
+* **Counting stays in code.** Jev "does not count reliably", so it is asked only for
+  semantic judgements; every tally, threshold and rollup is Python.
+* **Context rot** -- the request state carries only the scene prose, nothing else.
+* Because the output is typed and closed-set, prompt injection in prose can at worst flip a
+  nudge. It cannot cause attacker-authored text to reach the author.
+
+### Prose structure vs field completeness
+
+The three element questions ask whether the *prose* shows a goal, opposition, and a change
+by the end. That is deliberately distinct from `Scene.complete_when`, which asks whether the
+author filled in the fields -- a scene can have a goal in its field and none on the page, or
+the reverse. Reported as an observation ("the prose shows no conflict or outcome"), never as
+a judgement about quality.
+
+A gap is claimed only below 0.4 and presence only above 0.6; between the two the tool says
+nothing, because a nudge built on a coin flip is worse than silence.
+
+**Tests never reach a live model.** Settings read `api/.env`, so the harness forces
+`STORYTOOL_NOTICING_BACKEND=deterministic` -- otherwise a developer with a key would have
+every noticing test quietly calling a paid API. One live test constructs its own client and
+skips without a key. A test guards the override itself.
+
 **`Score` is deliberately unused.** It is the one primitive that could turn this into a tool
 that grades a novelist's prose, and "your scene scores 1/4" is a different, worse product.
 If it is ever adopted it should judge structural properties ("does this scene state a

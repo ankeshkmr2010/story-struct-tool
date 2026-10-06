@@ -59,6 +59,31 @@ class UnknownNameNotice:
 
 
 @dataclass(frozen=True, slots=True)
+class SceneElements:
+    """Whether the *prose* shows the three things that make a scene a scene.
+
+    Separate from `Scene.complete_when`, which asks whether the author filled in the fields.
+    A scene can have a goal on the page and an empty goal field, or the reverse. Probabilities
+    rather than booleans, with None meaning "too uncertain to claim either way".
+    """
+
+    goal: float | None = None
+    conflict: float | None = None
+    outcome: float | None = None
+
+    def missing(self, absent_below: float) -> tuple[str, ...]:
+        return tuple(
+            name
+            for name, value in (
+                ("goal", self.goal),
+                ("conflict", self.conflict),
+                ("outcome", self.outcome),
+            )
+            if value is not None and value <= absent_below
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class StructureNotice:
     """An observation about a scene's shape.
 
@@ -73,6 +98,8 @@ class StructureNotice:
     # Raw probability when the noticer reports one (Jev does; Claude does not). Lets the UI
     # show strength instead of a bare claim, and lets suggestions be threshold-gated.
     probability: float | None = None
+    # Present only when the noticer can judge prose structure (Jev).
+    elements: "SceneElements | None" = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,6 +114,10 @@ class SceneNotices:
 class KnownBeat:
     id: UUID
     label: str
+    # Jev reads option descriptions as well as keys, and its documented weakness is literal
+    # interpretation -- so the framework's own beat description is far better criteria than
+    # the bare label. Seeded beats already carry one.
+    description: str | None = None
 
 
 class Noticer(Protocol):

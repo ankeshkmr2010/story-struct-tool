@@ -296,8 +296,14 @@ async def story_with_prose(client: AsyncTestClient) -> dict:
 
 async def test_noticer_info_reports_what_is_reading(client: AsyncTestClient) -> None:
     info = (await client.get("/api/noticing")).json()
-    assert info["noticer"] in {"deterministic", "claude"}
-    assert "claude_available" in info
+    assert info["noticer"] in {"deterministic", "claude", "jev"}
+    assert {"claude_available", "jev_available", "model"} <= set(info)
+
+
+async def test_the_suite_never_reaches_a_live_model(client: AsyncTestClient) -> None:
+    """Guards the conftest override. Settings read api/.env, so without this a developer
+    with a real key would have every noticing test silently calling a paid API."""
+    assert (await client.get("/api/noticing")).json()["noticer"] == "deterministic"
 
 
 async def test_pass_records_mentions_and_suggests_an_arc(client: AsyncTestClient) -> None:

@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.graph import StoryGraph
 from storytool.domain.narrative.models import SceneCharacterMention, Suggestion
+from storytool.domain.noticing.jev import ELEMENT_ABSENT_BELOW
 from storytool.domain.noticing.suggestions import NoticingState, propose_suggestions
 from storytool.domain.noticing.types import KnownBeat, KnownCharacter
 
@@ -40,11 +41,14 @@ async def run_noticing_pass(
     session: AsyncSession, graph: StoryGraph, noticer: object
 ) -> PassResult:
     known_characters = tuple(KnownCharacter(id=c.id, name=c.name) for c in graph.characters)
-    known_beats = tuple(KnownBeat(id=b.id, label=b.label) for b in graph.beats)
+    known_beats = tuple(
+        KnownBeat(id=b.id, label=b.label, description=b.description) for b in graph.beats
+    )
 
     scenes_by_character: dict[UUID, int] = {}
     unknown_counts: dict[str, int] = {}
     turning_points: set[UUID] = set()
+    element_gaps: dict[UUID, tuple[str, ...]] = {}
     pending_mentions: list[tuple[UUID, UUID]] = []
     scenes_read = 0
     noticed_by = getattr(noticer, "name", "deterministic")
@@ -87,6 +91,11 @@ async def run_noticing_pass(
         if notices.structure and notices.structure.reads_like_turning_point:
             turning_points.add(scene.id)
 
+        if notices.structure and notices.structure.elements:
+            missing = notices.structure.elements.missing(ELEMENT_ABSENT_BELOW)
+            if missing:
+                element_gaps[scene.id] = missing
+
     mentions_added = 0
     if pending_mentions:
         result = await session.execute(
@@ -105,6 +114,7 @@ async def run_noticing_pass(
         scenes_by_character=scenes_by_character,
         unknown_name_scene_counts=unknown_counts,
         turning_point_scene_ids=frozenset(turning_points),
+        prose_element_gaps=element_gaps,
     )
     proposed = propose_suggestions(graph, state)
 

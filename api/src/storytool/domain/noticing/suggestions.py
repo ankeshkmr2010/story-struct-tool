@@ -29,6 +29,9 @@ class NoticingState:
     scenes_by_character: dict[UUID, int] = field(default_factory=dict)
     unknown_name_scene_counts: dict[str, int] = field(default_factory=dict)
     turning_point_scene_ids: frozenset[UUID] = frozenset()
+    # scene id -> which of goal/conflict/outcome the *prose* does not show. Only populated by
+    # a noticer that can judge prose structure.
+    prose_element_gaps: dict[UUID, tuple[str, ...]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +49,15 @@ class ProposedSuggestion:
 
 def _plural(count: int, noun: str) -> str:
     return f"{count} {noun}{'' if count == 1 else 's'}"
+
+
+def _join(items: tuple[str, ...]) -> str:
+    """ "a", "a or b", "a, b, or c"."""
+    if len(items) <= 1:
+        return "".join(items)
+    if len(items) == 2:
+        return f"{items[0]} or {items[1]}"
+    return f"{', '.join(items[:-1])}, or {items[-1]}"
 
 
 def character_with_presence_but_no_arc(
@@ -183,12 +195,45 @@ def turning_point_not_pinned_to_a_beat(
     return out
 
 
+def scene_prose_missing_a_structural_element(
+    graph: StoryGraph, state: NoticingState
+) -> list[ProposedSuggestion]:
+    """Goal, conflict and outcome are what make a scene a scene.
+
+    Distinct from `Scene.complete_when`, which checks whether the author filled in the
+    fields: this reads the prose. A scene can have a goal in its field and none on the page.
+
+    Structural, deliberately not evaluative -- it reports which element is absent, never
+    whether the writing is any good.
+    """
+    by_id = {scene.id: scene for scene in graph.scenes}
+    out = []
+    for scene_id, missing in sorted(state.prose_element_gaps.items(), key=lambda kv: str(kv[0])):
+        scene = by_id.get(scene_id)
+        if scene is None or not missing:
+            continue
+        title = scene.title or "An untitled scene"
+        joined = _join(missing)
+        out.append(
+            ProposedSuggestion(
+                code="scene.prose_missing_element",
+                message=f"{title}: the prose shows no {joined}.",
+                scene_id=scene_id,
+                # Keyed on which elements are absent, so a scene whose gap changes raises a
+                # fresh observation rather than being deduped against the old one.
+                subject_key=",".join(missing),
+            )
+        )
+    return out
+
+
 RULES = (
     character_with_presence_but_no_arc,
     recurring_name_that_is_not_a_character,
     character_with_arc_but_no_presence,
     thread_that_has_gone_quiet,
     turning_point_not_pinned_to_a_beat,
+    scene_prose_missing_a_structural_element,
 )
 
 

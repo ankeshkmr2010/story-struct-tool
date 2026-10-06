@@ -70,6 +70,13 @@ def run_migrations(target: str = "upgrade") -> subprocess.CompletedProcess[str]:
 @pytest.fixture(scope="session", autouse=True)
 def _point_settings_at_test_db() -> None:
     os.environ["STORYTOOL_DATABASE_URL"] = TEST_URL
+
+    # Force deterministic noticing for the whole suite. Settings read api/.env, so a
+    # developer with a real key would otherwise have every noticing test make live API
+    # calls -- slow, network-dependent, and quietly spending money. Tests that genuinely
+    # exercise a model construct their own client and are skipped without a key.
+    os.environ["STORYTOOL_NOTICING_BACKEND"] = "deterministic"
+
     from storytool.config import get_settings
 
     get_settings.cache_clear()
