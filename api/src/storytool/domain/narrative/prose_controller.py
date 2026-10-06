@@ -85,7 +85,10 @@ class SceneProseController(Controller):
         rows = await db_session.execute(
             select(SceneRevision)
             .where(SceneRevision.scene_id == scene_id)
-            .order_by(SceneRevision.created_at.desc())
+            # Tie-break on id: three saves in quick succession can share a created_at, which
+            # left the order undefined and the ordering test intermittently failing. UUIDv7 is
+            # time-sortable, so id is a monotonic tiebreaker rather than an arbitrary one.
+            .order_by(SceneRevision.created_at.desc(), SceneRevision.id.desc())
         )
         return [SceneRevisionOut.model_validate(r) for r in rows.scalars().all()]
 

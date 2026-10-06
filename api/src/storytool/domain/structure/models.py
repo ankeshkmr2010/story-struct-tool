@@ -37,9 +37,15 @@ class Event(StoryToolBase, CompletableMixin):
     display_label: Mapped[str | None] = mapped_column(String(200), default=None)
 
     is_turning_point: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
-    # Does a scene exist for this, or does it happen off-page? The scene_id link arrives
-    # with Level 8 in Phase 2.
+    # Does a scene exist for this, or does it happen off-page?
     is_on_page: Mapped[bool] = mapped_column(Boolean, default=False)
+    # use_alter breaks a legitimate foreign-key cycle for DDL ordering:
+    # event -> scene -> chapter -> act -> event (acts point at their turning-point events).
+    # Every edge is nullable SET NULL, so the cycle is fine at runtime; SQLAlchemy just needs
+    # to be told it can emit this one constraint separately.
+    scene_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("scene.id", ondelete="SET NULL", use_alter=True), default=None, index=True
+    )
 
 
 class Act(StoryToolBase, CompletableMixin):

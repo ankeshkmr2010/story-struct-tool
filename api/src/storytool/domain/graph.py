@@ -17,6 +17,7 @@ from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
 from storytool.domain.narrative.models import Chapter, Scene
 from storytool.domain.story.models import Story
 from storytool.domain.structure.models import Act, Beat, Event, Thread
+from storytool.domain.world.models import Location
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +35,7 @@ class StoryGraph:
     arc_stages: tuple[ArcStage, ...] = field(default_factory=tuple)
     chapters: tuple[Chapter, ...] = field(default_factory=tuple)
     scenes: tuple[Scene, ...] = field(default_factory=tuple)
+    locations: tuple[Location, ...] = field(default_factory=tuple)
 
     # Association rows, as plain tuples -- these are edges, not entities.
     chapter_beats: tuple[tuple[UUID, UUID], ...] = field(default_factory=tuple)
@@ -44,6 +46,9 @@ class StoryGraph:
     """(scene_id, thread_id, is_primary)"""
     scene_arc_advances: tuple[tuple[UUID, UUID], ...] = field(default_factory=tuple)
     """(scene_id, arc_stage_id)"""
+    character_mentions: tuple[tuple[UUID, UUID], ...] = field(default_factory=tuple)
+    """(scene_id, character_id) for mentions the author has not rejected. Continuity rules
+    need to know who was where, which only this can tell them."""
 
     # ------------------------------------------------------------- lookups
 
@@ -65,6 +70,30 @@ class StoryGraph:
 
     def arc_by_id(self) -> dict[UUID, Arc]:
         return {a.id: a for a in self.arcs}
+
+    def location_by_id(self) -> dict[UUID, Location]:
+        return {location.id: location for location in self.locations}
+
+    def characters_in_scene(self) -> dict[UUID, set[UUID]]:
+        grouped: dict[UUID, set[UUID]] = defaultdict(set)
+        for scene_id, character_id in self.character_mentions:
+            grouped[scene_id].add(character_id)
+        return grouped
+
+    def scenes_in_reading_order(self) -> tuple[Scene, ...]:
+        """Chapter order, then scene order within the chapter.
+
+        Reading order, not story-time order -- the difference between the two is where
+        continuity problems live.
+        """
+        chapter_rank = {
+            chapter.id: index
+            for index, chapter in enumerate(sorted(self.chapters, key=lambda c: c.sort_key))
+        }
+        placed = [
+            s for s in self.scenes if s.chapter_id is not None and s.chapter_id in chapter_rank
+        ]
+        return tuple(sorted(placed, key=lambda s: (chapter_rank[s.chapter_id], s.sort_key)))  # type: ignore[index]
 
     def stage_by_id(self) -> dict[UUID, ArcStage]:
         return {s.id: s for s in self.arc_stages}

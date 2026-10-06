@@ -59,6 +59,15 @@ class UnknownNameNotice:
 
 
 @dataclass(frozen=True, slots=True)
+class KnownLocation:
+    """A place the story already has, passed in as a closed set."""
+
+    id: UUID
+    name: str
+    description: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class SceneElements:
     """Whether the *prose* shows the three things that make a scene a scene.
 
@@ -100,6 +109,11 @@ class StructureNotice:
     probability: float | None = None
     # Present only when the noticer can judge prose structure (Jev).
     elements: "SceneElements | None" = None
+    # Which existing location the prose reads like. Closed set, so it can only ever point at
+    # a place the author already created. Serves both location tracking (the scene has no
+    # link yet) and continuity (the scene is linked to something else).
+    reads_like_location_id: UUID | None = None
+    location_confidence: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,6 +148,7 @@ class Noticer(Protocol):
         prose: str,
         known_characters: tuple[KnownCharacter, ...],
         known_beats: tuple[KnownBeat, ...] = (),
+        known_locations: tuple["KnownLocation", ...] = (),
     ) -> SceneNotices: ...
 
 

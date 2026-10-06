@@ -886,6 +886,80 @@ export interface paths {
         patch: operations["ApiStoriesStoryIdSuggestionsSuggestionIdUpdateSuggestion"];
         trace?: never;
     };
+    "/api/stories/{story_id}/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List locations */
+        get: operations["ApiStoriesStoryIdLocationsListLocations"];
+        put?: never;
+        /** Create a location */
+        post: operations["ApiStoriesStoryIdLocationsCreateLocation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/locations/{location_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a location */
+        get: operations["ApiStoriesStoryIdLocationsLocationIdGetLocation"];
+        put?: never;
+        post?: never;
+        /** Delete a location */
+        delete: operations["ApiStoriesStoryIdLocationsLocationIdDeleteLocation"];
+        options?: never;
+        head?: never;
+        /** Update a location */
+        patch: operations["ApiStoriesStoryIdLocationsLocationIdUpdateLocation"];
+        trace?: never;
+    };
+    "/api/stories/{story_id}/locations/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where each location is used */
+        get: operations["ApiStoriesStoryIdLocationsUsageGetUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/continuity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Contradictions and possible anomalies
+         * @description Contradictions are provable from the story graph and are stated as fact. Possible anomalies come from a model's reading, are confidence-gated, and are phrased as questions. Reports what it finds; never proposes the fix.
+         */
+        get: operations["ApiStoriesStoryIdContinuityGetContinuity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -962,6 +1036,17 @@ export interface components {
         AnnotationUpdate: {
             note?: string | null;
             resolved?: boolean | null;
+        };
+        /** AnomalyOut */
+        AnomalyOut: {
+            code: string;
+            kind: string;
+            message: string;
+            scene_ids: string[];
+            character_id: string | null;
+            location_id: string | null;
+            event_id: string | null;
+            confidence: number | null;
         };
         /** ArcAdvanceOut */
         ArcAdvanceOut: {
@@ -1221,6 +1306,14 @@ export interface components {
             required: string[];
             ratio: number;
         };
+        /** ContinuityOut */
+        ContinuityOut: {
+            /** Format: uuid */
+            story_id: string;
+            contradiction_count: number;
+            possible_count: number;
+            anomalies: components["schemas"]["AnomalyOut"][];
+        };
         /**
          * DraftStatus
          * @description Authored, not derived.
@@ -1242,6 +1335,7 @@ export interface components {
             is_turning_point: boolean;
             /** @default false */
             is_on_page: boolean;
+            scene_id?: string | null;
         };
         /** EventOut */
         EventOut: {
@@ -1260,6 +1354,7 @@ export interface components {
             display_label: string | null;
             is_turning_point: boolean;
             is_on_page: boolean;
+            scene_id: string | null;
         };
         /** EventUpdate */
         EventUpdate: {
@@ -1269,6 +1364,7 @@ export interface components {
             display_label?: string | null;
             is_turning_point?: boolean | null;
             is_on_page?: boolean | null;
+            scene_id?: string | null;
         };
         /** FindingOut */
         FindingOut: {
@@ -1303,6 +1399,48 @@ export interface components {
             thread_ids: string[];
             /** @default [] */
             arc_stage_ids: string[];
+        };
+        /** LocationCreate */
+        LocationCreate: {
+            name: string;
+            description?: string | null;
+            atmosphere_notes?: string | null;
+            /** @default 0 */
+            sort_key: number;
+        };
+        /** LocationOut */
+        LocationOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            completeness: components["schemas"]["CompletenessOut"];
+            /** Format: uuid */
+            story_id: string;
+            name: string;
+            description: string | null;
+            atmosphere_notes: string | null;
+            sort_key: number;
+        };
+        /** LocationUpdate */
+        LocationUpdate: {
+            name?: string | null;
+            description?: string | null;
+            atmosphere_notes?: string | null;
+            sort_key?: number | null;
+        };
+        /** LocationUsageOut */
+        LocationUsageOut: {
+            /** Format: uuid */
+            location_id: string;
+            name: string;
+            scene_count: number;
+            chapter_numbers: number[];
+            character_ids: string[];
+            first_story_time: number | null;
+            last_story_time: number | null;
         };
         /** MentionOut */
         MentionOut: {
@@ -1427,8 +1565,11 @@ export interface components {
             chapter_id?: string | null;
             summary?: string | null;
             location?: string | null;
+            location_id?: string | null;
             story_time_ordinal?: number | null;
             time_label?: string | null;
+            /** @default false */
+            is_flashback: boolean;
             pov_character_id?: string | null;
             goal?: string | null;
             conflict?: string | null;
@@ -1465,8 +1606,10 @@ export interface components {
             title: string | null;
             summary: string | null;
             location: string | null;
+            location_id: string | null;
             story_time_ordinal: number | null;
             time_label: string | null;
+            is_flashback: boolean;
             pov_character_id: string | null;
             goal: string | null;
             conflict: string | null;
@@ -1504,8 +1647,10 @@ export interface components {
             chapter_id?: string | null;
             summary?: string | null;
             location?: string | null;
+            location_id?: string | null;
             story_time_ordinal?: number | null;
             time_label?: string | null;
+            is_flashback?: boolean | null;
             pov_character_id?: string | null;
             goal?: string | null;
             conflict?: string | null;
@@ -4932,6 +5077,274 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuggestionOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdLocationsListLocations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdLocationsCreateLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationCreate"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdLocationsLocationIdGetLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                location_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdLocationsLocationIdDeleteLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                location_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdLocationsLocationIdUpdateLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                location_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdLocationsUsageGetUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationUsageOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdContinuityGetContinuity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContinuityOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

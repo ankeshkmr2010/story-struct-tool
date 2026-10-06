@@ -12,6 +12,7 @@ an API key.
 from dataclasses import dataclass, field
 from uuid import UUID
 
+from storytool.domain.continuity import location_disagreements
 from storytool.domain.graph import StoryGraph
 
 # An author who has written a character into this many scenes probably means it.
@@ -32,6 +33,9 @@ class NoticingState:
     # scene id -> which of goal/conflict/outcome the *prose* does not show. Only populated by
     # a noticer that can judge prose structure.
     prose_element_gaps: dict[UUID, tuple[str, ...]] = field(default_factory=dict)
+    # scene id -> (location it reads like, confidence). Only populated by a noticer that can
+    # judge place from prose.
+    location_readings: dict[UUID, tuple[UUID, float]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -227,6 +231,52 @@ def scene_prose_missing_a_structural_element(
     return out
 
 
+def scene_reads_like_an_unlinked_location(
+    graph: StoryGraph, state: NoticingState
+) -> list[ProposedSuggestion]:
+    """A scene whose prose clearly happens somewhere the author has already defined, with no
+    link set. Asks; never sets the link itself."""
+    locations = graph.location_by_id()
+    by_id = {scene.id: scene for scene in graph.scenes}
+    out = []
+    for scene_id, (location_id, _) in sorted(
+        state.location_readings.items(), key=lambda kv: str(kv[0])
+    ):
+        scene = by_id.get(scene_id)
+        place = locations.get(location_id)
+        if scene is None or place is None or scene.location_id is not None:
+            continue
+        title = scene.title or "An untitled scene"
+        out.append(
+            ProposedSuggestion(
+                code="scene.location_unlinked",
+                message=f'{title} reads like it takes place at "{place.name}".',
+                scene_id=scene_id,
+                subject_key=str(location_id),
+            )
+        )
+    return out
+
+
+def scene_location_disagrees_with_its_prose(
+    graph: StoryGraph, state: NoticingState
+) -> list[ProposedSuggestion]:
+    """A scene linked to one place whose prose reads like another.
+
+    Reuses the continuity helper so the wording and the gating live in one place. Phrased as a
+    question, because the model may simply be wrong.
+    """
+    return [
+        ProposedSuggestion(
+            code=anomaly.code,
+            message=anomaly.message,
+            scene_id=anomaly.scene_ids[0] if anomaly.scene_ids else None,
+            subject_key=str(anomaly.location_id),
+        )
+        for anomaly in location_disagreements(graph, state.location_readings)
+    ]
+
+
 RULES = (
     character_with_presence_but_no_arc,
     recurring_name_that_is_not_a_character,
@@ -234,6 +284,8 @@ RULES = (
     thread_that_has_gone_quiet,
     turning_point_not_pinned_to_a_beat,
     scene_prose_missing_a_structural_element,
+    scene_reads_like_an_unlinked_location,
+    scene_location_disagrees_with_its_prose,
 )
 
 

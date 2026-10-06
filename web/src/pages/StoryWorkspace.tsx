@@ -6,6 +6,8 @@ import { Ladder, type AuthoringMode } from '../components/Ladder'
 import { HealthPanel } from '../components/HealthPanel'
 import { ChapterBriefCard } from '../components/ChapterBriefCard'
 import { SuggestionsPanel } from '../components/SuggestionsPanel'
+import { ContinuityPanel } from '../components/ContinuityPanel'
+import { PlacesPanel } from '../components/PlacesPanel'
 // Lazy: CodeMirror is the largest dependency in the app and is only needed once the
 // author reaches level 8, so it should not sit in the initial bundle.
 const SceneEditor = lazy(() =>
@@ -13,6 +15,10 @@ const SceneEditor = lazy(() =>
 )
 
 const MODES: AuthoringMode[] = ['plotter', 'hybrid', 'pantser']
+
+// Places are reference data, not a rung. The sentinel keeps them out of the ladder's
+// readiness logic entirely.
+const PLACES_VIEW = 100
 
 function AddForm({
   placeholder,
@@ -109,6 +115,20 @@ export default function StoryWorkspace() {
   const progress = useQuery({
     queryKey: ['progress', storyId],
     queryFn: () => api.getProgress(storyId),
+  })
+  const locations = useQuery({
+    queryKey: ['locations', storyId],
+    queryFn: () => api.listLocations(storyId),
+  })
+
+  const linkLocation = useMutation({
+    mutationFn: (vars: { sceneId: string; locationId: string | null }) =>
+      api.updateScene(storyId, vars.sceneId, { location_id: vars.locationId }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['scenes', storyId] })
+      void qc.invalidateQueries({ queryKey: ['location-usage', storyId] })
+      void qc.invalidateQueries({ queryKey: ['continuity', storyId] })
+    },
   })
 
   // Any write can change readiness and health, so invalidate both every time.
@@ -261,6 +281,19 @@ export default function StoryWorkspace() {
               onSelect={setLevel}
             />
           )}
+
+          <h2 className="mt-5 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Reference
+          </h2>
+          <button
+            onClick={() => setLevel(PLACES_VIEW)}
+            className={[
+              'w-full rounded-md px-3 py-2 text-left text-sm transition',
+              level === PLACES_VIEW ? 'bg-slate-900 text-white' : 'hover:bg-slate-100',
+            ].join(' ')}
+          >
+            Places
+          </button>
         </aside>
 
         <section className="min-w-0">
@@ -447,6 +480,8 @@ export default function StoryWorkspace() {
             </Panel>
           )}
 
+          {level === PLACES_VIEW && <PlacesPanel storyId={storyId} />}
+
           {level === 8 && (
             <Panel
               title="Scenes"
@@ -485,6 +520,34 @@ export default function StoryWorkspace() {
               )}
 
               {selectedScene && (
+                <div className="mt-3 flex items-center gap-2">
+                  <label className="text-xs text-slate-400">Place</label>
+                  <select
+                    className="rounded border border-slate-300 px-2 py-1 text-xs"
+                    value={selectedScene.location_id ?? ''}
+                    onChange={(e) =>
+                      linkLocation.mutate({
+                        sceneId: selectedScene.id,
+                        locationId: e.target.value || null,
+                      })
+                    }
+                  >
+                    <option value="">— not set —</option>
+                    {locations.data?.map((location) => (
+                      <option key={location.id} value={location.id}>
+                        {location.name}
+                      </option>
+                    ))}
+                  </select>
+                  {locations.data?.length === 0 && (
+                    <span className="text-xs text-slate-400">
+                      define places under Reference first
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {selectedScene && (
                 <div className="mt-4">
                   <Suspense
                     fallback={<p className="text-sm text-slate-400">Loading editor…</p>}
@@ -510,6 +573,10 @@ export default function StoryWorkspace() {
             Health · level ≤ {level}
           </h2>
           {health.data && <HealthPanel health={health.data} />}
+
+          <div className="mt-6">
+            <ContinuityPanel storyId={storyId} />
+          </div>
 
           <div className="mt-6">
             <SuggestionsPanel storyId={storyId} />

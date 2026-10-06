@@ -21,6 +21,7 @@ class EventCreate(BaseModel):
     display_label: str | None = Field(default=None, max_length=200)
     is_turning_point: bool = False
     is_on_page: bool = False
+    scene_id: UUID | None = None
 
 
 class EventUpdate(BaseModel):
@@ -30,6 +31,7 @@ class EventUpdate(BaseModel):
     display_label: str | None = Field(default=None, max_length=200)
     is_turning_point: bool | None = None
     is_on_page: bool | None = None
+    scene_id: UUID | None = None
 
 
 class EventOut(EntityOut):
@@ -40,6 +42,7 @@ class EventOut(EntityOut):
     display_label: str | None
     is_turning_point: bool
     is_on_page: bool
+    scene_id: UUID | None
 
 
 # ----------------------------------------------------------------------- Act

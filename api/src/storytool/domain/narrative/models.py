@@ -121,7 +121,13 @@ class Scene(StoryToolBase, CompletableMixin):
     title: Mapped[str | None] = mapped_column(String(200), default=None)
     summary: Mapped[str | None] = mapped_column(Text, default=None)
 
+    # Free text is the *placeholder*: a scene can name a place before that place exists as an
+    # entity. `location_id` is the committed form, and continuity checks only use that --
+    # they cannot reason about a string.
     location: Mapped[str | None] = mapped_column(String(200), default=None)
+    location_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("location.id", ondelete="SET NULL"), default=None, index=True
+    )
     # Same reasoning as Event: only ordering is mechanical, the label is the author's.
     story_time_ordinal: Mapped[int | None] = mapped_column(Integer, default=None)
     time_label: Mapped[str | None] = mapped_column(String(200), default=None)
@@ -134,6 +140,11 @@ class Scene(StoryToolBase, CompletableMixin):
     outcome: Mapped[str | None] = mapped_column(Text, default=None)
     emotional_value_from: Mapped[str | None] = mapped_column(String(120), default=None)
     emotional_value_to: Mapped[str | None] = mapped_column(String(120), default=None)
+
+    # Marks a deliberate jump backwards in story time. Without it, an out-of-order scene is
+    # indistinguishable from a continuity error, so the anomaly engine would accuse every
+    # flashback in the book.
+    is_flashback: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
     status: Mapped[str] = mapped_column(String(20), default=DraftStatus.PLACEHOLDER)
     sort_key: Mapped[float] = mapped_column(Float, default=0.0)

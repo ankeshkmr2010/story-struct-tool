@@ -326,6 +326,60 @@ rejected against populated tables, half-applied, and 145 passing tests said noth
 
 ---
 
+## 7c. Continuity: contradictions vs possible anomalies
+
+"Plot hole finder" is a dangerous framing. A tool that falsely tells a novelist their plot has
+a hole is worse than one that says nothing -- once it accuses them wrongly they stop reading
+the panel. So findings come in two kinds with deliberately different voices, counted and
+coloured separately so a guess never carries the authority of a proof:
+
+| Kind | Source | Voice |
+| --- | --- | --- |
+| `contradiction` | Provable from the story graph | Stated as fact: *"Maya is in 2 places at story-time 40: The Harbour, The Lighthouse."* No hedging, no confidence |
+| `possible` | A model's reading, confidence-gated | Phrased as a question: *"...reads like it takes place at The Lighthouse — is the link right?"* Carries its confidence |
+
+Neither ever proposes the fix. This is `health`'s sibling, not its replacement: health reports
+**gaps** (structure not built yet, which is normal mid-draft); continuity reports
+**contradictions** (the draft disagreeing with itself, which never is).
+
+Six deterministic rules, each with a test proving it stays quiet when it should:
+
+1. `character.two_places_at_once` -- same character, same story time, two committed locations.
+2. `scene.pov_absent_from_prose` -- told from someone's POV, never mentions them.
+3. `scene.unmarked_time_reversal` -- reading order goes back in story time without
+   `is_flashback` set.
+4. `arc.stage_out_of_order` -- a later scene advancing an earlier arc stage.
+5. `location.near_duplicate_name` -- "Harbour" and "Harbor" as two places.
+6. `event.on_page_without_scene` -- the story claims to show something it never shows. The
+   closest thing to a literal plot hole the graph can prove.
+
+**What the rules deliberately refuse to do.** Free-text locations are never compared -- two
+strings cannot be matched reliably and guessing would accuse the innocent. A scene with no
+story time, or a scene with no mentions yet, is not judged at all. `is_flashback` exists
+purely so rules 3 and 4 do not accuse every deliberate analepsis in the book.
+
+## 7d. Locations
+
+`Location` is reference data outside the ladder -- defining one never unlocks anything and
+not defining one never blocks anything. `World` from the original brief is omitted: it would
+be a container with one occupant and no behaviour, and locations can move under it later.
+
+`Scene.location` (free text) is the **placeholder**; `Scene.location_id` is the committed
+form. Continuity only reasons about the link, never the string. Usage figures -- scenes,
+chapters, characters present, story-time span -- are all derived, so a location stores nothing
+about its own use.
+
+Names are unique per story (`409` on collision), because duplicate names silently break every
+continuity check that compares locations.
+
+**One Jev question serves both features.** A `Choice` over the story's existing locations asks
+where a scene takes place. For an unlinked scene that is location tracking ("reads like it
+takes place at X"); for a linked one it is continuity ("linked to X but reads like Y"). Its
+floor is 0.7, higher than the beat floor, because telling an author their own scene is set
+somewhere it is not is a costlier error than failing to guess.
+
+---
+
 ## 8. Phases
 
 | Phase | Scope | Status |
@@ -335,6 +389,7 @@ rejected against populated tables, half-applied, and 145 passing tests said noth
 | **2** | Levels 7–8, join tables, **Chapter Context Brief**, health dashboard | **done** |
 | **3** | Editor: Markdown prose, autosave, revisions, annotations, compile/export | **done** |
 | **4** | Pantser: deterministic mention-matching, suggestion engine, Claude noticing behind the same interface, degrading to deterministic with no API key | **done** |
+| **5** | Locations and location tracking; continuity engine (contradictions + possible anomalies) | **done** |
 
 Phase 1 deliberately precedes the editor, accepting that the flagship brief lands last.
 

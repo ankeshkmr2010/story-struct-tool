@@ -14,6 +14,7 @@ from storytool.domain.noticing.types import (
     CharacterNotice,
     KnownBeat,
     KnownCharacter,
+    KnownLocation,
     SceneNotices,
     UnknownNameNotice,
 )
@@ -202,6 +203,7 @@ class DeterministicNoticer:
         prose: str,
         known_characters: tuple[KnownCharacter, ...],
         known_beats: tuple[KnownBeat, ...] = (),
+        known_locations: tuple[KnownLocation, ...] = (),
     ) -> SceneNotices:
         if not prose.strip():
             return SceneNotices(noticed_by=self.name)

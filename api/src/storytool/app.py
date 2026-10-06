@@ -25,6 +25,7 @@ from storytool.domain.structure.controller import (
     EventController,
     ThreadController,
 )
+from storytool.domain.world.controller import ContinuityController, LocationController
 
 
 @get("/api/health", tags=["meta"], summary="Liveness probe", sync_to_thread=False)
@@ -52,6 +53,8 @@ def create_app() -> Litestar:
             SceneProseController,
             ManuscriptController,
             NoticingController,
+            LocationController,
+            ContinuityController,
         ],
         plugins=[build_db_plugin()],
         debug=settings.debug,

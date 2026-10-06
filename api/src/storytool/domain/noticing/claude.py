@@ -30,6 +30,7 @@ from storytool.domain.noticing.types import (
     Confidence,
     KnownBeat,
     KnownCharacter,
+    KnownLocation,
     SceneNotices,
     StructureNotice,
     UnknownNameNotice,
@@ -102,6 +103,7 @@ class ClaudeNoticer:
         prose: str,
         known_characters: tuple[KnownCharacter, ...],
         known_beats: tuple[KnownBeat, ...] = (),
+        known_locations: tuple[KnownLocation, ...] = (),
     ) -> SceneNotices:
         if not prose.strip():
             return SceneNotices(noticed_by=self.name)

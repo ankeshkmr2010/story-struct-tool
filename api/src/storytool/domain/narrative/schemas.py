@@ -56,8 +56,10 @@ class SceneCreate(BaseModel):
     chapter_id: UUID | None = None
     summary: str | None = None
     location: str | None = Field(default=None, max_length=200)
+    location_id: UUID | None = None
     story_time_ordinal: int | None = None
     time_label: str | None = Field(default=None, max_length=200)
+    is_flashback: bool = False
     pov_character_id: UUID | None = None
     goal: str | None = None
     conflict: str | None = None
@@ -74,8 +76,10 @@ class SceneUpdate(BaseModel):
     chapter_id: UUID | None = None
     summary: str | None = None
     location: str | None = Field(default=None, max_length=200)
+    location_id: UUID | None = None
     story_time_ordinal: int | None = None
     time_label: str | None = Field(default=None, max_length=200)
+    is_flashback: bool | None = None
     pov_character_id: UUID | None = None
     goal: str | None = None
     conflict: str | None = None
@@ -94,8 +98,10 @@ class SceneOut(EntityOut):
     title: str | None
     summary: str | None
     location: str | None
+    location_id: UUID | None
     story_time_ordinal: int | None
     time_label: str | None
+    is_flashback: bool
     pov_character_id: UUID | None
     goal: str | None
     conflict: str | None

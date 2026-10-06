@@ -36,6 +36,11 @@ export type Suggestion = S['SuggestionOut']
 export type PassResult = S['PassResultOut']
 export type NoticerInfo = S['NoticerInfoOut']
 
+export type Location = S['LocationOut']
+export type LocationUsage = S['LocationUsageOut']
+export type Continuity = S['ContinuityOut']
+export type Anomaly = S['AnomalyOut']
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
@@ -163,4 +168,20 @@ export const api = {
     patch<Suggestion>(`/api/stories/${storyId}/suggestions/${suggestionId}`, {
       is_dismissed: true,
     }),
+
+  // Places. Reference data, outside the ladder -- they never gate a level.
+  listLocations: (storyId: string) =>
+    request<Location[]>(`/api/stories/${storyId}/locations`),
+  createLocation: (storyId: string, body: { name: string; description?: string }) =>
+    post<Location>(`/api/stories/${storyId}/locations`, body),
+  updateLocation: (storyId: string, locationId: string, body: Record<string, unknown>) =>
+    patch<Location>(`/api/stories/${storyId}/locations/${locationId}`, body),
+  deleteLocation: (storyId: string, locationId: string) =>
+    request<void>(`/api/stories/${storyId}/locations/${locationId}`, { method: 'DELETE' }),
+  getLocationUsage: (storyId: string) =>
+    request<LocationUsage[]>(`/api/stories/${storyId}/locations/usage`),
+
+  // Contradictions are facts; possible anomalies are questions.
+  getContinuity: (storyId: string) =>
+    request<Continuity>(`/api/stories/${storyId}/continuity`),
 }

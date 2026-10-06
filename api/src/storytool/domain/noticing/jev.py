@@ -44,6 +44,7 @@ from storytool.domain.noticing.types import (
     Confidence,
     KnownBeat,
     KnownCharacter,
+    KnownLocation,
     SceneElements,
     SceneNotices,
     StructureNotice,
@@ -80,6 +81,14 @@ TURNING_POINT_CRITERIA: "NoulCriteria" = {
         "event."
     ),
 }
+
+LOCATION_QUESTION = (
+    "Where does this scene take place? Choose only from the listed places, judging by what "
+    "the prose describes rather than where the characters came from or are going."
+)
+# A place is only worth claiming when the distribution is clearly concentrated -- getting this
+# wrong means telling an author their own scene is set somewhere it is not.
+LOCATION_MIN_CONFIDENCE = 0.7
 
 BEAT_QUESTION = (
     "Which of these story beats does this scene fulfil, judging only what is written on the "
@@ -164,6 +173,7 @@ class JevNoticer:
         *,
         turning_point_threshold: float = TURNING_POINT_THRESHOLD,
         beat_min_confidence: float = BEAT_MIN_CONFIDENCE,
+        location_min_confidence: float = LOCATION_MIN_CONFIDENCE,
     ) -> None:
         self._client = client
         self._model = model
@@ -171,12 +181,14 @@ class JevNoticer:
         self._deterministic = deterministic
         self._turning_point_threshold = turning_point_threshold
         self._beat_min_confidence = beat_min_confidence
+        self._location_min_confidence = location_min_confidence
 
     async def notice_scene(
         self,
         prose: str,
         known_characters: tuple[KnownCharacter, ...],
         known_beats: tuple[KnownBeat, ...] = (),
+        known_locations: tuple[KnownLocation, ...] = (),
     ) -> SceneNotices:
         base: SceneNotices = await self._deterministic.notice_scene(  # type: ignore[attr-defined]
             prose, known_characters, known_beats
@@ -192,6 +204,8 @@ class JevNoticer:
 
         beats = known_beats[:MAX_CHOICE_OPTIONS]
         options = {_slug(beat.label, index): beat for index, beat in enumerate(beats)}
+        places = known_locations[:MAX_CHOICE_OPTIONS]
+        place_options = {_slug(place.name, index): place for index, place in enumerate(places)}
 
         # Speculative fan-out: one call, every question. Parallel evaluation means the extra
         # questions are close to free, and the code below decides what is worth reporting.
@@ -200,6 +214,17 @@ class JevNoticer:
         }
         for name, (instructions, criteria) in ELEMENT_QUESTIONS.items():
             questions[f"element_{name}"] = Noul(instructions=instructions, criteria=criteria)
+
+        if place_options:
+            # One extra question in the same call: near-free, and it serves location tracking
+            # and continuity at once.
+            questions["location"] = Choice(
+                instructions=LOCATION_QUESTION,
+                criteria={
+                    key: (place.description or place.name)
+                    for key, place in place_options.items()
+                },
+            )
 
         if options:
             questions["beat"] = Choice(
@@ -222,11 +247,16 @@ class JevNoticer:
             return base
 
         return replace(
-            base, structure=self._read_structure(response, options), noticed_by=self.name
+            base,
+            structure=self._read_structure(response, options, place_options),
+            noticed_by=self.name,
         )
 
     def _read_structure(
-        self, response: object, options: dict[str, KnownBeat]
+        self,
+        response: object,
+        options: dict[str, KnownBeat],
+        place_options: dict[str, KnownLocation] | None = None,
     ) -> StructureNotice | None:
         nouls = getattr(response, "nouls", {}) or {}
         choices = getattr(response, "choices", {}) or {}
@@ -254,7 +284,22 @@ class JevNoticer:
             if matched is not None and beat_confidence >= self._beat_min_confidence:
                 resembles = matched.id
 
-        if not (reads_like_turning_point or resembles is not None or has_elements):
+        reads_location: UUID | None = None
+        location_confidence: float | None = None
+        place_choice = choices.get("location")
+        if place_choice is not None and place_options:
+            found = float(getattr(place_choice, "confidence", 0.0) or 0.0)
+            matched_place = place_options.get(str(getattr(place_choice, "choice", "")))
+            if matched_place is not None and found >= self._location_min_confidence:
+                reads_location = matched_place.id
+                location_confidence = round(found, 3)
+
+        if not (
+            reads_like_turning_point
+            or resembles is not None
+            or has_elements
+            or reads_location is not None
+        ):
             return None
 
         # Compare like with like: a noul's certainty, not its raw probability.
@@ -267,4 +312,6 @@ class JevNoticer:
             evidence=None,
             probability=round(probability, 3),
             elements=elements if has_elements else None,
+            reads_like_location_id=reads_location,
+            location_confidence=location_confidence,
         )

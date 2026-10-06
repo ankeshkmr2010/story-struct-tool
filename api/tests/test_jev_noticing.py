@@ -31,6 +31,8 @@ class StubJev:
         choice: str | None = None,
         confidence: float = 0.0,
         elements: dict[str, float] | None = None,
+        location: str | None = None,
+        location_confidence: float = 0.0,
     ):
         self.calls = 0
         self.last: dict = {}
@@ -38,6 +40,8 @@ class StubJev:
         self._choice = choice
         self._confidence = confidence
         self._elements = elements or {}
+        self._location = location
+        self._location_confidence = location_confidence
 
     async def system_one(self, **kwargs):
         self.calls += 1
@@ -46,6 +50,10 @@ class StubJev:
         if self._choice is not None:
             choices["beat"] = SimpleNamespace(
                 choice=self._choice, confidence=self._confidence, probabilities={}
+            )
+        if self._location is not None:
+            choices["location"] = SimpleNamespace(
+                choice=self._location, confidence=self._location_confidence, probabilities={}
             )
         nouls = {"turning_point": SimpleNamespace(noul=self._noul)}
         for name, value in self._elements.items():
@@ -401,3 +409,107 @@ def test_no_observation_when_the_prose_shows_everything() -> None:
 
     graph = StoryGraph(story=Story(title="S"))
     assert scene_prose_missing_a_structural_element(graph, NoticingState()) == []
+
+
+# -------------------------------------------------------- location reading
+
+
+def place(name: str, description: str | None = None):
+    from storytool.domain.noticing.types import KnownLocation
+
+    return KnownLocation(id=cid(), name=name, description=description)
+
+
+async def test_location_is_asked_in_the_same_call() -> None:
+    """One extra question, not an extra request -- it serves tracking and continuity at once."""
+    stub = StubJev(noul=0.1)
+    harbour = place("The Harbour", "A working dock, all tar and gulls.")
+    await noticer(stub).notice_scene(PROSE, (), (), (harbour,))
+
+    assert stub.calls == 1
+    assert "location" in stub.last["questions"]
+    assert list(stub.last["questions"]["location"].criteria.values()) == [
+        "A working dock, all tar and gulls."
+    ]
+
+
+async def test_no_location_question_when_the_story_has_none() -> None:
+    stub = StubJev(noul=0.1)
+    await noticer(stub).notice_scene(PROSE, ())
+    assert "location" not in stub.last["questions"]
+
+
+async def test_a_confident_location_reading_is_reported() -> None:
+    harbour = place("The Harbour")
+    stub = StubJev(noul=0.1, location=_slug("The Harbour", 0), location_confidence=0.88)
+    notices = await noticer(stub).notice_scene(PROSE, (), (), (harbour,))
+
+    assert notices.structure is not None
+    assert notices.structure.reads_like_location_id == harbour.id
+    assert notices.structure.location_confidence == 0.88
+
+
+async def test_an_unsure_location_reading_is_discarded() -> None:
+    """Telling an author their own scene is set somewhere it is not is worse than silence, so
+    this floor is higher than the beat floor."""
+    from storytool.domain.noticing.jev import LOCATION_MIN_CONFIDENCE
+
+    assert LOCATION_MIN_CONFIDENCE > 0.6
+
+    harbour = place("The Harbour")
+    stub = StubJev(noul=0.1, location=_slug("The Harbour", 0), location_confidence=0.55)
+    notices = await noticer(stub).notice_scene(PROSE, (), (), (harbour,))
+    assert notices.structure is None or notices.structure.reads_like_location_id is None
+
+
+async def test_an_invented_place_resolves_to_nothing() -> None:
+    harbour = place("The Harbour")
+    stub = StubJev(noul=0.1, location="99_the_drowned_city", location_confidence=0.99)
+    notices = await noticer(stub).notice_scene(PROSE, (), (), (harbour,))
+    assert notices.structure is None or notices.structure.reads_like_location_id is None
+
+
+# ---------------------------------------------- location suggestion rules
+
+
+def test_an_unlinked_scene_gets_a_link_suggestion() -> None:
+    from storytool.domain.graph import StoryGraph
+    from storytool.domain.narrative.models import Scene
+    from storytool.domain.noticing.suggestions import (
+        NoticingState,
+        scene_reads_like_an_unlinked_location,
+    )
+    from storytool.domain.story.models import Story
+    from storytool.domain.world.models import Location
+
+    harbour = Location(story_id=None, name="The Harbour")
+    harbour.id = cid()
+    scene = Scene(story_id=None, title="Tide")
+    scene.id = cid()
+    graph = StoryGraph(story=Story(title="S"), locations=(harbour,), scenes=(scene,))
+    state = NoticingState(location_readings={scene.id: (harbour.id, 0.9)})
+
+    proposals = scene_reads_like_an_unlinked_location(graph, state)
+    assert len(proposals) == 1
+    assert proposals[0].message == 'Tide reads like it takes place at "The Harbour".'
+    assert proposals[0].subject_key == str(harbour.id)
+
+
+def test_an_already_linked_scene_gets_no_link_suggestion() -> None:
+    from storytool.domain.graph import StoryGraph
+    from storytool.domain.narrative.models import Scene
+    from storytool.domain.noticing.suggestions import (
+        NoticingState,
+        scene_reads_like_an_unlinked_location,
+    )
+    from storytool.domain.story.models import Story
+    from storytool.domain.world.models import Location
+
+    harbour = Location(story_id=None, name="The Harbour")
+    harbour.id = cid()
+    scene = Scene(story_id=None, title="Tide", location_id=harbour.id)
+    scene.id = cid()
+    graph = StoryGraph(story=Story(title="S"), locations=(harbour,), scenes=(scene,))
+    state = NoticingState(location_readings={scene.id: (harbour.id, 0.9)})
+
+    assert scene_reads_like_an_unlinked_location(graph, state) == []

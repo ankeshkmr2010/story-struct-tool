@@ -19,6 +19,7 @@ from storytool.domain.narrative.models import (
 )
 from storytool.domain.story.models import Story
 from storytool.domain.structure.models import Act, Beat, Event, Thread
+from storytool.domain.world.models import Location
 
 __all__ = (
     "Act",
@@ -29,6 +30,7 @@ __all__ = (
     "Chapter",
     "Character",
     "Event",
+    "Location",
     "Relationship",
     "Scene",
     "SceneCharacterMention",

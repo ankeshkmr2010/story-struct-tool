@@ -107,7 +107,9 @@ async def _truncate(engine: AsyncEngine) -> AsyncGenerator[None, None]:
     from storytool.db.base import metadata
 
     yield
-    tables = ", ".join(f'"{t.name}"' for t in metadata.sorted_tables)
+    # Plain table list, not sorted_tables: TRUNCATE ... CASCADE needs no ordering, and
+    # asking for a topological sort warns about the (legitimate) event/scene/act cycle.
+    tables = ", ".join(f'"{name}"' for name in metadata.tables)
     if tables:
         async with engine.begin() as conn:
             await conn.execute(text(f"truncate {tables} restart identity cascade"))

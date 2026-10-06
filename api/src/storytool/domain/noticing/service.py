@@ -24,7 +24,7 @@ from storytool.domain.graph import StoryGraph
 from storytool.domain.narrative.models import SceneCharacterMention, Suggestion
 from storytool.domain.noticing.jev import ELEMENT_ABSENT_BELOW
 from storytool.domain.noticing.suggestions import NoticingState, propose_suggestions
-from storytool.domain.noticing.types import KnownBeat, KnownCharacter
+from storytool.domain.noticing.types import KnownBeat, KnownCharacter, KnownLocation
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,11 +44,16 @@ async def run_noticing_pass(
     known_beats = tuple(
         KnownBeat(id=b.id, label=b.label, description=b.description) for b in graph.beats
     )
+    known_locations = tuple(
+        KnownLocation(id=loc.id, name=loc.name, description=loc.description)
+        for loc in graph.locations
+    )
 
     scenes_by_character: dict[UUID, int] = {}
     unknown_counts: dict[str, int] = {}
     turning_points: set[UUID] = set()
     element_gaps: dict[UUID, tuple[str, ...]] = {}
+    location_readings: dict[UUID, tuple[UUID, float]] = {}
     pending_mentions: list[tuple[UUID, UUID]] = []
     scenes_read = 0
     noticed_by = getattr(noticer, "name", "deterministic")
@@ -73,7 +78,9 @@ async def run_noticing_pass(
             continue
         scenes_read += 1
 
-        notices = await noticer.notice_scene(prose, known_characters, known_beats)  # type: ignore[attr-defined]
+        notices = await noticer.notice_scene(  # type: ignore[attr-defined]
+            prose, known_characters, known_beats, known_locations
+        )
 
         for notice in notices.characters:
             pair = (scene.id, notice.character_id)
@@ -90,6 +97,16 @@ async def run_noticing_pass(
 
         if notices.structure and notices.structure.reads_like_turning_point:
             turning_points.add(scene.id)
+
+        if (
+            notices.structure
+            and notices.structure.reads_like_location_id is not None
+            and notices.structure.location_confidence is not None
+        ):
+            location_readings[scene.id] = (
+                notices.structure.reads_like_location_id,
+                notices.structure.location_confidence,
+            )
 
         if notices.structure and notices.structure.elements:
             missing = notices.structure.elements.missing(ELEMENT_ABSENT_BELOW)
@@ -115,6 +132,7 @@ async def run_noticing_pass(
         unknown_name_scene_counts=unknown_counts,
         turning_point_scene_ids=frozenset(turning_points),
         prose_element_gaps=element_gaps,
+        location_readings=location_readings,
     )
     proposed = propose_suggestions(graph, state)
 

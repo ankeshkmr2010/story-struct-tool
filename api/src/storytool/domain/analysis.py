@@ -17,6 +17,7 @@ from storytool.domain.graph import StoryGraph
 from storytool.domain.narrative.models import (
     Chapter,
     Scene,
+    SceneCharacterMention,
     chapter_beat,
     scene_arc_advance,
     scene_beat,
@@ -25,6 +26,7 @@ from storytool.domain.narrative.models import (
 from storytool.domain.readiness import StorySnapshot
 from storytool.domain.story.models import Story
 from storytool.domain.structure.models import Act, Beat, Event, Thread
+from storytool.domain.world.models import Location
 
 
 def snapshot_from_graph(graph: StoryGraph) -> StorySnapshot:
@@ -91,6 +93,7 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
     scene_beats: tuple[tuple[UUID, UUID], ...] = ()
     scene_threads: tuple[tuple[UUID, UUID, bool], ...] = ()
     scene_arc_advances: tuple[tuple[UUID, UUID], ...] = ()
+    character_mentions: tuple[tuple[UUID, UUID], ...] = ()
     if scene_ids:
         rows = await session.execute(
             select(scene_beat.c.scene_id, scene_beat.c.beat_id).where(
@@ -113,6 +116,16 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
         )
         scene_arc_advances = tuple((r.scene_id, r.arc_stage_id) for r in rows)
 
+        # Rejected mentions are excluded: continuity must reason about who the author says is
+        # in a scene, not what inference guessed.
+        rows = await session.execute(
+            select(SceneCharacterMention.scene_id, SceneCharacterMention.character_id).where(
+                SceneCharacterMention.scene_id.in_(scene_ids),
+                SceneCharacterMention.is_rejected.is_(False),
+            )
+        )
+        character_mentions = tuple((r.scene_id, r.character_id) for r in rows)
+
     return StoryGraph(
         story=story,
         events=await fetch(Event, Event.sort_ordinal.asc()),
@@ -125,10 +138,12 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
         arc_stages=stages,
         chapters=chapters,
         scenes=scenes,
+        locations=await fetch(Location, Location.name.asc()),
         chapter_beats=chapter_beats,
         scene_beats=scene_beats,
         scene_threads=scene_threads,
         scene_arc_advances=scene_arc_advances,
+        character_mentions=character_mentions,
     )
 
 
