@@ -9,40 +9,59 @@ logger = logging.getLogger(__name__)
 
 
 def build_noticer() -> object:
-    """Claude when credentials are configured, deterministic otherwise.
+    """Jev, Claude, or deterministic, per configuration and available credentials.
 
-    Deliberately silent-but-logged rather than an error: a missing API key should cost the
-    author a little inference quality, never the ability to write.
+    Deliberately silent-but-logged rather than an error: a missing key should cost the author
+    a little inference quality, never the ability to write.
     """
     settings = get_settings()
     deterministic = DeterministicNoticer()
+    backend = settings.resolved_noticing_backend
 
-    if not settings.noticing_use_claude:
-        return deterministic
-    if not settings.anthropic_api_key:
-        logger.info("No ANTHROPIC_API_KEY set; using deterministic noticing only")
-        return deterministic
+    if backend == "jev":
+        try:
+            from typesafe_sdk import AsyncTypeSafeClient
 
-    try:
-        from anthropic import AsyncAnthropic
+            from storytool.domain.noticing.jev import JevNoticer
+        except ImportError:
+            logger.warning("typesafe-sdk unavailable; using deterministic noticing")
+            return deterministic
+        return JevNoticer(
+            client=AsyncTypeSafeClient(api_key=settings.typesafe_api_key),
+            model=settings.jev_model,
+            deterministic=deterministic,
+        )
 
-        from storytool.domain.noticing.claude import ClaudeNoticer
-    except ImportError:
-        logger.warning("anthropic SDK unavailable; using deterministic noticing")
-        return deterministic
+    if backend == "claude":
+        try:
+            from anthropic import AsyncAnthropic
 
-    return ClaudeNoticer(
-        client=AsyncAnthropic(api_key=settings.anthropic_api_key),
-        model=settings.noticing_model,
-        fallback=deterministic,
-    )
+            from storytool.domain.noticing.claude import ClaudeNoticer
+        except ImportError:
+            logger.warning("anthropic SDK unavailable; using deterministic noticing")
+            return deterministic
+        return ClaudeNoticer(
+            client=AsyncAnthropic(api_key=settings.anthropic_api_key),
+            model=settings.noticing_model,
+            fallback=deterministic,
+        )
+
+    logger.info("Using deterministic noticing (no model credentials configured)")
+    return deterministic
 
 
 def describe_noticer() -> dict[str, object]:
     """Surfaced through the API so the author can see what is actually reading their prose."""
     settings = get_settings()
+    backend = settings.resolved_noticing_backend
+    model = {
+        "jev": settings.jev_model,
+        "claude": settings.noticing_model,
+        "deterministic": None,
+    }[backend]
     return {
-        "noticer": "claude" if settings.claude_noticing_available else "deterministic",
-        "model": settings.noticing_model if settings.claude_noticing_available else None,
+        "noticer": backend,
+        "model": model,
         "claude_available": settings.claude_noticing_available,
+        "jev_available": settings.jev_noticing_available,
     }

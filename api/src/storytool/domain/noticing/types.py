@@ -70,6 +70,9 @@ class StructureNotice:
     resembles_beat_id: UUID | None = None
     confidence: Confidence = "low"
     evidence: str | None = None
+    # Raw probability when the noticer reports one (Jev does; Claude does not). Lets the UI
+    # show strength instead of a bare claim, and lets suggestions be threshold-gated.
+    probability: float | None = None
 
 
 @dataclass(frozen=True, slots=True)

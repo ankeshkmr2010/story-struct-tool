@@ -45,9 +45,9 @@ export function SuggestionsPanel({ storyId }: { storyId: string }) {
       {/* The author should never be in doubt about what is reading their book. */}
       {noticer.data && (
         <p className="mb-2 text-[11px] text-slate-400">
-          {noticer.data.claude_available
-            ? `${noticer.data.model} — noticing only, never writing`
-            : 'name matching only (no API key set)'}
+          {noticer.data.noticer === 'deterministic'
+            ? 'name matching only (no model key set)'
+            : `${noticer.data.model} — noticing only, never writing`}
         </p>
       )}
 

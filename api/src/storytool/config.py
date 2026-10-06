@@ -34,9 +34,38 @@ class Settings(BaseSettings):
     # noticer is used and the feature degrades instead of erroring or billing anyone.
     noticing_use_claude: bool = True
 
+    # Jev (TypeSafe System One). Returns typed values and probabilities, never text, which
+    # suits noticing better than a text model -- see DESIGN.md section 7b.
+    typesafe_api_key: str | None = Field(default=None, validation_alias="TYPESAFE_API_KEY")
+    jev_model: str = "jev-latest"
+
+    # auto | deterministic | claude | jev
+    # "auto" prefers Jev (graded answers, no text output), then Claude, then deterministic.
+    noticing_backend: str = "auto"
+
     @property
     def claude_noticing_available(self) -> bool:
         return bool(self.noticing_use_claude and self.anthropic_api_key)
+
+    @property
+    def jev_noticing_available(self) -> bool:
+        return bool(self.typesafe_api_key)
+
+    @property
+    def resolved_noticing_backend(self) -> str:
+        """Which noticer will actually be used, given configuration and credentials."""
+        requested = self.noticing_backend.strip().lower()
+        if requested == "deterministic":
+            return "deterministic"
+        if requested == "jev":
+            return "jev" if self.jev_noticing_available else "deterministic"
+        if requested == "claude":
+            return "claude" if self.claude_noticing_available else "deterministic"
+        if self.jev_noticing_available:
+            return "jev"
+        if self.claude_noticing_available:
+            return "claude"
+        return "deterministic"
 
 
 @lru_cache

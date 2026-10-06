@@ -1329,6 +1329,7 @@ export interface components {
             noticer: string;
             model: string | null;
             claude_available: boolean;
+            jev_available: boolean;
         };
         /** PassResultOut */
         PassResultOut: {

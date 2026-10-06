@@ -13,6 +13,7 @@ dependencies = [
     "pydantic-settings>=2.7",
     "uuid-utils>=0.10",
     "anthropic>=1.11.0",
+    "typesafe-sdk>=0.7.2",
 ]
 
 [dependency-groups]

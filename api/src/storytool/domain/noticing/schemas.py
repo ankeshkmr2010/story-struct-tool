@@ -18,6 +18,7 @@ class NoticerInfoOut(BaseModel):
     noticer: str
     model: str | None
     claude_available: bool
+    jev_available: bool
 
 
 class PassResultOut(BaseModel):

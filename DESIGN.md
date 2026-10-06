@@ -214,8 +214,42 @@ This is enforced by the **shape of the response**, not by instructing the model:
    continuation, a recommendation, or a new label. There is nowhere for "what should happen
    next" to go. A test asserts the field set directly.
 
-Model: `claude-sonnet-5-5` at `effort: low` (extraction, not reasoning). `claude-haiku-4-5`
-is a one-line swap if these calls prove simple enough.
+### Backends
+
+Three, behind one `Noticer` interface, chosen by `STORYTOOL_NOTICING_BACKEND`
+(`auto` prefers Jev, then Claude, then deterministic):
+
+| Backend | Does | Notes |
+| --- | --- | --- |
+| `deterministic` | Name matching, unrecognised names | Free, exact, no key. Reports *nothing* about structure rather than guessing |
+| `claude` | Everything, via structured output | `claude-sonnet-5-5` at `effort: low`. The three guarantees are enforced by schema validation |
+| `jev` | **Judgement only**, composed with deterministic | `jev-latest` (TypeSafe System One) |
+
+**Jev is the better fit, and the reason is structural.** It returns typed values and
+probability distributions and *has no text output at all*, so the "cannot propose prose"
+guarantee is a property of its API rather than of our validation code. The primitives map
+onto what this feature needs almost exactly:
+
+* `Noul` -> "does this scene contain an irreversible change?" as `0.0-1.0`
+* `Choice` over the story's existing beats -> a distribution plus confidence, which is the
+  closed-set problem we hand-rolled for Claude
+
+Two consequences worth recording:
+
+1. **It composes rather than replaces.** Jev answers decisions, not extraction, so presence
+   and unrecognised names stay with the deterministic matcher -- free, exact, and the only
+   half that can supply verbatim evidence. Asking presence as one Noul per character would
+   scale as cast x scenes (a 30-character, 200-scene novel is 6,000 questions).
+2. **Graded answers let nudges be gated.** A boolean must be asserted; `0.3` can stay quiet.
+   Thresholds: turning point >= 0.65, beat confidence >= 0.5. This is the direct fix for
+   suggestion noise.
+
+Cost: no evidence quote on structural notices, because there is no text to quote.
+
+**`Score` is deliberately unused.** It is the one primitive that could turn this into a tool
+that grades a novelist's prose, and "your scene scores 1/4" is a different, worse product.
+If it is ever adopted it should judge structural properties ("does this scene state a
+goal?"), never craft quality.
 
 Refusals and API errors **degrade to the deterministic noticer**, never failing the author's
 save -- fiction routinely contains content a safety classifier may decline, and losing a
