@@ -19,6 +19,7 @@ def frontend_router(directory: Path) -> Router:
         return File(
             directory / "index.html",
             media_type="text/html",
+            content_disposition_type="inline",
             headers={"Cache-Control": "no-cache"},
         )
 
@@ -30,7 +31,11 @@ def frontend_router(directory: Path) -> Router:
 
         @get("/vite.svg", include_in_schema=False)
         async def favicon() -> File:
-            return File(directory / "vite.svg", media_type="image/svg+xml")
+            return File(
+                directory / "vite.svg",
+                media_type="image/svg+xml",
+                content_disposition_type="inline",
+            )
 
         handlers.append(favicon)
     return Router(path="/", route_handlers=handlers)

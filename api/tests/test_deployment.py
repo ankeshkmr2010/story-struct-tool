@@ -38,6 +38,7 @@ def test_frontend_routes_support_reload_without_serving_api_or_private_files(tmp
             response = client.get(route)
             assert response.status_code == 200
             assert response.headers["content-type"].startswith("text/html")
+            assert "attachment" not in response.headers.get("content-disposition", "")
             assert "StoryTool frontend" in response.text
         assert client.get("/assets/app.js").status_code == 200
         assert client.get("/.env").status_code == 404
