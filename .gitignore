@@ -21,3 +21,11 @@ dist/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Neon project/authentication context and environment pulls stay local.
+.neon
+.neon/
+.mcp.json
+# Downloaded agent guidance can be reinstalled from skills-lock.json.
+.agents/skills/
+.claude/skills/

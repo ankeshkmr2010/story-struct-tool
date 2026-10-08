@@ -1,7 +1,9 @@
+import ssl
 from uuid import uuid4
 
 from litestar import Litestar
 from litestar.testing import TestClient
+from sqlalchemy.engine import make_url
 
 from storytool.config import Settings
 from storytool.frontend import frontend_router
@@ -13,9 +15,16 @@ def test_neon_connection_string_uses_asyncpg_and_verified_tls():
         database_url="postgresql://writer:p%40ss@ep-example.neon.tech/storytool"
         "?sslmode=require&channel_binding=require",
     )
-    assert settings.database_url == (
-        "postgresql+asyncpg://writer:p%40ss@ep-example.neon.tech/storytool?ssl=verify-full"
-    )
+    url = make_url(settings.database_url)
+    assert url.drivername == "postgresql+asyncpg"
+    assert url.password == "p@ss"
+    assert url.host == "ep-example.neon.tech"
+    assert url.query["ssl"] == "verify-full"
+    context = settings.database_connect_args["ssl"]
+    assert isinstance(context, ssl.SSLContext)
+    assert context.check_hostname
+    assert context.verify_mode == ssl.CERT_REQUIRED
+    assert "channel_binding" not in url.query
 
 
 def test_frontend_routes_support_reload_without_serving_api_or_private_files(tmp_path):

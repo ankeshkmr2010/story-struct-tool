@@ -15,7 +15,8 @@ from storytool.examples.provision import ensure_starter_examples
 
 
 async def main() -> None:
-    engine = create_async_engine(get_settings().database_url)
+    settings = get_settings()
+    engine = create_async_engine(settings.database_url, connect_args=settings.database_connect_args)
     try:
         async with AsyncSession(engine) as session:
             user_ids = list((await session.execute(select(User.id))).scalars())

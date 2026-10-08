@@ -35,6 +35,34 @@ channel-binding argument. No manual URL editing is needed.
 This guide starts with a new hosted database. Existing local stories are not
 automatically copied. New Google accounts receive private starter examples.
 
+### Optional: link the supplied project through the Neon CLI
+
+The Neon CLI and minimal `neon.ts` policy are installed in this workspace.
+The supplied project is `tiny-feather-56716313`, branch `production`.
+Dashboard browser login does not authorize the terminal: run `neon login` and
+approve its browser access request. From the repository root on this machine:
+
+```powershell
+$env:PATH = 'C:\Users\ankes\AppData\Local\Zed\node\node-v24.11.0-win-x64;C:\Users\ankes\AppData\Roaming\npm;' + $env:PATH
+neon login
+neon link --project-id tiny-feather-56716313 --branch production -y
+neon config plan
+```
+
+Linking verifies the project/branch and pulls connection strings into a local,
+ignored `.env.local` (or root `.env` if present). It does not change `api/.env` or
+move local stories. To copy the direct Neon URL for Render without displaying it:
+
+```powershell
+.\scripts\copy-deployment-setting.ps1 -Name NeonDatabaseUrl
+```
+
+`neon deploy` applies the `neon.ts` infrastructure policy; it does not publish
+StoryTool's Python/React server. Inspect `neon config plan` before applying.
+The policy declares no extra services; application hosting remains on Render.
+Codex's Neon MCP is configured with OAuth and pinned to this project. It may
+require a fresh Codex session and its own OAuth sign-in before tools are available.
+
 ## 3. Create the Render service
 
 1. Sign in at https://dashboard.render.com/ and connect your GitHub account.

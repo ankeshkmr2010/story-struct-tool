@@ -4,9 +4,12 @@ Deliberately env-only (no branching on "is this local vs container vs hosted") s
 same image runs unchanged as a dev container or a deployed service.
 """
 
+import ssl
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
+import certifi
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
@@ -46,6 +49,18 @@ class Settings(BaseSettings):
                 query.setdefault("ssl", "verify-full" if mode == "require" else mode)
             url = url.set(query=query)
         return url.render_as_string(hide_password=False)
+
+    @property
+    def database_connect_args(self) -> dict[str, Any]:
+        url = make_url(self.database_url)
+        if url.drivername == "postgresql+asyncpg" and url.query.get("ssl") in {
+            "verify-ca",
+            "verify-full",
+        }:
+            context = ssl.create_default_context(cafile=certifi.where())
+            context.check_hostname = url.query.get("ssl") == "verify-full"
+            return {"ssl": context}
+        return {}
 
     # --- Noticing (Phase 4) -------------------------------------------------
     # Read from the unprefixed name the Anthropic SDK itself uses, so one variable

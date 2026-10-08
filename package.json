@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@neon/config": "^1.8.4",
+    "@neon/env": "^1.5.1"
+  },
+  "name": "storytool-infrastructure",
+  "private": true,
+  "type": "module"
+}

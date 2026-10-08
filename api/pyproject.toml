@@ -17,6 +17,7 @@ dependencies = [
     "google-auth[requests]>=2.60.0",
     "openai>=3.26.0",
     "cryptography>=50.0.2",
+    "certifi>=2024.8.30",
     "mcp>=2.3.0",
 ]
 

@@ -22,6 +22,7 @@ def build_db_config() -> SQLAlchemyAsyncConfig:
             pool_pre_ping=True,
             pool_size=5,
             max_overflow=5,
+            connect_args=settings.database_connect_args,
         ),
         # Commit the request's session on a 2xx response; roll back otherwise. Keeps
         # controllers free of explicit commit calls.
