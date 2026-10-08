@@ -26,7 +26,7 @@ EXTRAS: dict[str, Any] = {
     "suggestion": Suggestion.__table__,
 }
 AUDIT = {"created_at", "updated_at", "sa_orm_sentinel", "word_count"}
-ADMIN = {"user_id", "parent_story_id"}
+ADMIN = {"user_id", "parent_story_id", "deleted_at"}
 
 
 async def full_state(db: AsyncSession, story_id: UUID) -> dict[str, Any]:

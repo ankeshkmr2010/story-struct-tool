@@ -2,6 +2,7 @@
 (completeness, readiness, the chapter brief) are computed, not columns.
 """
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -40,6 +41,7 @@ class StoryOut(EntityOut):
     structure_framework: str
     authoring_mode: str
     parent_story_id: UUID | None
+    deleted_at: datetime | None
 
 
 # ----------------------------------------------------------- analysis DTOs

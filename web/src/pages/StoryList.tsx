@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api, type Story } from '../api/client'
@@ -23,8 +23,22 @@ function CompletenessBar({ story }: { story: Story }) {
 export default function StoryList() {
   const qc = useQueryClient()
   const [title, setTitle] = useState('')
+  const [showTrash, setShowTrash] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<Story | null>(null)
+  const [message, setMessage] = useState('')
+  const confirmDialog = useRef<HTMLDialogElement>(null)
+  const trashToggle = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (pendingDelete) confirmDialog.current?.showModal()
+    else confirmDialog.current?.close()
+  }, [pendingDelete])
 
   const stories = useQuery({ queryKey: ['stories'], queryFn: api.listStories })
+  const trash = useQuery({ queryKey: ['trashed-stories'], queryFn: api.listTrashedStories })
+  const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ['stories'] })
+    void qc.invalidateQueries({ queryKey: ['trashed-stories'] })
+  }
 
   const create = useMutation({
     mutationFn: () => api.createStory({ title }),
@@ -36,12 +50,27 @@ export default function StoryList() {
 
   const remove = useMutation({
     mutationFn: api.deleteStory,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['stories'] }),
+    onSuccess: () => {
+      setMessage(`“${pendingDelete?.title}” moved to Trash. Its contents and versions are preserved.`)
+      setPendingDelete(null)
+      refresh()
+      window.setTimeout(() => trashToggle.current?.focus(), 0)
+    },
+  })
+  const restore = useMutation({
+    mutationFn: api.restoreStory,
+    onSuccess: (story) => {
+      setMessage(`“${story.title}” restored to your library.`)
+      refresh()
+    },
   })
 
   return (
     <main className="mx-auto max-w-2xl p-5 sm:p-8">
-      <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Your stories</h1>
+      <div className="flex items-center justify-between gap-3"><h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{showTrash ? 'Trash' : 'Your stories'}</h1><button ref={trashToggle} type="button" onClick={() => setShowTrash(!showTrash)} className="shrink-0 rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm">{showTrash ? 'Back to library' : `Trash${trash.data?.length ? ` (${trash.data.length})` : ''}`}</button></div>
+      {message && <p role="status" className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</p>}
+      {showTrash && <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Stories in Trash keep all prose, structure, and versions. Restore them whenever you need. Nothing is permanently deleted here.</p>}
+      {!showTrash && <>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         Build your story from its first idea to its individual scenes. Start with a title and fill in the rest as you go.
       </p>
@@ -71,6 +100,7 @@ export default function StoryList() {
           Create
         </button>
       </form>
+      </>}
 
       {stories.isPending && <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">Loading…</p>}
       {stories.isError && (
@@ -78,15 +108,15 @@ export default function StoryList() {
       )}
 
       <ul className="mt-6 divide-y divide-slate-200 dark:divide-slate-700">
-        {stories.data?.map((story) => (
+        {(showTrash ? trash.data : stories.data)?.map((story) => (
           <li key={story.id} className="flex items-center justify-between py-3">
             <div className="min-w-0">
-              <Link
+              {showTrash ? <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{story.title}</p> : <Link
                 to={`/stories/${story.id}`}
                 className="text-sm font-medium text-slate-900 dark:text-slate-100 hover:underline"
               >
                 {story.title}
-              </Link>
+              </Link>}
               <p className="truncate text-xs text-slate-400">
                 {story.premise ?? 'no premise yet'}
               </p>
@@ -94,17 +124,27 @@ export default function StoryList() {
                 <CompletenessBar story={story} />
               </div>
             </div>
-            <button
-              onClick={() => remove.mutate(story.id)}
-              className="text-xs text-slate-400 hover:text-red-600 dark:hover:text-red-300"
+            {showTrash ? <button type="button" disabled={restore.isPending} onClick={() => restore.mutate(story.id)} className="ml-3 shrink-0 rounded border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm disabled:opacity-50">Restore</button> : <button
+              type="button"
+              aria-label={`Delete ${story.title}`}
+              onClick={() => { remove.reset(); setPendingDelete(story) }}
+              className="ml-3 shrink-0 text-xs text-slate-400 hover:text-red-600 dark:hover:text-red-300"
             >
               delete
-            </button>
+            </button>}
           </li>
         ))}
       </ul>
 
-      {stories.data?.length === 0 && <p className="mt-6 text-sm text-slate-400">No stories yet.</p>}
+      {showTrash && trash.isPending && <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">Loading Trash…</p>}
+      {(trash.isError || restore.isError) && <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-300">{String(trash.error ?? restore.error)}</p>}
+      {(showTrash ? trash.data : stories.data)?.length === 0 && <p className="mt-6 text-sm text-slate-400">{showTrash ? 'Trash is empty.' : 'No stories yet.'}</p>}
+      <dialog ref={confirmDialog} role="alertdialog" aria-labelledby="delete-story-title" aria-describedby="delete-story-description" onCancel={(event) => { event.preventDefault(); if (!remove.isPending) setPendingDelete(null) }} className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-slate-200 bg-white p-6 text-slate-900 shadow-xl backdrop:bg-black/50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+        <h2 id="delete-story-title" className="text-lg font-semibold">Move story to Trash?</h2>
+        <p id="delete-story-description" className="mt-3 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">“{pendingDelete?.title}” will leave your library. All its prose, characters, structure, and version history will be preserved. You can restore it from Trash.</p>
+        {remove.isError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">Could not move the story. Please try again.</p>}
+        <div className="mt-5 flex justify-end gap-3"><button type="button" autoFocus disabled={remove.isPending} onClick={() => setPendingDelete(null)} className="rounded border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm">Cancel</button><button type="button" disabled={remove.isPending || !pendingDelete} onClick={() => { if (pendingDelete) remove.mutate(pendingDelete.id) }} className="rounded bg-red-700 px-4 py-2 text-sm text-white disabled:opacity-50">{remove.isPending ? 'Moving…' : 'Move to Trash'}</button></div>
+      </dialog>
     </main>
   )
 }

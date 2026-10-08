@@ -186,11 +186,19 @@ class StoryAccessMiddleware:
                 except ValueError:
                     await _reject(send, 404, "Story not found")
                     return
-                owner_id = (
-                    await db.execute(select(Story.user_id).where(Story.id == story_id))
-                ).scalar_one_or_none()
-                if owner_id != user_id:
+                owner = (
+                    await db.execute(
+                        select(Story.user_id, Story.deleted_at).where(Story.id == story_id)
+                    )
+                ).one_or_none()
+                if owner is None or owner.user_id != user_id:
                     await _reject(send, 404, "Story not found")
+                    return
+                trash_action = (
+                    http_scope["method"] == "POST" and path == f"/api/stories/{story_id}/restore"
+                ) or (http_scope["method"] == "DELETE" and path == f"/api/stories/{story_id}")
+                if owner.deleted_at is not None and not trash_action:
+                    await _reject(send, 410, "Story is in Trash. Restore it from your library.")
                     return
 
                 # References sent in create/update bodies must belong to this story too.
@@ -252,7 +260,7 @@ class StoryAccessMiddleware:
                     await db.execute(
                         select(Story.user_id)
                         .join(Arc, Arc.story_id == Story.id)
-                        .where(Arc.id == arc_id)
+                        .where(Arc.id == arc_id, Story.deleted_at.is_(None))
                     )
                 ).scalar_one_or_none()
                 if owner_id != user_id:
@@ -276,6 +284,21 @@ class StoryAccessMiddleware:
                     http_scope["method"] == "DELETE"
                     and path.rstrip("/") == f"/api/stories/{lock_story_id}"
                 )
+                restoring_story = (
+                    http_scope["method"] == "POST"
+                    and path == f"/api/stories/{lock_story_id}/restore"
+                )
+                locked_story = (
+                    await lock_db.execute(
+                        select(Story.id, Story.deleted_at).where(Story.id == lock_story_id)
+                    )
+                ).one_or_none()
+                if locked_story is None:
+                    await _reject(send, 404, "Story not found")
+                    return
+                if locked_story.deleted_at is not None and not (deleting_story or restoring_story):
+                    await _reject(send, 410, "Story is in Trash. Restore it from your library.")
+                    return
                 if "/versions" not in path and not deleting_story:
                     from storytool.domain.versioning import service as versions
                     from storytool.domain.versioning.models import StoryVersion

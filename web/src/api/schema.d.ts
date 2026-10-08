@@ -410,12 +410,29 @@ export interface paths {
         get: operations["ApiStoriesStoryIdGetStory"];
         put?: never;
         post?: never;
-        /** Delete a story */
+        /** Move a story to Trash; preserve content and versions */
         delete: operations["ApiStoriesStoryIdDeleteStory"];
         options?: never;
         head?: never;
         /** Update a story */
         patch: operations["ApiStoriesStoryIdUpdateStory"];
+        trace?: never;
+    };
+    "/api/stories/{story_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore a story from Trash */
+        post: operations["ApiStoriesStoryIdRestoreRestoreStory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/stories/{story_id}/events/{event_id}/presence/{character_id}": {
@@ -2264,6 +2281,7 @@ export interface components {
             structure_framework: string;
             authoring_mode: string;
             parent_story_id: string | null;
+            deleted_at: string | null;
         };
         /** StoryProgressOut */
         StoryProgressOut: {
@@ -3329,7 +3347,9 @@ export interface operations {
     };
     ApiStoriesListStories: {
         parameters: {
-            query?: never;
+            query?: {
+                trashed?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3343,6 +3363,21 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StoryOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
                 };
             };
         };
@@ -3475,6 +3510,43 @@ export interface operations {
         responses: {
             /** @description Request fulfilled, document follows */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoryOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdRestoreRestoreStory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

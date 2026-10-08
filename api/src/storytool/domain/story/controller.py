@@ -6,6 +6,7 @@ enforced -- DESIGN.md principle 1.
 """
 
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
 from uuid import UUID
 
 from litestar import Controller, Request, delete, get, patch, post
@@ -32,9 +33,17 @@ class StoryController(Controller):
     }
 
     @get(summary="List stories")
-    async def list_stories(self, stories: StoryService, request: Request) -> list[StoryOut]:
+    async def list_stories(
+        self,
+        stories: StoryService,
+        request: Request,
+        trashed: bool = False,
+    ) -> list[StoryOut]:
         user_id = request.scope["state"]["storytool_user_id"]
-        records = await stories.get_many(Story.user_id == user_id)
+        records = await stories.get_many(
+            Story.user_id == user_id,
+            Story.deleted_at.is_not(None) if trashed else Story.deleted_at.is_(None),
+        )
         return [StoryOut.model_validate(record) for record in records]
 
     @post(status_code=201, summary="Create a story")
@@ -72,9 +81,36 @@ class StoryController(Controller):
         record = await stories.update(record)
         return StoryOut.model_validate(record)
 
-    @delete("/{story_id:uuid}", summary="Delete a story")
-    async def delete_story(self, stories: StoryService, story_id: UUID) -> None:
+    @delete("/{story_id:uuid}", summary="Move a story to Trash; preserve content and versions")
+    async def delete_story(
+        self,
+        stories: StoryService,
+        story_id: UUID,
+        request: Request,
+        db_session: AsyncSession,
+    ) -> None:
         record = await stories.get_one_or_none(id=story_id)
         if record is None:
             raise NotFoundException(detail=f"No story with id {story_id}")
-        await stories.delete(story_id)
+        if record.deleted_at is None:
+            from storytool.domain.versioning.service import checkpoint
+
+            await checkpoint(
+                db_session,
+                story_id,
+                request.scope["state"]["storytool_user_id"],
+                "Before moving to Trash",
+                "recovery",
+            )
+            record.deleted_at = datetime.now(UTC)
+            await stories.update(record)
+
+    @post("/{story_id:uuid}/restore", summary="Restore a story from Trash")
+    async def restore_story(self, stories: StoryService, story_id: UUID) -> StoryOut:
+        record = await stories.get_one_or_none(id=story_id)
+        if record is None:
+            raise NotFoundException(detail=f"No story with id {story_id}")
+        if record.deleted_at is not None:
+            record.deleted_at = None
+            record = await stories.update(record)
+        return StoryOut.model_validate(record)

@@ -100,7 +100,9 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
                     Story, (Story.id == AgentToken.story_id) & (Story.user_id == AgentToken.user_id)
                 )
                 .where(
-                    AgentToken.token_hash == token_hash, AgentToken.expires_at > datetime.now(UTC)
+                    AgentToken.token_hash == token_hash,
+                    AgentToken.expires_at > datetime.now(UTC),
+                    Story.deleted_at.is_(None),
                 )
             )
 

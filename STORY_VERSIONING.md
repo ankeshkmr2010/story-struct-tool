@@ -5,7 +5,7 @@ Open **Versions** beside **Export .md** in a story header.
 - **Save named version** freezes the current saved story with a label.
 - Automatic checkpoints are created during edits, at most once per minute.
 - The latest 50 automatic checkpoints are retained. Named, initial, restored,
-  and recovery versions are retained until the story itself is deleted.
+  and recovery versions are retained, including while a story is in Trash.
 - AI apply/undo batches get additional checkpoints before and after changes.
 - Existing stories get their first baseline immediately before their first
   versioned edit. The feature does not reconstruct edits made before deployment.

@@ -100,7 +100,11 @@ def json_value(value: Any) -> Any:
 
 
 async def owned_story(db: AsyncSession, story_id: UUID, user_id: UUID) -> Story:
-    story = await db.scalar(select(Story).where(Story.id == story_id, Story.user_id == user_id))
+    story = await db.scalar(
+        select(Story).where(
+            Story.id == story_id, Story.user_id == user_id, Story.deleted_at.is_(None)
+        )
+    )
     if story is None:
         raise NotFoundException(detail="Story not found")
     return story

@@ -105,6 +105,8 @@ export const api = {
   createStory: (data: StoryCreate) => post<Story>('/api/stories', data),
   updateStory: (id: string, data: StoryUpdate) => patch<Story>(`/api/stories/${id}`, data),
   deleteStory: (id: string) => request<void>(`/api/stories/${id}`, { method: 'DELETE' }),
+  listTrashedStories: () => request<Story[]>('/api/stories?trashed=true'),
+  restoreStory: (id: string) => post<Story>(`/api/stories/${id}/restore`),
 
   // Computed layer
   getTimeline: (id: string) => request<StoryTimeline>(`/api/stories/${id}/timeline`),

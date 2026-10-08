@@ -1,8 +1,9 @@
 """Level 1 of the ladder: the Story itself."""
 
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import CompletableMixin, StoryToolBase
@@ -16,6 +17,9 @@ class Story(StoryToolBase, CompletableMixin):
     complete_when = ("title", "premise")
 
     title: Mapped[str] = mapped_column(String(300))
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None, index=True
+    )
     premise: Mapped[str | None] = mapped_column(Text, default=None)
     genre: Mapped[str | None] = mapped_column(String(120), default=None)
     pov_style: Mapped[str | None] = mapped_column(String(40), default=None)
