@@ -12,6 +12,7 @@ from storytool.db.plugin import build_db_plugin
 from storytool.domain.ai.controller import AIController
 from storytool.domain.auth.access import StoryAccessMiddleware
 from storytool.domain.auth.controller import AuthController
+from storytool.domain.auth.oauth_controller import OAuthConsentController
 from storytool.domain.cast.controller import (
     ArcController,
     ArcStageController,
@@ -37,6 +38,7 @@ from storytool.domain.versioning.controller import StoryVersionController
 from storytool.domain.world.controller import ContinuityController, LocationController
 from storytool.frontend import frontend_router
 from storytool.mcp_server import build_mcp
+from storytool.oauth_routes import oauth_routes
 
 
 @get("/api/health", tags=["meta"], summary="Liveness probe", sync_to_thread=False)
@@ -60,6 +62,8 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
         route_handlers=[
             health,
             mcp_endpoint,
+            *oauth_routes(config),
+            OAuthConsentController,
             AuthController,
             AIController,
             StoryVersionController,

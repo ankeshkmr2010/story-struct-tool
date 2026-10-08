@@ -6,7 +6,7 @@ import re
 from datetime import UTC, datetime
 from http.cookies import SimpleCookie
 from typing import Any, cast
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 from uuid import UUID
 
 from advanced_alchemy.extensions.litestar import SQLAlchemyAsyncConfig
@@ -21,8 +21,9 @@ from litestar.types import (
 )
 from sqlalchemy import select, text
 
-from storytool.domain.ai.models import AgentToken
+from storytool.domain.ai.models import AgentToken, AIRun
 from storytool.domain.auth.models import User, UserSession
+from storytool.domain.auth.oauth import SCOPES, Delegation, delegated_access
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
 from storytool.domain.narrative.models import Chapter, Scene
 from storytool.domain.story.models import Story
@@ -104,11 +105,21 @@ class StoryAccessMiddleware:
 
         http_scope = cast(HTTPScope, scope)
         path = http_scope["path"]
+        # Public OAuth protocol endpoints authenticate with PKCE/client credentials, not cookies.
+        if path in {"/authorize", "/token", "/register", "/revoke"} or path.startswith(
+            "/.well-known/"
+        ):
+            await self.app(scope, receive, send)
+            return
         if http_scope["method"] in {"POST", "PUT", "PATCH", "DELETE"}:
             headers = dict(scope.get("headers", []))
             origin = headers.get(b"origin")
             host = headers.get(b"host", b"").decode("latin-1").lower()
-            if origin and urlsplit(origin.decode("latin-1")).netloc.lower() != host:
+            if (
+                path.startswith("/api/")
+                and origin
+                and urlsplit(origin.decode("latin-1")).netloc.lower() != host
+            ):
                 await _reject(send, 403, "Use this site's own origin for browser writes")
                 return
         if not path.startswith("/api/") or path in _PUBLIC_PATHS or path.startswith("/api/schema"):
@@ -131,7 +142,7 @@ class StoryAccessMiddleware:
         replay: list[Any] = []
         lock_story_id: UUID | None = None
         async with self.db_config.get_session() as db:
-            delegated = None
+            delegated: AgentToken | Delegation | None = None
             if bearer:
                 delegated = await db.scalar(
                     select(AgentToken).where(
@@ -139,6 +150,8 @@ class StoryAccessMiddleware:
                         AgentToken.expires_at > datetime.now(UTC),
                     )
                 )
+                if delegated is None:
+                    delegated = await delegated_access(db, bearer)
                 story_prefix = f"/api/stories/{delegated.story_id}" if delegated else ""
                 suffix = path.removeprefix(story_prefix) if delegated else ""
                 allowed = bool(delegated and path.startswith(story_prefix + "/")) and (
@@ -161,6 +174,29 @@ class StoryAccessMiddleware:
                 )
                 if not delegated or not allowed:
                     await _reject(send, 401, "Invalid or out-of-scope agent token")
+                    return
+                scopes = getattr(delegated, "scopes", SCOPES)
+                needed = {"story:read"}
+                query = parse_qs(http_scope.get("query_string", b"").decode())
+                prose_query = query.get("include_prose", ["false"])[0].lower() in {
+                    "true",
+                    "1",
+                    "yes",
+                }
+                if (
+                    prose_query
+                    or suffix.endswith(
+                        ("/content", "/annotations", "/mentions", "/revisions", "/preview")
+                    )
+                    or suffix in {"/ai/runs", "/ai/observations"}
+                ):
+                    needed.add("prose:read")
+                if http_scope["method"] != "GET":
+                    needed.add("story:write")
+                if suffix.startswith("/versions/") and suffix.endswith("/restore"):
+                    needed.update({"versions:restore", "prose:read"})
+                if not needed <= set(scopes):
+                    await _reject(send, 403, "Connection lacks required story permissions")
                     return
             user_id = (
                 await db.execute(
@@ -194,6 +230,28 @@ class StoryAccessMiddleware:
                 if owner is None or owner.user_id != user_id:
                     await _reject(send, 404, "Story not found")
                     return
+                if (
+                    delegated
+                    and "/ai/runs/" in path
+                    and "prose:read" not in getattr(delegated, "scopes", SCOPES)
+                ):
+                    run_ref = path.split("/ai/runs/", 1)[1].split("/", 1)[0]
+                    try:
+                        run_id = UUID(run_ref)
+                    except ValueError:
+                        run_id = None
+                    run = await db.scalar(
+                        select(AIRun).where(
+                            AIRun.id == run_id,
+                            AIRun.story_id == story_id,
+                            AIRun.user_id == user_id,
+                        )
+                    )
+                    if run and any(
+                        op.get("op") == "write_prose" for op in run.proposal.get("operations", [])
+                    ):
+                        await _reject(send, 403, "Prose permission is required for this proposal")
+                        return
                 trash_action = (
                     http_scope["method"] == "POST" and path == f"/api/stories/{story_id}/restore"
                 ) or (http_scope["method"] == "DELETE" and path == f"/api/stories/{story_id}")
@@ -215,6 +273,18 @@ class StoryAccessMiddleware:
                     except (UnicodeDecodeError, json.JSONDecodeError):
                         payload = None
                     if isinstance(payload, dict):
+                        if delegated and path.endswith("/ai/stage"):
+                            operations = payload.get("operations", [])
+                            if (
+                                isinstance(operations, list)
+                                and any(
+                                    isinstance(op, dict) and op.get("op") == "write_prose"
+                                    for op in operations
+                                )
+                                and "prose:read" not in getattr(delegated, "scopes", SCOPES)
+                            ):
+                                await _reject(send, 403, "Prose permission is required")
+                                return
                         for key, value in payload.items():
                             if value is None or (
                                 key not in _REFERENCE_MODELS and key != "arc_stage_id"

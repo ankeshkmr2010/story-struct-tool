@@ -15,7 +15,7 @@ def frontend_router(directory: Path) -> Router:
         raise RuntimeError("Build the frontend before setting STORYTOOL_FRONTEND_DIR")
 
     @get(
-        ["/", "/library", "/settings", "/how-to-use", "/stories/{story_id:uuid}"],
+        ["/", "/library", "/settings", "/how-to-use", "/oauth/consent", "/stories/{story_id:uuid}"],
         include_in_schema=False,
     )
     async def index(story_id: UUID | None = None) -> File:

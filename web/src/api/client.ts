@@ -55,6 +55,7 @@ export type StoryVersionPreview = S['VersionPreview']
 export type AIProposal = S['Proposal']
 export type AIObservation = S['ObservationOut']
 export type AgentToken = { id: string; story_id: string; label: string; expires_at: string }
+export type OAuthGrant = { id: string; client_name: string; story_title: string; scopes: string[]; expires_at: string; revoked_at: string | null }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -75,6 +76,10 @@ const patch = <T,>(path: string, body: unknown) =>
   request<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 
 export const api = {
+  getOAuthConsent: (id: string) => request<{ client_name: string; redirect_host: string; requested_scopes: string[]; expires_at: string }>(`/api/mcp/consent/${encodeURIComponent(id)}`),
+  decideOAuthConsent: (id: string, data: { story_id: string | null; scopes: string[]; deny: boolean }) => post<{ redirect_url: string }>(`/api/mcp/consent/${encodeURIComponent(id)}`, data),
+  listOAuthGrants: () => request<OAuthGrant[]>('/api/mcp/grants'),
+  revokeOAuthGrant: (id: string) => request<void>(`/api/mcp/grants/${id}`, { method: 'DELETE' }),
   listStoryVersions: (id: string) => request<StoryVersion[]>(`/api/stories/${id}/versions`),
   saveStoryVersion: (id: string, label: string) => post<StoryVersion>(`/api/stories/${id}/versions`, { label }),
   previewStoryVersion: (id: string, versionId: string) => request<StoryVersionPreview>(`/api/stories/${id}/versions/${versionId}/preview`),

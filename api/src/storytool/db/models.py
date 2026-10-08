@@ -6,6 +6,7 @@ adding an entity never silently produces an empty migration.
 
 from storytool.domain.ai.models import AgentToken, AIConnection, AIRun, StoryObservation
 from storytool.domain.auth.models import User, UserSession
+from storytool.domain.auth.oauth_models import MCPClient, MCPConsent, MCPGrant, MCPToken
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
 from storytool.domain.narrative.models import (
     Annotation,
@@ -37,6 +38,10 @@ __all__ = (
     "Character",
     "Event",
     "Location",
+    "MCPClient",
+    "MCPConsent",
+    "MCPGrant",
+    "MCPToken",
     "Relationship",
     "Scene",
     "SceneCharacterMention",

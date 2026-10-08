@@ -3,7 +3,6 @@
 import hashlib
 import json
 from collections.abc import Callable
-from datetime import UTC, datetime
 from typing import Any, Literal, cast
 from uuid import UUID
 
@@ -13,13 +12,12 @@ from litestar import asgi
 from litestar.types import ASGIApp, Receive, Scope, Send
 from mcp.server.mcpserver import Context, MCPServer
 from mcp_types import ToolAnnotations
-from sqlalchemy import select
 
+from storytool.config import get_settings
 from storytool.domain.ai.commands import ENTITIES, LINKS
-from storytool.domain.ai.models import AgentToken
 from storytool.domain.ai.schemas import Proposal
 from storytool.domain.auth.access import _reject
-from storytool.domain.story.models import Story
+from storytool.domain.auth.oauth import Delegation, delegated_access, issuer
 
 GUIDELINES = {
     "connections": {
@@ -71,8 +69,8 @@ GUIDELINES = {
 }
 
 INSTRUCTIONS = """StoryTool is an author's story graph and writing workspace.
-First get_connection and read the selected story. The bearer token grants read/write access
-to exactly one owned story, including prose and version history. Never request provider keys.
+First get_connection and read the selected story. Its permission scopes govern access
+to exactly one owned story. Never request provider keys. Respect read-only and prose limits.
 Use schemas, real IDs and typed new: references. Read guidelines and findings before repairs.
 Respect plotter/pantser/hybrid mode, author canon and dismissed notices. Placeholders are valid.
 World time and reading order are independent. Editorial judgments need evidence and alternatives.
@@ -88,23 +86,12 @@ No tool calls a billable LLM or runs shell/database commands. The connected clie
 def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) -> tuple[Any, Any]:
     server = MCPServer("StoryTool", instructions=INSTRUCTIONS, version="1.0.0")
 
-    async def principal(headers: Any) -> AgentToken | None:
+    async def principal(headers: Any) -> Delegation | None:
         authorization = headers.get("authorization", "")
         if not authorization.startswith("Bearer "):
             return None
-        token_hash = hashlib.sha256(authorization[7:].encode()).hexdigest()
         async with db_config.get_session() as db:
-            return await db.scalar(
-                select(AgentToken)
-                .join(
-                    Story, (Story.id == AgentToken.story_id) & (Story.user_id == AgentToken.user_id)
-                )
-                .where(
-                    AgentToken.token_hash == token_hash,
-                    AgentToken.expires_at > datetime.now(UTC),
-                    Story.deleted_at.is_(None),
-                )
-            )
+            return await delegated_access(db, authorization[7:])
 
     async def call(ctx: Context, suffix: str, method: str = "GET", body: Any = None) -> Any:
         headers = ctx.headers or {}
@@ -134,10 +121,10 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         return {
             "story_id": str(grant.story_id),
             "expires_at": grant.expires_at.isoformat(),
-            "permissions": "Read/write this story including prose, proposals and versions",
+            "permissions": grant.scopes,
             "transport": "Streamable HTTP",
-            "auth": "story-scoped bearer token",
-            "oauth_supported": False,
+            "auth": "OAuth" if grant.oauth else "story-scoped bearer token",
+            "oauth_supported": True,
             "fork_supported": False,
             "limits": {"operations": 200, "prose_characters": 200000},
         }
@@ -485,11 +472,22 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         if origin:
             from urllib.parse import urlsplit
 
-            if urlsplit(origin).netloc.lower() != headers.get("host", "").lower():
+            if (
+                urlsplit(origin).netloc.lower() != headers.get("host", "").lower()
+                and origin not in get_settings().mcp_allowed_origins
+            ):
                 await _reject(send, 403, "Invalid MCP origin")
                 return
         if await principal(headers) is None:
-            await _reject(send, 401, "Create a story-scoped agent token in StoryTool Settings")
+            from storytool.oauth_routes import json_response
+
+            challenge = (
+                f'Bearer resource_metadata="{issuer()}/.well-known/oauth-protected-resource/mcp", '
+                'scope="story:read"'
+            )
+            await json_response(
+                send, 401, {"error": "invalid_token"}, [(b"www-authenticate", challenge.encode())]
+            )
             return
         await http_app(cast(Any, scope), cast(Any, receive), cast(Any, send))
 

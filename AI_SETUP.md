@@ -7,7 +7,8 @@ The MCP server is part of the same StoryTool backend, at:
 `https://storytool.onrender.com/mcp`
 
 For local development use `http://localhost:8000/mcp`. Transport is Streamable HTTP.
-This release uses a story-scoped bearer token; it does not yet implement OAuth for MCP clients.
+The server supports standard OAuth authorization code with PKCE and dynamic client registration,
+plus the existing manual story-scoped tokens.
 It supports both the 2025-11-25 and 2026-07-28 protocol profiles through the official SDK.
 
 1. Sign in to StoryTool and open **Settings -> Connect an AI client · MCP**.
@@ -31,7 +32,7 @@ listing/reading/creation/comparison, restore preview and recovery-protected rest
 One guidelines resource and a reusable outline/draft/review/timeline prompt are provided.
 
 Entity and relationship fields reflect the current app. Separate world-rule/lore/theme
-models, multi-scene event revelations, version forks and remote OAuth remain in the roadmap.
+models, multi-scene event revelations and version forks remain in the roadmap.
 No tool silently calls a paid reader. Reading notices does not generate new observations.
 Context reads are currently graph-based; output pages are bounded, but novel-scale database
 projection/search optimizations are still future work.
@@ -51,8 +52,22 @@ environment variable names. Use your own checkout path. Keep raw tokens outside 
 configuration and prompts. The original `story_mcp.py` remains compatible, with its older
 four-tool catalog; `story_mcp_remote.py` forwards the full hosted tool/resource/prompt catalog.
 
-If a client only accepts OAuth and cannot run a stdio bridge or supply a bearer header,
-it cannot connect to this release yet. No client-specific OAuth compatibility is claimed.
+OAuth clients use the same URL, discover authorization metadata, and open a StoryTool consent
+screen. Sign in with Google, select one story and choose permissions. Read-only is the default;
+enable edits to let the client stage/apply changes. Prose and whole-story restore have separate
+permissions. Access tokens last one hour, refresh tokens rotate, and consent lasts at most
+30 days. Revoke any connection in Settings -> OAuth connections.
+
+For Gemini on a phone, open gemini.google.com in the browser -> Settings -> Connected Apps ->
+Custom apps -> Add a custom app. Enter the MCP URL and complete StoryTool consent. Once linked,
+the connector can be used in the mobile app. Google controls availability by region/account.
+No manual token or new model key is needed for this OAuth flow. The server's protocol flow is
+tested; completion inside a user's Gemini account must be confirmed by that user.
+
+Local OAuth testing requires STORYTOOL_PUBLIC_URL=http://localhost:8000. Production's default
+issuer is https://storytool.onrender.com. For a different hostname configure STORYTOOL_PUBLIC_URL
+to its HTTPS origin, keeping issuer/resource metadata and callbacks consistent. Custom MCP
+browser origins can be configured with STORYTOOL_MCP_ALLOWED_ORIGINS; Gemini is explicitly allowed.
 The free Render server may need about a minute to wake after being idle; a startup timeout
 is different from a rejected token.
 
@@ -156,7 +171,7 @@ changed since that batch; it will not overwrite subsequent manual edits.
 Current limits: at most 200 operations per proposal; 8,000 characters per scene
 excerpt and 24,000 excerpt characters in total; synchronous generation with a provider
 timeout. A rejected/invalid response leaves the story intact. Partial proposal selection,
-streaming progress, remote MCP OAuth, and embedded agent runtimes are later extensions.
+streaming progress and embedded agent runtimes are later extensions.
 
 ## OpenRouter free model setup
 

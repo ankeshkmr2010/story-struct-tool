@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     legacy_owner_email: str | None = None
     ai_encryption_key: str | None = None
     frontend_dir: Path | None = None
+    public_url: str = "https://storytool.onrender.com"
+    mcp_allowed_origins: list[str] = ["https://gemini.google.com"]
 
     @field_validator("database_url")
     @classmethod

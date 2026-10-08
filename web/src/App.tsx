@@ -6,6 +6,7 @@ import StoryList from './pages/StoryList'
 import StoryWorkspace from './pages/StoryWorkspace'
 import HowToUse from './pages/HowToUse'
 import UserSettings from './pages/UserSettings'
+import OAuthConsent from './pages/OAuthConsent'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
       <Route element={<AuthGate><Outlet /></AuthGate>}>
         <Route path="/library" element={<StoryList />} />
         <Route path="/settings" element={<UserSettings />} />
+        <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/stories/:storyId" element={<StoryWorkspace />} />
       </Route>
     </Routes>

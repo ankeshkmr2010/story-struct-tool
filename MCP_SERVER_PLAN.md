@@ -1,6 +1,6 @@
 # StoryTool MCP server and writing workflows
 
-Planning date: 8 October 2026. Status: full roadmap plus an initial implementation. The hosted token-authenticated server now includes the current entity/link catalog, staged prose replacement, findings/notices, arc tracing, version reads/comparisons/restores, guidelines and a full-catalog stdio adapter. Granular scopes, OAuth onboarding, forks, richer world/theme/lore models, range patches, durable workflows and novel-scale context optimizations remain planned. The API transport boundary is reused through in-process ASGI requests to preserve current ownership and atomic checkpoint behavior.
+Planning date: 8 October 2026. Status: full roadmap plus an initial implementation. The hosted token-authenticated server now includes the current entity/link catalog, staged prose replacement, findings/notices, arc tracing, version reads/comparisons/restores, guidelines and a full-catalog stdio adapter. OAuth onboarding and granular OAuth scopes are implemented using the official SDK, persistent grants, PKCE, refresh rotation, Google-backed story consent and revocation. Real-client rollout verification is ongoing. Forks, richer world/theme/lore models, range patches, durable workflows and novel-scale context optimizations remain planned. The API transport boundary is reused through in-process ASGI requests to preserve current ownership and atomic checkpoint behavior.
 
 ## 1. Product outcome
 
