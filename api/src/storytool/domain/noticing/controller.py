@@ -7,15 +7,15 @@ observation is always the author's explicit next step.
 
 from uuid import UUID
 
-from litestar import Controller, get, patch, post
+from litestar import Controller, Request, get, patch, post
 from litestar.exceptions import NotFoundException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from storytool.domain.ai.noticer import user_noticer
 from storytool.domain.analysis import load_graph_by_id
 from storytool.domain.common import apply_patch
 from storytool.domain.narrative.models import SceneCharacterMention, Suggestion
-from storytool.domain.noticing.factory import build_noticer, describe_noticer
 from storytool.domain.noticing.schemas import (
     MentionOut,
     MentionUpdate,
@@ -33,8 +33,9 @@ class NoticingController(Controller):
     signature_namespace = {"AsyncSession": AsyncSession}
 
     @get("/noticing", summary="Which noticer is active")
-    async def noticer_info(self) -> NoticerInfoOut:
-        return NoticerInfoOut(**describe_noticer())  # type: ignore[arg-type]
+    async def noticer_info(self, request: Request, db_session: AsyncSession) -> NoticerInfoOut:
+        _, info = await user_noticer(db_session, request.scope["state"]["storytool_user_id"])
+        return NoticerInfoOut(**info)  # type: ignore[arg-type]
 
     @post(
         "/stories/{story_id:uuid}/notice",
@@ -46,11 +47,14 @@ class NoticingController(Controller):
             "mentions and dismissed suggestions are never resurrected."
         ),
     )
-    async def notice(self, db_session: AsyncSession, story_id: UUID) -> PassResultOut:
+    async def notice(
+        self, request: Request, db_session: AsyncSession, story_id: UUID
+    ) -> PassResultOut:
         graph = await load_graph_by_id(db_session, story_id)
         if graph is None:
             raise NotFoundException(detail=f"No story with id {story_id}")
-        result = await run_noticing_pass(db_session, graph, build_noticer())
+        noticer, _ = await user_noticer(db_session, request.scope["state"]["storytool_user_id"])
+        result = await run_noticing_pass(db_session, graph, noticer)
         return PassResultOut.model_validate(result)
 
     # ----------------------------------------------------------- suggestions

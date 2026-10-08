@@ -24,9 +24,10 @@ class Story(StoryToolBase, CompletableMixin):
     )
     authoring_mode: Mapped[str] = mapped_column(String(20), default=AuthoringMode.HYBRID)
 
-    # Both present from the first migration even though auth (Phase 4) and forking ship
-    # later: cheap now, brutal to retrofit onto an existing dataset.
-    user_id: Mapped[UUID | None] = mapped_column(default=None, index=True)
+    # Legacy stories remain unowned until the configured owner signs in once.
+    user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("app_user.id", ondelete="SET NULL"), default=None, index=True
+    )
     parent_story_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("story.id", ondelete="SET NULL"), default=None, index=True
     )

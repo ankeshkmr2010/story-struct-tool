@@ -1,10 +1,17 @@
 """Litestar application factory."""
 
+from typing import cast
+
+from advanced_alchemy.extensions.litestar import SQLAlchemyAsyncConfig, SQLAlchemyPlugin
 from litestar import Litestar, get
+from litestar.middleware import DefineMiddleware
 from litestar.openapi import OpenAPIConfig
 
 from storytool.config import get_settings
 from storytool.db.plugin import build_db_plugin
+from storytool.domain.ai.controller import AIController
+from storytool.domain.auth.access import StoryAccessMiddleware
+from storytool.domain.auth.controller import AuthController
 from storytool.domain.cast.controller import (
     ArcController,
     ArcStageController,
@@ -19,6 +26,7 @@ from storytool.domain.narrative.prose_controller import (
 from storytool.domain.noticing.controller import NoticingController
 from storytool.domain.story.analysis_controller import StoryAnalysisController
 from storytool.domain.story.controller import StoryController
+from storytool.domain.story.timeline_controller import TimelineController
 from storytool.domain.structure.controller import (
     ActController,
     BeatController,
@@ -26,6 +34,7 @@ from storytool.domain.structure.controller import (
     ThreadController,
 )
 from storytool.domain.world.controller import ContinuityController, LocationController
+from storytool.frontend import frontend_router
 
 
 @get("/api/health", tags=["meta"], summary="Liveness probe", sync_to_thread=False)
@@ -33,12 +42,23 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-def create_app() -> Litestar:
+def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
+    """Build the application.
+
+    `db_plugin` exists for tests: each call otherwise builds a fresh engine with its own
+    connection pool, and a suite that creates one app per test exhausts Postgres's
+    connection limit partway through. Production calls this once.
+    """
     settings = get_settings()
+    plugin = db_plugin or build_db_plugin()
+    frontend = [frontend_router(settings.frontend_dir)] if settings.frontend_dir else []
     return Litestar(
         route_handlers=[
             health,
+            AuthController,
+            AIController,
             StoryController,
+            TimelineController,
             StoryAnalysisController,
             EventController,
             ActController,
@@ -55,8 +75,15 @@ def create_app() -> Litestar:
             NoticingController,
             LocationController,
             ContinuityController,
+            *frontend,
         ],
-        plugins=[build_db_plugin()],
+        plugins=[plugin],
+        middleware=[
+            DefineMiddleware(
+                StoryAccessMiddleware,
+                db_config=cast(SQLAlchemyAsyncConfig, plugin.config[0]),
+            )
+        ],
         debug=settings.debug,
         openapi_config=OpenAPIConfig(
             title="StoryTool API",

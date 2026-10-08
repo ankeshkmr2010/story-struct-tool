@@ -112,6 +112,35 @@ class SceneOut(EntityOut):
     sort_key: float
 
 
+# -------------------------------------------------------------------- moving
+
+
+class SceneMove(BaseModel):
+    """Position expressed as a neighbour, not an index.
+
+    An index is only meaningful against a list the client fetched a moment ago; a neighbour id
+    still means the same thing if someone inserted a scene in between. Omitting both appends.
+    """
+
+    chapter_id: UUID | None = None
+    after_scene_id: UUID | None = None
+    before_scene_id: UUID | None = None
+
+
+class ChapterMove(BaseModel):
+    after_chapter_id: UUID | None = None
+    before_chapter_id: UUID | None = None
+
+
+class MoveResultOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    sort_key: float
+    rebalanced: bool
+    """True when siblings had to be renumbered because the midpoints ran out."""
+    chapter_id: UUID | None = None
+
+
 # --------------------------------------------------------------- fulfilment
 
 

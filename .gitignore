@@ -11,6 +11,8 @@ __pycache__/
 node_modules/
 dist/
 *.local
+*.local.log
+.storytool-share.local
 
 # Editors / OS
 .DS_Store

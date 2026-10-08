@@ -10,16 +10,18 @@ the test schema the same way production is built means every test run is also a 
 test.
 """
 
+import hashlib
 import os
 import subprocess
 import sys
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import asyncpg
 import pytest
 from litestar.testing import AsyncTestClient
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 PG_HOST, PG_PORT = "localhost", 5432
 PG_USER, PG_PASSWORD = "storytool", "storytool"
@@ -117,7 +119,38 @@ async def _truncate(engine: AsyncEngine) -> AsyncGenerator[None, None]:
 
 @pytest.fixture
 async def client(engine: AsyncEngine) -> AsyncGenerator[AsyncTestClient, None]:
-    from storytool.app import create_app
+    """A fresh app per test, with its engine disposed afterwards.
 
-    async with AsyncTestClient(app=create_app()) as test_client:
-        yield test_client
+    The app cannot be shared across tests -- entering `AsyncTestClient` runs the app's
+    lifespan, so a second client would get an already-shut-down app. But each app builds its
+    own engine with its own pool, and nothing was releasing it: the suite leaked one Postgres
+    connection per test and everything past roughly the hundredth returned 500. The symptom
+    was maddening (every file passed alone, the full run failed), so the engine is now
+    disposed explicitly.
+    """
+    from advanced_alchemy.extensions.litestar import SQLAlchemyPlugin
+
+    from storytool.app import create_app
+    from storytool.db.plugin import build_db_config
+    from storytool.domain.auth.models import User, UserSession
+
+    async with AsyncSession(engine) as session:
+        user = User(google_sub="test-author", email="author@example.com")
+        session.add(user)
+        await session.flush()
+        session.add(UserSession(
+            user_id=user.id,
+            token_hash=hashlib.sha256(b"test-session").hexdigest(),
+            expires_at=datetime.now(UTC) + timedelta(days=1),
+        ))
+        await session.commit()
+
+    config = build_db_config()
+    try:
+        async with AsyncTestClient(
+            app=create_app(db_plugin=SQLAlchemyPlugin(config=config))
+        ) as test_client:
+            test_client.cookies.set("storytool_session", "test-session", path="/api")
+            yield test_client
+    finally:
+        await config.get_engine().dispose()

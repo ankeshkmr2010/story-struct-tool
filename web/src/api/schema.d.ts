@@ -21,6 +21,297 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Public Google sign-in configuration */
+        get: operations["ApiAuthConfigConfig"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sign in with a Google ID token */
+        post: operations["ApiAuthGoogleGoogleLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke the current browser session */
+        post: operations["ApiAuthLogoutLogout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Current signed-in user */
+        get: operations["ApiAuthMeMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/ai/runs/{run_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply */
+        post: operations["ApiStoriesStoryIdAiRunsRunIdApplyApply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/ai/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Context */
+        get: operations["ApiStoriesStoryIdAiContextContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/agent-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ListTokens */
+        get: operations["ApiAiAgentTokensListTokens"];
+        put?: never;
+        /** CreateToken */
+        post: operations["ApiAiAgentTokensCreateToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/connections/{connection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnect */
+        delete: operations["ApiAiConnectionsConnectionIdDisconnect"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/ai/runs/{run_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismiss */
+        post: operations["ApiStoriesStoryIdAiRunsRunIdDismissDismiss"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ListConnections */
+        get: operations["ApiAiConnectionsListConnections"];
+        /** SaveConnection */
+        put: operations["ApiAiConnectionsSaveConnection"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/ai/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ListRuns */
+        get: operations["ApiStoriesStoryIdAiRunsListRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/ai/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Observations */
+        get: operations["ApiStoriesStoryIdAiObservationsObservations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/ai/propose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Propose */
+        post: operations["ApiStoriesStoryIdAiProposePropose"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/agent-tokens/{token_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** RevokeToken */
+        delete: operations["ApiAiAgentTokensTokenIdRevokeToken"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/ai/stage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stage */
+        post: operations["ApiStoriesStoryIdAiStageStage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/connections/{connection_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** TestConnection */
+        post: operations["ApiAiConnectionsConnectionIdTestTestConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/ai/runs/{run_id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo */
+        post: operations["ApiStoriesStoryIdAiRunsRunIdUndoUndo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories": {
         parameters: {
             query?: never;
@@ -56,6 +347,57 @@ export interface paths {
         head?: never;
         /** Update a story */
         patch: operations["ApiStoriesStoryIdUpdateStory"];
+        trace?: never;
+    };
+    "/api/stories/{story_id}/events/{event_id}/presence/{character_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Record or remove a character's involvement in a story event */
+        put: operations["ApiStoriesStoryIdEventsEventIdPresenceCharacterIdSetEventPresence"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/presence/{character_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Record or remove a character's presence in a scene */
+        put: operations["ApiStoriesStoryIdScenesSceneIdPresenceCharacterIdSetPresence"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Global world-time timeline with character appearances */
+        get: operations["ApiStoriesStoryIdTimelineTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/stories/{story_id}/health": {
@@ -479,6 +821,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/chapters/{chapter_id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reorder a chapter */
+        post: operations["ApiStoriesStoryIdChaptersChapterIdMoveMoveChapterRoute"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/chapters/{chapter_id}/beats/{beat_id}": {
         parameters: {
             query?: never;
@@ -595,6 +954,26 @@ export interface paths {
         put?: never;
         /** This scene advances a thread */
         post: operations["ApiStoriesStoryIdScenesSceneIdThreadsLinkThread"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/scenes/{scene_id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reorder a scene, or move it to another chapter
+         * @description The server computes sort_key -- midpoint arithmetic plus the rebalance case is exactly the sort of thing that goes subtly wrong if duplicated client-side. Sending chapter_id as null unplaces the scene, which is a legal state.
+         */
+        post: operations["ApiStoriesStoryIdScenesSceneIdMoveMoveSceneRoute"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1122,6 +1501,10 @@ export interface components {
         ArcUpdate: {
             resolution?: string | null;
         };
+        /** AuthConfigOut */
+        AuthConfigOut: {
+            google_client_id: string | null;
+        };
         /**
          * AuthoringMode
          * @default hybrid
@@ -1209,6 +1592,11 @@ export interface components {
             /** @default 0 */
             sort_key: number;
         };
+        /** ChapterMove */
+        ChapterMove: {
+            after_chapter_id?: string | null;
+            before_chapter_id?: string | null;
+        };
         /** ChapterOut */
         ChapterOut: {
             /** Format: uuid */
@@ -1283,6 +1671,10 @@ export interface components {
             arc_type: string | null;
             voice_notes: string | null;
         };
+        /** CharacterPresenceUpdate */
+        CharacterPresenceUpdate: {
+            is_present: boolean;
+        };
         /**
          * CharacterRole
          * @enum {string}
@@ -1306,6 +1698,15 @@ export interface components {
             required: string[];
             ratio: number;
         };
+        /** ConnectionOut */
+        ConnectionOut: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            provider: "anthropic" | "openai" | "openrouter" | "jev";
+            model: string;
+            key_suffix: string;
+        };
         /** ContinuityOut */
         ContinuityOut: {
             /** Format: uuid */
@@ -1328,14 +1729,14 @@ export interface components {
         EventCreate: {
             label: string;
             description?: string | null;
-            /** @default 0 */
-            sort_ordinal: number;
+            sort_ordinal?: number | null;
             display_label?: string | null;
             /** @default false */
             is_turning_point: boolean;
             /** @default false */
             is_on_page: boolean;
             scene_id?: string | null;
+            location_id?: string | null;
         };
         /** EventOut */
         EventOut: {
@@ -1350,11 +1751,12 @@ export interface components {
             story_id: string;
             label: string;
             description: string | null;
-            sort_ordinal: number;
+            sort_ordinal: number | null;
             display_label: string | null;
             is_turning_point: boolean;
             is_on_page: boolean;
             scene_id: string | null;
+            location_id: string | null;
         };
         /** EventUpdate */
         EventUpdate: {
@@ -1365,6 +1767,7 @@ export interface components {
             is_turning_point?: boolean | null;
             is_on_page?: boolean | null;
             scene_id?: string | null;
+            location_id?: string | null;
         };
         /** FindingOut */
         FindingOut: {
@@ -1374,6 +1777,10 @@ export interface components {
             message: string;
             entity_type: string | null;
             entity_id: string | null;
+        };
+        /** GoogleCredential */
+        GoogleCredential: {
+            credential: string;
         };
         /** HealthOut */
         HealthOut: {
@@ -1462,12 +1869,41 @@ export interface components {
             source?: string | null;
             is_rejected?: boolean | null;
         };
+        /** MoveResultOut */
+        MoveResultOut: {
+            sort_key: number;
+            rebalanced: boolean;
+            chapter_id?: string | null;
+        };
         /** NoticerInfoOut */
         NoticerInfoOut: {
             noticer: string;
             model: string | null;
             claude_available: boolean;
             jev_available: boolean;
+        };
+        /** ObservationOut */
+        ObservationOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            scene_id: string;
+            scene_title: string;
+            source: string;
+            payload: {
+                [key: string]: unknown;
+            };
+        };
+        /** Operation */
+        Operation: {
+            /** @enum {string} */
+            op: "create" | "update" | "link" | "unlink";
+            /** @enum {string} */
+            entity: "story" | "character" | "relationship" | "arc" | "arc_stage" | "act" | "beat" | "thread" | "location" | "chapter" | "scene" | "event" | "chapter_beat" | "scene_beat" | "scene_thread" | "scene_arc_advance" | "event_character" | "scene_presence";
+            ref: string;
+            data: {
+                [key: string]: unknown;
+            };
         };
         /** PassResultOut */
         PassResultOut: {
@@ -1483,12 +1919,44 @@ export interface components {
          * @enum {string}
          */
         PovStyle: "first" | "third_limited" | "third_omniscient" | "second" | "mixed";
+        /** PromptRequest */
+        PromptRequest: {
+            /** Format: uuid */
+            connection_id: string;
+            prompt: string;
+            /** @default false */
+            include_prose: boolean;
+            /**
+             * @default author
+             * @enum {string}
+             */
+            mode: "author" | "review";
+            conversation_run_ids?: string[];
+        };
+        /** Proposal */
+        Proposal: {
+            summary: string;
+            assumptions?: string[];
+            recommendations?: components["schemas"]["Recommendation"][];
+            operations?: components["schemas"]["Operation"][];
+        };
         /** ReadinessOut */
         ReadinessOut: {
             level: number;
             label: string;
             is_ready: boolean;
             blocked_by: string[];
+        };
+        /** Recommendation */
+        Recommendation: {
+            title: string;
+            explanation: string;
+            observation_ids?: string[];
+            /**
+             * @default medium
+             * @enum {string}
+             */
+            priority: "low" | "medium" | "high";
         };
         /** RelationshipCreate */
         RelationshipCreate: {
@@ -1524,6 +1992,26 @@ export interface components {
             history?: string | null;
             current_dynamic?: string | null;
             tension_notes?: string | null;
+        };
+        /** RunOut */
+        RunOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            story_id: string;
+            provider: string;
+            model: string;
+            prompt: string;
+            summary: string;
+            status: string;
+            proposal: components["schemas"]["Proposal"];
+            result: {
+                [key: string]: unknown;
+            } | null;
+            usage: {
+                [key: string]: unknown;
+            };
+            evidence: components["schemas"]["ObservationOut"][];
         };
         /** SaveResultOut */
         SaveResultOut: {
@@ -1588,6 +2076,12 @@ export interface components {
             type: string;
             status: string;
             is_complete: boolean;
+        };
+        /** SceneMove */
+        SceneMove: {
+            chapter_id?: string | null;
+            after_scene_id?: string | null;
+            before_scene_id?: string | null;
         };
         /** SceneOut */
         SceneOut: {
@@ -1792,6 +2286,74 @@ export interface components {
             owner_character_id?: string | null;
             sort_key?: number | null;
         };
+        /** TimelineCharacterOut */
+        TimelineCharacterOut: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            role: string | null;
+        };
+        /** TimelineEntryOut */
+        TimelineEntryOut: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "scene" | "event";
+            title: string;
+            ordinal: number | null;
+            time_label: string | null;
+            summary: string | null;
+            location_id?: string | null;
+            location_name?: string | null;
+            chapter_title?: string | null;
+            scene_id?: string | null;
+            /** @default false */
+            is_turning_point: boolean;
+            /** @default false */
+            is_flashback: boolean;
+            /** @default false */
+            is_on_page: boolean;
+            reading_order?: number | null;
+            reading_label?: string | null;
+            /** @default [] */
+            participants: components["schemas"]["TimelineParticipantOut"][];
+            /** @default [] */
+            threads: string[];
+            /** @default [] */
+            beats: string[];
+            /** @default [] */
+            arc_stages: string[];
+        };
+        /** TimelineOut */
+        TimelineOut: {
+            /** Format: uuid */
+            story_id: string;
+            characters: components["schemas"]["TimelineCharacterOut"][];
+            entries: components["schemas"]["TimelineEntryOut"][];
+        };
+        /** TimelineParticipantOut */
+        TimelineParticipantOut: {
+            /** Format: uuid */
+            character_id: string;
+            name: string;
+            source: string;
+            is_pov: boolean;
+        };
+        /** TokenRequest */
+        TokenRequest: {
+            /** Format: uuid */
+            story_id: string;
+            /** @default Story agent */
+            label: string;
+        };
+        /** UserOut */
+        UserOut: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            name: string | null;
+            picture_url: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -1818,6 +2380,630 @@ export interface operations {
                 content: {
                     "application/json": {
                         [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    ApiAuthConfigConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthConfigOut"];
+                };
+            };
+        };
+    };
+    ApiAuthGoogleGoogleLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleCredential"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAuthLogoutLogout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+        };
+    };
+    ApiAuthMeMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdAiRunsRunIdApplyApply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdAiContextContext: {
+        parameters: {
+            query?: {
+                include_prose?: boolean;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAiAgentTokensListTokens: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
+    ApiAiAgentTokensCreateToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAiConnectionsConnectionIdDisconnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdAiRunsRunIdDismissDismiss: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAiConnectionsListConnections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionOut"][];
+                };
+            };
+        };
+    };
+    ApiAiConnectionsSaveConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionOut"];
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdAiRunsListRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdAiObservationsObservations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservationOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdAiProposePropose: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptRequest"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAiAgentTokensTokenIdRevokeToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdAiStageStage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Proposal"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAiConnectionsConnectionIdTestTestConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdAiRunsRunIdUndoUndo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
                     };
                 };
             };
@@ -1976,6 +3162,131 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StoryOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdEventsEventIdPresenceCharacterIdSetEventPresence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                event_id: string;
+                character_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CharacterPresenceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdPresenceCharacterIdSetPresence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+                character_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CharacterPresenceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentionOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdTimelineTimeline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimelineOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */
@@ -3938,6 +5249,48 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdChaptersChapterIdMoveMoveChapterRoute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                chapter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChapterMove"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoveResultOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdChaptersChapterIdBeatsBeatIdUnlinkBeat: {
         parameters: {
             query?: never;
@@ -4314,6 +5667,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LinksOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdMoveMoveSceneRoute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SceneMove"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoveResultOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

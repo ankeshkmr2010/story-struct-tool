@@ -10,10 +10,17 @@ Two conventions throughout:
 
 from uuid import UUID
 
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from storytool.db.base import CompletableMixin, StoryToolBase
+from storytool.db.base import CompletableMixin, StoryToolBase, metadata
+
+event_character = Table(
+    "event_character",
+    metadata,
+    Column("event_id", ForeignKey("event.id", ondelete="CASCADE"), primary_key=True),
+    Column("character_id", ForeignKey("character.id", ondelete="CASCADE"), primary_key=True),
+)
 
 
 class Event(StoryToolBase, CompletableMixin):
@@ -33,8 +40,11 @@ class Event(StoryToolBase, CompletableMixin):
 
     # Only ordering matters, and fictional calendars break real datetimes. An abstract
     # ordinal sorts; the display label is whatever the author wants to call it.
-    sort_ordinal: Mapped[int] = mapped_column(Integer, default=0)
+    sort_ordinal: Mapped[int | None] = mapped_column(Integer, default=None)
     display_label: Mapped[str | None] = mapped_column(String(200), default=None)
+    location_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("location.id", ondelete="SET NULL"), default=None, index=True
+    )
 
     is_turning_point: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     # Does a scene exist for this, or does it happen off-page?

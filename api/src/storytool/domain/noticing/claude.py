@@ -129,7 +129,7 @@ class ClaudeNoticer:
                 messages=[{"role": "user", "content": prompt}],
             )
         except Exception:
-            logger.warning("Claude noticing failed; falling back to deterministic", exc_info=True)
+            logger.warning("Claude noticing failed; falling back to deterministic")
             return await self._degrade(prose, known_characters, known_beats)
 
         # A safety decline is expected occasionally on fiction. Degrade, do not fail.

@@ -1,0 +1,262 @@
+"""Authenticate every API request and enforce ownership at the story boundary."""
+
+import hashlib
+import json
+import re
+from datetime import UTC, datetime
+from http.cookies import SimpleCookie
+from typing import Any, cast
+from urllib.parse import urlsplit
+from uuid import UUID
+
+from advanced_alchemy.extensions.litestar import SQLAlchemyAsyncConfig
+from litestar.types import (
+    ASGIApp,
+    HTTPResponseBodyEvent,
+    HTTPResponseStartEvent,
+    HTTPScope,
+    Receive,
+    Scope,
+    Send,
+)
+from sqlalchemy import select, text
+
+from storytool.domain.ai.models import AgentToken
+from storytool.domain.auth.models import User, UserSession
+from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
+from storytool.domain.narrative.models import Chapter, Scene
+from storytool.domain.story.models import Story
+from storytool.domain.structure.models import Act, Beat, Event, Thread
+from storytool.domain.world.models import Location
+
+SESSION_COOKIE = "storytool_session"
+_STORY_PATH = re.compile(r"^/api/stories/([^/]+)(?:/|$)")
+_ARC_PATH = re.compile(r"^/api/arcs/([^/]+)(?:/|$)")
+_PUBLIC_PATHS = {"/api/health", "/api/auth/config", "/api/auth/google"}
+_REFERENCE_MODELS = {
+    "act_id": Act,
+    "beat_id": Beat,
+    "beat_ids": Beat,
+    "chapter_id": Chapter,
+    "location_id": Location,
+    "scene_id": Scene,
+    "scene_ids": Scene,
+    "thread_id": Thread,
+    "thread_ids": Thread,
+    "character_id": Character,
+    "character_ids": Character,
+    "character_a_id": Character,
+    "character_b_id": Character,
+    "owner_character_id": Character,
+    "pov_character_id": Character,
+    "relationship_id": Relationship,
+    "opening_turning_point_id": Event,
+    "closing_turning_point_id": Event,
+    "event_id": Event,
+    "after_scene_id": Scene,
+    "before_scene_id": Scene,
+    "after_chapter_id": Chapter,
+    "before_chapter_id": Chapter,
+}
+
+
+def session_token(scope: Scope) -> str | None:
+    for name, value in scope.get("headers", []):
+        if name.lower() != b"cookie":
+            continue
+        cookie = SimpleCookie()
+        try:
+            cookie.load(value.decode("latin-1"))
+        except Exception:
+            return None
+        return cookie[SESSION_COOKIE].value if SESSION_COOKIE in cookie else None
+    return None
+
+
+async def _reject(send: Send, status: int, detail: str) -> None:
+    body = json.dumps({"detail": detail}).encode()
+    await send(
+        HTTPResponseStartEvent(
+            {
+                "type": "http.response.start",
+                "status": status,
+                "headers": [
+                    (b"content-type", b"application/json"),
+                    (b"cache-control", b"no-store"),
+                ],
+            }
+        )
+    )
+    await send(
+        HTTPResponseBodyEvent({"type": "http.response.body", "body": body, "more_body": False})
+    )
+
+
+class StoryAccessMiddleware:
+    def __init__(self, app: ASGIApp, db_config: SQLAlchemyAsyncConfig) -> None:
+        self.app = app
+        self.db_config = db_config
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        http_scope = cast(HTTPScope, scope)
+        path = http_scope["path"]
+        if http_scope["method"] in {"POST", "PUT", "PATCH", "DELETE"}:
+            headers = dict(scope.get("headers", []))
+            origin = headers.get(b"origin")
+            host = headers.get(b"host", b"").decode("latin-1").lower()
+            if origin and urlsplit(origin.decode("latin-1")).netloc.lower() != host:
+                await _reject(send, 403, "Use this site's own origin for browser writes")
+                return
+        if not path.startswith("/api/") or path in _PUBLIC_PATHS or path.startswith("/api/schema"):
+            await self.app(scope, receive, send)
+            return
+
+        bearer = next(
+            (
+                value.decode().removeprefix("Bearer ")
+                for name, value in scope.get("headers", [])
+                if name.lower() == b"authorization" and value.startswith(b"Bearer ")
+            ),
+            None,
+        )
+        token = bearer or session_token(scope)
+        if not token:
+            await _reject(send, 401, "Sign in to continue")
+            return
+
+        replay: list[Any] = []
+        lock_story_id: UUID | None = None
+        async with self.db_config.get_session() as db:
+            delegated = None
+            if bearer:
+                delegated = await db.scalar(
+                    select(AgentToken).where(
+                        AgentToken.token_hash == hashlib.sha256(bearer.encode()).hexdigest(),
+                        AgentToken.expires_at > datetime.now(UTC),
+                    )
+                )
+                allowed_prefix = f"/api/stories/{delegated.story_id}/ai/" if delegated else ""
+                if (
+                    not delegated
+                    or not path.startswith(allowed_prefix)
+                    or path.endswith("/ai/propose")
+                ):
+                    await _reject(send, 401, "Invalid or out-of-scope agent token")
+                    return
+            user_id = (
+                await db.execute(
+                    select(User.id)
+                    .join(UserSession, UserSession.user_id == User.id)
+                    .where(
+                        UserSession.token_hash == hashlib.sha256(token.encode()).hexdigest(),
+                        UserSession.expires_at > datetime.now(UTC),
+                    )
+                )
+            ).scalar_one_or_none()
+            if delegated:
+                user_id = delegated.user_id
+            if user_id is None:
+                await _reject(send, 401, "Session expired. Sign in again")
+                return
+
+            story_match = _STORY_PATH.match(path)
+            arc_match = _ARC_PATH.match(path)
+            if story_match:
+                try:
+                    story_id = UUID(story_match.group(1))
+                except ValueError:
+                    await _reject(send, 404, "Story not found")
+                    return
+                owner_id = (
+                    await db.execute(select(Story.user_id).where(Story.id == story_id))
+                ).scalar_one_or_none()
+                if owner_id != user_id:
+                    await _reject(send, 404, "Story not found")
+                    return
+
+                # References sent in create/update bodies must belong to this story too.
+                # Otherwise a known UUID could link another author's character or beat.
+                if http_scope["method"] in {"POST", "PATCH", "PUT"}:
+                    while True:
+                        message = await receive()
+                        replay.append(message)
+                        if message["type"] != "http.request" or not message.get("more_body", False):
+                            break
+                    body = b"".join(message.get("body", b"") for message in replay)
+                    try:
+                        payload = json.loads(body)
+                    except (UnicodeDecodeError, json.JSONDecodeError):
+                        payload = None
+                    if isinstance(payload, dict):
+                        for key, value in payload.items():
+                            if value is None or (
+                                key not in _REFERENCE_MODELS and key != "arc_stage_id"
+                            ):
+                                continue
+                            values = value if isinstance(value, list) else [value]
+                            for item in values:
+                                try:
+                                    ref_id = UUID(str(item))
+                                except ValueError:
+                                    continue  # Let Pydantic report malformed input.
+                                if key == "arc_stage_id":
+                                    ref_owner = (
+                                        await db.execute(
+                                            select(Arc.story_id)
+                                            .join(ArcStage, ArcStage.arc_id == Arc.id)
+                                            .where(ArcStage.id == ref_id)
+                                        )
+                                    ).scalar_one_or_none()
+                                else:
+                                    model = _REFERENCE_MODELS[key]
+                                    ref_owner = (
+                                        await db.execute(
+                                            select(cast(Any, model).story_id).where(
+                                                model.id == ref_id
+                                            )
+                                        )
+                                    ).scalar_one_or_none()
+                                if ref_owner is not None and ref_owner != story_id:
+                                    await _reject(send, 404, "Referenced item not found")
+                                    return
+                if http_scope["method"] in {"POST", "PATCH", "PUT", "DELETE"} and not path.endswith(
+                    ("/ai/propose", "/notice")
+                ):
+                    lock_story_id = story_id
+            elif arc_match:
+                try:
+                    arc_id = UUID(arc_match.group(1))
+                except ValueError:
+                    await _reject(send, 404, "Arc not found")
+                    return
+                owner_id = (
+                    await db.execute(
+                        select(Story.user_id)
+                        .join(Arc, Arc.story_id == Story.id)
+                        .where(Arc.id == arc_id)
+                    )
+                ).scalar_one_or_none()
+                if owner_id != user_id:
+                    await _reject(send, 404, "Arc not found")
+                    return
+                if http_scope["method"] in {"POST", "PATCH", "PUT", "DELETE"}:
+                    lock_story_id = await db.scalar(select(Arc.story_id).where(Arc.id == arc_id))
+
+        scope.setdefault("state", {})["storytool_user_id"] = user_id
+
+        async def replay_receive() -> Any:
+            return replay.pop(0) if replay else await receive()
+
+        if lock_story_id is not None:
+            async with self.db_config.get_session() as lock_db:
+                await lock_db.execute(
+                    text("SELECT pg_advisory_xact_lock(:key)"),
+                    {"key": int.from_bytes(lock_story_id.bytes[:8], "big", signed=True)},
+                )
+                await self.app(scope, replay_receive if replay else receive, send)
+        else:
+            await self.app(scope, replay_receive if replay else receive, send)

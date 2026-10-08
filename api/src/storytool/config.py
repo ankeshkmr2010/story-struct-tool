@@ -5,9 +5,11 @@ same image runs unchanged as a dev container or a deployed service.
 """
 
 from functools import lru_cache
+from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
@@ -20,6 +22,30 @@ class Settings(BaseSettings):
 
     # Echo SQL in logs. Noisy; opt-in.
     db_echo: bool = False
+
+    # Google Identity Services Web client ID. No OAuth client secret is needed for
+    # the browser-issued ID token flow; the backend verifies every token with Google.
+    google_client_id: str | None = None
+    legacy_owner_email: str | None = None
+    ai_encryption_key: str | None = None
+    frontend_dir: Path | None = None
+
+    @field_validator("database_url")
+    @classmethod
+    def async_postgres_url(cls, value: str) -> str:
+        """Accept the standard Neon URL while using our asyncpg driver."""
+        url = make_url(value)
+        if url.drivername in {"postgres", "postgresql"}:
+            url = url.set(drivername="postgresql+asyncpg")
+        if url.drivername == "postgresql+asyncpg":
+            query = dict(url.query)
+            mode = query.pop("sslmode", None)
+            # libpq-specific; asyncpg uses TLS without this libpq parameter.
+            query.pop("channel_binding", None)
+            if mode:
+                query.setdefault("ssl", "verify-full" if mode == "require" else mode)
+            url = url.set(query=query)
+        return url.render_as_string(hide_password=False)
 
     # --- Noticing (Phase 4) -------------------------------------------------
     # Read from the unprefixed name the Anthropic SDK itself uses, so one variable

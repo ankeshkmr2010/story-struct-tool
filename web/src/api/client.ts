@@ -8,6 +8,8 @@ export type Story = S['StoryOut']
 export type StoryCreate = S['StoryCreate']
 export type StoryUpdate = S['StoryUpdate']
 export type Completeness = S['CompletenessOut']
+export type AuthUser = S['UserOut']
+export type AuthConfig = S['AuthConfigOut']
 
 export type Ladder = S['LadderOut']
 export type Readiness = S['ReadinessOut']
@@ -20,11 +22,15 @@ export type Act = S['ActOut']
 export type Beat = S['BeatOut']
 export type Thread = S['ThreadOut']
 export type Character = S['CharacterOut']
+export type Relationship = S['RelationshipOut']
+export type Arc = S['ArcOut']
+export type ArcStage = S['ArcStageOut']
 
 export type Chapter = S['ChapterOut']
 export type Scene = S['SceneOut']
 export type ChapterBrief = S['ChapterBriefOut']
 export type Links = S['LinksOut']
+export type MoveResult = { sort_key: number; rebalanced: boolean; chapter_id?: string | null }
 
 export type SceneContent = S['SceneContentOut']
 export type SaveResult = S['SaveResultOut']
@@ -40,6 +46,13 @@ export type Location = S['LocationOut']
 export type LocationUsage = S['LocationUsageOut']
 export type Continuity = S['ContinuityOut']
 export type Anomaly = S['AnomalyOut']
+export type StoryTimeline = S['TimelineOut']
+export type TimelineEntry = S['TimelineEntryOut']
+export type AIConnection = S['ConnectionOut']
+export type AIRun = S['RunOut']
+export type AIProposal = S['Proposal']
+export type AIObservation = S['ObservationOut']
+export type AgentToken = { id: string; story_id: string; label: string; expires_at: string }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -60,6 +73,26 @@ const patch = <T,>(path: string, body: unknown) =>
   request<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 
 export const api = {
+  listAIConnections: () => request<AIConnection[]>('/api/ai/connections'),
+  saveAIConnection: (body: { provider: AIConnection['provider']; model: string; api_key: string }) => request<AIConnection>('/api/ai/connections', { method: 'PUT', body: JSON.stringify(body) }),
+  testAIConnection: (id: string) => post<{ connected: boolean }>(`/api/ai/connections/${id}/test`),
+  deleteAIConnection: (id: string) => request<void>(`/api/ai/connections/${id}`, { method: 'DELETE' }),
+  listAIRuns: (id: string) => request<AIRun[]>(`/api/stories/${id}/ai/runs`),
+  listAIObservations: (id: string) => request<AIObservation[]>(`/api/stories/${id}/ai/observations`),
+  getAIContext: (id: string) => request<{ entities: Record<string, Record<string, unknown>[]> }>(`/api/stories/${id}/ai/context`),
+  proposeAIChanges: (id: string, body: S['PromptRequest']) => post<AIRun>(`/api/stories/${id}/ai/propose`, body),
+  applyAIRun: (id: string, runId: string) => post<AIRun>(`/api/stories/${id}/ai/runs/${runId}/apply`),
+  undoAIRun: (id: string, runId: string) => post<AIRun>(`/api/stories/${id}/ai/runs/${runId}/undo`),
+  dismissAIRun: (id: string, runId: string) => post<AIRun>(`/api/stories/${id}/ai/runs/${runId}/dismiss`),
+  listAgentTokens: () => request<AgentToken[]>('/api/ai/agent-tokens'),
+  createAgentToken: (storyId: string, label: string) => post<{ id: string; token: string; expires_at: string }>('/api/ai/agent-tokens', { story_id: storyId, label }),
+  revokeAgentToken: (id: string) => request<void>(`/api/ai/agent-tokens/${id}`, { method: 'DELETE' }),
+  // Google sign-in and current account
+  authConfig: () => request<AuthConfig>('/api/auth/config'),
+  currentUser: () => request<AuthUser>('/api/auth/me'),
+  googleLogin: (credential: string) => post<AuthUser>('/api/auth/google', { credential }),
+  logout: () => post<{ signed_out: boolean }>('/api/auth/logout'),
+
   // Stories
   listStories: () => request<Story[]>('/api/stories'),
   getStory: (id: string) => request<Story>(`/api/stories/${id}`),
@@ -68,6 +101,15 @@ export const api = {
   deleteStory: (id: string) => request<void>(`/api/stories/${id}`, { method: 'DELETE' }),
 
   // Computed layer
+  getTimeline: (id: string) => request<StoryTimeline>(`/api/stories/${id}/timeline`),
+  setScenePresence: (storyId: string, sceneId: string, characterId: string, isPresent: boolean) =>
+    request<S['MentionOut']>(`/api/stories/${storyId}/scenes/${sceneId}/presence/${characterId}`, {
+      method: 'PUT', body: JSON.stringify({ is_present: isPresent }),
+    }),
+  setEventPresence: (storyId: string, eventId: string, characterId: string, isPresent: boolean) =>
+    request<{ is_present: boolean }>(`/api/stories/${storyId}/events/${eventId}/presence/${characterId}`, {
+      method: 'PUT', body: JSON.stringify({ is_present: isPresent }),
+    }),
   getLadder: (id: string) => request<Ladder>(`/api/stories/${id}/ladder`),
   getHealth: (id: string, maxLevel = 8) =>
     request<Health>(`/api/stories/${id}/health?max_level=${maxLevel}`),
@@ -78,8 +120,10 @@ export const api = {
 
   // Levels 2-6
   listEvents: (id: string) => request<StoryEvent[]>(`/api/stories/${id}/events`),
-  createEvent: (id: string, body: { label: string; is_turning_point?: boolean }) =>
+  createEvent: (id: string, body: Pick<S['EventCreate'], 'label'> & Partial<Omit<S['EventCreate'], 'label'>>) =>
     post<StoryEvent>(`/api/stories/${id}/events`, body),
+  updateEvent: (storyId: string, eventId: string, body: Record<string, unknown>) =>
+    patch<StoryEvent>(`/api/stories/${storyId}/events/${eventId}`, body),
   deleteEvent: (storyId: string, eventId: string) =>
     request<void>(`/api/stories/${storyId}/events/${eventId}`, { method: 'DELETE' }),
 
@@ -88,20 +132,64 @@ export const api = {
     post<Character>(`/api/stories/${id}/characters`, body),
   updateCharacter: (storyId: string, characterId: string, body: Record<string, unknown>) =>
     patch<Character>(`/api/stories/${storyId}/characters/${characterId}`, body),
+  deleteCharacter: (storyId: string, characterId: string) =>
+    request<void>(`/api/stories/${storyId}/characters/${characterId}`, { method: 'DELETE' }),
+  listRelationships: (id: string) => request<Relationship[]>(`/api/stories/${id}/relationships`),
+  createRelationship: (id: string, body: { character_a_id: string; character_b_id: string }) =>
+    post<Relationship>(`/api/stories/${id}/relationships`, body),
+  updateRelationship: (storyId: string, relationshipId: string, body: Record<string, unknown>) =>
+    patch<Relationship>(`/api/stories/${storyId}/relationships/${relationshipId}`, body),
+  deleteRelationship: (storyId: string, relationshipId: string) =>
+    request<void>(`/api/stories/${storyId}/relationships/${relationshipId}`, { method: 'DELETE' }),
+
+  listArcs: (id: string) => request<Arc[]>(`/api/stories/${id}/arcs`),
+  createArc: (id: string, body: { character_id: string; resolution?: string | null }) =>
+    post<Arc>(`/api/stories/${id}/arcs`, body),
+  updateArc: (storyId: string, arcId: string, body: Record<string, unknown>) =>
+    patch<Arc>(`/api/stories/${storyId}/arcs/${arcId}`, body),
+  deleteArc: (storyId: string, arcId: string) =>
+    request<void>(`/api/stories/${storyId}/arcs/${arcId}`, { method: 'DELETE' }),
+  listArcStages: (arcId: string) => request<ArcStage[]>(`/api/arcs/${arcId}/stages`),
+  createArcStage: (arcId: string, body: { label: string; sort_key?: number }) =>
+    post<ArcStage>(`/api/arcs/${arcId}/stages`, body),
+  updateArcStage: (arcId: string, stageId: string, body: Record<string, unknown>) =>
+    patch<ArcStage>(`/api/arcs/${arcId}/stages/${stageId}`, body),
+  deleteArcStage: (arcId: string, stageId: string) =>
+    request<void>(`/api/arcs/${arcId}/stages/${stageId}`, { method: 'DELETE' }),
 
   listActs: (id: string) => request<Act[]>(`/api/stories/${id}/acts`),
+  createAct: (id: string, body: { number: number; title?: string }) =>
+    post<Act>(`/api/stories/${id}/acts`, body),
+  updateAct: (storyId: string, actId: string, body: Record<string, unknown>) =>
+    patch<Act>(`/api/stories/${storyId}/acts/${actId}`, body),
+  deleteAct: (storyId: string, actId: string) =>
+    request<void>(`/api/stories/${storyId}/acts/${actId}`, { method: 'DELETE' }),
   listBeats: (id: string) => request<Beat[]>(`/api/stories/${id}/beats`),
+  createBeat: (id: string, body: { label: string; act_id?: string | null }) =>
+    post<Beat>(`/api/stories/${id}/beats`, body),
+  updateBeat: (storyId: string, beatId: string, body: Record<string, unknown>) =>
+    patch<Beat>(`/api/stories/${storyId}/beats/${beatId}`, body),
+  deleteBeat: (storyId: string, beatId: string) =>
+    request<void>(`/api/stories/${storyId}/beats/${beatId}`, { method: 'DELETE' }),
 
   listThreads: (id: string) => request<Thread[]>(`/api/stories/${id}/threads`),
   createThread: (id: string, body: { type: string; title?: string }) =>
     post<Thread>(`/api/stories/${id}/threads`, body),
+  updateThread: (storyId: string, threadId: string, body: Record<string, unknown>) =>
+    patch<Thread>(`/api/stories/${storyId}/threads/${threadId}`, body),
+  deleteThread: (storyId: string, threadId: string) =>
+    request<void>(`/api/stories/${storyId}/threads/${threadId}`, { method: 'DELETE' }),
 
   // Levels 7-8
   listChapters: (id: string) => request<Chapter[]>(`/api/stories/${id}/chapters`),
-  createChapter: (id: string, body: { number: number; title?: string; act_id?: string }) =>
+  createChapter: (id: string, body: { number: number; title?: string; act_id?: string; sort_key?: number }) =>
     post<Chapter>(`/api/stories/${id}/chapters`, body),
   updateChapter: (storyId: string, chapterId: string, body: Record<string, unknown>) =>
     patch<Chapter>(`/api/stories/${storyId}/chapters/${chapterId}`, body),
+  deleteChapter: (storyId: string, chapterId: string) =>
+    request<void>(`/api/stories/${storyId}/chapters/${chapterId}`, { method: 'DELETE' }),
+  moveChapter: (storyId: string, chapterId: string, body: { before_chapter_id?: string; after_chapter_id?: string }) =>
+    post<MoveResult>(`/api/stories/${storyId}/chapters/${chapterId}/move`, body),
 
   // The flagship: derived entirely from the levels above the chapter.
   getBrief: (storyId: string, chapterId: string) =>
@@ -119,6 +207,24 @@ export const api = {
     post<Scene>(`/api/stories/${id}/scenes`, body),
   updateScene: (storyId: string, sceneId: string, body: Record<string, unknown>) =>
     patch<Scene>(`/api/stories/${storyId}/scenes/${sceneId}`, body),
+  deleteScene: (storyId: string, sceneId: string) =>
+    request<void>(`/api/stories/${storyId}/scenes/${sceneId}`, { method: 'DELETE' }),
+  moveScene: (storyId: string, sceneId: string, body: { chapter_id?: string | null; before_scene_id?: string; after_scene_id?: string }) =>
+    post<MoveResult>(`/api/stories/${storyId}/scenes/${sceneId}/move`, body),
+  getSceneLinks: (storyId: string, sceneId: string) =>
+    request<Links>(`/api/stories/${storyId}/scenes/${sceneId}/links`),
+  linkSceneBeat: (storyId: string, sceneId: string, beatId: string) =>
+    post<Links>(`/api/stories/${storyId}/scenes/${sceneId}/beats`, { beat_id: beatId }),
+  unlinkSceneBeat: (storyId: string, sceneId: string, beatId: string) =>
+    request<void>(`/api/stories/${storyId}/scenes/${sceneId}/beats/${beatId}`, { method: 'DELETE' }),
+  linkSceneThread: (storyId: string, sceneId: string, threadId: string) =>
+    post<Links>(`/api/stories/${storyId}/scenes/${sceneId}/threads`, { thread_id: threadId }),
+  unlinkSceneThread: (storyId: string, sceneId: string, threadId: string) =>
+    request<void>(`/api/stories/${storyId}/scenes/${sceneId}/threads/${threadId}`, { method: 'DELETE' }),
+  linkSceneArcStage: (storyId: string, sceneId: string, stageId: string) =>
+    post<Links>(`/api/stories/${storyId}/scenes/${sceneId}/arc-stages`, { arc_stage_id: stageId }),
+  unlinkSceneArcStage: (storyId: string, sceneId: string, stageId: string) =>
+    request<void>(`/api/stories/${storyId}/scenes/${sceneId}/arc-stages/${stageId}`, { method: 'DELETE' }),
 
   // Prose. Note there is no way to send a word_count -- the server owns it.
   getContent: (storyId: string, sceneId: string) =>

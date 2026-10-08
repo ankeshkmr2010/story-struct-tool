@@ -221,8 +221,7 @@ class JevNoticer:
             questions["location"] = Choice(
                 instructions=LOCATION_QUESTION,
                 criteria={
-                    key: (place.description or place.name)
-                    for key, place in place_options.items()
+                    key: (place.description or place.name) for key, place in place_options.items()
                 },
             )
 
@@ -243,7 +242,7 @@ class JevNoticer:
                 questions=questions,
             )
         except Exception:
-            logger.warning("Jev noticing failed; keeping deterministic results", exc_info=True)
+            logger.warning("Jev noticing failed; keeping deterministic results")
             return base
 
         return replace(

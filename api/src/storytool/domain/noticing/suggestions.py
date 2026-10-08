@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from uuid import UUID
 
 from storytool.domain.continuity import location_disagreements
+from storytool.domain.enums import ArcType
 from storytool.domain.graph import StoryGraph
 
 # An author who has written a character into this many scenes probably means it.
@@ -75,6 +76,10 @@ def character_with_presence_but_no_arc(
     for character_id, count in sorted(state.scenes_by_character.items(), key=lambda kv: -kv[1]):
         character = by_id.get(character_id)
         if character is None or character_id in with_arcs:
+            continue
+        # A flat arc is an authorial decision, not an omission. Sherlock Holmes does not
+        # change, and asking his author to give him an arc is noise.
+        if character.arc_type == ArcType.FLAT:
             continue
         if count >= MIN_SCENES_FOR_ARC_PROMPT:
             out.append(

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api, type Story } from '../api/client'
+import { AccountMenu } from '../components/AuthGate'
 
 function CompletenessBar({ story }: { story: Story }) {
   const { is_complete, missing, ratio } = story.completeness
@@ -41,10 +42,20 @@ export default function StoryList() {
 
   return (
     <main className="mx-auto max-w-2xl p-8">
-      <h1 className="text-2xl font-semibold text-slate-900">StoryTool</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold text-slate-900">StoryTool</h1>
+        <div className="flex flex-wrap items-center gap-4">
+          <Link to="/how-to-use" className="text-sm text-slate-600 underline underline-offset-4 hover:text-slate-900">How to use</Link>
+          <AccountMenu />
+        </div>
+      </div>
       <p className="mt-1 text-sm text-slate-500">
-        A story needs only a title to exist. Everything else is flagged, never blocked.
+        Build your story from its first idea to its individual scenes. Start with a title and fill in the rest as you go.
       </p>
+      <p className="mt-2 text-xs leading-5 text-slate-400">
+        Your library includes editable study examples and an original timeline-and-arc tutorial. Each account has its own copies.
+      </p>
+      {stories.data?.find((story) => story.genre === 'Tutorial · timelines and arcs') && <Link to={`/stories/${stories.data.find((story) => story.genre === 'Tutorial · timelines and arcs')!.id}`} className="mt-4 inline-block rounded-lg border border-sky-200 bg-sky-50 px-4 py-2 text-sm text-sky-800 hover:bg-sky-100">Learn timelines and arcs with The Last Lantern →</Link>}
 
       <form
         className="mt-6 flex gap-2"

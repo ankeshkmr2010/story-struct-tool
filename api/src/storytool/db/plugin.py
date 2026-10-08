@@ -17,7 +17,12 @@ def build_db_config() -> SQLAlchemyAsyncConfig:
     return SQLAlchemyAsyncConfig(
         connection_string=settings.database_url,
         metadata=metadata,
-        engine_config=EngineConfig(echo=settings.db_echo),
+        engine_config=EngineConfig(
+            echo=settings.db_echo,
+            pool_pre_ping=True,
+            pool_size=5,
+            max_overflow=5,
+        ),
         # Commit the request's session on a 2xx response; roll back otherwise. Keeps
         # controllers free of explicit commit calls.
         before_send_handler="autocommit",

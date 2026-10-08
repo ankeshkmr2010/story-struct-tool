@@ -9,6 +9,8 @@ What it deliberately cannot do is recognise a character referred to only as "her
 """
 
 import re
+from collections import Counter
+from uuid import UUID
 
 from storytool.domain.noticing.types import (
     CharacterNotice,
@@ -193,6 +195,32 @@ def _sentence_around(prose: str, index: int) -> str:
     return prose[start:end].strip()
 
 
+def unambiguous_aliases(
+    known_characters: tuple[KnownCharacter, ...],
+) -> dict[UUID, tuple[str, ...]]:
+    """Drop short forms that more than one character answers to.
+
+    "John Watson" and "John Clay" both yield the alias "John", so matching it put Watson in
+    every scene Clay appeared in -- and mis-attributed presence feeds arcs, suggestions, and
+    the continuity rule that proves a character cannot be in two places at once. A shared
+    short form is worse than no short form.
+
+    The full name is always kept, so every character keeps at least one way to be found.
+    """
+    counts: Counter[str] = Counter()
+    for character in known_characters:
+        for alias in character.aliases:
+            counts[alias.casefold()] += 1
+
+    resolved: dict[UUID, tuple[str, ...]] = {}
+    for character in known_characters:
+        unique = tuple(
+            alias for alias in character.aliases if counts[alias.casefold()] == 1
+        )
+        resolved[character.id] = unique or (character.name,)
+    return resolved
+
+
 class DeterministicNoticer:
     """Matches known names by word boundary; flags unmatched capitalised words."""
 
@@ -210,9 +238,10 @@ class DeterministicNoticer:
 
         characters: list[CharacterNotice] = []
         matched_words: set[str] = set()
+        aliases = unambiguous_aliases(known_characters)
 
         for character in known_characters:
-            for alias in character.aliases:
+            for alias in aliases[character.id]:
                 match = re.search(rf"\b{re.escape(alias)}\b", prose)
                 if match:
                     characters.append(
@@ -222,7 +251,9 @@ class DeterministicNoticer:
                             confidence="high",
                         )
                     )
-                    matched_words.update(alias.split())
+                    # Every token of the full name, not just the matched alias: a
+                    # scene naming "Holmes" must not then report "Sherlock" as unknown.
+                    matched_words.update(character.name_tokens)
                     break
 
         # Capitalised words that match no known character: worth asking about, never acting on.

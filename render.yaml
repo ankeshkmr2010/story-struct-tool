@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: storytool
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: STORYTOOL_DATABASE_URL
+        sync: false
+      - key: STORYTOOL_GOOGLE_CLIENT_ID
+        sync: false
+      - key: STORYTOOL_AI_ENCRYPTION_KEY
+        sync: false
+      - key: STORYTOOL_DEBUG
+        value: "false"
+      - key: STORYTOOL_DB_ECHO
+        value: "false"
+      - key: STORYTOOL_NOTICING_BACKEND
+        value: deterministic

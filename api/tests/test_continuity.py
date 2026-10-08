@@ -481,3 +481,37 @@ async def test_locations_are_story_scoped(client: AsyncTestClient) -> None:
     assert (
         await client.post(f"{STORIES}/{b}/locations", json={"name": "Shared"})
     ).status_code == 201
+
+
+# ------------------------------------------- first-person narration guard
+
+
+def test_a_first_person_story_never_reports_an_absent_pov() -> None:
+    """Found by building "The Red-Headed League": Watson narrates as "I" and is never named, so
+    the rule declared him absent from his own scenes -- and said so as a contradiction, which is
+    the worst possible place to be wrong."""
+    watson = with_id(Character(story_id=None, name="John Watson"))
+    holmes = with_id(Character(story_id=None, name="Sherlock Holmes"))
+    scene = with_id(Scene(story_id=None, title="Wilson's story", pov_character_id=watson.id))
+    graph = StoryGraph(
+        story=Story(title="S", pov_style="first"),
+        characters=(watson, holmes),
+        scenes=(scene,),
+        character_mentions=((scene.id, holmes.id),),
+    )
+    assert "scene.pov_absent_from_prose" not in codes(run_continuity(graph))
+
+
+def test_a_third_person_story_still_reports_an_absent_pov() -> None:
+    """The guard must not disable the rule everywhere -- in third person the POV character is
+    named, so their absence is still a real contradiction."""
+    maya = with_id(Character(story_id=None, name="Maya"))
+    kit = with_id(Character(story_id=None, name="Kit"))
+    scene = with_id(Scene(story_id=None, title="The wall", pov_character_id=maya.id))
+    graph = StoryGraph(
+        story=Story(title="S", pov_style="third_limited"),
+        characters=(maya, kit),
+        scenes=(scene,),
+        character_mentions=((scene.id, kit.id),),
+    )
+    assert "scene.pov_absent_from_prose" in codes(run_continuity(graph))

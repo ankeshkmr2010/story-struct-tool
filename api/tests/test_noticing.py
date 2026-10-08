@@ -45,9 +45,57 @@ async def test_deterministic_matches_known_names() -> None:
 async def test_deterministic_matches_a_bare_first_name() -> None:
     """Prose says "Maya"; the cast list says "Maya Okonkwo"."""
     maya = KnownCharacter(id=cid(), name="Maya Okonkwo")
-    assert maya.aliases == ("Maya Okonkwo", "Maya")
     notices = await DeterministicNoticer().notice_scene("Maya waited.", (maya,))
     assert len(notices.characters) == 1
+
+
+async def test_deterministic_matches_a_surname() -> None:
+    """Found by building a real Sherlock Holmes story: prose says "Holmes" almost every time,
+    and matching only the given name left the protagonist absent from every scene -- after
+    which "Holmes" was reported as an unknown name."""
+    holmes = KnownCharacter(id=cid(), name="Sherlock Holmes")
+    assert holmes.aliases == ("Sherlock Holmes", "Holmes", "Sherlock")
+
+    notices = await DeterministicNoticer().notice_scene(
+        "Holmes put his fingertips together and said nothing.", (holmes,)
+    )
+    assert [n.character_id for n in notices.characters] == [holmes.id]
+    assert "Holmes" not in {u.name for u in notices.unknown_names}
+
+
+async def test_an_honorific_is_not_an_alias() -> None:
+    """ "Mr Merryweather" once yielded "Mr" as an alias, which matched every "Mr Wilson" in the
+    book and reported a bit-part character as present in four scenes."""
+    merryweather = KnownCharacter(id=cid(), name="Mr Merryweather")
+    assert merryweather.aliases == ("Mr Merryweather", "Merryweather")
+
+    notices = await DeterministicNoticer().notice_scene(
+        "Mr Jabez Wilson sat by the window.", (merryweather,)
+    )
+    assert notices.characters == (), "a title must not match a different character"
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("Sherlock Holmes", ("Sherlock Holmes", "Holmes", "Sherlock")),
+        ("Mr Merryweather", ("Mr Merryweather", "Merryweather")),
+        ("Dr John H. Watson", ("Dr John H. Watson", "Watson", "John")),
+        ("Madonna", ("Madonna",)),
+        ("Inspector Lestrade", ("Inspector Lestrade", "Lestrade")),
+    ],
+)
+def test_alias_forms(name: str, expected: tuple[str, ...]) -> None:
+    assert KnownCharacter(id=cid(), name=name).aliases == expected
+
+
+async def test_matching_one_form_does_not_orphan_the_others() -> None:
+    """A scene naming "Holmes" must not then report "Sherlock" as a stranger."""
+    holmes = KnownCharacter(id=cid(), name="Sherlock Holmes")
+    notices = await DeterministicNoticer().notice_scene(
+        "Sherlock Holmes rose, and Holmes was already at the door.", (holmes,)
+    )
+    assert {u.name for u in notices.unknown_names} == set()
 
 
 async def test_deterministic_flags_names_it_does_not_know() -> None:
@@ -477,3 +525,61 @@ def test_stopwords_are_trimmed_from_the_edges_only(run: str, expected: str) -> N
     from storytool.domain.noticing.deterministic import _trim_stopwords
 
     assert _trim_stopwords(run) == expected
+
+
+def test_a_flat_arc_character_is_not_nudged_for_an_arc() -> None:
+    """Found by building a Holmes story: Holmes appears in every scene and has no arc, because
+    he is declared flat. A flat arc is an authorial decision, not an omission."""
+    from storytool.domain.cast.models import Character as CharacterModel
+    from storytool.domain.graph import StoryGraph
+    from storytool.domain.noticing.suggestions import (
+        NoticingState,
+        character_with_presence_but_no_arc,
+    )
+    from storytool.domain.story.models import Story
+
+    holmes = CharacterModel(story_id=None, name="Sherlock Holmes", arc_type="flat")
+    holmes.id = cid()
+    wilson = CharacterModel(story_id=None, name="Jabez Wilson", arc_type="positive")
+    wilson.id = cid()
+    graph = StoryGraph(story=Story(title="S"), characters=(holmes, wilson))
+    state = NoticingState(scenes_by_character={holmes.id: 6, wilson.id: 4})
+
+    nudged = {p.character_id for p in character_with_presence_but_no_arc(graph, state)}
+    assert holmes.id not in nudged
+    assert wilson.id in nudged, "a character who is meant to change still gets the nudge"
+
+
+async def test_a_shared_given_name_is_not_used_as_an_alias() -> None:
+    """Found in a real cast: "John Watson" and "John Clay" both answered to "John", so Watson
+    was detected in every scene Clay appeared in. Mis-attributed presence feeds arcs,
+    suggestions, and the rule that proves a character cannot be in two places at once -- so a
+    shared short form is worse than no short form.
+    """
+    watson = KnownCharacter(id=cid(), name="John Watson")
+    clay = KnownCharacter(id=cid(), name="John Clay")
+
+    notices = await DeterministicNoticer().notice_scene(
+        "John Clay stood very still with the revolver at his head.", (watson, clay)
+    )
+    assert [n.character_id for n in notices.characters] == [clay.id]
+
+
+async def test_each_character_keeps_at_least_their_full_name() -> None:
+    """Two characters with the identical full name would otherwise end up unfindable."""
+    from storytool.domain.noticing.deterministic import unambiguous_aliases
+
+    a = KnownCharacter(id=cid(), name="John Smith")
+    b = KnownCharacter(id=cid(), name="John Smith")
+    resolved = unambiguous_aliases((a, b))
+    assert resolved[a.id] == ("John Smith",)
+    assert resolved[b.id] == ("John Smith",)
+
+
+async def test_an_unshared_surname_still_matches() -> None:
+    watson = KnownCharacter(id=cid(), name="John Watson")
+    clay = KnownCharacter(id=cid(), name="John Clay")
+    notices = await DeterministicNoticer().notice_scene(
+        "Watson followed him into the dark.", (watson, clay)
+    )
+    assert [n.character_id for n in notices.characters] == [watson.id]

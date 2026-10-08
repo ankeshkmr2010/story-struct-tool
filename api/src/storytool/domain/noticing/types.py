@@ -21,6 +21,21 @@ from uuid import UUID
 Confidence = Literal["low", "medium", "high"]
 
 
+# Titles are not names. Without this, "Mr Merryweather" yields "Mr" as an alias, which matches
+# every other "Mr Wilson" in the book and reports one character as present everywhere.
+HONORIFICS = frozenset(
+    {
+        "mr", "mrs", "ms", "miss", "mister", "madam", "madame",
+        "dr", "doctor", "prof", "professor",
+        "sir", "dame", "lord", "lady",
+        "capt", "captain", "col", "colonel", "gen", "general", "lt", "lieutenant",
+        "sgt", "sergeant", "insp", "inspector", "det", "detective", "officer",
+        "rev", "reverend", "father", "sister", "brother",
+        "king", "queen", "prince", "princess", "duke", "duchess",
+    }
+)
+
+
 @dataclass(frozen=True, slots=True)
 class KnownCharacter:
     """A character the story already has, passed *into* a noticer as a closed set."""
@@ -30,11 +45,33 @@ class KnownCharacter:
 
     @property
     def aliases(self) -> tuple[str, ...]:
-        """The full name plus a bare first name, which is how prose usually refers to people."""
-        parts = self.name.split()
-        if len(parts) > 1:
-            return (self.name, parts[0])
-        return (self.name,)
+        """Every form prose is likely to use, most specific first.
+
+        **Surname before given name.** Fiction refers to people by surname constantly --
+        "Holmes", not "Sherlock" -- and matching only the given name meant the protagonist of a
+        Holmes story registered as absent from every scene, and "Holmes" was then reported as
+        an unknown name. Honorifics are stripped, because "Mr" is not what anyone is called.
+        """
+        parts = [part for part in self.name.split() if part]
+        meaningful = [
+            part for part in parts if part.strip(".,").casefold() not in HONORIFICS
+        ]
+
+        candidates = [self.name]
+        if len(meaningful) > 1:
+            candidates.append(meaningful[-1])
+            candidates.append(meaningful[0])
+        elif meaningful:
+            candidates.append(meaningful[0])
+
+        # dict.fromkeys de-duplicates while keeping "most specific first".
+        return tuple(dict.fromkeys(candidate for candidate in candidates if candidate))
+
+    @property
+    def name_tokens(self) -> frozenset[str]:
+        """Every word of the full name, so matching one form does not leave the others looking
+        like strangers."""
+        return frozenset(self.name.split())
 
 
 @dataclass(frozen=True, slots=True)

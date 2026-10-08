@@ -5,7 +5,7 @@ from uuid import UUID
 
 from litestar import Controller, delete, get, patch, post
 from litestar.di import Provide
-from litestar.exceptions import NotFoundException
+from litestar.exceptions import ClientException, NotFoundException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.analysis import load_graph_by_id
@@ -13,15 +13,19 @@ from storytool.domain.common import apply_patch, fetch_or_404
 from storytool.domain.narrative import links as link_ops
 from storytool.domain.narrative.brief import build_chapter_brief
 from storytool.domain.narrative.models import Chapter, Scene
+from storytool.domain.narrative.moving import MoveError, move_chapter, move_scene
 from storytool.domain.narrative.schemas import (
     ArcStageLink,
     BeatLink,
     ChapterBriefOut,
     ChapterCreate,
+    ChapterMove,
     ChapterOut,
     ChapterUpdate,
     LinksOut,
+    MoveResultOut,
     SceneCreate,
+    SceneMove,
     SceneOut,
     SceneUpdate,
     ThreadLink,
@@ -84,6 +88,27 @@ class ChapterController(Controller):
     ) -> None:
         await fetch_or_404(chapters, "chapter", id=chapter_id, story_id=story_id)
         await chapters.delete(chapter_id)
+
+    @post("/{chapter_id:uuid}/move", summary="Reorder a chapter")
+    async def move_chapter_route(
+        self,
+        db_session: AsyncSession,
+        chapters: ChapterService,
+        story_id: UUID,
+        chapter_id: UUID,
+        data: ChapterMove,
+    ) -> MoveResultOut:
+        record = await fetch_or_404(chapters, "chapter", id=chapter_id, story_id=story_id)
+        try:
+            result = await move_chapter(
+                db_session,
+                record,
+                after_chapter_id=data.after_chapter_id,
+                before_chapter_id=data.before_chapter_id,
+            )
+        except MoveError as exc:
+            raise ClientException(status_code=400, detail=str(exc)) from exc
+        return MoveResultOut.model_validate(result)
 
     @get(
         "/{chapter_id:uuid}/brief",
@@ -181,6 +206,39 @@ class SceneController(Controller):
     async def delete_scene(self, scenes: SceneService, story_id: UUID, scene_id: UUID) -> None:
         await fetch_or_404(scenes, "scene", id=scene_id, story_id=story_id)
         await scenes.delete(scene_id)
+
+    @post(
+        "/{scene_id:uuid}/move",
+        summary="Reorder a scene, or move it to another chapter",
+        description=(
+            "The server computes sort_key -- midpoint arithmetic plus the rebalance case is "
+            "exactly the sort of thing that goes subtly wrong if duplicated client-side. "
+            "Sending chapter_id as null unplaces the scene, which is a legal state."
+        ),
+    )
+    async def move_scene_route(
+        self,
+        db_session: AsyncSession,
+        scenes: SceneService,
+        story_id: UUID,
+        scene_id: UUID,
+        data: SceneMove,
+    ) -> MoveResultOut:
+        record = await fetch_or_404(scenes, "scene", id=scene_id, story_id=story_id)
+        # Distinguish "chapter_id absent" from "chapter_id: null" -- the latter unplaces.
+        keep_chapter = "chapter_id" not in data.model_dump(exclude_unset=True)
+        try:
+            result = await move_scene(
+                db_session,
+                record,
+                chapter_id=data.chapter_id,
+                keep_chapter=keep_chapter,
+                after_scene_id=data.after_scene_id,
+                before_scene_id=data.before_scene_id,
+            )
+        except MoveError as exc:
+            raise ClientException(status_code=400, detail=str(exc)) from exc
+        return MoveResultOut.model_validate(result)
 
     @get("/{scene_id:uuid}/links", summary="What this scene points at upward")
     async def get_links(

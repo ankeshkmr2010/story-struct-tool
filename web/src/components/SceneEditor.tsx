@@ -115,14 +115,14 @@ export function SceneEditor({
   const dirty = draft !== savedRef.current
 
   return (
-    <div className="grid grid-cols-[1fr_260px] gap-4">
+    <div className="min-w-0">
       <div className="min-w-0">
-        <div className="mb-2 flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-slate-900">
+        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h3 className="min-w-0 break-words text-sm font-semibold text-slate-900">
             {scene.title ?? 'Untitled scene'}
           </h3>
           <span className="text-xs text-slate-400">{words} words</span>
-          <span className="ml-auto text-xs text-slate-400">
+          <span className="sm:ml-auto text-xs text-slate-400">
             {status === 'saving' ? 'saving…' : dirty ? 'unsaved' : status === 'saved' ? 'saved' : ''}
           </span>
           <button
@@ -133,9 +133,18 @@ export function SceneEditor({
           </button>
         </div>
 
-        <div className="overflow-hidden rounded-md border border-slate-300" onBlur={flushWithSnapshot}>
+        {(brief?.beats.length || scene.goal) && (
+          <p className="mb-2 truncate text-xs text-slate-500" title={[brief?.beats.map((beat) => beat.label).join(', '), scene.goal].filter(Boolean).join(' · ')}>
+            {brief?.beats.length ? `Beat: ${brief.beats.map((beat) => beat.label).join(', ')}` : ''}
+            {brief?.beats.length && scene.goal ? ' · ' : ''}
+            {scene.goal ? `Goal: ${scene.goal}` : ''}
+          </p>
+        )}
+
+        <div className="w-full min-w-0 overflow-hidden rounded-md border border-slate-300" onBlur={flushWithSnapshot}>
           <CodeMirror
             value={draft}
+            width="100%"
             height="460px"
             extensions={[markdown(), EditorView.lineWrapping]}
             onCreateEditor={(view) => {
@@ -159,8 +168,11 @@ export function SceneEditor({
         </p>
       </div>
 
-      {/* The reason this view exists: structure stays in sight while writing. */}
-      <aside className="space-y-4 text-xs">
+      <details className="mt-4 rounded-md border border-slate-200 bg-slate-50/60 px-3 py-2 text-xs">
+        <summary className="cursor-pointer font-medium text-slate-600">
+          Scene context and notes{annotations.data?.length ? ` · ${annotations.data.length} notes` : ''}
+        </summary>
+        <div className="mt-3 grid min-w-0 gap-4 border-t border-slate-200 pt-3 md:grid-cols-2 xl:grid-cols-3">
         <section>
           <h4 className="mb-1.5 font-semibold uppercase tracking-wide text-slate-400">
             This scene owes
@@ -254,7 +266,8 @@ export function SceneEditor({
             ))}
           </ul>
         </section>
-      </aside>
+        </div>
+      </details>
     </div>
   )
 }

@@ -2,3 +2,4 @@
 * text=auto eol=lf
 *.png binary
 *.svg text
+*.sh text eol=lf

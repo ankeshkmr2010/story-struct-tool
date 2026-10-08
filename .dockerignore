@@ -1,0 +1,27 @@
+# Allow only the files needed by the production build. Secrets/local diagnostics
+# and unrelated workspace files cannot enter the image build context.
+**
+!Dockerfile
+!api/
+!api/pyproject.toml
+!api/uv.lock
+!api/alembic.ini
+!api/src/
+!api/src/**
+!web/
+!web/package.json
+!web/package-lock.json
+!web/index.html
+!web/tsconfig*.json
+!web/vite.config.ts
+!web/src/
+!web/src/**
+!web/public/
+!web/public/**
+!scripts/
+!scripts/start-production.sh
+**/__pycache__/**
+**/*.pyc
+**/.env
+**/*.local
+**/*.local.log

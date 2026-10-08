@@ -119,13 +119,26 @@ def character_in_two_places_at_once(graph: StoryGraph) -> Iterator[Anomaly]:
         )
 
 
+# A first- or second-person narrator is "I" or "you" on the page and is almost never named, so
+# their absence from the prose says nothing at all.
+UNNAMED_NARRATOR_POV = frozenset({"first", "second"})
+
+
 @rule
 def pov_character_absent_from_their_own_scene(graph: StoryGraph) -> Iterator[Anomaly]:
     """A scene told from someone's point of view that never mentions them.
 
-    Only checked for scenes where a noticing pass has already found *somebody*, otherwise
+    Skipped entirely for first- and second-person stories: the narrator is "I", so the rule
+    would accuse every scene in the book. Building a real Sherlock Holmes story -- narrated by
+    Watson, who is never named in his own narration -- produced three false contradictions
+    before this guard existed.
+
+    Also only checked for scenes where a noticing pass has already found *somebody*, otherwise
     every un-analysed scene would be reported.
     """
+    if (graph.story.pov_style or "") in UNNAMED_NARRATOR_POV:
+        return
+
     present = graph.characters_in_scene()
     characters = graph.character_by_id()
 

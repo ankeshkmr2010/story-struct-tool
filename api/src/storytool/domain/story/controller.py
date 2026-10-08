@@ -8,7 +8,7 @@ enforced -- DESIGN.md principle 1.
 from collections.abc import AsyncGenerator
 from uuid import UUID
 
-from litestar import Controller, delete, get, patch, post
+from litestar import Controller, Request, delete, get, patch, post
 from litestar.di import Provide
 from litestar.exceptions import NotFoundException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,13 +32,17 @@ class StoryController(Controller):
     }
 
     @get(summary="List stories")
-    async def list_stories(self, stories: StoryService) -> list[StoryOut]:
-        records = await stories.get_many()
+    async def list_stories(self, stories: StoryService, request: Request) -> list[StoryOut]:
+        user_id = request.scope["state"]["storytool_user_id"]
+        records = await stories.get_many(Story.user_id == user_id)
         return [StoryOut.model_validate(record) for record in records]
 
     @post(status_code=201, summary="Create a story")
-    async def create_story(self, stories: StoryService, data: StoryCreate) -> StoryOut:
-        record = await stories.create(Story(**data.model_dump()))
+    async def create_story(
+        self, stories: StoryService, request: Request, data: StoryCreate
+    ) -> StoryOut:
+        user_id = request.scope["state"]["storytool_user_id"]
+        record = await stories.create(Story(user_id=user_id, **data.model_dump()))
         return StoryOut.model_validate(record)
 
     @get("/{story_id:uuid}", summary="Get one story")

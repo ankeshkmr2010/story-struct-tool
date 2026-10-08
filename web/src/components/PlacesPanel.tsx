@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
+import { DeleteButton, InlineText } from './fields'
 
 /**
  * Locations, and where they are actually used.
@@ -38,6 +39,11 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
 
   const remove = useMutation({
     mutationFn: (id: string) => api.deleteLocation(storyId, id),
+    onSuccess: invalidate,
+  })
+  const update = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
+      api.updateLocation(storyId, id, body),
     onSuccess: invalidate,
   })
 
@@ -86,7 +92,7 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
           return (
             <li key={location.id} className="py-2.5">
               <div className="flex items-baseline gap-2">
-                <span className="text-sm font-medium text-slate-900">{location.name}</span>
+                <div className="min-w-0 flex-1"><InlineText value={location.name} placeholder="Place name" onSave={(name) => update.mutateAsync({ id: location.id, body: { name } })} className="font-medium" /></div>
                 {used && used.scene_count > 0 ? (
                   <span className="text-xs text-slate-500">
                     {used.scene_count} scene{used.scene_count === 1 ? '' : 's'}
@@ -102,16 +108,10 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
                 ) : (
                   <span className="text-xs text-slate-400 italic">no scenes yet</span>
                 )}
-                <button
-                  onClick={() => remove.mutate(location.id)}
-                  className="ml-auto text-xs text-slate-400 hover:text-red-600"
-                >
-                  delete
-                </button>
+                <DeleteButton onConfirm={() => remove.mutate(location.id)} what="place" />
               </div>
-              {location.description && (
-                <p className="mt-0.5 text-xs text-slate-500">{location.description}</p>
-              )}
+              <label className="mt-1 block text-[10px] uppercase text-slate-400">Description<InlineText value={location.description} placeholder="Describe the place" onSave={(description) => update.mutateAsync({ id: location.id, body: { description } })} multiline /></label>
+              <label className="mt-1 block text-[10px] uppercase text-slate-400">Atmosphere<InlineText value={location.atmosphere_notes} placeholder="What does it feel like?" onSave={(atmosphere_notes) => update.mutateAsync({ id: location.id, body: { atmosphere_notes } })} multiline /></label>
             </li>
           )
         })}

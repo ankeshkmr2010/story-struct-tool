@@ -12,7 +12,7 @@ Without those two, running the pass again would undo the author's curation every
 which is exactly what would make this feature annoying rather than useful.
 """
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any, cast
 from uuid import UUID
 
@@ -20,6 +20,9 @@ from sqlalchemy import CursorResult, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from storytool.domain.ai.commands import json_value
+from storytool.domain.ai.context import reader_revision
+from storytool.domain.ai.models import StoryObservation
 from storytool.domain.graph import StoryGraph
 from storytool.domain.narrative.models import SceneCharacterMention, Suggestion
 from storytool.domain.noticing.jev import ELEMENT_ABSENT_BELOW
@@ -80,6 +83,24 @@ async def run_noticing_pass(
 
         notices = await noticer.notice_scene(  # type: ignore[attr-defined]
             prose, known_characters, known_beats, known_locations
+        )
+        payload = json_value(asdict(notices))
+        await session.execute(
+            insert(StoryObservation)
+            .values(
+                story_id=graph.story.id,
+                scene_id=scene.id,
+                source=notices.noticed_by,
+                source_revision=reader_revision(graph, scene),
+                payload=payload,
+            )
+            .on_conflict_do_update(
+                constraint="one_observation_per_reader",
+                set_={
+                    "source_revision": reader_revision(graph, scene),
+                    "payload": payload,
+                },
+            )
         )
 
         for notice in notices.characters:

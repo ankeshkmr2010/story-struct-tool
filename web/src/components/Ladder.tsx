@@ -15,9 +15,9 @@ function statusFor(
   mode: AuthoringMode,
   furthest: number,
 ): 'ready' | 'nudge' | 'locked' {
+  if (mode === 'plotter' && rung.level > furthest) return 'locked'
   if (rung.is_ready) return 'ready'
   if (mode === 'pantser') return 'ready'
-  if (mode === 'plotter' && rung.level > furthest) return 'locked'
   return 'nudge'
 }
 
@@ -50,8 +50,10 @@ export function Ladder({
             <button
               disabled={!clickable}
               onClick={() => onSelect(rung.level)}
+              title={rung.blocked_by.join(' ') || undefined}
+              aria-current={isActive ? 'step' : undefined}
               className={[
-                'w-full rounded-md px-3 py-2 text-left transition',
+                'w-full rounded-md px-2.5 py-1.5 text-left transition',
                 isActive ? 'bg-slate-900 text-white' : 'hover:bg-slate-100',
                 clickable ? '' : 'cursor-not-allowed opacity-45',
               ].join(' ')}
@@ -60,28 +62,14 @@ export function Ladder({
                 <span className={`size-2 shrink-0 rounded-full ${dot[status]}`} />
                 <span className="text-xs tabular-nums opacity-60">{rung.level}</span>
                 <span className="text-sm font-medium">{rung.label}</span>
-                {rung.level === ladder.furthest_ready_level && (
-                  <span
-                    className={[
-                      'ml-auto rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
-                      isActive ? 'bg-white/20' : 'bg-slate-200 text-slate-600',
-                    ].join(' ')}
-                  >
-                    you are here
-                  </span>
-                )}
               </span>
 
-              {/* Blockers are the product: they say what to do next, not just "no". */}
-              {status === 'nudge' && rung.blocked_by.length > 0 && (
-                <ul className={isActive ? 'mt-1.5 space-y-0.5' : 'mt-1.5 space-y-0.5'}>
+              {isActive && status === 'nudge' && rung.blocked_by.length > 0 && (
+                <ul className="mt-1.5 space-y-0.5">
                   {rung.blocked_by.map((reason) => (
                     <li
                       key={reason}
-                      className={[
-                        'pl-[26px] text-xs',
-                        isActive ? 'text-slate-300' : 'text-amber-700',
-                      ].join(' ')}
+                      className="pl-[26px] text-xs text-slate-300"
                     >
                       {reason}
                     </li>

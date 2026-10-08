@@ -17,11 +17,12 @@ from storytool.domain.enums import ThreadType
 class EventCreate(BaseModel):
     label: str = Field(min_length=1, max_length=300)
     description: str | None = None
-    sort_ordinal: int = 0
+    sort_ordinal: int | None = None
     display_label: str | None = Field(default=None, max_length=200)
     is_turning_point: bool = False
     is_on_page: bool = False
     scene_id: UUID | None = None
+    location_id: UUID | None = None
 
 
 class EventUpdate(BaseModel):
@@ -32,17 +33,19 @@ class EventUpdate(BaseModel):
     is_turning_point: bool | None = None
     is_on_page: bool | None = None
     scene_id: UUID | None = None
+    location_id: UUID | None = None
 
 
 class EventOut(EntityOut):
     story_id: UUID
     label: str
     description: str | None
-    sort_ordinal: int
+    sort_ordinal: int | None
     display_label: str | None
     is_turning_point: bool
     is_on_page: bool
     scene_id: UUID | None
+    location_id: UUID | None
 
 
 # ----------------------------------------------------------------------- Act

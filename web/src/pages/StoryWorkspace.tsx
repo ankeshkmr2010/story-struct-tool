@@ -3,11 +3,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { Ladder, type AuthoringMode } from '../components/Ladder'
-import { HealthPanel } from '../components/HealthPanel'
 import { ChapterBriefCard } from '../components/ChapterBriefCard'
-import { SuggestionsPanel } from '../components/SuggestionsPanel'
-import { ContinuityPanel } from '../components/ContinuityPanel'
+import { InsightsPanel } from '../components/InsightsPanel'
 import { PlacesPanel } from '../components/PlacesPanel'
+import { CharactersPanel } from '../components/CharactersPanel'
+import { ActsPanel, BeatsPanel, EventsPanel, ThreadsPanel } from '../components/StructurePanels'
+import { AddForm, Chip, DeleteButton, InlineNumber, InlineSelect, InlineText } from '../components/fields'
+import { SceneDetails } from '../components/SceneDetails'
+import { AccountMenu } from '../components/AuthGate'
+import { StoryTimeline } from '../components/StoryTimeline'
+import { AuthoringAssistant } from '../components/AuthoringAssistant'
+import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 // Lazy: CodeMirror is the largest dependency in the app and is only needed once the
 // author reaches level 8, so it should not sit in the initial bundle.
 const SceneEditor = lazy(() =>
@@ -19,81 +25,26 @@ const MODES: AuthoringMode[] = ['plotter', 'hybrid', 'pantser']
 // Places are reference data, not a rung. The sentinel keeps them out of the ladder's
 // readiness logic entirely.
 const PLACES_VIEW = 100
-
-function AddForm({
-  placeholder,
-  onAdd,
-  pending,
-}: {
-  placeholder: string
-  onAdd: (value: string) => void
-  pending?: boolean
-}) {
-  const [value, setValue] = useState('')
-  return (
-    <form
-      className="flex gap-2"
-      onSubmit={(e) => {
-        e.preventDefault()
-        if (value.trim()) {
-          onAdd(value.trim())
-          setValue('')
-        }
-      }}
-    >
-      <input
-        className="flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm"
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-      />
-      <button
-        type="submit"
-        disabled={!value.trim() || pending}
-        className="rounded bg-slate-900 px-3 py-1.5 text-sm text-white disabled:opacity-40"
-      >
-        Add
-      </button>
-    </form>
-  )
-}
-
-function Chip({ complete }: { complete: boolean }) {
-  return (
-    <span
-      className={[
-        'rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
-        complete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700',
-      ].join(' ')}
-    >
-      {complete ? 'complete' : 'placeholder'}
-    </span>
-  )
-}
+const TIMELINE_VIEW = 101
+const ASSISTANT_VIEW = 102
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
   const qc = useQueryClient()
   const [level, setLevel] = useState(1)
-  const [mode, setMode] = useState<AuthoringMode>('hybrid')
 
   const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
   const ladder = useQuery({ queryKey: ['ladder', storyId], queryFn: () => api.getLadder(storyId) })
   const health = useQuery({
     queryKey: ['health', storyId, level],
-    queryFn: () => api.getHealth(storyId, level),
+    queryFn: () => api.getHealth(storyId, Math.min(level, 8)),
   })
-  const events = useQuery({ queryKey: ['events', storyId], queryFn: () => api.listEvents(storyId) })
   const characters = useQuery({
     queryKey: ['characters', storyId],
     queryFn: () => api.listCharacters(storyId),
   })
   const acts = useQuery({ queryKey: ['acts', storyId], queryFn: () => api.listActs(storyId) })
   const beats = useQuery({ queryKey: ['beats', storyId], queryFn: () => api.listBeats(storyId) })
-  const threads = useQuery({
-    queryKey: ['threads', storyId],
-    queryFn: () => api.listThreads(storyId),
-  })
   const chapters = useQuery({
     queryKey: ['chapters', storyId],
     queryFn: () => api.listChapters(storyId),
@@ -101,7 +52,9 @@ export default function StoryWorkspace() {
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
 
   const [chapterId, setChapterId] = useState<string | null>(null)
-  const selectedChapter = chapterId ?? chapters.data?.[0]?.id ?? null
+  const selectedChapter = chapters.data?.find((chapter) => chapter.id === chapterId)?.id ?? chapters.data?.[0]?.id ?? null
+  const chapter = chapters.data?.find((item) => item.id === selectedChapter)
+  const chapterIndex = chapters.data?.findIndex((item) => item.id === selectedChapter) ?? -1
 
   const brief = useQuery({
     queryKey: ['brief', storyId, selectedChapter],
@@ -110,25 +63,21 @@ export default function StoryWorkspace() {
   })
 
   const [sceneId, setSceneId] = useState<string | null>(null)
-  const selectedScene = scenes.data?.find((s) => s.id === sceneId) ?? scenes.data?.[0] ?? null
+  const selectedScene = scenes.data?.find((s) => s.id === sceneId)
+    ?? scenes.data?.find((s) => s.chapter_id === selectedChapter)
+    ?? scenes.data?.[0]
+    ?? null
+  const sceneSiblings = scenes.data?.filter((item) => item.chapter_id === selectedScene?.chapter_id) ?? []
+  const sceneIndex = sceneSiblings.findIndex((item) => item.id === selectedScene?.id)
+  const sceneBrief = useQuery({
+    queryKey: ['brief', storyId, selectedScene?.chapter_id],
+    queryFn: () => api.getBrief(storyId, selectedScene!.chapter_id!),
+    enabled: Boolean(selectedScene?.chapter_id),
+  })
 
   const progress = useQuery({
     queryKey: ['progress', storyId],
     queryFn: () => api.getProgress(storyId),
-  })
-  const locations = useQuery({
-    queryKey: ['locations', storyId],
-    queryFn: () => api.listLocations(storyId),
-  })
-
-  const linkLocation = useMutation({
-    mutationFn: (vars: { sceneId: string; locationId: string | null }) =>
-      api.updateScene(storyId, vars.sceneId, { location_id: vars.locationId }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['scenes', storyId] })
-      void qc.invalidateQueries({ queryKey: ['location-usage', storyId] })
-      void qc.invalidateQueries({ queryKey: ['continuity', storyId] })
-    },
   })
 
   // Any write can change readiness and health, so invalidate both every time.
@@ -137,34 +86,10 @@ export default function StoryWorkspace() {
     void qc.invalidateQueries({ queryKey: ['health', storyId] })
   }
 
-  const savePremise = useMutation({
-    mutationFn: (premise: string) => api.updateStory(storyId, { premise }),
+  const updateStory = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.updateStory(storyId, body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['story', storyId] })
-      refresh()
-    },
-  })
-
-  const addEvent = useMutation({
-    mutationFn: (label: string) => api.createEvent(storyId, { label, is_turning_point: true }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['events', storyId] })
-      refresh()
-    },
-  })
-
-  const addCharacter = useMutation({
-    mutationFn: (name: string) => api.createCharacter(storyId, { name }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['characters', storyId] })
-      refresh()
-    },
-  })
-
-  const addThread = useMutation({
-    mutationFn: (title: string) => api.createThread(storyId, { type: 'a_story', title }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['threads', storyId] })
       refresh()
     },
   })
@@ -172,15 +97,43 @@ export default function StoryWorkspace() {
   const addChapter = useMutation({
     mutationFn: (title: string) =>
       api.createChapter(storyId, {
-        number: (chapters.data?.length ?? 0) + 1,
+        number: Math.max(0, ...(chapters.data ?? []).map((chapter) => chapter.number)) + 1,
         title,
-        // Default to the act the story is furthest into, so a new chapter is never
-        // orphaned when the author just wants to get moving.
-        act_id: acts.data?.[0]?.id,
+        // Continue in the selected chapter's act, or use the last act for a new story.
+        act_id: chapter?.act_id ?? acts.data?.at(-1)?.id,
+        sort_key: Math.max(0, ...(chapters.data ?? []).map((chapter) => chapter.sort_key)) + 100,
       }),
     onSuccess: (created) => {
       setChapterId(created.id)
       void qc.invalidateQueries({ queryKey: ['chapters', storyId] })
+      refresh()
+    },
+  })
+
+  const updateChapter = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.updateChapter(storyId, selectedChapter!, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['chapters', storyId] })
+      void qc.invalidateQueries({ queryKey: ['brief', storyId] })
+      refresh()
+    },
+  })
+  const deleteChapter = useMutation({
+    mutationFn: () => api.deleteChapter(storyId, selectedChapter!),
+    onSuccess: () => {
+      setChapterId(null)
+      void qc.invalidateQueries({ queryKey: ['chapters', storyId] })
+      void qc.invalidateQueries({ queryKey: ['scenes', storyId] })
+      void qc.invalidateQueries({ queryKey: ['brief', storyId] })
+      refresh()
+    },
+  })
+  const moveChapter = useMutation({
+    mutationFn: ({ id, before, after }: { id: string; before?: string; after?: string }) =>
+      api.moveChapter(storyId, id, { before_chapter_id: before, after_chapter_id: after }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['chapters', storyId] })
+      void qc.invalidateQueries({ queryKey: ['continuity', storyId] })
       refresh()
     },
   })
@@ -190,9 +143,10 @@ export default function StoryWorkspace() {
       api.createScene(storyId, {
         title,
         chapter_id: selectedChapter ?? undefined,
-        sort_key: (scenes.data?.length ?? 0) + 1,
+        sort_key: Math.max(0, ...(scenes.data ?? []).filter((scene) => scene.chapter_id === selectedChapter).map((scene) => scene.sort_key)) + 100,
       }),
-    onSuccess: () => {
+    onSuccess: (created) => {
+      setSceneId(created.id)
       void qc.invalidateQueries({ queryKey: ['scenes', storyId] })
       void qc.invalidateQueries({ queryKey: ['brief', storyId] })
       refresh()
@@ -206,12 +160,19 @@ export default function StoryWorkspace() {
       refresh()
     },
   })
-
-  const scaffold = useMutation({
-    mutationFn: () => api.scaffold(storyId),
+  const moveScene = useMutation({
+    mutationFn: ({ id, before, after }: { id: string; before?: string; after?: string }) =>
+      api.moveScene(storyId, id, { before_scene_id: before, after_scene_id: after }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['acts', storyId] })
-      void qc.invalidateQueries({ queryKey: ['beats', storyId] })
+      void qc.invalidateQueries({ queryKey: ['scenes', storyId] })
+      void qc.invalidateQueries({ queryKey: ['brief', storyId] })
+      void qc.invalidateQueries({ queryKey: ['continuity', storyId] })
+    },
+  })
+  const unlinkBeat = useMutation({
+    mutationFn: (beatId: string) => api.unlinkChapterBeat(storyId, selectedChapter!, beatId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['brief', storyId] })
       refresh()
     },
   })
@@ -224,19 +185,19 @@ export default function StoryWorkspace() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
+    <main className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8">
       <Link to="/" className="text-xs text-slate-400 hover:text-slate-700">
         ← all stories
       </Link>
 
-      <header className="mt-2 flex items-start justify-between gap-6">
+      <header className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">{story.data.title}</h1>
           <p className="mt-0.5 text-xs text-slate-400">
-            {story.data.structure_framework.replace('_', ' ')} · {story.data.authoring_mode}
+            {story.data.structure_framework.replace('_', ' ')}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {progress.data && (
             <span className="text-xs text-slate-500">
               {progress.data.word_count.toLocaleString()} words ·{' '}
@@ -251,32 +212,33 @@ export default function StoryWorkspace() {
           >
             Export .md
           </a>
-        </div>
-        <div className="flex gap-1 rounded-md bg-slate-100 p-1">
-          {MODES.map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={[
-                'rounded px-2.5 py-1 text-xs capitalize',
-                mode === m ? 'bg-white shadow-sm font-medium' : 'text-slate-500',
-              ].join(' ')}
+          <label className="flex items-center gap-1.5 text-xs text-slate-500">
+            Mode
+            <select
+              aria-label="Authoring mode"
+              value={story.data.authoring_mode}
+              onChange={(event) => updateStory.mutate({ authoring_mode: event.target.value })}
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs capitalize text-slate-700"
             >
-              {m}
-            </button>
-          ))}
+              {MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
+            </select>
+          </label>
+          <AccountMenu />
         </div>
       </header>
 
-      <div className="mt-6 grid grid-cols-[260px_1fr_280px] gap-6">
-        <aside>
+      {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setLevel(TIMELINE_VIEW)} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
+      <div className={`mt-6 grid grid-cols-1 gap-5 md:grid-cols-[170px_minmax(0,1fr)] ${level === TIMELINE_VIEW || level === ASSISTANT_VIEW ? 'xl:grid-cols-[180px_minmax(0,1fr)]' : 'xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
+        <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
+          <button type="button" onClick={() => setLevel(TIMELINE_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === TIMELINE_VIEW ? 'bg-slate-900 text-white' : 'bg-sky-50 text-sky-800 hover:bg-sky-100'}`}>Story timeline →</button>
+          <button type="button" onClick={() => setLevel(ASSISTANT_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === ASSISTANT_VIEW ? 'bg-slate-900 text-white' : 'bg-violet-50 text-violet-800 hover:bg-violet-100'}`}>Story assistant →</button>
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
             Levels
           </h2>
           {ladder.data && (
             <Ladder
               ladder={ladder.data}
-              mode={mode}
+              mode={story.data.authoring_mode as AuthoringMode}
               activeLevel={level}
               onSelect={setLevel}
             />
@@ -297,154 +259,67 @@ export default function StoryWorkspace() {
         </aside>
 
         <section className="min-w-0">
+          {level === TIMELINE_VIEW && <StoryTimeline storyId={storyId} onOpenScene={(id) => { setSceneId(id || null); setLevel(8) }} />}
+          {level === ASSISTANT_VIEW && <AuthoringAssistant storyId={storyId} />}
           {level === 1 && (
-            <Panel title="Premise" hint="One sentence: what is this story?">
-              <textarea
-                className="w-full rounded border border-slate-300 p-3 text-sm"
-                rows={3}
-                defaultValue={story.data.premise ?? ''}
-                placeholder="A cartographer discovers her maps are rewriting the territory."
-                onBlur={(e) => {
-                  if (e.target.value !== (story.data.premise ?? '')) {
-                    savePremise.mutate(e.target.value)
-                  }
-                }}
-              />
-              <p className="mt-1 text-xs text-slate-400">Saves when you click away.</p>
+            <Panel title="Premise" hint="The story's starting point and settings.">
+              <div className="space-y-3">
+                <label className="block text-xs text-slate-500">Title<InlineText value={story.data.title} placeholder="Story title" onSave={(title) => updateStory.mutateAsync({ title })} /></label>
+                <label className="block text-xs text-slate-500">Premise<InlineText value={story.data.premise} placeholder="What is this story?" onSave={(premise) => updateStory.mutateAsync({ premise })} multiline /></label>
+                <label className="block text-xs text-slate-500">Genre<InlineText value={story.data.genre} placeholder="Genre" onSave={(genre) => updateStory.mutateAsync({ genre })} /></label>
+                <label className="block text-xs text-slate-500">Point of view<InlineSelect value={story.data.pov_style} options={['first', 'third_limited', 'third_omniscient', 'second', 'mixed']} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></label>
+                <label className="block text-xs text-slate-500">Framework<InlineSelect value={story.data.structure_framework} options={['three_act', 'save_the_cat', 'custom']} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /></label>
+              </div>
             </Panel>
           )}
 
-          {level === 2 && (
-            <Panel title="Arc skeleton" hint="Three to five major turning points.">
-              <AddForm
-                placeholder="A turning point…"
-                onAdd={(label) => addEvent.mutate(label)}
-                pending={addEvent.isPending}
-              />
-              <ul className="mt-3 divide-y divide-slate-100">
-                {events.data?.map((event) => (
-                  <li key={event.id} className="py-2 text-sm text-slate-800">
-                    {event.label}
-                  </li>
-                ))}
-              </ul>
-              {events.data?.length === 0 && <Empty>No turning points yet.</Empty>}
-            </Panel>
-          )}
-
-          {level === 3 && (
-            <Panel title="Characters" hint="Who wants what, and what do they actually need?">
-              <AddForm
-                placeholder="Character name…"
-                onAdd={(name) => addCharacter.mutate(name)}
-                pending={addCharacter.isPending}
-              />
-              <ul className="mt-3 divide-y divide-slate-100">
-                {characters.data?.map((character) => (
-                  <li key={character.id} className="flex items-center gap-2 py-2">
-                    <span className="text-sm text-slate-800">{character.name}</span>
-                    <span className="text-xs text-slate-400">{character.role ?? 'no role'}</span>
-                    <span className="ml-auto">
-                      <Chip complete={character.completeness.is_complete} />
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              {characters.data?.length === 0 && <Empty>No characters yet.</Empty>}
-            </Panel>
-          )}
-
-          {(level === 4 || level === 5) && (
-            <Panel
-              title={level === 4 ? 'Acts' : 'Beats'}
-              hint="Seeded from the framework, then yours to edit."
-            >
-              <button
-                onClick={() => scaffold.mutate()}
-                disabled={scaffold.isPending}
-                className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50 disabled:opacity-40"
-              >
-                Seed from {story.data.structure_framework.replace('_', ' ')}
-              </button>
-              {scaffold.data && (
-                <p className="mt-2 text-xs text-slate-500">
-                  {scaffold.data.changed
-                    ? `Created ${scaffold.data.acts_created} acts and ${scaffold.data.beats_created} beats.`
-                    : 'Already scaffolded — nothing to add.'}
-                </p>
-              )}
-              <ul className="mt-3 divide-y divide-slate-100">
-                {level === 4
-                  ? acts.data?.map((act) => (
-                      <li key={act.id} className="flex items-center gap-2 py-2">
-                        <span className="text-xs tabular-nums text-slate-400">{act.number}</span>
-                        <span className="text-sm text-slate-800">{act.title ?? 'untitled'}</span>
-                        <span className="ml-auto">
-                          <Chip complete={act.completeness.is_complete} />
-                        </span>
-                      </li>
-                    ))
-                  : beats.data?.map((beat) => (
-                      <li key={beat.id} className="flex items-center gap-2 py-2">
-                        <span className="text-sm text-slate-800">{beat.label}</span>
-                        {!beat.act_id && (
-                          <span className="text-[10px] text-amber-700">no act</span>
-                        )}
-                        <span className="ml-auto">
-                          <Chip complete={beat.completeness.is_complete} />
-                        </span>
-                      </li>
-                    ))}
-              </ul>
-            </Panel>
-          )}
-
-          {level === 6 && (
-            <Panel title="Threads" hint="Which storyline carries which beats?">
-              <AddForm
-                placeholder="Thread title…"
-                onAdd={(title) => addThread.mutate(title)}
-                pending={addThread.isPending}
-              />
-              <ul className="mt-3 divide-y divide-slate-100">
-                {threads.data?.map((thread) => (
-                  <li key={thread.id} className="flex items-center gap-2 py-2">
-                    <span className="text-sm text-slate-800">{thread.title ?? 'untitled'}</span>
-                    <span className="text-xs text-slate-400">
-                      {thread.type.replace('_', '-')}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              {threads.data?.length === 0 && <Empty>No threads yet.</Empty>}
-            </Panel>
-          )}
+          {level === 2 && <EventsPanel storyId={storyId} />}
+          {level === 3 && <CharactersPanel storyId={storyId} />}
+          {level === 4 && <ActsPanel storyId={storyId} framework={story.data.structure_framework} />}
+          {level === 5 && <BeatsPanel storyId={storyId} framework={story.data.structure_framework} />}
+          {level === 6 && <ThreadsPanel storyId={storyId} />}
 
           {level === 7 && (
             <Panel title="Chapters" hint="Containers that exist to fulfil specific beats.">
               <AddForm
                 placeholder="Chapter title…"
-                onAdd={(title) => addChapter.mutate(title)}
+                onAdd={(title) => addChapter.mutateAsync(title)}
                 pending={addChapter.isPending}
               />
 
               {(chapters.data?.length ?? 0) > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {chapters.data?.map((chapter) => (
-                    <button
-                      key={chapter.id}
-                      onClick={() => setChapterId(chapter.id)}
-                      className={[
-                        'rounded px-2 py-1 text-xs',
-                        chapter.id === selectedChapter
-                          ? 'bg-slate-900 text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
-                      ].join(' ')}
-                    >
-                      {chapter.number}. {chapter.title ?? 'untitled'}
-                    </button>
-                  ))}
+                <div className="mt-3 flex min-w-0 items-center gap-2">
+                  <select aria-label="Select chapter" value={selectedChapter ?? ''} onChange={(event) => setChapterId(event.target.value)} className="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700">
+                    {chapters.data?.map((item) => <option key={item.id} value={item.id}>{item.number}. {item.title ?? 'Untitled'}</option>)}
+                  </select>
+                  <button type="button" aria-label="Move chapter up" title="Move chapter up" disabled={!selectedChapter || chapterIndex <= 0 || moveChapter.isPending} onClick={() => moveChapter.mutate({ id: selectedChapter!, before: chapters.data?.[chapterIndex - 1]?.id })} className="rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 disabled:opacity-30">↑</button>
+                  <button type="button" aria-label="Move chapter down" title="Move chapter down" disabled={!selectedChapter || chapterIndex >= (chapters.data?.length ?? 0) - 1 || moveChapter.isPending} onClick={() => moveChapter.mutate({ id: selectedChapter!, after: chapters.data?.[chapterIndex + 1]?.id })} className="rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 disabled:opacity-30">↓</button>
                 </div>
+              )}
+
+              {chapter && (
+                <details className="mt-4 rounded-md border border-slate-200 bg-white">
+                  <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    <span>Chapter details</span>
+                    <span className="truncate text-xs font-normal text-slate-400">Draft: {chapter.status} · {chapter.title ?? 'Untitled'}</span>
+                  </summary>
+                  <div className="border-t border-slate-100 p-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Structure</h3>
+                    <div className="flex items-center gap-2"><Chip complete={chapter.completeness.is_complete} missing={chapter.completeness.missing} /><DeleteButton onConfirm={() => deleteChapter.mutate()} what="chapter" /></div>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <label className="text-xs text-slate-500">Number<InlineNumber value={chapter.number} min={1} onSave={(number) => updateChapter.mutateAsync({ number })} /></label>
+                    <label className="text-xs text-slate-500">Title<InlineText value={chapter.title} placeholder="Chapter title" onSave={(title) => updateChapter.mutateAsync({ title })} /></label>
+                    <label className="text-xs text-slate-500">Act<InlineSelect value={chapter.act_id} options={(acts.data ?? []).map((act) => ({ value: act.id, label: `${act.number}. ${act.title ?? 'Untitled'}` }))} onSave={(act_id) => updateChapter.mutateAsync({ act_id })} /></label>
+                    <label className="text-xs text-slate-500">POV character<InlineSelect value={chapter.pov_character_id} options={(characters.data ?? []).map((character) => ({ value: character.id, label: character.name }))} onSave={(pov_character_id) => updateChapter.mutateAsync({ pov_character_id })} /></label>
+                    <label className="text-xs text-slate-500">Draft status<InlineSelect value={chapter.status} options={['placeholder', 'outlined', 'drafted', 'revised']} onSave={(status) => updateChapter.mutateAsync({ status })} /></label>
+                    <label className="text-xs text-slate-500">Emotional shift from<InlineText value={chapter.emotional_shift_from} placeholder="from" onSave={(emotional_shift_from) => updateChapter.mutateAsync({ emotional_shift_from })} /></label>
+                    <label className="text-xs text-slate-500">Emotional shift to<InlineText value={chapter.emotional_shift_to} placeholder="to" onSave={(emotional_shift_to) => updateChapter.mutateAsync({ emotional_shift_to })} /></label>
+                  </div>
+                  <label className="mt-2 block text-xs text-slate-500">Summary<InlineText value={chapter.summary} placeholder="What does this chapter do?" onSave={(summary) => updateChapter.mutateAsync({ summary })} multiline /></label>
+                  </div>
+                </details>
               )}
 
               {brief.data && (
@@ -453,10 +328,19 @@ export default function StoryWorkspace() {
 
                   {/* Declaring what a chapter owes is the one upward reference the
                       author makes by hand; everything else is derived from it. */}
-                  <div className="mt-3">
-                    <p className="mb-1.5 text-xs text-slate-400">
-                      Declare a beat this chapter fulfils:
-                    </p>
+                  <details className="mt-3 rounded-md border border-slate-200 bg-white">
+                    <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                      Beat assignments · {brief.data.beats.length} linked
+                    </summary>
+                    <div className="border-t border-slate-100 p-3">
+                    <p className="mb-1.5 text-xs text-slate-400">Declare a beat this chapter fulfils:</p>
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      {brief.data.beats.map((beat) => (
+                        <button key={beat.beat_id} onClick={() => unlinkBeat.mutate(beat.beat_id)} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-600 hover:bg-red-50 hover:text-red-700" title="Remove beat from chapter">
+                          {beat.label} ×
+                        </button>
+                      ))}
+                    </div>
                     <div className="flex flex-wrap gap-1.5">
                       {beats.data
                         ?.filter(
@@ -472,7 +356,8 @@ export default function StoryWorkspace() {
                           </button>
                         ))}
                     </div>
-                  </div>
+                    </div>
+                  </details>
                 </div>
               )}
 
@@ -493,59 +378,20 @@ export default function StoryWorkspace() {
             >
               <AddForm
                 placeholder="Scene title…"
-                onAdd={(title) => addScene.mutate(title)}
+                onAdd={(title) => addScene.mutateAsync(title)}
                 pending={addScene.isPending}
               />
               {(scenes.data?.length ?? 0) > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {scenes.data?.map((scene) => (
-                    <button
-                      key={scene.id}
-                      onClick={() => setSceneId(scene.id)}
-                      className={[
-                        'rounded px-2 py-1 text-xs',
-                        scene.id === selectedScene?.id
-                          ? 'bg-slate-900 text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
-                      ].join(' ')}
-                    >
-                      {scene.title ?? 'untitled'}
-                      {scene.word_count > 0 && (
-                        <span className="ml-1.5 opacity-60">{scene.word_count}w</span>
-                      )}
-                      {!scene.chapter_id && <span className="ml-1 text-amber-600">·</span>}
-                    </button>
-                  ))}
+                <div className="mt-3 flex min-w-0 items-center gap-2">
+                  <select aria-label="Select scene" value={selectedScene?.id ?? ''} onChange={(event) => setSceneId(event.target.value)} className="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700">
+                    {scenes.data?.map((item) => <option key={item.id} value={item.id}>{chapters.data?.find((chapter) => chapter.id === item.chapter_id)?.number ?? '—'} · {item.title ?? 'Untitled'}{item.word_count > 0 ? ` · ${item.word_count} words` : ''}</option>)}
+                  </select>
+                  <button type="button" aria-label="Move scene up" title="Move scene up within chapter" disabled={!selectedScene || sceneIndex <= 0 || moveScene.isPending} onClick={() => moveScene.mutate({ id: selectedScene!.id, before: sceneSiblings[sceneIndex - 1]?.id })} className="rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 disabled:opacity-30">↑</button>
+                  <button type="button" aria-label="Move scene down" title="Move scene down within chapter" disabled={!selectedScene || sceneIndex >= sceneSiblings.length - 1 || moveScene.isPending} onClick={() => moveScene.mutate({ id: selectedScene!.id, after: sceneSiblings[sceneIndex + 1]?.id })} className="rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 disabled:opacity-30">↓</button>
                 </div>
               )}
 
-              {selectedScene && (
-                <div className="mt-3 flex items-center gap-2">
-                  <label className="text-xs text-slate-400">Place</label>
-                  <select
-                    className="rounded border border-slate-300 px-2 py-1 text-xs"
-                    value={selectedScene.location_id ?? ''}
-                    onChange={(e) =>
-                      linkLocation.mutate({
-                        sceneId: selectedScene.id,
-                        locationId: e.target.value || null,
-                      })
-                    }
-                  >
-                    <option value="">— not set —</option>
-                    {locations.data?.map((location) => (
-                      <option key={location.id} value={location.id}>
-                        {location.name}
-                      </option>
-                    ))}
-                  </select>
-                  {locations.data?.length === 0 && (
-                    <span className="text-xs text-slate-400">
-                      define places under Reference first
-                    </span>
-                  )}
-                </div>
-              )}
+              {selectedScene && <SceneDetails key={selectedScene.id} storyId={storyId} scene={selectedScene} onDeleted={() => setSceneId(null)} />}
 
               {selectedScene && (
                 <div className="mt-4">
@@ -553,11 +399,10 @@ export default function StoryWorkspace() {
                     fallback={<p className="text-sm text-slate-400">Loading editor…</p>}
                   >
                   <SceneEditor
+                    key={selectedScene.id}
                     storyId={storyId}
                     scene={selectedScene}
-                    brief={
-                      selectedScene.chapter_id === selectedChapter ? brief.data : undefined
-                    }
+                    brief={sceneBrief.data}
                   />
                   </Suspense>
                 </div>
@@ -568,20 +413,9 @@ export default function StoryWorkspace() {
           )}
         </section>
 
-        <aside>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Health · level ≤ {level}
-          </h2>
-          {health.data && <HealthPanel health={health.data} />}
-
-          <div className="mt-6">
-            <ContinuityPanel storyId={storyId} />
-          </div>
-
-          <div className="mt-6">
-            <SuggestionsPanel storyId={storyId} />
-          </div>
-        </aside>
+        {level !== TIMELINE_VIEW && level !== ASSISTANT_VIEW && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
+          <InsightsPanel storyId={storyId} health={health.data} />
+        </aside>}
       </div>
     </main>
   )

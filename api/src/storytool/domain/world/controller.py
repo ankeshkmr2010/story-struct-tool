@@ -39,9 +39,7 @@ class LocationController(Controller):
     signature_namespace = {"AsyncSession": AsyncSession, "LocationService": LocationService}
 
     @get(summary="List locations")
-    async def list_locations(
-        self, locations: LocationService, story_id: UUID
-    ) -> list[LocationOut]:
+    async def list_locations(self, locations: LocationService, story_id: UUID) -> list[LocationOut]:
         records = await locations.get_many(
             Location.story_id == story_id, order_by=Location.name.asc()
         )
@@ -119,9 +117,7 @@ class ContinuityController(Controller):
         anomalies = run_continuity(graph)
         return ContinuityOut(
             story_id=story_id,
-            contradiction_count=sum(
-                1 for a in anomalies if a.kind is AnomalyKind.CONTRADICTION
-            ),
+            contradiction_count=sum(1 for a in anomalies if a.kind is AnomalyKind.CONTRADICTION),
             possible_count=sum(1 for a in anomalies if a.kind is AnomalyKind.POSSIBLE),
             anomalies=[
                 AnomalyOut(
