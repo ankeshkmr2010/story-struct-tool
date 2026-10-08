@@ -22,12 +22,15 @@ import asyncpg
 import pytest
 from litestar.testing import AsyncTestClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.pool import NullPool
 
 PG_HOST, PG_PORT = "localhost", 5432
 PG_USER, PG_PASSWORD = "storytool", "storytool"
 PG_BASE = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}"
 TEST_DB = "storytool_test"
-TEST_URL = f"{PG_BASE}/{TEST_DB}"
+# The local Docker Postgres does not use TLS. Avoid asyncpg's opportunistic TLS
+# negotiation, which intermittently resets Windows sockets in long test runs.
+TEST_URL = f"{PG_BASE}/{TEST_DB}?ssl=disable"
 
 API_ROOT = Path(__file__).resolve().parent.parent
 
@@ -35,7 +38,12 @@ API_ROOT = Path(__file__).resolve().parent.parent
 async def _recreate_database() -> None:
     """Drop and recreate the public schema so migrations always run from nothing."""
     admin = await asyncpg.connect(
-        user=PG_USER, password=PG_PASSWORD, host=PG_HOST, port=PG_PORT, database="postgres"
+        user=PG_USER,
+        password=PG_PASSWORD,
+        host=PG_HOST,
+        port=PG_PORT,
+        database="postgres",
+        ssl=False,
     )
     try:
         if not await admin.fetchval("select 1 from pg_database where datname = $1", TEST_DB):
@@ -44,7 +52,7 @@ async def _recreate_database() -> None:
         await admin.close()
 
     db = await asyncpg.connect(
-        user=PG_USER, password=PG_PASSWORD, host=PG_HOST, port=PG_PORT, database=TEST_DB
+        user=PG_USER, password=PG_PASSWORD, host=PG_HOST, port=PG_PORT, database=TEST_DB, ssl=False
     )
     try:
         await db.execute("drop schema public cascade; create schema public;")
@@ -95,7 +103,7 @@ async def engine(_point_settings_at_test_db: None) -> AsyncGenerator[AsyncEngine
             f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
         )
 
-    eng = create_async_engine(TEST_URL)
+    eng = create_async_engine(TEST_URL, poolclass=NullPool)
     yield eng
     await eng.dispose()
 
@@ -138,14 +146,19 @@ async def client(engine: AsyncEngine) -> AsyncGenerator[AsyncTestClient, None]:
         user = User(google_sub="test-author", email="author@example.com")
         session.add(user)
         await session.flush()
-        session.add(UserSession(
-            user_id=user.id,
-            token_hash=hashlib.sha256(b"test-session").hexdigest(),
-            expires_at=datetime.now(UTC) + timedelta(days=1),
-        ))
+        session.add(
+            UserSession(
+                user_id=user.id,
+                token_hash=hashlib.sha256(b"test-session").hexdigest(),
+                expires_at=datetime.now(UTC) + timedelta(days=1),
+            )
+        )
         await session.commit()
 
     config = build_db_config()
+    # TestClient's portal has its own loop. Do not retain asyncpg sockets across
+    # portal shutdown: on Windows they become stale and fail subsequent requests.
+    config.engine_instance = create_async_engine(TEST_URL, poolclass=NullPool)
     try:
         async with AsyncTestClient(
             app=create_app(db_plugin=SQLAlchemyPlugin(config=config))

@@ -50,6 +50,8 @@ export type StoryTimeline = S['TimelineOut']
 export type TimelineEntry = S['TimelineEntryOut']
 export type AIConnection = S['ConnectionOut']
 export type AIRun = S['RunOut']
+export type StoryVersion = S['VersionOut']
+export type StoryVersionPreview = S['VersionPreview']
 export type AIProposal = S['Proposal']
 export type AIObservation = S['ObservationOut']
 export type AgentToken = { id: string; story_id: string; label: string; expires_at: string }
@@ -73,6 +75,10 @@ const patch = <T,>(path: string, body: unknown) =>
   request<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 
 export const api = {
+  listStoryVersions: (id: string) => request<StoryVersion[]>(`/api/stories/${id}/versions`),
+  saveStoryVersion: (id: string, label: string) => post<StoryVersion>(`/api/stories/${id}/versions`, { label }),
+  previewStoryVersion: (id: string, versionId: string) => request<StoryVersionPreview>(`/api/stories/${id}/versions/${versionId}/preview`),
+  restoreStoryVersion: (id: string, versionId: string, fingerprint: string) => post<S['VersionRestoreOut']>(`/api/stories/${id}/versions/${versionId}/restore`, { expected_fingerprint: fingerprint }),
   listAIConnections: () => request<AIConnection[]>('/api/ai/connections'),
   saveAIConnection: (body: { provider: AIConnection['provider']; model: string; api_key: string }) => request<AIConnection>('/api/ai/connections', { method: 'PUT', body: JSON.stringify(body) }),
   testAIConnection: (id: string) => post<{ connected: boolean }>(`/api/ai/connections/${id}/test`),

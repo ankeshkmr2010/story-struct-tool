@@ -299,7 +299,10 @@ export default function HowToUse() {
             </Section>
 
             <section className="rounded-xl border border-amber-200 bg-amber-50/50 p-5">
-              <h2 className="text-lg font-semibold">Chat with your story assistant</h2>
+              <h2 className="text-lg font-semibold">Save and restore the whole story</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">Open Versions beside Export in a story's header. A named version captures prose, structure, characters, arcs, locations, timeline, notes, and their links together. Automatic editing checkpoints are saved at most once per minute; the latest 50 are kept. Named and recovery versions are retained.</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600">Select a version to preview its differences from the working draft, then choose Restore this version. The tool first saves a recovery checkpoint. If another edit happens after the preview, refresh the preview before restoring. Account settings, provider keys, and AI conversation history stay separate.</p>
+              <h2 className="mt-6 text-lg font-semibold">Chat with your story assistant</h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">Connect an OpenRouter, Claude, or OpenAI API key in Settings, open a story, and choose Story assistant. Discuss ideas and answer its questions, then ask it to populate characters, arcs, beats, chapters, scenes, places, or timeline events. It remembers the recent conversation and reads your current story.</p>
               <p className="mt-3 text-sm leading-6 text-slate-600">Advice is saved in the chat. Proposed edits appear under Review story changes; inspect them and choose Apply changes to fill your story. Follow up to revise the plan. Applied changes can be undone before later edits.</p>
               <h2 className="mt-6 text-lg font-semibold">Why an entry says “placeholder”</h2>

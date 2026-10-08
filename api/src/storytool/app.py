@@ -33,6 +33,7 @@ from storytool.domain.structure.controller import (
     EventController,
     ThreadController,
 )
+from storytool.domain.versioning.controller import StoryVersionController
 from storytool.domain.world.controller import ContinuityController, LocationController
 from storytool.frontend import frontend_router
 
@@ -57,6 +58,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             health,
             AuthController,
             AIController,
+            StoryVersionController,
             StoryController,
             TimelineController,
             StoryAnalysisController,

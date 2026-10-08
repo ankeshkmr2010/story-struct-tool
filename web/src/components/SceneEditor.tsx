@@ -4,6 +4,7 @@ import CodeMirror from '@uiw/react-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView } from '@codemirror/view'
 import { api, type ChapterBrief, type Scene } from '../api/client'
+import { errorText } from '../api/errors'
 
 const AUTOSAVE_MS = 1200
 
@@ -35,7 +36,7 @@ export function SceneEditor({
 
   const [draft, setDraft] = useState<string>('')
   const savedRef = useRef<string>('')
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   // Reset the buffer when switching scenes, so one scene's prose can never be saved
   // over another's.
@@ -52,6 +53,7 @@ export function SceneEditor({
     mutationFn: (opts: { text: string; snapshot: boolean }) =>
       api.saveContent(storyId, scene.id, { content: opts.text, snapshot: opts.snapshot }),
     onMutate: () => setStatus('saving'),
+    onError: () => setStatus('error'),
     onSuccess: (_result, opts) => {
       savedRef.current = opts.text
       setStatus('saved')
@@ -123,7 +125,7 @@ export function SceneEditor({
           </h3>
           <span className="text-xs text-slate-400">{words} words</span>
           <span className="sm:ml-auto text-xs text-slate-400">
-            {status === 'saving' ? 'saving…' : dirty ? 'unsaved' : status === 'saved' ? 'saved' : ''}
+            {status === 'error' ? 'save failed' : status === 'saving' ? 'saving…' : dirty ? 'unsaved' : status === 'saved' ? 'saved' : ''}
           </span>
           <button
             onClick={annotateSelection}
@@ -132,6 +134,7 @@ export function SceneEditor({
             Annotate selection
           </button>
         </div>
+        {save.isError && <div role="alert" className="mb-3 rounded border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-800"><p>{errorText(save.error)}</p><p>Your unsaved text remains in this editor.</p><button type="button" disabled={save.isPending} onClick={() => save.mutate({ text: draft, snapshot: false })} className="mt-2 rounded border border-red-300 px-3 py-1 font-medium">Retry save</button></div>}
 
         {(brief?.beats.length || scene.goal) && (
           <p className="mb-2 truncate text-xs text-slate-500" title={[brief?.beats.map((beat) => beat.label).join(', '), scene.goal].filter(Boolean).join(' · ')}>

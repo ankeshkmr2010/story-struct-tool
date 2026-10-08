@@ -257,6 +257,32 @@ class StoryAccessMiddleware:
                     text("SELECT pg_advisory_xact_lock(:key)"),
                     {"key": int.from_bytes(lock_story_id.bytes[:8], "big", signed=True)},
                 )
-                await self.app(scope, replay_receive if replay else receive, send)
+                deleting_story = (
+                    http_scope["method"] == "DELETE"
+                    and path.rstrip("/") == f"/api/stories/{lock_story_id}"
+                )
+                if "/versions" not in path and not deleting_story:
+                    from storytool.domain.versioning import service as versions
+                    from storytool.domain.versioning.models import StoryVersion
+
+                    before = await versions.full_state(lock_db, lock_story_id)
+                    if not before["story"]:
+                        await _reject(send, 404, "Story not found")
+                        return
+                    existing = await lock_db.scalar(
+                        select(StoryVersion.id)
+                        .where(StoryVersion.story_id == lock_story_id)
+                        .limit(1)
+                    )
+                    scope["state"]["storytool_version_context"] = {
+                        "story_id": lock_story_id,
+                        "user_id": user_id,
+                        "before": before,
+                        "initial": existing is None,
+                        "ai_batch": "/ai/runs/" in path and path.endswith(("/apply", "/undo")),
+                    }
+                    await self.app(scope, replay_receive if replay else receive, send)
+                else:
+                    await self.app(scope, replay_receive if replay else receive, send)
         else:
             await self.app(scope, replay_receive if replay else receive, send)

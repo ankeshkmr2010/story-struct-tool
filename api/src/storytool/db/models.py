@@ -21,6 +21,7 @@ from storytool.domain.narrative.models import (
 )
 from storytool.domain.story.models import Story
 from storytool.domain.structure.models import Act, Beat, Event, Thread, event_character
+from storytool.domain.versioning.models import StoryVersion
 from storytool.domain.world.models import Location
 
 __all__ = (
@@ -42,6 +43,7 @@ __all__ = (
     "SceneRevision",
     "Story",
     "StoryObservation",
+    "StoryVersion",
     "Suggestion",
     "Thread",
     "User",

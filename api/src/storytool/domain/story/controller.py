@@ -39,10 +39,17 @@ class StoryController(Controller):
 
     @post(status_code=201, summary="Create a story")
     async def create_story(
-        self, stories: StoryService, request: Request, data: StoryCreate
+        self,
+        stories: StoryService,
+        request: Request,
+        data: StoryCreate,
+        db_session: AsyncSession,
     ) -> StoryOut:
         user_id = request.scope["state"]["storytool_user_id"]
         record = await stories.create(Story(user_id=user_id, **data.model_dump()))
+        from storytool.domain.versioning.service import checkpoint
+
+        await checkpoint(db_session, record.id, user_id, "Story created", "initial")
         return StoryOut.model_validate(record)
 
     @get("/{story_id:uuid}", summary="Get one story")

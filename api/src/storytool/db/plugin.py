@@ -1,11 +1,16 @@
 """SQLAlchemy wiring for Litestar: async engine, session-per-request, Alembic config."""
 
+import inspect
+import json
+import logging
+
 from advanced_alchemy.extensions.litestar import (
     AlembicAsyncConfig,
     EngineConfig,
     SQLAlchemyAsyncConfig,
     SQLAlchemyPlugin,
 )
+from litestar.types import Message, Scope
 
 from storytool.config import get_settings
 from storytool.db import models as _models  # noqa: F401  -- registers all tables
@@ -14,7 +19,7 @@ from storytool.db.base import metadata
 
 def build_db_config() -> SQLAlchemyAsyncConfig:
     settings = get_settings()
-    return SQLAlchemyAsyncConfig(
+    config = SQLAlchemyAsyncConfig(
         connection_string=settings.database_url,
         metadata=metadata,
         engine_config=EngineConfig(
@@ -31,6 +36,88 @@ def build_db_config() -> SQLAlchemyAsyncConfig:
             script_location="src/storytool/db/migrations",
         ),
     )
+    original = config.before_send_handler
+    assert callable(original)
+
+    async def versioned_commit(message: Message, scope: Scope) -> None:
+        context = (
+            scope.get("state", {}).pop("storytool_version_context", None)
+            if message["type"] == "http.response.start"
+            else None
+        )
+        if message["type"] == "http.response.start" and context and 200 <= message["status"] < 300:
+            from storytool.domain.versioning import service as versions
+
+            db = config.provide_session(scope["app"].state, scope)
+            try:
+                await db.flush()
+                after = await versions.full_state(db, context["story_id"])
+                if context["initial"]:
+                    await versions.checkpoint(
+                        db,
+                        context["story_id"],
+                        context["user_id"],
+                        "Before the first versioned edit",
+                        "initial",
+                        context["before"],
+                    )
+                if versions.fingerprint(context["before"]) != versions.fingerprint(after):
+                    if context["ai_batch"]:
+                        await versions.automatic_checkpoint(
+                            db,
+                            context["story_id"],
+                            context["user_id"],
+                            context["before"],
+                            "Before assistant changes",
+                            force=True,
+                        )
+                    await versions.automatic_checkpoint(
+                        db,
+                        context["story_id"],
+                        context["user_id"],
+                        after,
+                        "After assistant changes" if context["ai_batch"] else "Editing checkpoint",
+                        force=context["ai_batch"],
+                    )
+                # Checkpoint failure must abort the edit rather than commit it without history.
+                await db.commit()
+            except Exception as exc:
+                await db.rollback()
+                logging.getLogger("storytool.versions").error(
+                    "Story checkpoint failed (%s); request rolled back", type(exc).__name__
+                )
+                body = json.dumps(
+                    {
+                        "status_code": 503,
+                        "detail": "Could not save this edit and its story checkpoint. "
+                        "Keep your changes open and retry.",
+                    }
+                ).encode()
+                scope.setdefault("state", {})["storytool_version_error"] = body
+                message["status"] = 503
+                headers = [
+                    (key, value)
+                    for key, value in message.get("headers", [])
+                    if key.lower() not in {b"content-type", b"content-length"}
+                ]
+                headers.extend(
+                    [
+                        (b"content-type", b"application/json"),
+                        (b"content-length", str(len(body)).encode()),
+                    ]
+                )
+                message["headers"] = headers
+        if message["type"] == "http.response.body" and scope.get("state", {}).get(
+            "storytool_version_error"
+        ):
+            message["body"] = scope["state"]["storytool_version_error"]
+            message["more_body"] = False
+        result = original(message, scope)
+        if inspect.isawaitable(result):
+            await result
+
+    config.before_send_handler = versioned_commit
+    return config
 
 
 def build_db_plugin() -> SQLAlchemyPlugin:

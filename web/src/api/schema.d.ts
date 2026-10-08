@@ -312,6 +312,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ListVersions */
+        get: operations["ApiStoriesStoryIdVersionsListVersions"];
+        put?: never;
+        /** SaveVersion */
+        post: operations["ApiStoriesStoryIdVersionsSaveVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/versions/{version_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview */
+        get: operations["ApiStoriesStoryIdVersionsVersionIdPreviewPreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/versions/{version_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore */
+        post: operations["ApiStoriesStoryIdVersionsVersionIdRestoreRestore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories": {
         parameters: {
             query?: never;
@@ -2354,6 +2406,56 @@ export interface components {
             name: string | null;
             picture_url: string | null;
         };
+        /** VersionChange */
+        VersionChange: {
+            entity: string;
+            title: string;
+            action: string;
+            fields?: string[];
+            before?: {
+                [key: string]: string;
+            };
+            after?: {
+                [key: string]: string;
+            };
+        };
+        /** VersionCreate */
+        VersionCreate: {
+            label: string;
+        };
+        /** VersionOut */
+        VersionOut: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            label: string;
+            source: string;
+            /** Format: date-time */
+            created_at: string;
+            statistics: {
+                [key: string]: unknown;
+            };
+        };
+        /** VersionPreview */
+        VersionPreview: {
+            version: components["schemas"]["VersionOut"];
+            current_fingerprint: string;
+            current_statistics: {
+                [key: string]: unknown;
+            };
+            changes: components["schemas"]["VersionChange"][];
+            change_count: number;
+        };
+        /** VersionRestore */
+        VersionRestore: {
+            expected_fingerprint: string;
+        };
+        /** VersionRestoreOut */
+        VersionRestoreOut: {
+            restored_number: number;
+            recovery_version: components["schemas"]["VersionOut"];
+            restored_version: components["schemas"]["VersionOut"];
+        };
     };
     responses: never;
     parameters: never;
@@ -2990,6 +3092,164 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdVersionsListVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdVersionsSaveVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionCreate"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdVersionsVersionIdPreviewPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionPreview"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdVersionsVersionIdRestoreRestore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionRestore"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionRestoreOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */
