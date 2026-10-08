@@ -97,8 +97,8 @@ export function AccountMenu() {
 
   if (!me.data) return null
   return (
-    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-      <span className="max-w-48 truncate" title={me.data.email}>{me.data.name ?? me.data.email}</span>
+    <div className="account-menu flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+      <span className="account-name max-w-48 truncate" title={me.data.email}>{me.data.name ?? me.data.email}</span>
       <Link to="/settings" className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950">Settings</Link>
       <button type="button" onClick={() => logout.mutate()} disabled={logout.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950 disabled:opacity-50">
         Sign out

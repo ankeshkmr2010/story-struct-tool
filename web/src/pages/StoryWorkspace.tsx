@@ -10,7 +10,6 @@ import { CharactersPanel } from '../components/CharactersPanel'
 import { ActsPanel, BeatsPanel, EventsPanel, ThreadsPanel } from '../components/StructurePanels'
 import { AddForm, Chip, DeleteButton, InlineNumber, InlineSelect, InlineText } from '../components/fields'
 import { SceneDetails } from '../components/SceneDetails'
-import { AccountMenu } from '../components/AuthGate'
 import { StoryTimeline } from '../components/StoryTimeline'
 import { AuthoringAssistant } from '../components/AuthoringAssistant'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
@@ -225,7 +224,6 @@ export default function StoryWorkspace() {
               {MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
             </select>
           </label>
-          <AccountMenu />
         </div>
       </header>
 

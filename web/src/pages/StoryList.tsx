@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api, type Story } from '../api/client'
-import { AccountMenu } from '../components/AuthGate'
 
 function CompletenessBar({ story }: { story: Story }) {
   const { is_complete, missing, ratio } = story.completeness
@@ -41,14 +40,8 @@ export default function StoryList() {
   })
 
   return (
-    <main className="mx-auto max-w-2xl p-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">StoryTool</h1>
-        <div className="flex flex-wrap items-center gap-4">
-          <Link to="/how-to-use" className="text-sm text-slate-600 dark:text-slate-300 underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-100">How to use</Link>
-          <AccountMenu />
-        </div>
-      </div>
+    <main className="mx-auto max-w-2xl p-5 sm:p-8">
+      <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Your stories</h1>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         Build your story from its first idea to its individual scenes. Start with a title and fill in the rest as you go.
       </p>
@@ -65,7 +58,7 @@ export default function StoryList() {
         }}
       >
         <input
-          className="flex-1 rounded border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
+          className="min-w-0 flex-1 rounded border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
           placeholder="Story title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
