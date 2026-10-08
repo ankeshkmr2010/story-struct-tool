@@ -51,7 +51,7 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="text-sm font-semibold text-slate-900">Places</h2>
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Places</h2>
       <p className="mb-3 text-xs text-slate-400">
         Reference data — a place never gates a level. Linking scenes to places is what makes
         continuity checking possible.
@@ -65,7 +65,7 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
         }}
       >
         <input
-          className="flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm"
+          className="flex-1 rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
           placeholder="Place name…"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -73,20 +73,20 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
         <button
           type="submit"
           disabled={!name.trim() || create.isPending}
-          className="rounded bg-slate-900 px-3 py-1.5 text-sm text-white disabled:opacity-40"
+          className="rounded bg-slate-900 dark:bg-slate-200 px-3 py-1.5 text-sm text-white dark:text-slate-950 disabled:opacity-40"
         >
           Add
         </button>
       </form>
 
       {create.isError && (
-        <p className="mt-1.5 text-xs text-red-600">
+        <p className="mt-1.5 text-xs text-red-600 dark:text-red-300">
           {/* The 409 from a duplicate name, which would otherwise break continuity checks. */}
           A place with that name already exists in this story.
         </p>
       )}
 
-      <ul className="mt-4 divide-y divide-slate-100">
+      <ul className="mt-4 divide-y divide-slate-100 dark:divide-slate-800">
         {locations.data?.map((location) => {
           const used = usageFor(location.id)
           return (
@@ -94,7 +94,7 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
               <div className="flex items-baseline gap-2">
                 <div className="min-w-0 flex-1"><InlineText value={location.name} placeholder="Place name" onSave={(name) => update.mutateAsync({ id: location.id, body: { name } })} className="font-medium" /></div>
                 {used && used.scene_count > 0 ? (
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
                     {used.scene_count} scene{used.scene_count === 1 ? '' : 's'}
                     {used.chapter_numbers.length > 0 &&
                       ` · ch ${used.chapter_numbers.join(', ')}`}

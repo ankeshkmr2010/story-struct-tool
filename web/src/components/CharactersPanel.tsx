@@ -68,7 +68,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="text-sm font-semibold text-slate-900">Characters</h2>
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Characters</h2>
       <p className="mb-3 text-xs text-slate-400">
         Who wants what, and what do they actually need? A name is enough to start.
       </p>
@@ -81,7 +81,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
         }}
       >
         <input
-          className="flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm"
+          className="flex-1 rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
           placeholder="Character name…"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -89,19 +89,19 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
         <button
           type="submit"
           disabled={!name.trim() || create.isPending}
-          className="rounded bg-slate-900 px-3 py-1.5 text-sm text-white disabled:opacity-40"
+          className="rounded bg-slate-900 dark:bg-slate-200 px-3 py-1.5 text-sm text-white dark:text-slate-950 disabled:opacity-40"
         >
           Add
         </button>
       </form>
 
       {characters.data && characters.data.length > 0 && protagonists === 0 && (
-        <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">
+        <p className="mt-2 rounded bg-amber-50 dark:bg-amber-950 px-2 py-1 text-xs text-amber-800 dark:text-amber-300">
           No one is marked protagonist yet — set a role below to unlock Acts.
         </p>
       )}
       {protagonists > 1 && (
-        <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">
+        <p className="mt-2 rounded bg-amber-50 dark:bg-amber-950 px-2 py-1 text-xs text-amber-800 dark:text-amber-300">
           {protagonists} characters are marked protagonist.
         </p>
       )}
@@ -110,7 +110,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
         {characters.data?.map((character) => {
           const set = patch(character.id)
           return (
-            <li key={character.id} className="rounded-md border border-slate-200 p-2.5">
+            <li key={character.id} className="rounded-md border border-slate-200 dark:border-slate-700 p-2.5">
               <div className="flex items-center gap-2">
                 <div className="min-w-0 flex-1">
                   <InlineText
@@ -187,7 +187,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
               </details>
 
               {!character.completeness.is_complete && (
-                <p className="mt-1 text-[10px] text-amber-700">
+                <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-300">
                   needs: {character.completeness.missing.join(', ')}
                 </p>
               )}
@@ -198,7 +198,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                 <button
                   onClick={() => createArc.mutate(character.id)}
                   disabled={createArc.isPending}
-                  className="mt-2 text-xs text-sky-700 hover:underline disabled:opacity-40"
+                  className="mt-2 text-xs text-sky-700 dark:text-sky-300 hover:underline disabled:opacity-40"
                 >
                   + Define an arc
                 </button>
@@ -238,7 +238,7 @@ function RelationshipsSection({ storyId, characters }: { storyId: string; charac
   const nameOf = (id: string) => characters.find((character) => character.id === id)?.name ?? 'Unknown character'
 
   return (
-    <section className="mt-6 border-t border-slate-200 pt-4">
+    <section className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
       <h2 className="text-sm font-semibold">Relationships</h2>
       <p className="mt-1 text-xs text-slate-400">Define how two characters relate, and how that changes.</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -247,13 +247,13 @@ function RelationshipsSection({ storyId, characters }: { storyId: string; charac
         <button
           onClick={() => create.mutate()}
           disabled={!first || !second || first === second || create.isPending}
-          className="rounded bg-slate-900 px-2 py-1 text-xs text-white disabled:opacity-40"
+          className="rounded bg-slate-900 dark:bg-slate-200 px-2 py-1 text-xs text-white dark:text-slate-950 disabled:opacity-40"
         >Add relationship</button>
       </div>
-      {create.isError && <p className="mt-1 text-xs text-red-600">Could not add this relationship.</p>}
+      {create.isError && <p className="mt-1 text-xs text-red-600 dark:text-red-300">Could not add this relationship.</p>}
       <ul className="mt-3 space-y-2">
         {relationships.data?.map((relationship) => (
-          <li key={relationship.id} className="rounded border border-slate-200 p-3">
+          <li key={relationship.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center justify-between text-sm font-medium">
               <span>{nameOf(relationship.character_a_id)} ↔ {nameOf(relationship.character_b_id)}</span>
               <DeleteButton onConfirm={() => remove.mutate(relationship.id)} what="relationship" />
@@ -302,9 +302,9 @@ function CharacterArc({
   const removeStage = useMutation({ mutationFn: (id: string) => api.deleteArcStage(arcId, id), onSuccess: refresh })
 
   return (
-    <div className="mt-3 border-t border-slate-100 pt-2">
+    <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-slate-700">Character arc</h3>
+        <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-200">Character arc</h3>
         <DeleteButton onConfirm={() => remove.mutate()} what="arc" />
       </div>
       <label className="mt-1 block text-[10px] uppercase text-slate-400">Resolution
@@ -312,7 +312,7 @@ function CharacterArc({
       </label>
       <ul className="mt-2 space-y-1">
         {stages.data?.map((stage) => (
-          <li key={stage.id} className="rounded bg-slate-50 p-1">
+          <li key={stage.id} className="rounded bg-slate-50 dark:bg-slate-950 p-1">
             <div className="flex items-center gap-1">
               <div className="min-w-0 flex-1"><InlineText value={stage.label} placeholder="Stage" onSave={(label) => updateStage.mutateAsync({ id: stage.id, body: { label } })} /></div>
               <DeleteButton onConfirm={() => removeStage.mutate(stage.id)} what="stage" />

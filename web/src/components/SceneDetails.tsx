@@ -47,12 +47,12 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
   })))
 
   return (
-    <details className="mt-4 rounded-md border border-slate-200 bg-white">
-      <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+    <details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+      <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-950">
         <span>Scene details and links</span>
         <span className="truncate text-xs font-normal text-slate-400">Draft: {scene.status} · {scene.word_count} words</span>
       </summary>
-      <div className="border-t border-slate-100 p-3">
+      <div className="border-t border-slate-100 dark:border-slate-800 p-3">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Structure</h3>
         <div className="flex items-center gap-2"><Chip complete={scene.completeness.is_complete} missing={scene.completeness.missing} /><DeleteButton onConfirm={() => remove.mutate()} what="scene" /></div>
@@ -69,7 +69,7 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
         <Field label="Flashback"><InlineSelect value={String(scene.is_flashback)} options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]} onSave={(v) => update.mutateAsync({ is_flashback: v === 'true' })} /></Field>
       </div>
       <div className="mt-2 space-y-2">
-        <p className="text-xs leading-5 text-slate-500">The completeness badge follows your filled details. Choose Draft status yourself: placeholder → outlined → drafted → revised.</p>
+        <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">The completeness badge follows your filled details. Choose Draft status yourself: placeholder → outlined → drafted → revised.</p>
         <Field label="Summary"><InlineText value={scene.summary} placeholder="What happens?" onSave={save('summary')} multiline /></Field>
         <Field label="Goal"><InlineText value={scene.goal} placeholder="What does the POV character want?" onSave={save('goal')} multiline /></Field>
         <Field label="Conflict"><InlineText value={scene.conflict} placeholder="What opposes them?" onSave={save('conflict')} multiline /></Field>
@@ -79,7 +79,7 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
         <Field label="Emotional value from"><InlineText value={scene.emotional_value_from} placeholder="from" onSave={save('emotional_value_from')} /></Field>
         <Field label="Emotional value to"><InlineText value={scene.emotional_value_to} placeholder="to" onSave={save('emotional_value_to')} /></Field>
       </div>
-      <div className="mt-4 space-y-3 border-t border-slate-100 pt-3">
+      <div className="mt-4 space-y-3 border-t border-slate-100 dark:border-slate-800 pt-3">
         <div><h4 className="text-xs font-semibold">Beats this scene fulfils</h4><div className="mt-1 flex flex-wrap gap-2">{beats.data?.map((beat) => <label key={beat.id} className="text-xs"><input type="checkbox" checked={links.data?.beat_ids.includes(beat.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'beat', id: beat.id, checked: event.target.checked })} /> {beat.label}</label>)}</div></div>
         <div><h4 className="text-xs font-semibold">Threads advanced</h4><div className="mt-1 flex flex-wrap gap-2">{threads.data?.map((thread) => <label key={thread.id} className="text-xs"><input type="checkbox" checked={links.data?.thread_ids.includes(thread.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'thread', id: thread.id, checked: event.target.checked })} /> {thread.title ?? thread.type}</label>)}</div></div>
         {stages.length > 0 && <div><h4 className="text-xs font-semibold">Arc stages advanced</h4><div className="mt-1 flex flex-wrap gap-2">{stages.map((stage) => <label key={stage.id} className="text-xs"><input type="checkbox" checked={links.data?.arc_stage_ids.includes(stage.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'stage', id: stage.id, checked: event.target.checked })} /> {stage.owner}: {stage.label}</label>)}</div></div>}

@@ -28,7 +28,7 @@ export function ContinuityPanel({ storyId }: { storyId: string }) {
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
           Continuity
         </h2>
-        <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="rounded-md bg-emerald-50 dark:bg-emerald-950 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-300">
           Nothing contradicts itself.
         </p>
       </section>
@@ -41,7 +41,7 @@ export function ContinuityPanel({ storyId }: { storyId: string }) {
         <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
           Continuity
         </h2>
-        <span className="text-[11px] text-slate-500">
+        <span className="text-[11px] text-slate-500 dark:text-slate-400">
           {report.contradiction_count} contradiction
           {report.contradiction_count === 1 ? '' : 's'}
           {report.possible_count > 0 && ` · ${report.possible_count} to check`}
@@ -56,14 +56,14 @@ export function ContinuityPanel({ storyId }: { storyId: string }) {
               key={`${anomaly.code}-${index}`}
               className={[
                 'rounded-md border-l-2 px-3 py-2',
-                proven ? 'border-red-400 bg-red-50' : 'border-violet-300 bg-violet-50/60',
+                proven ? 'border-red-400 bg-red-50 dark:bg-red-950' : 'border-violet-300 dark:border-violet-800 bg-violet-50/60 dark:bg-violet-950/60',
               ].join(' ')}
             >
-              <p className="text-sm text-slate-800">{anomaly.message}</p>
+              <p className="text-sm text-slate-800 dark:text-slate-100">{anomaly.message}</p>
               <div className="mt-0.5 flex items-center gap-2">
                 <span className="font-mono text-[10px] text-slate-400">{anomaly.code}</span>
                 {!proven && anomaly.confidence !== null && (
-                  <span className="text-[10px] text-violet-700">
+                  <span className="text-[10px] text-violet-700 dark:text-violet-300">
                     {Math.round(anomaly.confidence * 100)}% sure
                   </span>
                 )}

@@ -15,7 +15,7 @@ type Status = 'ready' | 'nudge' | 'locked'
 const DOT: Record<Status, string> = {
   ready: 'bg-emerald-500',
   nudge: 'bg-amber-400',
-  locked: 'bg-slate-300',
+  locked: 'bg-slate-300 dark:bg-slate-600',
 }
 
 const SECTIONS = [
@@ -66,28 +66,28 @@ const MODES = [
 const FEEDBACK = [
   {
     label: 'Health',
-    tone: 'border-amber-400 bg-amber-50',
+    tone: 'border-amber-400 bg-amber-50 dark:bg-amber-950',
     swatch: 'bg-amber-400',
     kind: 'Gaps',
     text: 'Structure you have not built yet — a beat nothing fulfils, a character with no want. Normal mid-draft, not errors.',
   },
   {
     label: 'Continuity · contradiction',
-    tone: 'border-red-400 bg-red-50',
+    tone: 'border-red-400 bg-red-50 dark:bg-red-950',
     swatch: 'bg-red-400',
     kind: 'Proven',
     text: 'The draft disagrees with itself: a character in two places at one story time, an on-page event with no scene. Stated as fact, because it is provable.',
   },
   {
     label: 'Continuity · possible',
-    tone: 'border-violet-300 bg-violet-50',
+    tone: 'border-violet-300 dark:border-violet-800 bg-violet-50 dark:bg-violet-950',
     swatch: 'bg-violet-400',
     kind: 'A question',
     text: 'A model read something that does not match your links. Shown with its confidence and phrased as a question, because it may be wrong.',
   },
   {
     label: 'Noticed',
-    tone: 'border-sky-300 bg-sky-50',
+    tone: 'border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950',
     swatch: 'bg-sky-400',
     kind: 'Observations',
     text: 'What a reading pass found in your prose — a character in six scenes with no arc, a thread gone quiet. Dismiss any of them permanently.',
@@ -96,33 +96,33 @@ const FEEDBACK = [
 
 export default function HowToUse() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         <nav className="flex items-center justify-between gap-4" aria-label="Guide navigation">
           <Link to="/" className="text-lg font-semibold">
             StoryTool
           </Link>
           <Link
-            to="/"
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+            to="/library"
+            className="rounded-md bg-slate-900 dark:bg-slate-200 px-4 py-2 text-sm font-medium text-white dark:text-slate-950 hover:bg-slate-700 dark:hover:bg-slate-300"
           >
             Open your stories →
           </Link>
         </nav>
 
         <header className="mt-10 max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
             How to use StoryTool
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
             Turn an idea into a story you can follow.
           </h1>
-          <p className="mt-5 text-base leading-7 text-slate-600">
+          <p className="mt-5 text-base leading-7 text-slate-600 dark:text-slate-300">
             StoryTool holds the shape of your story so you don't have to keep it all in your
             head. Each level scaffolds the next, so a chapter opens already knowing which act
             it sits in and which beat it owes.
           </p>
-          <p className="mt-3 text-sm leading-6 text-slate-500">
+          <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
             You write the story. The tool keeps its structure close at hand and points out
             gaps — it never writes for you, and it never blocks you.
           </p>
@@ -142,7 +142,7 @@ export default function HowToUse() {
                 <li key={id}>
                   <a
                     href={`#${id}`}
-                    className="text-sm text-slate-500 underline-offset-4 hover:text-slate-900 hover:underline"
+                    className="text-sm text-slate-500 dark:text-slate-400 underline-offset-4 hover:text-slate-900 dark:hover:text-slate-100 hover:underline"
                   >
                     {label}
                   </a>
@@ -153,12 +153,12 @@ export default function HowToUse() {
 
           <div className="min-w-0 space-y-14">
             <Section id="start" eyebrow="01" title="Your first five minutes">
-              <ol className="space-y-3 text-sm leading-6 text-slate-600">
+              <ol className="space-y-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 {[
                   <>Sign in with Google. Your library belongs to your account.</>,
                   <>
                     Type a title on the home page, choose{' '}
-                    <strong className="font-medium text-slate-900">Create</strong>, and open
+                    <strong className="font-medium text-slate-900 dark:text-slate-100">Create</strong>, and open
                     the story.
                   </>,
                   <>Pick an authoring mode in the header — Hybrid is the default.</>,
@@ -166,7 +166,7 @@ export default function HowToUse() {
                   <>Come back to the other levels later. Half-filled entries are fine.</>,
                 ].map((step, index) => (
                   <li key={index} className="flex gap-3">
-                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-medium text-white">
+                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-slate-900 dark:bg-slate-200 text-[11px] font-medium text-white dark:text-slate-950">
                       {index + 1}
                     </span>
                     <span>{step}</span>
@@ -176,7 +176,7 @@ export default function HowToUse() {
             </Section>
 
             <Section id="modes" eyebrow="02" title="Choose how you work">
-              <p className="text-sm leading-6 text-slate-600">
+              <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
                 All three modes read the same story — the mode only decides how firmly the
                 sidebar holds you to the order. Switch at any time from the story header;
                 nothing you have written changes.
@@ -185,13 +185,13 @@ export default function HowToUse() {
                 {MODES.map((mode) => (
                   <article
                     key={mode.name}
-                    className="flex flex-col rounded-xl border border-slate-200 bg-white p-5"
+                    className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5"
                   >
                     <div className="flex items-center gap-2">
                       <span className={`size-2 rounded-full ${DOT[mode.status]}`} />
                       <h3 className="font-semibold">{mode.name}</h3>
                       {mode.name === 'Hybrid' && (
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+                        <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
                           default
                         </span>
                       )}
@@ -199,8 +199,8 @@ export default function HowToUse() {
                     <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">
                       {mode.tagline}
                     </p>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{mode.description}</p>
-                    <p className="mt-4 border-t border-slate-100 pt-4 text-sm leading-6 text-slate-800">
+                    <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{mode.description}</p>
+                    <p className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4 text-sm leading-6 text-slate-800 dark:text-slate-100">
                       {mode.start}
                     </p>
                   </article>
@@ -209,10 +209,10 @@ export default function HowToUse() {
             </Section>
 
             <Section id="levels" eyebrow="03" title="Build the structure in eight levels">
-              <p className="text-sm leading-6 text-slate-600">
+              <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Move between levels in the left sidebar. The dot tells you where you stand:
               </p>
-              <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600">
+              <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
                 <Legend dot={DOT.ready}>ready — the level above carries enough weight</Legend>
                 <Legend dot={DOT.nudge}>
                   not ready — select it to see exactly what is missing
@@ -220,45 +220,45 @@ export default function HowToUse() {
                 <Legend dot={DOT.locked}>locked — Plotter mode only</Legend>
               </ul>
 
-              <ol className="mt-5 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <ol className="mt-5 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
                 {LEVELS.map(([name, description], index) => (
                   <li key={name} className="flex items-start gap-4 px-5 py-4">
-                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500">
+                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                       {index + 1}
                     </span>
                     <div>
                       <h3 className="text-sm font-semibold">{name}</h3>
-                      <p className="mt-0.5 text-sm leading-6 text-slate-600">{description}</p>
+                      <p className="mt-0.5 text-sm leading-6 text-slate-600 dark:text-slate-300">{description}</p>
                     </div>
                   </li>
                 ))}
               </ol>
 
-              <p className="mt-4 text-sm leading-6 text-slate-500">
-                <strong className="font-medium text-slate-700">Places</strong> sits below the
+              <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                <strong className="font-medium text-slate-700 dark:text-slate-200">Places</strong> sits below the
                 eight under <em>Reference</em>. Locations never gate a level — but linking
                 scenes to them is what makes continuity checking possible.
               </p>
             </Section>
 
             <Section id="links" eyebrow="04" title="Connect the plan to the draft">
-              <p className="text-sm leading-6 text-slate-600">
+              <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
                 The links you make are what the tool reasons over. Assign a chapter to an act
                 and declare the beats it fulfils; in a scene's details, connect its beat,
                 thread, POV character, and the arc stage it advances.
               </p>
-              <div className="mt-5 rounded-xl border border-sky-200 bg-sky-50 p-5">
-                <h3 className="text-sm font-semibold text-sky-950">
+              <div className="mt-5 rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950 p-5">
+                <h3 className="text-sm font-semibold text-sky-950 dark:text-sky-300">
                   Example — a betrayal scene
                 </h3>
-                <p className="mt-2 text-sm leading-6 text-sky-900">
+                <p className="mt-2 text-sm leading-6 text-sky-900 dark:text-sky-300">
                   Your protagonist learns an ally has betrayed them. Link the scene to the{' '}
                   <strong className="font-medium">Midpoint</strong> beat, the main thread, and
                   the character's <em>trust → doubt</em> arc stage. The chapter brief then
                   states what that chapter owes the story — computed, never typed twice.
                 </p>
               </div>
-              <p className="mt-4 text-sm leading-6 text-slate-600">
+              <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Drag a chapter or scene to reorder it, or drag a scene into another chapter.
                 Deleting takes two clicks — the <span aria-hidden>×</span> arms it, the second
                 confirms.
@@ -266,52 +266,52 @@ export default function HowToUse() {
             </Section>
 
             <Section id="time" eyebrow="05" title="Story time and flashbacks">
-              <p className="text-sm leading-6 text-slate-600">
+              <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Two fields in a scene's details do more work than they look like they do.
               </p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <article className="rounded-xl border border-slate-200 bg-white p-5">
+                <article className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5">
                   <h3 className="text-sm font-semibold">Story time</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                  <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                     A plain number ordering events in the world, not in the telling. Any scale
                     works — 10, 20, 30 — because only the order matters. A free-text time label
                     ("Saturday, midnight") is for you to read.
                   </p>
                 </article>
-                <article className="rounded-xl border border-violet-200 bg-violet-50/60 p-5">
-                  <h3 className="text-sm font-semibold text-violet-950">Flashback</h3>
-                  <p className="mt-2 text-sm leading-6 text-violet-900">
+                <article className="rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/60 dark:bg-violet-950/60 p-5">
+                  <h3 className="text-sm font-semibold text-violet-950 dark:text-violet-300">Flashback</h3>
+                  <p className="mt-2 text-sm leading-6 text-violet-900 dark:text-violet-300">
                     Mark a scene that deliberately jumps backwards. Without it, the tool reads
                     an earlier story time later in the book as a contradiction — so an unmarked
                     flashback gets reported as a mistake.
                   </p>
                 </article>
               </div>
-              <p className="mt-4 text-sm leading-6 text-slate-600">
+              <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Fill both in and the contradiction checks come alive: a character in two places
                 at one story time, or an arc moving backwards. Leave them empty and the tool
                 stays quiet rather than guessing. Open{' '}
-                <strong className="font-medium text-slate-900">Story timeline</strong> above the
+                <strong className="font-medium text-slate-900 dark:text-slate-100">Story timeline</strong> above the
                 levels to see events with their people and locations. World time follows when
                 events happen; Reading order follows when they are told. A late confession can
                 reveal an early event without moving it in world time.
               </p>
             </Section>
 
-            <section className="rounded-xl border border-amber-200 bg-amber-50/50 p-5">
+            <section className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/50 p-5">
               <h2 className="text-lg font-semibold">Save and restore the whole story</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Open Versions beside Export in a story's header. A named version captures prose, structure, characters, arcs, locations, timeline, notes, and their links together. Automatic editing checkpoints are saved at most once per minute; the latest 50 are kept. Named and recovery versions are retained.</p>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Select a version to preview its differences from the working draft, then choose Restore this version. The tool first saves a recovery checkpoint. If another edit happens after the preview, refresh the preview before restoring. Account settings, provider keys, and AI conversation history stay separate.</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Open Versions beside Export in a story's header. A named version captures prose, structure, characters, arcs, locations, timeline, notes, and their links together. Automatic editing checkpoints are saved at most once per minute; the latest 50 are kept. Named and recovery versions are retained.</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Select a version to preview its differences from the working draft, then choose Restore this version. The tool first saves a recovery checkpoint. If another edit happens after the preview, refresh the preview before restoring. Account settings, provider keys, and AI conversation history stay separate.</p>
               <h2 className="mt-6 text-lg font-semibold">Chat with your story assistant</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Connect an OpenRouter, Claude, or OpenAI API key in Settings, open a story, and choose Story assistant. Discuss ideas and answer its questions, then ask it to populate characters, arcs, beats, chapters, scenes, places, or timeline events. It remembers the recent conversation and reads your current story.</p>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Advice is saved in the chat. Proposed edits appear under Review story changes; inspect them and choose Apply changes to fill your story. Follow up to revise the plan. Applied changes can be undone before later edits.</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Connect an OpenRouter, Claude, or OpenAI API key in Settings, open a story, and choose Story assistant. Discuss ideas and answer its questions, then ask it to populate characters, arcs, beats, chapters, scenes, places, or timeline events. It remembers the recent conversation and reads your current story.</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Advice is saved in the chat. Proposed edits appear under Review story changes; inspect them and choose Apply changes to fill your story. Follow up to revise the plan. Applied changes can be undone before later edits.</p>
               <h2 className="mt-6 text-lg font-semibold">Why an entry says “placeholder”</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-600">A completeness badge is automatic: it means required details are missing. Click the badge to see the exact fields. Characters need a name, role, want, and need; beats need a label and description; scenes need goal, conflict, outcome, and POV. Fill the fields on the entry's card and the badge updates when saved.</p>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Chapters and scenes also have a separate Draft status that you choose: placeholder, outlined, drafted, or revised. Open Chapter details or Scene details and links to change it. A complete outline can still have Draft status “placeholder”; a drafted scene can still be missing planning details.</p>
-              <p className="mt-3 text-sm leading-6 text-slate-600">Try the original Last Lantern tutorial in your library. It contains a worked character arc, a flashback, and one clearly labeled practice placeholder you can fill yourself.</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">A completeness badge is automatic: it means required details are missing. Click the badge to see the exact fields. Characters need a name, role, want, and need; beats need a label and description; scenes need goal, conflict, outcome, and POV. Fill the fields on the entry's card and the badge updates when saved.</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Chapters and scenes also have a separate Draft status that you choose: placeholder, outlined, drafted, or revised. Open Chapter details or Scene details and links to change it. A complete outline can still have Draft status “placeholder”; a drafted scene can still be missing planning details.</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Try the original Last Lantern tutorial in your library. It contains a worked character arc, a flashback, and one clearly labeled practice placeholder you can fill yourself.</p>
             </section>
             <Section id="feedback" eyebrow="06" title="What the tool tells you">
-              <p className="text-sm leading-6 text-slate-600">
+              <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Four kinds of feedback, deliberately distinct. A guess is never presented with
                 the authority of a proof.
               </p>
@@ -324,15 +324,15 @@ export default function HowToUse() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`size-2 rounded-full ${item.swatch}`} />
                       <h3 className="text-sm font-semibold">{item.label}</h3>
-                      <span className="rounded bg-white/70 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600">
+                      <span className="rounded bg-white/70 dark:bg-slate-900/70 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">
                         {item.kind}
                       </span>
                     </div>
-                    <p className="mt-1.5 text-sm leading-6 text-slate-700">{item.text}</p>
+                    <p className="mt-1.5 text-sm leading-6 text-slate-700 dark:text-slate-200">{item.text}</p>
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 text-sm leading-6 text-slate-500">
+              <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
                 None of it rewrites your draft or changes your structure. Treat it as a list
                 for your next pass, not a checklist to clear.
               </p>
@@ -374,13 +374,13 @@ export default function HowToUse() {
           </div>
         </div>
 
-        <footer className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
-          <p className="text-sm text-slate-500">
+        <footer className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700 pt-6">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Start with what you know. Build the rest as the story grows.
           </p>
           <Link
-            to="/"
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+            to="/library"
+            className="rounded-md bg-slate-900 dark:bg-slate-200 px-4 py-2 text-sm font-medium text-white dark:text-slate-950 hover:bg-slate-700 dark:hover:bg-slate-300"
           >
             Open your stories →
           </Link>
@@ -427,7 +427,7 @@ function Item({ title, children }: { title: string; children: React.ReactNode })
   return (
     <article>
       <h3 className="text-sm font-semibold">{title}</h3>
-      <p className="mt-1.5 text-sm leading-6 text-slate-600">{children}</p>
+      <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">{children}</p>
     </article>
   )
 }

@@ -66,20 +66,20 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [clientId])
 
-  if (me.isPending) return <p className="p-8 text-sm text-slate-500">Loading your account…</p>
+  if (me.isPending) return <p className="p-8 text-sm text-slate-500 dark:text-slate-400">Loading your account…</p>
   if (me.data) return children
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 p-5">
-      <section className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-slate-900">StoryTool</h1>
-        <p className="mt-2 text-sm text-slate-600">Sign in with Google to open your stories.</p>
-        <Link to="/how-to-use" className="mt-3 inline-block text-sm text-slate-600 underline underline-offset-4 hover:text-slate-900">New here? Learn how StoryTool works</Link>
+    <main className="flex min-h-[calc(100dvh-73px)] items-center justify-center bg-slate-50 dark:bg-slate-950 p-5">
+      <section className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 shadow-sm">
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">StoryTool</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Sign in with Google to open your stories.</p>
+        <Link to="/how-to-use" className="mt-3 inline-block text-sm text-slate-600 dark:text-slate-300 underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-100">New here? Learn how StoryTool works</Link>
         {config.isPending && <p className="mt-6 text-sm text-slate-400">Preparing sign-in…</p>}
         {clientId && <div ref={buttonRef} className="mt-6 min-h-10" />}
-        {config.data && !clientId && <p className="mt-6 text-sm text-amber-700">Google sign-in is being configured.</p>}
+        {config.data && !clientId && <p className="mt-6 text-sm text-amber-700 dark:text-amber-300">Google sign-in is being configured.</p>}
         {(config.isError || scriptError || login.isError) && (
-          <p className="mt-4 text-sm text-red-600">
+          <p className="mt-4 text-sm text-red-600 dark:text-red-300">
             {login.isError ? 'Sign-in failed. Please try again.' : 'Google sign-in is unavailable right now.'}
           </p>
         )}
@@ -97,10 +97,10 @@ export function AccountMenu() {
 
   if (!me.data) return null
   return (
-    <div className="flex items-center gap-2 text-xs text-slate-500">
+    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
       <span className="max-w-48 truncate" title={me.data.email}>{me.data.name ?? me.data.email}</span>
-      <Link to="/settings" className="rounded border border-slate-300 px-2 py-1 text-slate-600 hover:bg-slate-50">Settings</Link>
-      <button type="button" onClick={() => logout.mutate()} disabled={logout.isPending} className="rounded border border-slate-300 px-2 py-1 text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+      <Link to="/settings" className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950">Settings</Link>
+      <button type="button" onClick={() => logout.mutate()} disabled={logout.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950 disabled:opacity-50">
         Sign out
       </button>
     </div>

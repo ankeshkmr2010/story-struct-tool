@@ -36,7 +36,7 @@ export function SuggestionsPanel({ storyId }: { storyId: string }) {
         <button
           onClick={() => runPass.mutate()}
           disabled={runPass.isPending}
-          className="rounded border border-slate-300 px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+          className="rounded border border-slate-300 dark:border-slate-600 px-2 py-0.5 text-[11px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950 disabled:opacity-40"
         >
           {runPass.isPending ? 'reading…' : 'read prose'}
         </button>
@@ -52,7 +52,7 @@ export function SuggestionsPanel({ storyId }: { storyId: string }) {
       )}
 
       {runPass.data && (
-        <p className="mb-2 text-[11px] text-slate-500">
+        <p className="mb-2 text-[11px] text-slate-500 dark:text-slate-400">
           Read {runPass.data.scenes_read} scene
           {runPass.data.scenes_read === 1 ? '' : 's'};{' '}
           {runPass.data.suggestions_added === 0
@@ -73,14 +73,14 @@ export function SuggestionsPanel({ storyId }: { storyId: string }) {
         {suggestions.data?.map((suggestion) => (
           <li
             key={suggestion.id}
-            className="rounded-md border-l-2 border-sky-300 bg-sky-50/60 px-3 py-2"
+            className="rounded-md border-l-2 border-sky-300 dark:border-sky-800 bg-sky-50/60 dark:bg-sky-950/60 px-3 py-2"
           >
-            <p className="text-sm text-slate-800">{suggestion.message}</p>
+            <p className="text-sm text-slate-800 dark:text-slate-100">{suggestion.message}</p>
             <div className="mt-1 flex items-center gap-2">
               <span className="font-mono text-[10px] text-slate-400">{suggestion.code}</span>
               <button
                 onClick={() => dismiss.mutate(suggestion.id)}
-                className="ml-auto text-[10px] text-slate-400 hover:text-slate-700"
+                className="ml-auto text-[10px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               >
                 dismiss
               </button>

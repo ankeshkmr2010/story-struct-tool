@@ -24,7 +24,7 @@ function statusFor(
 const dot = {
   ready: 'bg-emerald-500',
   nudge: 'bg-amber-400',
-  locked: 'bg-slate-300',
+  locked: 'bg-slate-300 dark:bg-slate-600',
 } as const
 
 export function Ladder({
@@ -54,7 +54,7 @@ export function Ladder({
               aria-current={isActive ? 'step' : undefined}
               className={[
                 'w-full rounded-md px-2.5 py-1.5 text-left transition',
-                isActive ? 'bg-slate-900 text-white' : 'hover:bg-slate-100',
+                isActive ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'hover:bg-slate-100 dark:hover:bg-slate-800',
                 clickable ? '' : 'cursor-not-allowed opacity-45',
               ].join(' ')}
             >
@@ -69,7 +69,7 @@ export function Ladder({
                   {rung.blocked_by.map((reason) => (
                     <li
                       key={reason}
-                      className="pl-[26px] text-xs text-slate-300"
+                      className="pl-[26px] text-xs text-slate-300 dark:text-slate-500"
                     >
                       {reason}
                     </li>

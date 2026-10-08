@@ -179,28 +179,28 @@ export default function StoryWorkspace() {
   })
 
   if (story.isPending || ladder.isPending) {
-    return <p className="p-8 text-sm text-slate-500">Loading…</p>
+    return <p className="p-8 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
   }
   if (story.isError) {
-    return <p className="p-8 text-sm text-red-600">{(story.error as Error).message}</p>
+    return <p className="p-8 text-sm text-red-600 dark:text-red-300">{(story.error as Error).message}</p>
   }
 
   return (
     <main className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8">
-      <Link to="/" className="text-xs text-slate-400 hover:text-slate-700">
+      <Link to="/library" className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
         ← all stories
       </Link>
 
       <header className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">{story.data.title}</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{story.data.title}</h1>
           <p className="mt-0.5 text-xs text-slate-400">
             {story.data.structure_framework.replace('_', ' ')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {progress.data && (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               {progress.data.word_count.toLocaleString()} words ·{' '}
               {progress.data.drafted_scene_count}/{progress.data.scene_count} scenes drafted
             </span>
@@ -209,18 +209,18 @@ export default function StoryWorkspace() {
               must always be able to leave. */}
           <a
             href={api.manuscriptUrl(storyId)}
-            className="rounded border border-slate-300 px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50"
+            className="rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950"
           >
             Export .md
           </a>
           <StoryVersions storyId={storyId} />
-          <label className="flex items-center gap-1.5 text-xs text-slate-500">
+          <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             Mode
             <select
               aria-label="Authoring mode"
               value={story.data.authoring_mode}
               onChange={(event) => updateStory.mutate({ authoring_mode: event.target.value })}
-              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs capitalize text-slate-700"
+              className="rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-xs capitalize text-slate-700 dark:text-slate-200"
             >
               {MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
             </select>
@@ -232,8 +232,8 @@ export default function StoryWorkspace() {
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setLevel(TIMELINE_VIEW)} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
       <div className={`mt-6 grid grid-cols-1 gap-5 md:grid-cols-[170px_minmax(0,1fr)] ${level === TIMELINE_VIEW || level === ASSISTANT_VIEW ? 'xl:grid-cols-[180px_minmax(0,1fr)]' : 'xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
         <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
-          <button type="button" onClick={() => setLevel(TIMELINE_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === TIMELINE_VIEW ? 'bg-slate-900 text-white' : 'bg-sky-50 text-sky-800 hover:bg-sky-100'}`}>Story timeline →</button>
-          <button type="button" onClick={() => setLevel(ASSISTANT_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === ASSISTANT_VIEW ? 'bg-slate-900 text-white' : 'bg-violet-50 text-violet-800 hover:bg-violet-100'}`}>Story assistant →</button>
+          <button type="button" onClick={() => setLevel(TIMELINE_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === TIMELINE_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'bg-sky-50 dark:bg-sky-950 text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-950'}`}>Story timeline →</button>
+          <button type="button" onClick={() => setLevel(ASSISTANT_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === ASSISTANT_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'bg-violet-50 dark:bg-violet-950 text-violet-800 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-950'}`}>Story assistant →</button>
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
             Levels
           </h2>
@@ -253,7 +253,7 @@ export default function StoryWorkspace() {
             onClick={() => setLevel(PLACES_VIEW)}
             className={[
               'w-full rounded-md px-3 py-2 text-left text-sm transition',
-              level === PLACES_VIEW ? 'bg-slate-900 text-white' : 'hover:bg-slate-100',
+              level === PLACES_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'hover:bg-slate-100 dark:hover:bg-slate-800',
             ].join(' ')}
           >
             Places
@@ -266,11 +266,11 @@ export default function StoryWorkspace() {
           {level === 1 && (
             <Panel title="Premise" hint="The story's starting point and settings.">
               <div className="space-y-3">
-                <label className="block text-xs text-slate-500">Title<InlineText value={story.data.title} placeholder="Story title" onSave={(title) => updateStory.mutateAsync({ title })} /></label>
-                <label className="block text-xs text-slate-500">Premise<InlineText value={story.data.premise} placeholder="What is this story?" onSave={(premise) => updateStory.mutateAsync({ premise })} multiline /></label>
-                <label className="block text-xs text-slate-500">Genre<InlineText value={story.data.genre} placeholder="Genre" onSave={(genre) => updateStory.mutateAsync({ genre })} /></label>
-                <label className="block text-xs text-slate-500">Point of view<InlineSelect value={story.data.pov_style} options={['first', 'third_limited', 'third_omniscient', 'second', 'mixed']} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></label>
-                <label className="block text-xs text-slate-500">Framework<InlineSelect value={story.data.structure_framework} options={['three_act', 'save_the_cat', 'custom']} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">Title<InlineText value={story.data.title} placeholder="Story title" onSave={(title) => updateStory.mutateAsync({ title })} /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">Premise<InlineText value={story.data.premise} placeholder="What is this story?" onSave={(premise) => updateStory.mutateAsync({ premise })} multiline /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">Genre<InlineText value={story.data.genre} placeholder="Genre" onSave={(genre) => updateStory.mutateAsync({ genre })} /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">Point of view<InlineSelect value={story.data.pov_style} options={['first', 'third_limited', 'third_omniscient', 'second', 'mixed']} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">Framework<InlineSelect value={story.data.structure_framework} options={['three_act', 'save_the_cat', 'custom']} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /></label>
               </div>
             </Panel>
           )}
@@ -291,35 +291,35 @@ export default function StoryWorkspace() {
 
               {(chapters.data?.length ?? 0) > 0 && (
                 <div className="mt-3 flex min-w-0 items-center gap-2">
-                  <select aria-label="Select chapter" value={selectedChapter ?? ''} onChange={(event) => setChapterId(event.target.value)} className="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700">
+                  <select aria-label="Select chapter" value={selectedChapter ?? ''} onChange={(event) => setChapterId(event.target.value)} className="min-w-0 flex-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200">
                     {chapters.data?.map((item) => <option key={item.id} value={item.id}>{item.number}. {item.title ?? 'Untitled'}</option>)}
                   </select>
-                  <button type="button" aria-label="Move chapter up" title="Move chapter up" disabled={!selectedChapter || chapterIndex <= 0 || moveChapter.isPending} onClick={() => moveChapter.mutate({ id: selectedChapter!, before: chapters.data?.[chapterIndex - 1]?.id })} className="rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 disabled:opacity-30">↑</button>
-                  <button type="button" aria-label="Move chapter down" title="Move chapter down" disabled={!selectedChapter || chapterIndex >= (chapters.data?.length ?? 0) - 1 || moveChapter.isPending} onClick={() => moveChapter.mutate({ id: selectedChapter!, after: chapters.data?.[chapterIndex + 1]?.id })} className="rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 disabled:opacity-30">↓</button>
+                  <button type="button" aria-label="Move chapter up" title="Move chapter up" disabled={!selectedChapter || chapterIndex <= 0 || moveChapter.isPending} onClick={() => moveChapter.mutate({ id: selectedChapter!, before: chapters.data?.[chapterIndex - 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↑</button>
+                  <button type="button" aria-label="Move chapter down" title="Move chapter down" disabled={!selectedChapter || chapterIndex >= (chapters.data?.length ?? 0) - 1 || moveChapter.isPending} onClick={() => moveChapter.mutate({ id: selectedChapter!, after: chapters.data?.[chapterIndex + 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↓</button>
                 </div>
               )}
 
               {chapter && (
-                <details className="mt-4 rounded-md border border-slate-200 bg-white">
-                  <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                <details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                  <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-950">
                     <span>Chapter details</span>
                     <span className="truncate text-xs font-normal text-slate-400">Draft: {chapter.status} · {chapter.title ?? 'Untitled'}</span>
                   </summary>
-                  <div className="border-t border-slate-100 p-3">
+                  <div className="border-t border-slate-100 dark:border-slate-800 p-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Structure</h3>
                     <div className="flex items-center gap-2"><Chip complete={chapter.completeness.is_complete} missing={chapter.completeness.missing} /><DeleteButton onConfirm={() => deleteChapter.mutate()} what="chapter" /></div>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-2">
-                    <label className="text-xs text-slate-500">Number<InlineNumber value={chapter.number} min={1} onSave={(number) => updateChapter.mutateAsync({ number })} /></label>
-                    <label className="text-xs text-slate-500">Title<InlineText value={chapter.title} placeholder="Chapter title" onSave={(title) => updateChapter.mutateAsync({ title })} /></label>
-                    <label className="text-xs text-slate-500">Act<InlineSelect value={chapter.act_id} options={(acts.data ?? []).map((act) => ({ value: act.id, label: `${act.number}. ${act.title ?? 'Untitled'}` }))} onSave={(act_id) => updateChapter.mutateAsync({ act_id })} /></label>
-                    <label className="text-xs text-slate-500">POV character<InlineSelect value={chapter.pov_character_id} options={(characters.data ?? []).map((character) => ({ value: character.id, label: character.name }))} onSave={(pov_character_id) => updateChapter.mutateAsync({ pov_character_id })} /></label>
-                    <label className="text-xs text-slate-500">Draft status<InlineSelect value={chapter.status} options={['placeholder', 'outlined', 'drafted', 'revised']} onSave={(status) => updateChapter.mutateAsync({ status })} /></label>
-                    <label className="text-xs text-slate-500">Emotional shift from<InlineText value={chapter.emotional_shift_from} placeholder="from" onSave={(emotional_shift_from) => updateChapter.mutateAsync({ emotional_shift_from })} /></label>
-                    <label className="text-xs text-slate-500">Emotional shift to<InlineText value={chapter.emotional_shift_to} placeholder="to" onSave={(emotional_shift_to) => updateChapter.mutateAsync({ emotional_shift_to })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400">Number<InlineNumber value={chapter.number} min={1} onSave={(number) => updateChapter.mutateAsync({ number })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400">Title<InlineText value={chapter.title} placeholder="Chapter title" onSave={(title) => updateChapter.mutateAsync({ title })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400">Act<InlineSelect value={chapter.act_id} options={(acts.data ?? []).map((act) => ({ value: act.id, label: `${act.number}. ${act.title ?? 'Untitled'}` }))} onSave={(act_id) => updateChapter.mutateAsync({ act_id })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400">POV character<InlineSelect value={chapter.pov_character_id} options={(characters.data ?? []).map((character) => ({ value: character.id, label: character.name }))} onSave={(pov_character_id) => updateChapter.mutateAsync({ pov_character_id })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400">Draft status<InlineSelect value={chapter.status} options={['placeholder', 'outlined', 'drafted', 'revised']} onSave={(status) => updateChapter.mutateAsync({ status })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400">Emotional shift from<InlineText value={chapter.emotional_shift_from} placeholder="from" onSave={(emotional_shift_from) => updateChapter.mutateAsync({ emotional_shift_from })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400">Emotional shift to<InlineText value={chapter.emotional_shift_to} placeholder="to" onSave={(emotional_shift_to) => updateChapter.mutateAsync({ emotional_shift_to })} /></label>
                   </div>
-                  <label className="mt-2 block text-xs text-slate-500">Summary<InlineText value={chapter.summary} placeholder="What does this chapter do?" onSave={(summary) => updateChapter.mutateAsync({ summary })} multiline /></label>
+                  <label className="mt-2 block text-xs text-slate-500 dark:text-slate-400">Summary<InlineText value={chapter.summary} placeholder="What does this chapter do?" onSave={(summary) => updateChapter.mutateAsync({ summary })} multiline /></label>
                   </div>
                 </details>
               )}
@@ -330,15 +330,15 @@ export default function StoryWorkspace() {
 
                   {/* Declaring what a chapter owes is the one upward reference the
                       author makes by hand; everything else is derived from it. */}
-                  <details className="mt-3 rounded-md border border-slate-200 bg-white">
-                    <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  <details className="mt-3 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                    <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-950">
                       Beat assignments · {brief.data.beats.length} linked
                     </summary>
-                    <div className="border-t border-slate-100 p-3">
+                    <div className="border-t border-slate-100 dark:border-slate-800 p-3">
                     <p className="mb-1.5 text-xs text-slate-400">Declare a beat this chapter fulfils:</p>
                     <div className="mb-2 flex flex-wrap gap-1.5">
                       {brief.data.beats.map((beat) => (
-                        <button key={beat.beat_id} onClick={() => unlinkBeat.mutate(beat.beat_id)} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-600 hover:bg-red-50 hover:text-red-700" title="Remove beat from chapter">
+                        <button key={beat.beat_id} onClick={() => unlinkBeat.mutate(beat.beat_id)} className="rounded bg-slate-100 dark:bg-slate-800 px-2 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-700 dark:hover:text-red-300" title="Remove beat from chapter">
                           {beat.label} ×
                         </button>
                       ))}
@@ -352,7 +352,7 @@ export default function StoryWorkspace() {
                           <button
                             key={beat.id}
                             onClick={() => linkBeat.mutate(beat.id)}
-                            className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+                            className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950"
                           >
                             + {beat.label}
                           </button>
@@ -385,11 +385,11 @@ export default function StoryWorkspace() {
               />
               {(scenes.data?.length ?? 0) > 0 && (
                 <div className="mt-3 flex min-w-0 items-center gap-2">
-                  <select aria-label="Select scene" value={selectedScene?.id ?? ''} onChange={(event) => setSceneId(event.target.value)} className="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700">
+                  <select aria-label="Select scene" value={selectedScene?.id ?? ''} onChange={(event) => setSceneId(event.target.value)} className="min-w-0 flex-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200">
                     {scenes.data?.map((item) => <option key={item.id} value={item.id}>{chapters.data?.find((chapter) => chapter.id === item.chapter_id)?.number ?? '—'} · {item.title ?? 'Untitled'}{item.word_count > 0 ? ` · ${item.word_count} words` : ''}</option>)}
                   </select>
-                  <button type="button" aria-label="Move scene up" title="Move scene up within chapter" disabled={!selectedScene || sceneIndex <= 0 || moveScene.isPending} onClick={() => moveScene.mutate({ id: selectedScene!.id, before: sceneSiblings[sceneIndex - 1]?.id })} className="rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 disabled:opacity-30">↑</button>
-                  <button type="button" aria-label="Move scene down" title="Move scene down within chapter" disabled={!selectedScene || sceneIndex >= sceneSiblings.length - 1 || moveScene.isPending} onClick={() => moveScene.mutate({ id: selectedScene!.id, after: sceneSiblings[sceneIndex + 1]?.id })} className="rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 disabled:opacity-30">↓</button>
+                  <button type="button" aria-label="Move scene up" title="Move scene up within chapter" disabled={!selectedScene || sceneIndex <= 0 || moveScene.isPending} onClick={() => moveScene.mutate({ id: selectedScene!.id, before: sceneSiblings[sceneIndex - 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↑</button>
+                  <button type="button" aria-label="Move scene down" title="Move scene down within chapter" disabled={!selectedScene || sceneIndex >= sceneSiblings.length - 1 || moveScene.isPending} onClick={() => moveScene.mutate({ id: selectedScene!.id, after: sceneSiblings[sceneIndex + 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↓</button>
                 </div>
               )}
 
@@ -434,7 +434,7 @@ function Panel({
 }) {
   return (
     <div>
-      <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
       <p className="mb-3 text-xs text-slate-400">{hint}</p>
       {children}
     </div>

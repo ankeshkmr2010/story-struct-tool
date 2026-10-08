@@ -58,8 +58,8 @@ export function InlineText({
     },
     className: [
       'w-full rounded border border-transparent bg-transparent px-1.5 py-0.5 text-sm',
-      'hover:border-slate-200 focus:border-slate-400 focus:bg-white focus:outline-none',
-      value ? 'text-slate-800' : 'text-slate-400 italic',
+      'hover:border-slate-200 dark:hover:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none',
+      value ? 'text-slate-800 dark:text-slate-100' : 'text-slate-400 italic',
       className,
     ].join(' '),
   }
@@ -75,10 +75,10 @@ export function InlineText({
         <span className="absolute -top-3 right-0 text-[10px] text-slate-400">saving…</span>
       )}
       {state === 'saved' && (
-        <span className="absolute -top-3 right-0 text-[10px] text-emerald-600">saved</span>
+        <span className="absolute -top-3 right-0 text-[10px] text-emerald-600 dark:text-emerald-300">saved</span>
       )}
       {state === 'error' && (
-        <span className="absolute -top-3 right-0 text-[10px] text-red-600">save failed</span>
+        <span className="absolute -top-3 right-0 text-[10px] text-red-600 dark:text-red-300">save failed</span>
       )}
     </span>
   )
@@ -108,9 +108,9 @@ export function InlineSelect({
           'rounded border px-1.5 py-0.5 text-xs capitalize',
           value
             ? highlight
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-              : 'border-slate-300 text-slate-700'
-            : 'border-slate-200 text-slate-400',
+              ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+              : 'border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200'
+            : 'border-slate-200 dark:border-slate-700 text-slate-400',
         ].join(' ')}
       >
         <option value="">{placeholder}</option>
@@ -127,7 +127,7 @@ export function InlineSelect({
         <span className="absolute -top-3 right-0 text-[10px] text-slate-400">…</span>
       )}
       {state === 'error' && (
-        <span className="absolute -top-3 right-0 text-[10px] text-red-600">save failed</span>
+        <span className="absolute -top-3 right-0 text-[10px] text-red-600 dark:text-red-300">save failed</span>
       )}
     </span>
   )
@@ -150,7 +150,7 @@ export function InlineNumber({
         type="number"
         min={min}
         defaultValue={value ?? ''}
-        className="w-20 rounded border border-slate-200 px-1.5 py-0.5 text-sm"
+        className="w-20 rounded border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 text-sm"
         onBlur={(event) => {
           const next = event.target.value === '' ? null : Number(event.target.value)
           if (next !== value && (next === null || (Number.isFinite(next) && (min === undefined || next >= min)))) {
@@ -158,7 +158,7 @@ export function InlineNumber({
           }
         }}
       />
-      {state === 'error' && <span className="text-[10px] text-red-600">save failed</span>}
+      {state === 'error' && <span className="text-[10px] text-red-600 dark:text-red-300">save failed</span>}
     </span>
   )
 }
@@ -186,7 +186,7 @@ export function DeleteButton({
         </button>
         <button
           onClick={() => setArmed(false)}
-          className="text-[10px] text-slate-400 hover:text-slate-700"
+          className="text-[10px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
         >
           cancel
         </button>
@@ -197,7 +197,7 @@ export function DeleteButton({
   return (
     <button
       onClick={() => setArmed(true)}
-      className="text-xs text-slate-300 hover:text-red-600"
+      className="text-xs text-slate-300 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-300"
       aria-label={`Delete ${what}`}
     >
       ×
@@ -209,9 +209,9 @@ export function Chip({ complete, missing = [] }: { complete: boolean; missing?: 
   const label = (field: string) => field === 'pov_character_id' ? 'POV character' : field.replaceAll('_', ' ')
   if (!complete) return (
     <details className="relative shrink-0 text-[10px]">
-      <summary aria-label="Placeholder — show missing details" className="cursor-pointer list-none rounded bg-amber-100 px-1.5 py-0.5 uppercase tracking-wide text-amber-700 [&::-webkit-details-marker]:hidden">placeholder ⓘ</summary>
-      <div className="absolute right-0 top-full z-30 mt-2 w-60 rounded-lg border border-amber-200 bg-white p-3 text-xs normal-case leading-5 text-slate-600 shadow-lg">
-        <p className="font-semibold text-slate-800">Required details are still missing</p>
+      <summary aria-label="Placeholder — show missing details" className="cursor-pointer list-none rounded bg-amber-100 dark:bg-amber-950 px-1.5 py-0.5 uppercase tracking-wide text-amber-700 dark:text-amber-300 [&::-webkit-details-marker]:hidden">placeholder ⓘ</summary>
+      <div className="absolute right-0 top-full z-30 mt-2 w-60 rounded-lg border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 p-3 text-xs normal-case leading-5 text-slate-600 dark:text-slate-300 shadow-lg">
+        <p className="font-semibold text-slate-800 dark:text-slate-100">Required details are still missing</p>
         {missing.length > 0 && <p className="mt-1">Fill in: {missing.map(label).join(', ')}.</p>}
         <p className="mt-2">Edit the fields on this card. The badge changes automatically when those details are filled. Draft status is a separate choice.</p>
       </div>
@@ -222,7 +222,7 @@ export function Chip({ complete, missing = [] }: { complete: boolean; missing?: 
       title="Required structural details are filled. This does not mean the story or draft is finished."
       className={[
         'shrink-0 rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
-        complete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700',
+        complete ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300',
       ].join(' ')}
     >
       {complete ? 'complete' : 'placeholder'}
@@ -261,7 +261,7 @@ export function AddForm({
       }}
     >
       <input
-        className="min-w-0 flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm"
+        className="min-w-0 flex-1 rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
         placeholder={error ? 'Could not add; try again' : placeholder}
         value={value}
         onChange={(event) => setValue(event.target.value)}
@@ -269,7 +269,7 @@ export function AddForm({
       <button
         type="submit"
         disabled={!value.trim() || pending}
-        className="rounded bg-slate-900 px-3 py-1.5 text-sm text-white disabled:opacity-40"
+        className="rounded bg-slate-900 dark:bg-slate-200 px-3 py-1.5 text-sm text-white dark:text-slate-950 disabled:opacity-40"
       >
         Add
       </button>

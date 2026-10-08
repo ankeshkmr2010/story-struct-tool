@@ -19,7 +19,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   return (
     <div className="grid grid-cols-[150px_1fr] gap-3 py-1.5">
       <dt className="text-xs text-slate-400">{label}</dt>
-      <dd className="text-sm text-slate-800">{children}</dd>
+      <dd className="text-sm text-slate-800 dark:text-slate-100">{children}</dd>
     </div>
   )
 }
@@ -30,18 +30,18 @@ const Unset = ({ children }: { children: React.ReactNode }) => (
 
 export function ChapterBriefCard({ brief }: { brief: ChapterBrief }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
       <div className="flex items-baseline justify-between">
-        <h3 className="text-base font-semibold text-slate-900">
+        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
           Chapter {brief.number}
-          {brief.title && <span className="font-normal text-slate-500"> — {brief.title}</span>}
+          {brief.title && <span className="font-normal text-slate-500 dark:text-slate-400"> — {brief.title}</span>}
         </h3>
-        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600">
+        <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">
           {brief.status}
         </span>
       </div>
 
-      <dl className="mt-3 divide-y divide-slate-100">
+      <dl className="mt-3 divide-y divide-slate-100 dark:divide-slate-800">
         <Row label="Act">
           {brief.act_number ? (
             <>
@@ -62,7 +62,7 @@ export function ChapterBriefCard({ brief }: { brief: ChapterBrief }) {
                 <li key={beat.beat_id} className="flex items-center gap-2">
                   <span
                     className={
-                      beat.is_fulfilled ? 'text-emerald-600' : 'text-amber-600'
+                      beat.is_fulfilled ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'
                     }
                   >
                     {beat.is_fulfilled ? '✓' : '○'}
@@ -118,7 +118,7 @@ export function ChapterBriefCard({ brief }: { brief: ChapterBrief }) {
             <>
               {brief.scenes.length} scene{brief.scenes.length === 1 ? '' : 's'}
               {brief.placeholder_scene_count > 0 && (
-                <span className="text-slate-500">
+                <span className="text-slate-500 dark:text-slate-400">
                   {' '}
                   · {brief.placeholder_scene_count} placeholder
                   {brief.placeholder_scene_count === 1 ? '' : 's'}
@@ -127,10 +127,10 @@ export function ChapterBriefCard({ brief }: { brief: ChapterBrief }) {
               <ul className="mt-1.5 space-y-0.5">
                 {brief.scenes.map((scene) => (
                   <li key={scene.scene_id} className="flex items-center gap-2 text-xs">
-                    <span className={scene.is_complete ? 'text-emerald-600' : 'text-amber-600'}>
+                    <span className={scene.is_complete ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'}>
                       {scene.is_complete ? '✓' : '○'}
                     </span>
-                    <span className="text-slate-700">{scene.title ?? 'untitled'}</span>
+                    <span className="text-slate-700 dark:text-slate-200">{scene.title ?? 'untitled'}</span>
                     <span className="text-slate-400">{scene.type}</span>
                   </li>
                 ))}

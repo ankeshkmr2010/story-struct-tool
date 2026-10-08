@@ -46,7 +46,7 @@ export function EventsPanel({ storyId }: { storyId: string }) {
       <AddForm placeholder="Turning point…" onAdd={(label) => create.mutateAsync(label)} pending={create.isPending} />
       <ul className="mt-4 space-y-3">
         {events.data?.map((event) => (
-          <li key={event.id} className="rounded border border-slate-200 p-3">
+          <li key={event.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1">
                 <InlineText value={event.label} placeholder="event label" onSave={(v) => save(event.id, 'label', v)} className="font-medium" />
@@ -97,13 +97,13 @@ export function ActsPanel({ storyId, framework }: { storyId: string; framework: 
       <h2 className="text-sm font-semibold">Acts</h2>
       <p className="mb-3 text-xs text-slate-400">What changes in each act?</p>
       <div className="flex flex-wrap gap-2">
-        <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40">Seed {framework.replaceAll('_', ' ')}</button>
-        {scaffold.data && <span className="self-center text-xs text-slate-500">{scaffold.data.changed ? `Added ${scaffold.data.acts_created} acts and ${scaffold.data.beats_created} beats.` : 'Already seeded.'}</span>}
+        <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40">Seed {framework.replaceAll('_', ' ')}</button>
+        {scaffold.data && <span className="self-center text-xs text-slate-500 dark:text-slate-400">{scaffold.data.changed ? `Added ${scaffold.data.acts_created} acts and ${scaffold.data.beats_created} beats.` : 'Already seeded.'}</span>}
       </div>
       <div className="mt-3"><AddForm placeholder="New act title…" onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} /></div>
       <ul className="mt-4 space-y-3">
         {acts.data?.map((act) => (
-          <li key={act.id} className="rounded border border-slate-200 p-3">
+          <li key={act.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <InlineNumber value={act.number} min={1} onSave={(v) => save(act.id, 'number', v)} />
               <div className="min-w-0 flex-1"><InlineText value={act.title} placeholder="act title" onSave={(v) => save(act.id, 'title', v)} className="font-medium" /></div>
@@ -147,13 +147,13 @@ export function BeatsPanel({ storyId, framework }: { storyId: string; framework:
       <h2 className="text-sm font-semibold">Beats</h2>
       <p className="mb-3 text-xs text-slate-400">What must happen to fulfil each act? Seeded beats are ordinary editable rows.</p>
       <div className="flex flex-wrap gap-2">
-        <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40">Seed {framework.replaceAll('_', ' ')}</button>
-        {scaffold.data && <span className="self-center text-xs text-slate-500">{scaffold.data.changed ? `Added ${scaffold.data.acts_created} acts and ${scaffold.data.beats_created} beats.` : 'Already seeded.'}</span>}
+        <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40">Seed {framework.replaceAll('_', ' ')}</button>
+        {scaffold.data && <span className="self-center text-xs text-slate-500 dark:text-slate-400">{scaffold.data.changed ? `Added ${scaffold.data.acts_created} acts and ${scaffold.data.beats_created} beats.` : 'Already seeded.'}</span>}
       </div>
       <div className="mt-3"><AddForm placeholder="New beat label…" onAdd={(label) => create.mutateAsync(label)} pending={create.isPending} /></div>
       <ul className="mt-4 space-y-3">
         {beats.data?.map((beat) => (
-          <li key={beat.id} className="rounded border border-slate-200 p-3">
+          <li key={beat.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1"><InlineText value={beat.label} placeholder="beat label" onSave={(v) => save(beat.id, 'label', v)} className="font-medium" /></div>
               <Chip complete={beat.completeness.is_complete} missing={beat.completeness.missing} />
@@ -189,7 +189,7 @@ export function ThreadsPanel({ storyId }: { storyId: string }) {
       <AddForm placeholder="Thread title…" onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} />
       <ul className="mt-4 space-y-3">
         {threads.data?.map((thread) => (
-          <li key={thread.id} className="rounded border border-slate-200 p-3">
+          <li key={thread.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1"><InlineText value={thread.title} placeholder="thread title" onSave={(v) => save(thread.id, 'title', v)} className="font-medium" /></div>
               <Chip complete={thread.completeness.is_complete} missing={thread.completeness.missing} />

@@ -14,7 +14,10 @@ def frontend_router(directory: Path) -> Router:
     if not (directory / "index.html").is_file() or not (directory / "assets").is_dir():
         raise RuntimeError("Build the frontend before setting STORYTOOL_FRONTEND_DIR")
 
-    @get(["/", "/settings", "/how-to-use", "/stories/{story_id:uuid}"], include_in_schema=False)
+    @get(
+        ["/", "/library", "/settings", "/how-to-use", "/stories/{story_id:uuid}"],
+        include_in_schema=False,
+    )
     async def index(story_id: UUID | None = None) -> File:
         return File(
             directory / "index.html",
