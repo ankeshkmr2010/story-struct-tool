@@ -43,7 +43,7 @@ class ConnectionOut(BaseModel):
 
 class Operation(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    op: Literal["create", "update", "link", "unlink"]
+    op: Literal["create", "update", "link", "unlink", "write_prose"]
     entity: Entity
     ref: str = Field(min_length=1, max_length=100)
     data: dict[str, Any]
@@ -63,6 +63,7 @@ class Proposal(BaseModel):
     assumptions: list[str] = Field(default_factory=list, max_length=30)
     recommendations: list[Recommendation] = Field(default_factory=list, max_length=30)
     operations: list[Operation] = Field(default_factory=list, max_length=200)
+    base_fingerprint: str | None = Field(default=None, min_length=64, max_length=64)
 
 
 class PromptRequest(BaseModel):

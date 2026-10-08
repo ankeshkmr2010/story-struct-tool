@@ -1,5 +1,116 @@
 # StoryTool AI setup
 
+## Hosted MCP server
+
+The MCP server is part of the same StoryTool backend, at:
+
+`https://storytool.onrender.com/mcp`
+
+For local development use `http://localhost:8000/mcp`. Transport is Streamable HTTP.
+This release uses a story-scoped bearer token; it does not yet implement OAuth for MCP clients.
+It supports both the 2025-11-25 and 2026-07-28 protocol profiles through the official SDK.
+
+1. Sign in to StoryTool and open **Settings -> Connect an AI client · MCP**.
+2. Choose a story and create an agent token. It expires after seven days; revoke it in Settings.
+3. In a client supporting custom bearer headers, add the MCP URL and set the Authorization
+   header to `Bearer <your-story-token>`. Enter the actual token locally, never in a prompt.
+4. Ask the client to call `get_connection`, then `get_story_context`, `get_writing_guidelines`
+   and `get_story_findings`. It will discover entity schemas, links and current IDs.
+5. Request a focused outline or draft. Review its staged proposal before applying.
+
+The token authorizes reading/editing the chosen story, including prose and whole-story
+version history/restores. It cannot access other stories, provider credentials or account
+settings, and cannot run in-app billable generation. There are no granular read-only token
+presets in this release. Grant access only to clients you intend to let edit this story.
+The external AI client supplies its own model and usage billing; MCP does not run a model.
+
+Tools cover context, exact schemas, paginated/searchable graph entities and links, arc
+tracing, global timeline, health/continuity/readiness, notices and fresh stored reader
+observations, scene annotations/mentions, prose chunks, writing guidelines, proposals and apply/dismiss/undo, version
+listing/reading/creation/comparison, restore preview and recovery-protected restore.
+One guidelines resource and a reusable outline/draft/review/timeline prompt are provided.
+
+Entity and relationship fields reflect the current app. Separate world-rule/lore/theme
+models, multi-scene event revelations, version forks and remote OAuth remain in the roadmap.
+No tool silently calls a paid reader. Reading notices does not generate new observations.
+Context reads are currently graph-based; output pages are bounded, but novel-scale database
+projection/search optimizations are still future work.
+
+### Clients that need a local stdio connection
+
+The full remote catalog can also be exposed by the local SDK bridge:
+
+```powershell
+$env:STORYTOOL_AGENT_TOKEN = 'paste-your-story-token-locally'
+$env:STORYTOOL_BASE_URL = 'https://storytool.onrender.com'
+uv --directory D:/learning/StoryTool/api run python scripts/story_mcp_remote.py
+```
+
+Register that command in your client's local MCP configuration and forward the two
+environment variable names. Use your own checkout path. Keep raw tokens outside repository
+configuration and prompts. The original `story_mcp.py` remains compatible, with its older
+four-tool catalog; `story_mcp_remote.py` forwards the full hosted tool/resource/prompt catalog.
+
+If a client only accepts OAuth and cannot run a stdio bridge or supply a bearer header,
+it cannot connect to this release yet. No client-specific OAuth compatibility is claimed.
+The free Render server may need about a minute to wake after being idle; a startup timeout
+is different from a rejected token.
+
+### Outline and prose example
+
+An outline proposal uses the `base_fingerprint` returned by current context, owned IDs,
+and `new:...` references for creates. Stage is a validation preview, not a write to the draft.
+The author can inspect external proposals in the story's **Story assistant** panel.
+Apply is atomic and a retried Apply returns the same result. Later edits invalidate stale plans.
+
+For prose, call `read_scene_prose` and page until you have the relevant text. Its hash
+covers the whole scene, even when the returned text is a chunk. Then stage:
+
+```json
+{
+  "summary": "Give Maya's choice a concrete consequence",
+  "base_fingerprint": "<fingerprint-from-current-context>",
+  "operations": [
+    {
+      "op": "write_prose",
+      "entity": "scene",
+      "ref": "<owned-scene-uuid>",
+      "data": {
+        "content": "Maya gave Eli the key. Beyond the glass, the last boat vanished into rain.",
+        "expected_content_hash": "<hash-from-read-scene-prose>"
+      }
+    }
+  ]
+}
+```
+
+This replaces the complete scene text when applied, not just one returned chunk. Assemble
+the intended full scene and preserve unaffected prose. Maximum replacement is 200,000
+characters. Range-patch editing is not implemented yet. Word counts, prose revisions and
+annotation re-anchoring use the same save service as the manual editor.
+
+For recovery, create a named checkpoint, compare versions or preview a restore, obtain
+the author's authorization, and pass the preview's exact `current_fingerprint` to
+`restore_story_version`. Restore replaces the whole story graph and creates a recovery version.
+It does not change ownership, saved model keys or account sessions.
+
+Useful author requests:
+
+> Read my story issues and notices. Identify the three most useful repairs, cite the
+> affected scenes, and propose two alternatives where the evidence is uncertain.
+
+> Read the connection guidelines, then build Act 2 with beats, linked chapters/scenes,
+> Maya's character arc, her relationship arc, A/B threads and events with people/places.
+> Reuse existing entities. Stage the outline and show what it changes before applying.
+
+> Save a version called Before the ending rewrite. Draft an alternative climax that
+> resolves Maya's need through a costly choice. Preserve the established POV and voice.
+
+> Compare the current timeline with an earlier version. Keep theft before the opening
+> in world time and the confession near the ending in reading order.
+
+The deeper design and remaining release phases are in [MCP_SERVER_PLAN.md](MCP_SERVER_PLAN.md).
+
 ## Use the assistant in the app
 
 1. Sign in and open **Settings** from the account menu.
@@ -45,7 +156,7 @@ changed since that batch; it will not overwrite subsequent manual edits.
 Current limits: at most 200 operations per proposal; 8,000 characters per scene
 excerpt and 24,000 excerpt characters in total; synchronous generation with a provider
 timeout. A rejected/invalid response leaves the story intact. Partial proposal selection,
-streaming progress, remote MCP hosting/OAuth, and embedded agent runtimes are later extensions.
+streaming progress, remote MCP OAuth, and embedded agent runtimes are later extensions.
 
 ## OpenRouter free model setup
 

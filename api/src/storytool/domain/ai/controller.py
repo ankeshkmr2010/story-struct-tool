@@ -164,6 +164,10 @@ class AIController(Controller):
         include_prose: bool = False,
     ) -> dict[str, Any]:
         await owned_story(db_session, story_id, actor(request))
+        await db_session.execute(
+            text("SELECT pg_advisory_xact_lock(:key)"),
+            {"key": int.from_bytes(story_id.bytes[:8], "big", signed=True)},
+        )
         return await story_context(db_session, story_id, include_prose)
 
     @get("/stories/{story_id:uuid}/ai/runs")
@@ -289,6 +293,10 @@ class AIController(Controller):
         user_id = actor(request)
         await owned_story(db_session, story_id, user_id)
         state = await snapshot(db_session, story_id)
+        if data.base_fingerprint and data.base_fingerprint != fingerprint(state):
+            raise ConflictException(
+                detail="The story changed since your context read. Read it again."
+            )
         context = await story_context(db_session, story_id, False, state)
         known_ids = {row["id"] for row in context["observations"]}
         if any(

@@ -78,6 +78,33 @@ class StoryVersionController(Controller):
         )
         return VersionOut.model_validate(record)
 
+    @get("/{version_id:uuid}")
+    async def read_version(
+        self,
+        request: Request,
+        db_session: AsyncSession,
+        story_id: UUID,
+        version_id: UUID,
+        include_prose: bool = False,
+    ) -> dict:
+        record = await owned_version(
+            db_session, story_id, request.scope["state"]["storytool_user_id"], version_id
+        )
+        import copy
+
+        state = copy.deepcopy(record.state)
+        if not include_prose:
+            for kind in ("scene", "scene_revision"):
+                for row in state.get(kind, []):
+                    row.pop("content", None)
+            for row in state.get("annotation", []):
+                row.pop("quoted_text", None)
+        return {
+            "version": VersionOut.model_validate(record).model_dump(mode="json"),
+            "state": state,
+            "include_prose": include_prose,
+        }
+
     @get("/{version_id:uuid}/preview")
     async def preview(
         self, request: Request, db_session: AsyncSession, story_id: UUID, version_id: UUID

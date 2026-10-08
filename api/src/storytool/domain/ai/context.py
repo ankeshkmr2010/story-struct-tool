@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from storytool.domain.ai.commands import ENTITIES, LINKS, json_value, snapshot
+from storytool.domain.ai.commands import ENTITIES, LINKS, fingerprint, json_value, snapshot
 from storytool.domain.ai.models import StoryObservation
 from storytool.domain.analysis import load_graph_by_id
 from storytool.domain.continuity import run_continuity
@@ -116,6 +116,8 @@ async def story_context(
     }
     create_schemas["arc_stage"]["required"].append("arc_id")
     return {
+        "story_id": str(story_id),
+        "base_fingerprint": fingerprint(state),
         "entities": entities,
         "create_schemas": create_schemas,
         "update_schemas": {

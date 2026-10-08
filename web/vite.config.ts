@@ -10,6 +10,7 @@ export default defineConfig({
     // keeps paths identical between dev and prod -- no CORS, no base-URL switching.
     proxy: {
       '/api': { target: 'http://localhost:8000', changeOrigin: false },
+      '/mcp': { target: 'http://localhost:8000', changeOrigin: false },
     },
   },
 })

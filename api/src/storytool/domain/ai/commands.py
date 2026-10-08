@@ -17,6 +17,7 @@ from storytool.domain.cast import models as cast_models
 from storytool.domain.cast import schemas as cast_schemas
 from storytool.domain.narrative import models as narrative
 from storytool.domain.narrative import schemas as narrative_schemas
+from storytool.domain.narrative.prose import save_scene_content
 from storytool.domain.story.models import Story
 from storytool.domain.story.schemas import StoryUpdate
 from storytool.domain.structure import models as structure
@@ -244,6 +245,58 @@ async def execute_proposal(
     for operation in proposal.operations:
         if operation.op == "create":
             continue
+        if operation.op == "write_prose":
+            if operation.entity != "scene" or set(operation.data) != {
+                "content",
+                "expected_content_hash",
+            }:
+                raise ClientException(
+                    detail="Prose edits need a scene, content and expected_content_hash"
+                )
+            identifier = await resolve("scene", operation.ref)
+            scene = await owned_entity(db, "scene", identifier, story_id)
+            content = operation.data["content"]
+            if not isinstance(content, str) or len(content) > 200000:
+                raise ClientException(
+                    detail="Prose content must be text, at most 200000 characters"
+                )
+            content_hash = hashlib.sha256((scene.content or "").encode()).hexdigest()
+            if operation.data["expected_content_hash"] != content_hash:
+                raise ClientException(
+                    detail="Scene prose changed; read the scene before proposing edits"
+                )
+            annotations = list(
+                (
+                    await db.scalars(
+                        select(narrative.Annotation).where(
+                            narrative.Annotation.scene_id == identifier
+                        )
+                    )
+                ).all()
+            )
+            inverse.append(
+                {
+                    "op": "write_prose",
+                    "entity": "scene",
+                    "id": str(identifier),
+                    "data": {
+                        "content": scene.content,
+                        "annotations": [
+                            {
+                                "id": str(a.id),
+                                "start_offset": a.start_offset,
+                                "end_offset": a.end_offset,
+                                "is_orphaned": a.is_orphaned,
+                            }
+                            for a in annotations
+                        ],
+                    },
+                }
+            )
+            await save_scene_content(
+                db, scene, content, snapshot=True, snapshot_label="Before assistant prose edit"
+            )
+            continue
         if operation.op == "update":
             if operation.entity not in ENTITIES:
                 raise ClientException(detail="Use link/unlink for relationships between entities")
@@ -355,7 +408,25 @@ async def undo_operations(db: AsyncSession, story_id: UUID, inverse: list[dict[s
                 await db.execute(insert(table).values(**values))
         else:
             item = await owned_entity(db, kind, UUID(operation["id"]), story_id)
-            if operation["op"] == "delete":
+            if operation["op"] == "write_prose":
+                await save_scene_content(
+                    db,
+                    item,
+                    operation["data"]["content"],
+                    snapshot=True,
+                    snapshot_label="Before undoing assistant prose edit",
+                )
+                for anchor in operation["data"]["annotations"]:
+                    annotation = await db.scalar(
+                        select(narrative.Annotation).where(
+                            narrative.Annotation.id == UUID(anchor["id"]),
+                            narrative.Annotation.scene_id == item.id,
+                        )
+                    )
+                    if annotation:
+                        for field in ("start_offset", "end_offset", "is_orphaned"):
+                            setattr(annotation, field, anchor[field])
+            elif operation["op"] == "delete":
                 await db.delete(item)
             else:
                 for field, value in operation["data"].items():

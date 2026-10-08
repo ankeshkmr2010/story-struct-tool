@@ -33,9 +33,9 @@ export function AIChangePreview({ run, entities = {} }: { run: AIRun; entities?:
         {operations.slice(0, 4).map((operation, index) => {
           const title = labels.get(operation.ref) ?? operation.entity.replaceAll('_', ' ')
           const name = operation.entity.replaceAll('_', ' ')
-          const verbs = run.status === 'applied' ? { create: 'Added', update: 'Updated', link: 'Connected', unlink: 'Disconnected' } : { create: 'Add', update: 'Update', link: 'Connect', unlink: 'Disconnect' }
+          const verbs = run.status === 'applied' ? { create: 'Added', update: 'Updated', link: 'Connected', unlink: 'Disconnected', write_prose: 'Rewrote prose in' } : { create: 'Add', update: 'Update', link: 'Connect', unlink: 'Disconnect', write_prose: 'Rewrite prose in' }
           const verb = verbs[operation.op]
-          const changes = Object.entries(operation.data).filter(([field]) => !['name', 'title', 'label', 'from_id', 'to_id'].includes(field)).slice(0, 2)
+          const changes = Object.entries(operation.data).filter(([field]) => !['name', 'title', 'label', 'from_id', 'to_id', 'expected_content_hash'].includes(field)).slice(0, 2)
           return <li key={index} className="text-xs leading-5 text-slate-700 dark:text-slate-200">
             <p className="font-medium">{verb} {name}{title !== name ? `: ${title}` : ''}{operation.op === 'link' || operation.op === 'unlink' ? ` · ${short(operation.data.from_id)} → ${short(operation.data.to_id)}` : ''}</p>
             {changes.length > 0 && <p className="break-words text-slate-500 dark:text-slate-400">{changes.map(([field, value]) => {

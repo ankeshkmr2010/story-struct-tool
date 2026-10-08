@@ -139,12 +139,27 @@ class StoryAccessMiddleware:
                         AgentToken.expires_at > datetime.now(UTC),
                     )
                 )
-                allowed_prefix = f"/api/stories/{delegated.story_id}/ai/" if delegated else ""
-                if (
-                    not delegated
-                    or not path.startswith(allowed_prefix)
-                    or path.endswith("/ai/propose")
-                ):
+                story_prefix = f"/api/stories/{delegated.story_id}" if delegated else ""
+                suffix = path.removeprefix(story_prefix) if delegated else ""
+                allowed = bool(delegated and path.startswith(story_prefix + "/")) and (
+                    http_scope["method"] == "GET"
+                    or (
+                        http_scope["method"] == "POST"
+                        and (
+                            suffix == "/ai/stage"
+                            or (
+                                suffix.startswith("/ai/runs/")
+                                and suffix.endswith(("/apply", "/undo", "/dismiss"))
+                            )
+                            or suffix == "/versions"
+                            or (suffix.startswith("/versions/") and suffix.endswith("/restore"))
+                        )
+                    )
+                )
+                allowed = allowed or bool(
+                    delegated and path == story_prefix and http_scope["method"] == "GET"
+                )
+                if not delegated or not allowed:
                     await _reject(send, 401, "Invalid or out-of-scope agent token")
                     return
             user_id = (

@@ -13,6 +13,7 @@ export default function UserSettings() {
   const [model, setModel] = useState('')
   const [key, setKey] = useState('')
   const [storyId, setStoryId] = useState('')
+  const [endpointCopied, setEndpointCopied] = useState(false)
   const [revealedToken, setRevealedToken] = useState('')
   const [tokenVisible, setTokenVisible] = useState(false)
   const [tokenCopied, setTokenCopied] = useState(false)
@@ -64,8 +65,13 @@ export default function UserSettings() {
         </div>
       </section>
       <section className="mt-6 rounded-xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6">
-        <h2 className="text-lg font-semibold">Connect Claude or Codex tools</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Create a seven-day token for one story. It lets your external agent read its context, propose changes, apply them, and undo a batch. It cannot read provider keys or access other stories.</p>
+        <h2 className="text-lg font-semibold">Connect an AI client · MCP</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Connect a client that supports Streamable HTTP with a bearer token. Your client supplies the model; no model key is needed here. Create a seven-day token for one story. It grants access to that story's structure, prose, findings, proposals, and versions, including edits and whole-story restores. Provider keys and other stories stay private.</p>
+        <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-xs leading-5">
+          <label className="block font-medium" htmlFor="mcp-endpoint">MCP server URL</label>
+          <div className="mt-1 flex flex-wrap gap-2"><input id="mcp-endpoint" readOnly value={`${window.location.origin}/mcp`} className="min-w-0 flex-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-2 font-mono" /><button type="button" onClick={() => { void navigator.clipboard.writeText(`${window.location.origin}/mcp`).then(() => setEndpointCopied(true)).catch(() => setEndpointCopied(false)) }} className="rounded border border-slate-300 dark:border-slate-600 px-3">{endpointCopied ? 'Copied' : 'Copy URL'}</button></div>
+          <p className="mt-2 text-slate-500 dark:text-slate-400">Set the client's Authorization header to Bearer followed by your story token. This is token authentication; OAuth sign-in for MCP clients is not available yet. Clients requiring OAuth need a local bridge. The free server can take a minute to wake after being idle.</p>
+        </div>
         <div className="mt-4 flex flex-wrap gap-3"><select aria-label="Story for external agent" value={storyId} onChange={(event) => setStoryId(event.target.value)} className="min-w-0 max-w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-2 text-sm"><option value="">Choose a story</option>{stories.data?.map((story) => <option key={story.id} value={story.id}>{story.title}</option>)}</select><button type="button" disabled={!storyId || createToken.isPending} onClick={() => createToken.mutate()} className="rounded-md bg-slate-900 dark:bg-slate-200 px-3 py-2 text-sm text-white dark:text-slate-950 disabled:opacity-40">Create agent token</button></div>
         {revealedToken && (
           <div className="mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-3">
@@ -82,7 +88,7 @@ export default function UserSettings() {
         )}
         {createToken.isError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(createToken.error)}</p>}
         <ul className="mt-4 space-y-2">{tokens.data?.map((token) => <li key={token.id} className="flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400"><span>{stories.data?.find((story) => story.id === token.story_id)?.title ?? 'Story'} · expires {new Date(token.expires_at).toLocaleDateString()}</span><button type="button" disabled={revoke.isPending} onClick={() => revoke.mutate(token.id)} className="text-red-600 dark:text-red-300">Revoke</button></li>)}</ul>
-        <p className="mt-4 text-xs leading-5 text-slate-500 dark:text-slate-400">Run the StoryTool MCP bridge on the machine hosting the API. Setup instructions are in AI_SETUP.md in the project.</p>
+        <p className="mt-4 text-xs leading-5 text-slate-500 dark:text-slate-400">Ask your client to read context, schemas, writing guidelines and findings; stage a connected outline or scene draft; review before applying. Timeline, arc tracing, prose editing and version comparison/recovery use the same story workspace. Setup and example requests are in AI_SETUP.md in the project.</p>
       </section>
     </main>
   )

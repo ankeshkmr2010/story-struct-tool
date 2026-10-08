@@ -347,6 +347,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ReadVersion */
+        get: operations["ApiStoriesStoryIdVersionsVersionIdReadVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/versions/{version_id}/restore": {
         parameters: {
             query?: never;
@@ -1949,7 +1966,7 @@ export interface components {
         /** Operation */
         Operation: {
             /** @enum {string} */
-            op: "create" | "update" | "link" | "unlink";
+            op: "create" | "update" | "link" | "unlink" | "write_prose";
             /** @enum {string} */
             entity: "story" | "character" | "relationship" | "arc" | "arc_stage" | "act" | "beat" | "thread" | "location" | "chapter" | "scene" | "event" | "chapter_beat" | "scene_beat" | "scene_thread" | "scene_arc_advance" | "event_character" | "scene_presence";
             ref: string;
@@ -1991,6 +2008,7 @@ export interface components {
             assumptions?: string[];
             recommendations?: components["schemas"]["Recommendation"][];
             operations?: components["schemas"]["Operation"][];
+            base_fingerprint?: string | null;
         };
         /** ReadinessOut */
         ReadinessOut: {
@@ -3208,6 +3226,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VersionPreview"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdVersionsVersionIdReadVersion: {
+        parameters: {
+            query?: {
+                include_prose?: boolean;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
                 };
             };
             /** @description Bad request syntax or unsupported method */

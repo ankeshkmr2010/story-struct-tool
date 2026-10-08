@@ -36,6 +36,7 @@ from storytool.domain.structure.controller import (
 from storytool.domain.versioning.controller import StoryVersionController
 from storytool.domain.world.controller import ContinuityController, LocationController
 from storytool.frontend import frontend_router
+from storytool.mcp_server import build_mcp
 
 
 @get("/api/health", tags=["meta"], summary="Liveness probe", sync_to_thread=False)
@@ -53,9 +54,12 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
     settings = get_settings()
     plugin = db_plugin or build_db_plugin()
     frontend = [frontend_router(settings.frontend_dir)] if settings.frontend_dir else []
-    return Litestar(
+    config = cast(SQLAlchemyAsyncConfig, plugin.config[0])
+    mcp_endpoint, mcp_lifespan = build_mcp(config, lambda: application)
+    application = Litestar(
         route_handlers=[
             health,
+            mcp_endpoint,
             AuthController,
             AIController,
             StoryVersionController,
@@ -80,6 +84,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             *frontend,
         ],
         plugins=[plugin],
+        lifespan=[mcp_lifespan],
         middleware=[
             DefineMiddleware(
                 StoryAccessMiddleware,
@@ -94,6 +99,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             path="/api/schema",
         ),
     )
+    return application
 
 
 app = create_app()
