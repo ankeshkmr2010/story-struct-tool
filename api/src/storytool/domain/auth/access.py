@@ -277,7 +277,9 @@ class StoryAccessMiddleware:
                         await _reject(send, 403, "Prose permission is required for this proposal")
                         return
                 trash_action = (
-                    http_scope["method"] == "POST" and path == f"/api/stories/{story_id}/restore"
+                    http_scope["method"] == "POST"
+                    and path
+                    in {f"/api/stories/{story_id}/restore", f"/api/stories/{story_id}/purge"}
                 ) or (http_scope["method"] == "DELETE" and path == f"/api/stories/{story_id}")
                 if owner.deleted_at is not None and not trash_action:
                     await _reject(send, 410, "Story is in Trash. Restore it from your library.")
@@ -377,6 +379,9 @@ class StoryAccessMiddleware:
                 deleting_story = (
                     http_scope["method"] == "DELETE"
                     and path.rstrip("/") == f"/api/stories/{lock_story_id}"
+                )
+                deleting_story = deleting_story or (
+                    http_scope["method"] == "POST" and path == f"/api/stories/{lock_story_id}/purge"
                 )
                 restoring_story = (
                     http_scope["method"] == "POST"

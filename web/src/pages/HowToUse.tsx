@@ -98,19 +98,8 @@ export default function HowToUse() {
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
-        <nav className="flex items-center justify-between gap-4" aria-label="Guide navigation">
-          <Link to="/" className="text-lg font-semibold">
-            StoryTool
-          </Link>
-          <Link
-            to="/library"
-            className="rounded-md bg-slate-900 dark:bg-slate-200 px-4 py-2 text-sm font-medium text-white dark:text-slate-950 hover:bg-slate-700 dark:hover:bg-slate-300"
-          >
-            Open your stories →
-          </Link>
-        </nav>
 
-        <header className="mt-10 max-w-2xl">
+        <header className="mt-4 max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
             How to use StoryTool
           </p>
@@ -300,7 +289,7 @@ export default function HowToUse() {
 
             <section className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/50 p-5">
               <h2 className="text-lg font-semibold">Save and restore the whole story</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Open Versions beside Export in a story's header. A named version captures prose, structure, characters, arcs, locations, timeline, notes, and their links together. Automatic editing checkpoints are saved at most once per minute; the latest 50 are kept. Named and recovery versions are retained. Deleting a story asks for confirmation and moves it to Trash, keeping all contents and versions. Open Trash in your library and select Restore to bring it back.</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Open Versions beside Export in a story's header. A named version captures prose, structure, characters, arcs, locations, timeline, notes, and their links together. Automatic editing checkpoints are saved at most once per minute; the latest 50 are kept. Named and recovery versions are retained. Deleting a story asks for confirmation and moves it to Trash, keeping all contents and versions. Open Trash in your library and select Restore to bring it back. Delete permanently requires a separate confirmation and typing DELETE; it removes the story and version history from the database and cannot be undone in StoryTool.</p>
               <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Select a version to preview its differences from the working draft, then choose Restore this version. The tool first saves a recovery checkpoint. If another edit happens after the preview, refresh the preview before restoring. Account settings, provider keys, and AI conversation history stay separate.</p>
               <h2 className="mt-6 text-lg font-semibold">Chat with your story assistant</h2>
               <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Connect an OpenRouter, Claude, or OpenAI API key in Settings, open a story, and choose Story assistant. Discuss ideas and answer its questions, then ask it to populate characters, arcs, beats, chapters, scenes, places, or timeline events. It remembers the recent conversation and reads your current story.</p>

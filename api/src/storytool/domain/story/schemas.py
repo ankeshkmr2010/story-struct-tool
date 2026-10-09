@@ -3,6 +3,7 @@
 """
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -42,6 +43,12 @@ class StoryOut(EntityOut):
     authoring_mode: str
     parent_story_id: UUID | None
     deleted_at: datetime | None
+
+
+class StoryPurge(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    confirmation: Literal["DELETE"]
+    expected_title: str = Field(min_length=1, max_length=300)
 
 
 # ----------------------------------------------------------- analysis DTOs

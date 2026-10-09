@@ -470,6 +470,23 @@ export interface paths {
         patch: operations["ApiStoriesStoryIdUpdateStory"];
         trace?: never;
     };
+    "/api/stories/{story_id}/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Permanently delete a trashed story and its linked database data */
+        post: operations["ApiStoriesStoryIdPurgePurgeStory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/restore": {
         parameters: {
             query?: never;
@@ -2352,6 +2369,12 @@ export interface components {
             unplaced_scene_word_count: number;
             chapters: components["schemas"]["ChapterProgressOut"][];
         };
+        /** StoryPurge */
+        StoryPurge: {
+            /** @constant */
+            confirmation: "DELETE";
+            expected_title: string;
+        };
         /** StoryUpdate */
         StoryUpdate: {
             title?: string | null;
@@ -3708,6 +3731,45 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["StoryOut"];
                 };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdPurgePurgeStory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoryPurge"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad request syntax or unsupported method */
             400: {

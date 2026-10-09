@@ -112,6 +112,7 @@ export const api = {
   deleteStory: (id: string) => request<void>(`/api/stories/${id}`, { method: 'DELETE' }),
   listTrashedStories: () => request<Story[]>('/api/stories?trashed=true'),
   restoreStory: (id: string) => post<Story>(`/api/stories/${id}/restore`),
+  purgeStory: (data: { id: string; expected_title: string; confirmation: 'DELETE' }) => request<void>(`/api/stories/${data.id}/purge`, { method: 'POST', body: JSON.stringify({ expected_title: data.expected_title, confirmation: data.confirmation }) }),
 
   // Computed layer
   getTimeline: (id: string) => request<StoryTimeline>(`/api/stories/${id}/timeline`),

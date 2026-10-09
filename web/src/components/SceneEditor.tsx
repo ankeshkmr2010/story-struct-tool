@@ -152,7 +152,13 @@ export function SceneEditor({
             value={draft}
             width="100%"
             height="460px"
-            extensions={[markdown(), EditorView.lineWrapping]}
+            extensions={[markdown(), EditorView.lineWrapping, EditorView.theme({
+              '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' },
+              '.cm-scroller': { fontFamily: 'Georgia, serif', fontSize: '16px' },
+              '.cm-content': { padding: '18px 22px', lineHeight: '1.9' },
+              '.cm-cursor': { borderLeftColor: 'var(--accent)' },
+              '.cm-gutters': { backgroundColor: 'var(--surface)', borderColor: 'var(--line)' },
+            })]}
             onCreateEditor={(view) => {
               viewRef.current = view
             }}

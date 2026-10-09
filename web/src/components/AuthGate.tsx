@@ -89,6 +89,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 }
 
 export function AccountMenu() {
+  const menu = useRef<HTMLDetailsElement>(null)
+  useEffect(() => {
+    const close = (event: PointerEvent) => { if (!menu.current?.contains(event.target as Node) && menu.current) menu.current.open = false }
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape' && menu.current?.open) { menu.current.open = false; menu.current.querySelector('summary')?.focus() } }
+    document.addEventListener('pointerdown', close); document.addEventListener('keydown', escape)
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', escape) }
+  }, [])
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, retry: false })
   const logout = useMutation({
     mutationFn: api.logout,
@@ -97,12 +104,9 @@ export function AccountMenu() {
 
   if (!me.data) return null
   return (
-    <div className="account-menu flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-      <span className="account-name max-w-48 truncate" title={me.data.email}>{me.data.name ?? me.data.email}</span>
-      <Link to="/settings" className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950">Settings</Link>
-      <button type="button" onClick={() => logout.mutate()} disabled={logout.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950 disabled:opacity-50">
-        Sign out
-      </button>
-    </div>
+    <details ref={menu} className="account-dropdown">
+      <summary aria-label="Account menu"><span className="account-avatar" aria-hidden="true">{(me.data.name ?? me.data.email).slice(0, 1).toUpperCase()}</span><span className="account-name">{me.data.name?.split(' ')[0] ?? 'Account'}</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m6 9 6 6 6-6" /></svg></summary>
+      <div className="account-popover"><div className="account-identity"><strong>{me.data.name ?? 'Your account'}</strong><span>{me.data.email}</span></div><Link to="/settings" onClick={() => { if (menu.current) menu.current.open = false }}>Settings</Link><button type="button" onClick={() => logout.mutate()} disabled={logout.isPending}>{logout.isPending ? 'Signing out…' : 'Sign out'}</button>{logout.isError && <p role="alert">Could not sign out. Try again.</p>}</div>
+    </details>
   )
 }

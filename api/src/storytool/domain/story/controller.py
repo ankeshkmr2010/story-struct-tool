@@ -11,11 +11,12 @@ from uuid import UUID
 
 from litestar import Controller, Request, delete, get, patch, post
 from litestar.di import Provide
-from litestar.exceptions import NotFoundException
+from litestar.exceptions import ClientException, NotFoundException
+from sqlalchemy import delete as sql_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.story.models import Story
-from storytool.domain.story.schemas import StoryCreate, StoryOut, StoryUpdate
+from storytool.domain.story.schemas import StoryCreate, StoryOut, StoryPurge, StoryUpdate
 from storytool.domain.story.services import StoryService
 
 
@@ -114,3 +115,35 @@ class StoryController(Controller):
             record.deleted_at = None
             record = await stories.update(record)
         return StoryOut.model_validate(record)
+
+    @post(
+        "/{story_id:uuid}/purge",
+        status_code=204,
+        summary="Permanently delete a trashed story and its linked database data",
+    )
+    async def purge_story(
+        self,
+        stories: StoryService,
+        story_id: UUID,
+        request: Request,
+        db_session: AsyncSession,
+        data: StoryPurge,
+    ) -> None:
+        record = await stories.get_one_or_none(id=story_id)
+        if record is None:
+            raise NotFoundException(detail="Story not found")
+        if record.deleted_at is None:
+            raise ClientException(
+                status_code=409, detail="Move the story to Trash before permanently deleting it"
+            )
+        if record.title != data.expected_title:
+            raise ClientException(
+                status_code=409, detail="The story title changed; reopen the confirmation"
+            )
+        await db_session.execute(
+            sql_delete(Story).where(
+                Story.id == story_id,
+                Story.user_id == request.scope["state"]["storytool_user_id"],
+                Story.deleted_at.is_not(None),
+            )
+        )
