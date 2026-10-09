@@ -3,6 +3,7 @@
 import inspect
 import json
 import logging
+from datetime import UTC, datetime
 
 from advanced_alchemy.extensions.litestar import (
     AlembicAsyncConfig,
@@ -11,10 +12,12 @@ from advanced_alchemy.extensions.litestar import (
     SQLAlchemyPlugin,
 )
 from litestar.types import Message, Scope
+from sqlalchemy import update
 
 from storytool.config import get_settings
 from storytool.db import models as _models  # noqa: F401  -- registers all tables
 from storytool.db.base import metadata
+from storytool.domain.story.models import Story
 
 
 def build_db_config() -> SQLAlchemyAsyncConfig:
@@ -45,39 +48,57 @@ def build_db_config() -> SQLAlchemyAsyncConfig:
             if message["type"] == "http.response.start"
             else None
         )
-        if message["type"] == "http.response.start" and context and 200 <= message["status"] < 300:
+        live_id = (
+            scope.get("state", {}).pop("storytool_live_story_id", None)
+            if message["type"] == "http.response.start"
+            else None
+        )
+        if (
+            message["type"] == "http.response.start"
+            and (context or live_id)
+            and 200 <= message["status"] < 300
+        ):
             from storytool.domain.versioning import service as versions
 
             db = config.provide_session(scope["app"].state, scope)
             try:
                 await db.flush()
-                after = await versions.full_state(db, context["story_id"])
-                if context["initial"]:
-                    await versions.checkpoint(
-                        db,
-                        context["story_id"],
-                        context["user_id"],
-                        "Before the first versioned edit",
-                        "initial",
-                        context["before"],
-                    )
-                if versions.fingerprint(context["before"]) != versions.fingerprint(after):
-                    if context["ai_batch"]:
+                if context:
+                    after = await versions.full_state(db, context["story_id"])
+                    if context["initial"]:
+                        await versions.checkpoint(
+                            db,
+                            context["story_id"],
+                            context["user_id"],
+                            "Before the first versioned edit",
+                            "initial",
+                            context["before"],
+                        )
+                    if versions.fingerprint(context["before"]) != versions.fingerprint(after):
+                        if context["ai_batch"]:
+                            await versions.automatic_checkpoint(
+                                db,
+                                context["story_id"],
+                                context["user_id"],
+                                context["before"],
+                                "Before assistant changes",
+                                force=True,
+                            )
                         await versions.automatic_checkpoint(
                             db,
                             context["story_id"],
                             context["user_id"],
-                            context["before"],
-                            "Before assistant changes",
-                            force=True,
+                            after,
+                            "After assistant changes"
+                            if context["ai_batch"]
+                            else "Editing checkpoint",
+                            force=context["ai_batch"],
                         )
-                    await versions.automatic_checkpoint(
-                        db,
-                        context["story_id"],
-                        context["user_id"],
-                        after,
-                        "After assistant changes" if context["ai_batch"] else "Editing checkpoint",
-                        force=context["ai_batch"],
+                if live_id:
+                    await db.execute(
+                        update(Story)
+                        .where(Story.id == live_id)
+                        .values(updated_at=datetime.now(UTC))
                     )
                 # Checkpoint failure must abort the edit rather than commit it without history.
                 await db.commit()

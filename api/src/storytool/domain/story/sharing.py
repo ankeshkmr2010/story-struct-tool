@@ -1,6 +1,7 @@
 """Email-scoped read access and explicit independent imports. No owner API is relaxed."""
 
 import copy
+import hashlib
 from typing import Any
 from uuid import UUID
 
@@ -74,6 +75,16 @@ class SharedDocumentOut(BaseModel):
 class SharedImportInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_fingerprint: str = Field(min_length=64, max_length=64)
+
+
+class StoryActivityOut(BaseModel):
+    change_token: str
+
+
+def activity(source: Story) -> StoryActivityOut:
+    return StoryActivityOut(
+        change_token=hashlib.sha256(str(source.updated_at).encode()).hexdigest()
+    )
 
 
 def visible_state(state: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
@@ -239,6 +250,13 @@ class SharedStoriesController(Controller):
             base_fingerprint=fingerprint(visible_state(state)),
         )
 
+    @get("/{story_id:uuid}/activity")
+    async def shared_activity(
+        self, db_session: AsyncSession, request: Request, story_id: UUID
+    ) -> StoryActivityOut:
+        source, _grant, _owner = await shared_source(db_session, actor(request), story_id)
+        return activity(source)
+
     @post("/{story_id:uuid}/import", status_code=201)
     async def import_story(
         self, db_session: AsyncSession, request: Request, story_id: UUID, data: SharedImportInput
@@ -258,3 +276,39 @@ class SharedStoriesController(Controller):
                 detail="The shared story changed. Refresh and review it before importing.",
             )
         return StoryOut.model_validate(await import_graph(db_session, source, actor(request)))
+
+
+class StoryReaderController(Controller):
+    path = "/api/stories/{story_id:uuid}"
+    tags = ["reading"]  # noqa: RUF012 - Litestar controller configuration
+    signature_namespace = {"AsyncSession": AsyncSession}  # noqa: RUF012
+
+    @get("/reader")
+    async def read_owned(
+        self, db_session: AsyncSession, request: Request, story_id: UUID
+    ) -> SharedDocumentOut:
+        await lock_source(db_session, story_id)
+        source = await owned_story(db_session, story_id, actor(request))
+        owner = await db_session.get(User, actor(request))
+        assert owner is not None
+        state = await full_state(db_session, story_id)
+        graph = await load_graph_by_id(db_session, story_id)
+        assert graph is not None
+        return SharedDocumentOut(
+            share=SharedStoryOut(
+                story_id=source.id,
+                title=source.title,
+                premise=source.premise,
+                owner_name=owner.name or "Your story",
+                allow_import=False,
+            ),
+            manuscript=compile_manuscript(graph),
+            structure=visible_state(state),
+            base_fingerprint=fingerprint(visible_state(state)),
+        )
+
+    @get("/activity")
+    async def owned_activity(
+        self, db_session: AsyncSession, request: Request, story_id: UUID
+    ) -> StoryActivityOut:
+        return activity(await owned_story(db_session, story_id, actor(request)))

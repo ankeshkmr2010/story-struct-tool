@@ -158,7 +158,25 @@ async def snapshot(db: AsyncSession, story_id: UUID) -> dict[str, Any]:
 
 
 def fingerprint(state: dict[str, Any]) -> str:
-    return hashlib.sha256(json.dumps(state, sort_keys=True).encode()).hexdigest()
+    # A live-update marker changes on staging and other administrative writes too.
+    # It must not invalidate a proposal that has not changed the authored graph.
+    canonical = {
+        kind: [
+            {
+                key: value
+                for key, value in row.items()
+                if not (kind == "story" and key == "updated_at")
+            }
+            for row in rows
+        ]
+        for kind, rows in state.items()
+    }
+    return hashlib.sha256(json.dumps(canonical, sort_keys=True).encode()).hexdigest()
+
+
+def matches_fingerprint(state: dict[str, Any], expected: str) -> bool:
+    legacy = hashlib.sha256(json.dumps(state, sort_keys=True).encode()).hexdigest()
+    return expected in {fingerprint(state), legacy}
 
 
 async def execute_proposal(

@@ -15,6 +15,7 @@ from uuid import UUID
 
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
 from storytool.domain.narrative.models import Chapter, Scene
+from storytool.domain.ordering import chapter_order_key, scene_order_key
 from storytool.domain.story.models import Story
 from storytool.domain.structure.models import Act, Beat, Event, Thread
 from storytool.domain.world.models import Location
@@ -86,14 +87,16 @@ class StoryGraph:
         Reading order, not story-time order -- the difference between the two is where
         continuity problems live.
         """
-        chapter_rank = {
+        chapter_rank: dict[UUID | None, int] = {
             chapter.id: index
-            for index, chapter in enumerate(sorted(self.chapters, key=lambda c: c.sort_key))
+            for index, chapter in enumerate(sorted(self.chapters, key=chapter_order_key))
         }
         placed = [
             s for s in self.scenes if s.chapter_id is not None and s.chapter_id in chapter_rank
         ]
-        return tuple(sorted(placed, key=lambda s: (chapter_rank[s.chapter_id], s.sort_key)))  # type: ignore[index]
+        return tuple(
+            sorted(placed, key=lambda s: (chapter_rank[s.chapter_id], *scene_order_key(s)))
+        )
 
     def stage_by_id(self) -> dict[UUID, ArcStage]:
         return {s.id: s for s in self.arc_stages}
@@ -112,13 +115,13 @@ class StoryGraph:
 
     def scenes_by_chapter(self) -> dict[UUID | None, list[Scene]]:
         grouped: dict[UUID | None, list[Scene]] = defaultdict(list)
-        for scene in sorted(self.scenes, key=lambda s: s.sort_key):
+        for scene in sorted(self.scenes, key=scene_order_key):
             grouped[scene.chapter_id].append(scene)
         return grouped
 
     def chapters_by_act(self) -> dict[UUID | None, list[Chapter]]:
         grouped: dict[UUID | None, list[Chapter]] = defaultdict(list)
-        for chapter in sorted(self.chapters, key=lambda c: c.sort_key):
+        for chapter in sorted(self.chapters, key=chapter_order_key):
             grouped[chapter.act_id].append(chapter)
         return grouped
 

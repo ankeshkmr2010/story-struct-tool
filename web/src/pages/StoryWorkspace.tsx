@@ -15,12 +15,14 @@ import { AuthoringAssistant } from '../components/AuthoringAssistant'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
 import { StorySharing } from '../components/StorySharing'
+import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 // Lazy: CodeMirror is the largest dependency in the app and is only needed once the
 // author reaches level 8, so it should not sit in the initial bundle.
 const SceneEditor = lazy(() =>
   import('../components/SceneEditor').then((m) => ({ default: m.SceneEditor })),
 )
 const StoryWriter = lazy(() => import('../components/StoryWriter').then(m => ({ default: m.StoryWriter })))
+const StoryReader = lazy(() => import('./SharedStoryReader').then(m => ({ default: m.StoryReader })))
 
 const MODES: AuthoringMode[] = ['plotter', 'hybrid', 'pantser']
 
@@ -38,22 +40,24 @@ export default function StoryWorkspace() {
 function Workspace() {
   const { storyId = '' } = useParams()
   const qc = useQueryClient()
+  const live = useStoryLiveUpdates(storyId)
   const [level, setLevel] = useState(1)
-  const [tab, setTab] = useState<'write' | 'design'>(() => {
-    try { return localStorage.getItem(`storytool-workspace:${storyId}`) === 'write' ? 'write' : 'design' } catch { return 'design' }
+  const [tab, setTab] = useState<'write' | 'read' | 'design'>(() => {
+    try { const saved = localStorage.getItem(`storytool-workspace:${storyId}`); return saved === 'write' || saved === 'read' ? saved : 'design' } catch { return 'design' }
   })
   const [writerOpened, setWriterOpened] = useState(tab === 'write')
   const [tabError, setTabError] = useState<string | null>(null)
   const writerFlush = useRef<() => Promise<boolean>>(async () => true)
   const registerFlush = useCallback((flush: () => Promise<boolean>) => { writerFlush.current = flush }, [])
-  const changeTab = async (next: 'write' | 'design') => {
+  const changeTab = async (next: 'write' | 'read' | 'design') => {
     if (next === tab) return
-    if (tab === 'write' && !await writerFlush.current()) { setTabError('Your writing has not saved yet. Retry the save before switching to Design.'); return }
+    if (tab === 'write' && !await writerFlush.current()) { setTabError('Your writing has not saved yet. Retry the save before switching workspaces.'); return }
     setTabError(null); setTab(next)
     if (next === 'write') {
       setWriterOpened(true)
       void qc.invalidateQueries({ queryKey: ['content', storyId] })
     }
+    if (next === 'read') void qc.invalidateQueries({ queryKey: ['reading-document', storyId] })
     try { localStorage.setItem(`storytool-workspace:${storyId}`, next) } catch { /* Preference storage is optional. */ }
   }
 
@@ -255,16 +259,21 @@ function Workspace() {
       <div className="story-workspace-tabs" role="tablist" aria-label="Story workspace" onKeyDown={event => {
         if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
           event.preventDefault()
-          const next = event.key === 'Home' ? 'write' : event.key === 'End' ? 'design' : tab === 'write' ? 'design' : 'write'
+          const tabs = ['write', 'read', 'design'] as const
+          const next = event.key === 'Home' ? 'write' : event.key === 'End' ? 'design' : tabs[(tabs.indexOf(tab) + (event.key === 'ArrowLeft' ? 2 : 1)) % tabs.length]
           void changeTab(next)
           document.getElementById(`workspace-tab-${next}`)?.focus()
         }
       }}>
-        {(['write', 'design'] as const).map(item => <button key={item} id={`workspace-tab-${item}`} type="button" role="tab" aria-selected={tab === item} aria-controls={`workspace-panel-${item}`} tabIndex={tab === item ? 0 : -1} onClick={() => { void changeTab(item) }}>{item === 'write' ? 'Write' : 'Design'}</button>)}
+        {(['write', 'read', 'design'] as const).map(item => <button key={item} id={`workspace-tab-${item}`} type="button" role="tab" aria-selected={tab === item} aria-controls={`workspace-panel-${item}`} tabIndex={tab === item ? 0 : -1} onClick={() => { void changeTab(item) }}>{item === 'write' ? 'Write' : item === 'read' ? 'Read' : 'Design'}</button>)}
       </div>
       {tabError && <p role="alert" className="writer-error">{tabError}</p>}
+      <p className="live-update-status" role="status">{live.isError ? 'Live updates paused.' : 'Live · checks for changes every 5 seconds.'}{live.isError && <button type="button" onClick={() => { void live.refetch() }}>Retry</button>}</p>
       <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>
         {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} registerFlush={registerFlush} /></Suspense>}
+      </div>
+      <div id="workspace-panel-read" role="tabpanel" aria-labelledby="workspace-tab-read" hidden={tab !== 'read'}>
+        {tab === 'read' && <Suspense fallback={<p className="p-6">Loading reader…</p>}><StoryReader storyId={storyId} owned embedded /></Suspense>}
       </div>
       <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design" hidden={tab !== 'design'}>
 

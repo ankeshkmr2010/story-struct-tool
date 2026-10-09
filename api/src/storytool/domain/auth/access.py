@@ -208,7 +208,14 @@ class StoryAccessMiddleware:
                 if (
                     prose_query
                     or suffix.endswith(
-                        ("/content", "/annotations", "/mentions", "/revisions", "/preview")
+                        (
+                            "/content",
+                            "/annotations",
+                            "/mentions",
+                            "/revisions",
+                            "/preview",
+                            "/reader",
+                        )
                     )
                     or suffix in {"/ai/runs", "/ai/observations"}
                 ):
@@ -374,6 +381,7 @@ class StoryAccessMiddleware:
             return replay.pop(0) if replay else await receive()
 
         if lock_story_id is not None:
+            scope["state"]["storytool_live_story_id"] = lock_story_id
             async with self.db_config.get_session() as lock_db:
                 await lock_db.execute(
                     text("SELECT pg_advisory_xact_lock(:key)"),

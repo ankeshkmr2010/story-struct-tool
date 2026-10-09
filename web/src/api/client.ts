@@ -1,4 +1,5 @@
 import type { components } from './schema'
+import { orderChapters, orderScenes } from './ordering'
 
 // Types come from the backend's OpenAPI schema, so Pydantic stays the single source of
 // truth. Never hand-write these -- run `npm run gen:api`.
@@ -10,6 +11,7 @@ export type StoryUpdate = S['StoryUpdate']
 export type StoryShare = S['ShareOut']
 export type SharedStory = S['SharedStoryOut']
 export type SharedDocument = S['SharedDocumentOut']
+export type StoryActivity = S['StoryActivityOut']
 export type Completeness = S['CompletenessOut']
 export type AuthUser = S['UserOut']
 export type AuthConfig = S['AuthConfigOut']
@@ -85,6 +87,8 @@ export const api = {
   revokeShare: (id: string, shareId: string) => request<void>(`/api/stories/${id}/shares/${shareId}`, { method: 'DELETE' }),
   listSharedStories: () => request<SharedStory[]>('/api/shared-stories'),
   readSharedStory: (id: string) => request<SharedDocument>(`/api/shared-stories/${id}`),
+  readOwnedStory: (id: string) => request<SharedDocument>(`/api/stories/${id}/reader`),
+  storyActivity: (id: string, shared = false) => request<StoryActivity>(shared ? `/api/shared-stories/${id}/activity` : `/api/stories/${id}/activity`),
   importSharedStory: (id: string, expected_fingerprint: string) => post<Story>(`/api/shared-stories/${id}/import`, { expected_fingerprint }),
   getOAuthConsent: (id: string) => request<{ client_name: string; redirect_host: string; requested_scopes: string[]; expires_at: string }>(`/api/mcp/consent/${encodeURIComponent(id)}`),
   decideOAuthConsent: (id: string, data: { story_id: string | null; scopes: string[]; deny: boolean }) => post<{ redirect_url: string }>(`/api/mcp/consent/${encodeURIComponent(id)}`, data),
@@ -173,7 +177,7 @@ export const api = {
     patch<Arc>(`/api/stories/${storyId}/arcs/${arcId}`, body),
   deleteArc: (storyId: string, arcId: string) =>
     request<void>(`/api/stories/${storyId}/arcs/${arcId}`, { method: 'DELETE' }),
-  listArcStages: (arcId: string) => request<ArcStage[]>(`/api/arcs/${arcId}/stages`),
+  listArcStages: (arcId: string) => request<ArcStage[]>(`/api/arcs/${arcId}/stages`).then(orderScenes),
   createArcStage: (arcId: string, body: { label: string; sort_key?: number }) =>
     post<ArcStage>(`/api/arcs/${arcId}/stages`, body),
   updateArcStage: (arcId: string, stageId: string, body: Record<string, unknown>) =>
@@ -181,23 +185,23 @@ export const api = {
   deleteArcStage: (arcId: string, stageId: string) =>
     request<void>(`/api/arcs/${arcId}/stages/${stageId}`, { method: 'DELETE' }),
 
-  listActs: (id: string) => request<Act[]>(`/api/stories/${id}/acts`),
-  createAct: (id: string, body: { number: number; title?: string }) =>
+  listActs: (id: string) => request<Act[]>(`/api/stories/${id}/acts`).then(orderChapters),
+  createAct: (id: string, body: { number: number; title?: string; sort_key?: number }) =>
     post<Act>(`/api/stories/${id}/acts`, body),
   updateAct: (storyId: string, actId: string, body: Record<string, unknown>) =>
     patch<Act>(`/api/stories/${storyId}/acts/${actId}`, body),
   deleteAct: (storyId: string, actId: string) =>
     request<void>(`/api/stories/${storyId}/acts/${actId}`, { method: 'DELETE' }),
-  listBeats: (id: string) => request<Beat[]>(`/api/stories/${id}/beats`),
-  createBeat: (id: string, body: { label: string; act_id?: string | null }) =>
+  listBeats: (id: string) => request<Beat[]>(`/api/stories/${id}/beats`).then(orderScenes),
+  createBeat: (id: string, body: { label: string; act_id?: string | null; sort_key?: number }) =>
     post<Beat>(`/api/stories/${id}/beats`, body),
   updateBeat: (storyId: string, beatId: string, body: Record<string, unknown>) =>
     patch<Beat>(`/api/stories/${storyId}/beats/${beatId}`, body),
   deleteBeat: (storyId: string, beatId: string) =>
     request<void>(`/api/stories/${storyId}/beats/${beatId}`, { method: 'DELETE' }),
 
-  listThreads: (id: string) => request<Thread[]>(`/api/stories/${id}/threads`),
-  createThread: (id: string, body: { type: string; title?: string }) =>
+  listThreads: (id: string) => request<Thread[]>(`/api/stories/${id}/threads`).then(orderScenes),
+  createThread: (id: string, body: { type: string; title?: string; sort_key?: number }) =>
     post<Thread>(`/api/stories/${id}/threads`, body),
   updateThread: (storyId: string, threadId: string, body: Record<string, unknown>) =>
     patch<Thread>(`/api/stories/${storyId}/threads/${threadId}`, body),
@@ -205,7 +209,7 @@ export const api = {
     request<void>(`/api/stories/${storyId}/threads/${threadId}`, { method: 'DELETE' }),
 
   // Levels 7-8
-  listChapters: (id: string) => request<Chapter[]>(`/api/stories/${id}/chapters`),
+  listChapters: (id: string) => request<Chapter[]>(`/api/stories/${id}/chapters`).then(orderChapters),
   createChapter: (id: string, body: { number: number; title?: string; act_id?: string; sort_key?: number }) =>
     post<Chapter>(`/api/stories/${id}/chapters`, body),
   updateChapter: (storyId: string, chapterId: string, body: Record<string, unknown>) =>

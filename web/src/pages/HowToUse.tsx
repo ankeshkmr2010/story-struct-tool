@@ -348,11 +348,33 @@ export default function HowToUse() {
                   controls. The <strong className="font-medium">Design</strong> tab keeps the
                   full planning workspace. Both tabs edit the same story.
                 </Item>
-                <Item title="Switch between Write and Design">
-                  Both tabs use the same chapters, scenes, and prose. Your chosen tab and
+                <Item title="Switch between Write, Read, and Design">
+                  All three tabs use the same chapters, scenes, and prose. Your chosen tab and
                   chapter are remembered on this device. Write saves pending prose before
                   you switch tabs or chapters; if saving fails, resolve the error first.
                   Write is available in Plotter, Pantser, and Hybrid.
+                </Item>
+                <Item title="Read continuously or turn pages">
+                  Open Read to experience your saved story without editing. Every chapter and
+                  scene stays in reading order in one manuscript. Choose Continuous scroll or
+                  Pages. In Pages, use Previous/Next, click the page edges, or focus the reading
+                  area and use arrow keys or Page Up/Down. Chapters and linked timeline events
+                  jump to passages without replacing the manuscript.
+                </Item>
+                <Item title="Set up a comfortable reading view">
+                  Appearance controls font size, serif/sans font, spacing, text width, and
+                  optional scene names. Pages reflow when these settings or the window size
+                  change. Focus hides surrounding panels; Escape returns you. Settings and a
+                  passage bookmark are remembered on this device. Shared stories use the same
+                  reader while keeping the author’s permissions.
+                </Item>
+                <Item title="See edits from your LLM session">
+                  StoryTool checks for changes every five seconds while the page is visible.
+                  Changed chapters, scenes, beats, arcs, timeline, proposals, and prose refresh
+                  automatically. Unsaved prose is preserved when a remote edit conflicts;
+                  review the latest saved text before choosing which draft to keep. Saved
+                  sort order is honored throughout the app; chapter-number and ID tie breakers
+                  keep entries with equal order keys stable.
                 </Item>
                 <Item title="Enter Focus">
                   Choose <strong className="font-medium">Focus</strong> in the writing toolbar

@@ -67,3 +67,15 @@ def place_between(keys: Sequence[float], index: int) -> tuple[float, list[float]
     new_before = fresh[index - 1] if index > 0 else None
     new_after = fresh[index] if index < len(fresh) else None
     return midpoint(new_before, new_after), fresh
+
+
+def chapter_order_key(chapter: object) -> tuple[float, int, str]:
+    return (
+        getattr(chapter, "sort_key", 0),
+        getattr(chapter, "number", 0),
+        str(getattr(chapter, "id", "")),
+    )
+
+
+def scene_order_key(scene: object) -> tuple[float, str]:
+    return (getattr(scene, "sort_key", 0), str(getattr(scene, "id", "")))

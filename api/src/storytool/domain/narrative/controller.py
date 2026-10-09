@@ -6,6 +6,7 @@ from uuid import UUID
 from litestar import Controller, delete, get, patch, post
 from litestar.di import Provide
 from litestar.exceptions import ClientException, NotFoundException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.analysis import load_graph_by_id
@@ -31,6 +32,7 @@ from storytool.domain.narrative.schemas import (
     ThreadLink,
 )
 from storytool.domain.narrative.services import ChapterService, SceneService
+from storytool.domain.ordering import chapter_order_key, scene_order_key
 
 
 async def provide_chapters(db_session: AsyncSession) -> AsyncGenerator[ChapterService, None]:
@@ -54,7 +56,7 @@ class ChapterController(Controller):
         records = await chapters.get_many(
             Chapter.story_id == story_id, order_by=Chapter.sort_key.asc()
         )
-        return [ChapterOut.model_validate(r) for r in records]
+        return [ChapterOut.model_validate(r) for r in sorted(records, key=chapter_order_key)]
 
     @post(status_code=201, summary="Create a chapter")
     async def create_chapter(
@@ -178,9 +180,22 @@ class SceneController(Controller):
     signature_namespace = {"AsyncSession": AsyncSession, "SceneService": SceneService}
 
     @get(summary="List scenes in order")
-    async def list_scenes(self, scenes: SceneService, story_id: UUID) -> list[SceneOut]:
+    async def list_scenes(
+        self, scenes: SceneService, story_id: UUID, db_session: AsyncSession
+    ) -> list[SceneOut]:
         records = await scenes.get_many(Scene.story_id == story_id, order_by=Scene.sort_key.asc())
-        return [SceneOut.model_validate(r) for r in records]
+        chapters = (
+            await db_session.scalars(select(Chapter).where(Chapter.story_id == story_id))
+        ).all()
+        rank: dict[UUID | None, int] = {
+            chapter.id: index
+            for index, chapter in enumerate(sorted(chapters, key=chapter_order_key))
+        }
+        ordered = sorted(
+            records,
+            key=lambda scene: (rank.get(scene.chapter_id, len(rank)), *scene_order_key(scene)),
+        )
+        return [SceneOut.model_validate(r) for r in ordered]
 
     @post(status_code=201, summary="Create a scene")
     async def create_scene(

@@ -191,6 +191,8 @@ stage_story_changes takes {story_id, proposal}; proposal contains summary, base_
 and operations. Never omit the fingerprint or substitute names for IDs. Use data.from_id and
 data.to_id for link operations. A new: reference must be declared by a create in this same batch.
 Respect plotter/pantser/hybrid mode, author canon and dismissed notices. Placeholders are valid.
+For ordered entities, set sort_key explicitly. Append with the highest existing key plus 100;
+do not use the item count as an order key. Keep chapter numbers consistent with the outline.
 World time and reading order are independent. Editorial judgments need evidence and alternatives.
 Stage changes with the base_fingerprint from your context read, inspect the proposal, and apply
 only work the author requested. Prose changes use write_prose and expected_content_hash.
@@ -363,6 +365,11 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
                 "note": "Full-scene replacement, not a partial chunk patch",
             }
         result["reference_note"] = "Use owned UUIDs or new: references; ownership is set by server"
+        if "sort_key" in update.model_fields:
+            result["ordering_note"] = (
+                "sort_key determines order. Append with max(existing sort_key) + 100, "
+                "not item count. Chapter numbers break ties; UUIDs break remaining ties."
+            )
         return result
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))

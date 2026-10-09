@@ -292,7 +292,7 @@ function CharacterArc({
   const update = useMutation({ mutationFn: (value: string | null) => api.updateArc(storyId, arcId, { resolution: value }), onSuccess: refresh })
   const remove = useMutation({ mutationFn: () => api.deleteArc(storyId, arcId), onSuccess: refresh })
   const addStage = useMutation({
-    mutationFn: (label: string) => api.createArcStage(arcId, { label, sort_key: (stages.data?.length ?? 0) + 1 }),
+    mutationFn: (label: string) => api.createArcStage(arcId, { label, sort_key: Math.max(0, ...(stages.data ?? []).map(stage => stage.sort_key)) + 100 }),
     onSuccess: refresh,
   })
   const updateStage = useMutation({

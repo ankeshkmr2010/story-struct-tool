@@ -17,6 +17,7 @@ from storytool.domain.ai import runner
 from storytool.domain.ai.commands import (
     execute_proposal,
     fingerprint,
+    matches_fingerprint,
     owned_story,
     snapshot,
     undo_operations,
@@ -293,7 +294,7 @@ class AIController(Controller):
         user_id = actor(request)
         await owned_story(db_session, story_id, user_id)
         state = await snapshot(db_session, story_id)
-        if data.base_fingerprint and data.base_fingerprint != fingerprint(state):
+        if data.base_fingerprint and not matches_fingerprint(state, data.base_fingerprint):
             raise ConflictException(
                 detail="The story changed since your context read. Read it again."
             )
@@ -330,7 +331,7 @@ class AIController(Controller):
             return RunOut.model_validate(row)
         if row.status != "proposed":
             raise ConflictException(detail="This proposal is no longer pending")
-        if fingerprint(await snapshot(db_session, story_id)) != row.base_fingerprint:
+        if not matches_fingerprint(await snapshot(db_session, story_id), row.base_fingerprint):
             raise ConflictException(
                 detail="The story changed since this proposal. Generate a fresh one."
             )
@@ -349,7 +350,9 @@ class AIController(Controller):
         row = await run_record(db_session, actor(request), story_id, run_id)
         if row.status != "applied":
             raise ConflictException(detail="Only an applied proposal can be undone")
-        if fingerprint(await snapshot(db_session, story_id)) != row.applied_fingerprint:
+        if not row.applied_fingerprint or not matches_fingerprint(
+            await snapshot(db_session, story_id), row.applied_fingerprint
+        ):
             raise ConflictException(
                 detail="The story changed after this batch. Undo would overwrite later work."
             )

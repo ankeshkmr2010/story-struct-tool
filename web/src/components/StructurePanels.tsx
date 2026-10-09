@@ -81,7 +81,7 @@ export function ActsPanel({ storyId, framework }: { storyId: string; framework: 
     onSuccess: () => { refresh(); void qc.invalidateQueries({ queryKey: ['beats', storyId] }) },
   })
   const create = useMutation({
-    mutationFn: (title: string) => api.createAct(storyId, { title, number: Math.max(0, ...(acts.data ?? []).map((act) => act.number)) + 1 }),
+    mutationFn: (title: string) => api.createAct(storyId, { title, number: Math.max(0, ...(acts.data ?? []).map((act) => act.number)) + 1, sort_key: Math.max(0, ...(acts.data ?? []).map(act => act.sort_key)) + 100 }),
     onSuccess: refresh,
   })
   const update = useMutation({
@@ -134,7 +134,7 @@ export function BeatsPanel({ storyId, framework }: { storyId: string; framework:
     mutationFn: () => api.scaffold(storyId),
     onSuccess: () => { refresh(); void qc.invalidateQueries({ queryKey: ['acts', storyId] }) },
   })
-  const create = useMutation({ mutationFn: (label: string) => api.createBeat(storyId, { label }), onSuccess: refresh })
+  const create = useMutation({ mutationFn: (label: string) => api.createBeat(storyId, { label, sort_key: Math.max(0, ...(beats.data ?? []).map(beat => beat.sort_key)) + 100 }), onSuccess: refresh })
   const update = useMutation({
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) => api.updateBeat(storyId, id, body),
     onSuccess: refresh,
@@ -174,7 +174,7 @@ export function ThreadsPanel({ storyId }: { storyId: string }) {
   const refresh = useRefresh(storyId, 'threads')
   const threads = useQuery({ queryKey: ['threads', storyId], queryFn: () => api.listThreads(storyId) })
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId) })
-  const create = useMutation({ mutationFn: (title: string) => api.createThread(storyId, { title, type: 'a_story' }), onSuccess: refresh })
+  const create = useMutation({ mutationFn: (title: string) => api.createThread(storyId, { title, type: 'a_story', sort_key: Math.max(0, ...(threads.data ?? []).map(thread => thread.sort_key)) + 100 }), onSuccess: refresh })
   const update = useMutation({
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) => api.updateThread(storyId, id, body),
     onSuccess: refresh,

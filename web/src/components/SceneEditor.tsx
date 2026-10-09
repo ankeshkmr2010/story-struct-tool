@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import CodeMirror from '@uiw/react-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
@@ -6,8 +6,8 @@ import { EditorView } from '@codemirror/view'
 import { api, type ChapterBrief, type Scene } from '../api/client'
 import { errorText } from '../api/errors'
 import { useTheme } from './theme-context'
+import { writerDraft } from './writerDraft'
 
-const AUTOSAVE_MS = 1200
 
 /**
  * The writing surface.
@@ -36,48 +36,27 @@ export function SceneEditor({
     queryFn: () => api.getContent(storyId, scene.id),
   })
 
-  const [draft, setDraft] = useState<string>('')
-  const savedRef = useRef<string>('')
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-
-  // Reset the buffer when switching scenes, so one scene's prose can never be saved
-  // over another's.
+  const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser })
+  const buffer = writerDraft(`storytool-writer:${me.data?.id}:${storyId}:${scene.id}`, content.data?.content ?? '')
+  const state = useSyncExternalStore(buffer.subscribe, buffer.snapshot)
+  const draft = state.text
+  const setDraft = buffer.change
+  const status = state.status
+  const lastCheckpoint = useRef(0)
+  const [latest, setLatest] = useState<string | null>(null)
+  useEffect(() => { if (content.data) buffer.observe(content.data.content ?? '') }, [buffer, content.data])
   useEffect(() => {
-    if (content.data) {
-      const text = content.data.content ?? ''
-      setDraft(text)
-      savedRef.current = text
-      setStatus('idle')
-    }
-  }, [content.data, scene.id])
-
-  const save = useMutation({
-    mutationFn: (opts: { text: string; snapshot: boolean }) =>
-      api.saveContent(storyId, scene.id, { content: opts.text, snapshot: opts.snapshot }),
-    onMutate: () => setStatus('saving'),
-    onError: () => setStatus('error'),
-    onSuccess: (_result, opts) => {
-      savedRef.current = opts.text
-      setStatus('saved')
-      void qc.invalidateQueries({ queryKey: ['scenes', storyId] })
-      void qc.invalidateQueries({ queryKey: ['progress', storyId] })
-      void qc.invalidateQueries({ queryKey: ['annotations', storyId, scene.id] })
-    },
-  })
-
-  // Debounced autosave. Snapshots are NOT taken here -- a revision per keystroke-pause
-  // would bury the few versions an author actually wants to find.
-  useEffect(() => {
-    if (draft === savedRef.current) return
-    const timer = setTimeout(() => save.mutate({ text: draft, snapshot: false }), AUTOSAVE_MS)
-    return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft])
-
-  // Leaving the scene is a meaningful boundary, so that is where a revision is kept.
-  const flushWithSnapshot = useCallback(() => {
-    if (draft !== savedRef.current) save.mutate({ text: draft, snapshot: true })
-  }, [draft, save])
+    buffer.configure(async (text, base) => {
+      const snapshot = Date.now() - lastCheckpoint.current >= 60_000
+      await api.saveContent(storyId, scene.id, { content: text, expected_content: base, snapshot })
+      if (snapshot) lastCheckpoint.current = Date.now()
+      qc.setQueryData(['content', storyId, scene.id], { scene_id: scene.id, content: text, word_count: text.trim().split(/\s+/).filter(Boolean).length })
+      for (const key of ['scenes', 'progress', 'annotations']) void qc.invalidateQueries({ queryKey: [key, storyId] })
+    })
+  }, [buffer, storyId, scene.id, qc])
+  useEffect(() => () => { if (buffer.state.status !== 'error') void buffer.flush() }, [buffer])
+  const save = { isError: state.status === 'error', isPending: state.status === 'saving', error: new Error(state.error ?? 'Save failed'), mutate: (opts: { text: string; snapshot: boolean }) => { if (opts.text !== buffer.state.text) buffer.change(opts.text); void buffer.flush() } }
+  const flushWithSnapshot = useCallback(() => { if (buffer.state.status !== 'error') void buffer.flush() }, [buffer])
 
   const annotations = useQuery({
     queryKey: ['annotations', storyId, scene.id],
@@ -116,7 +95,10 @@ export function SceneEditor({
   }
 
   const words = draft.trim() ? draft.trim().split(/\s+/).length : 0
-  const dirty = draft !== savedRef.current
+  const dirty = draft !== state.base
+
+  if (content.isPending) return <p className="text-sm">Loading prose…</p>
+  if (content.isError) return <p role="alert" className="writer-error">{errorText(content.error)}</p>
 
   return (
     <div className="min-w-0">
@@ -136,7 +118,7 @@ export function SceneEditor({
             Annotate selection
           </button>
         </div>
-        {save.isError && <div role="alert" className="mb-3 rounded border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-3 text-xs leading-5 text-red-800 dark:text-red-300"><p>{errorText(save.error)}</p><p>Your unsaved text remains in this editor.</p><button type="button" disabled={save.isPending} onClick={() => save.mutate({ text: draft, snapshot: false })} className="mt-2 rounded border border-red-300 dark:border-red-800 px-3 py-1 font-medium">Retry save</button></div>}
+        {save.isError && <div role="alert" className="mb-3 rounded border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-3 text-xs leading-5 text-red-800 dark:text-red-300"><p>{errorText(save.error)}</p><p>Your unsaved text remains in this editor.</p><button type="button" disabled={save.isPending} onClick={() => save.mutate({ text: draft, snapshot: false })} className="mt-2 rounded border border-red-300 dark:border-red-800 px-3 py-1 font-medium">Retry save</button><button type="button" className="ml-2" onClick={async () => { setLatest((await api.getContent(storyId, scene.id)).content ?? '') }}>Review latest text</button>{latest !== null && <div><pre className="writer-latest">{latest || '(Empty passage)'}</pre><button type="button" onClick={() => { if (window.confirm('Replace your local draft with the latest saved prose?')) { buffer.useLatest(latest); setLatest(null) } }}>Use latest text</button><button type="button" className="ml-3" onClick={() => { if (window.confirm('Save your draft over the latest prose? A revision will preserve the previous text.')) { lastCheckpoint.current = 0; buffer.rebase(latest); setLatest(null); void buffer.flush() } }}>Keep my draft</button></div>}</div>}
 
         {(brief?.beats.length || scene.goal) && (
           <p className="mb-2 truncate text-xs text-slate-500 dark:text-slate-400" title={[brief?.beats.map((beat) => beat.label).join(', '), scene.goal].filter(Boolean).join(' · ')}>

@@ -5,6 +5,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, keymap } from '@codemirror/view'
 import { api, type Chapter, type Scene } from '../api/client'
 import { errorText } from '../api/errors'
+import { orderChapters, orderScenes } from '../api/ordering'
 import { ChapterBriefCard } from './ChapterBriefCard'
 import { SceneDetails } from './SceneDetails'
 import { InlineText } from './fields'
@@ -30,10 +31,10 @@ export function StoryWriter({ storyId, registerFlush }: { storyId: string; regis
   const [focusTarget, setFocusTarget] = useState<string | null>(null)
   const titleRef = useRef('')
   const creatingChapter = useRef<Promise<Chapter> | null>(null)
-  const orderedChapters = [...(chapters.data ?? [])].sort((a, b) => a.sort_key - b.sort_key || a.number - b.number)
+  const orderedChapters = orderChapters(chapters.data ?? [])
   const chapter = orderedChapters.find(item => item.id === selectedId) ?? (selectedId === 'unfiled' ? undefined : orderedChapters[0])
   const unfiled = selectedId === 'unfiled'
-  const chapterScenes = [...(scenes.data ?? [])].filter(scene => scene.chapter_id === (unfiled ? null : chapter?.id)).sort((a, b) => a.sort_key - b.sort_key || a.id.localeCompare(b.id))
+  const chapterScenes = orderScenes((scenes.data ?? []).filter(scene => scene.chapter_id === (unfiled ? null : chapter?.id)))
   const contextScene = chapterScenes.find(scene => scene.id === activeScene) ?? chapterScenes[0]
   const brief = useQuery({ queryKey: ['brief', storyId, chapter?.id], queryFn: () => api.getBrief(storyId, chapter!.id), enabled: Boolean(chapter) })
 

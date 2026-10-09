@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.narrative.models import Chapter, Scene
-from storytool.domain.ordering import place_between
+from storytool.domain.ordering import chapter_order_key, place_between
 
 
 class MoveError(ValueError):
@@ -120,7 +120,7 @@ async def move_chapter(
         .scalars()
         .all()
     )
-    others = [c for c in siblings if c.id != chapter.id]
+    others = sorted((c for c in siblings if c.id != chapter.id), key=chapter_order_key)
 
     try:
         index = _target_index([c.id for c in others], after_chapter_id, before_chapter_id)

@@ -47,14 +47,20 @@ export function InlineText({
 }) {
   const { state, save } = useSaver(onSave)
   const original = value ?? ''
+  const field = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
+  const focusedValue = useRef(original)
+  useEffect(() => { if (field.current && document.activeElement !== field.current) field.current.value = original }, [original])
 
   const shared = {
     defaultValue: original,
+    ref: (element: HTMLInputElement | HTMLTextAreaElement | null) => { field.current = element },
+    onFocus: (event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { focusedValue.current = event.target.value },
     placeholder,
     // Empty means "unset", not "empty string" — the API treats null as not-yet-filled.
     onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const next = e.target.value.trim()
-      if (next !== original.trim()) void save(next === '' ? null : next)
+      if (next !== focusedValue.current.trim() && next !== original.trim()) void save(next === '' ? null : next)
+      else if (next === focusedValue.current.trim()) e.target.value = original
     },
     className: [
       'w-full rounded border border-transparent bg-transparent px-1.5 py-0.5 text-sm',
@@ -67,9 +73,9 @@ export function InlineText({
   return (
     <span className="relative block">
       {multiline ? (
-        <textarea {...shared} rows={2} key={original} />
+        <textarea {...shared} rows={2} />
       ) : (
-        <input {...shared} key={original} />
+        <input {...shared} />
       )}
       {state === 'saving' && (
         <span className="absolute -top-3 right-0 text-[10px] text-slate-400">saving…</span>
@@ -143,16 +149,21 @@ export function InlineNumber({
   min?: number
 }) {
   const { state, save } = useSaver(onSave)
+  const field = useRef<HTMLInputElement | null>(null)
+  const focusedValue = useRef(String(value ?? ''))
+  useEffect(() => { if (field.current && document.activeElement !== field.current) field.current.value = String(value ?? '') }, [value])
   return (
     <span className="relative inline-block">
       <input
-        key={value ?? 'empty'}
+        ref={field}
         type="number"
         min={min}
         defaultValue={value ?? ''}
+        onFocus={event => { focusedValue.current = event.target.value }}
         className="w-20 rounded border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 text-sm"
         onBlur={(event) => {
           const next = event.target.value === '' ? null : Number(event.target.value)
+          if (event.target.value === focusedValue.current) { event.target.value = String(value ?? ''); return }
           if (next !== value && (next === null || (Number.isFinite(next) && (min === undefined || next >= min)))) {
             void save(next)
           }

@@ -206,13 +206,15 @@ def compile_manuscript(graph: StoryGraph, *, include_unplaced: bool = True) -> s
     if graph.story.premise:
         parts.append(f"*{graph.story.premise}*\n")
 
-    for chapter in sorted(graph.chapters, key=lambda c: c.sort_key):
+    from storytool.domain.ordering import chapter_order_key, scene_order_key
+
+    for chapter in sorted(graph.chapters, key=chapter_order_key):
         heading = f"## Chapter {chapter.number}"
         if chapter.title:
             heading += f" — {chapter.title}"
         parts.append(heading + "\n")
 
-        scenes = by_chapter.get(chapter.id, [])
+        scenes = sorted(by_chapter.get(chapter.id, []), key=scene_order_key)
         written = [s for s in scenes if (s.content or "").strip()]
         if not written:
             # Say so rather than emitting a silent gap, so the export doubles as a
