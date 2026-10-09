@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from storytool.domain.ai.schemas import Proposal
 from storytool.domain.cast import models as cast_models
 from storytool.domain.cast import schemas as cast_schemas
+from storytool.domain.glossary import GlossaryCreate, GlossaryEntry, GlossaryUpdate
 from storytool.domain.narrative import models as narrative
 from storytool.domain.narrative import schemas as narrative_schemas
 from storytool.domain.narrative.prose import save_scene_content
@@ -46,6 +47,7 @@ ENTITIES: dict[str, tuple[Any, Any, Any]] = {
         narrative_schemas.ChapterUpdate,
     ),
     "scene": (narrative.Scene, narrative_schemas.SceneCreate, narrative_schemas.SceneUpdate),
+    "glossary_entry": (GlossaryEntry, GlossaryCreate, GlossaryUpdate),
     "event": (structure.Event, structure_schemas.EventCreate, structure_schemas.EventUpdate),
     "arc": (cast_models.Arc, cast_schemas.ArcCreate, cast_schemas.ArcUpdate),
     "arc_stage": (cast_models.ArcStage, cast_schemas.ArcStageCreate, cast_schemas.ArcStageUpdate),
@@ -55,6 +57,7 @@ REFERENCES = {
     "act_id": "act",
     "chapter_id": "chapter",
     "scene_id": "scene",
+    "first_explained_scene_id": "scene",
     "arc_id": "arc",
     "location_id": "location",
     "pov_character_id": "character",

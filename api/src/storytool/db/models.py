@@ -8,6 +8,7 @@ from storytool.domain.ai.models import AgentToken, AIConnection, AIRun, StoryObs
 from storytool.domain.auth.models import User, UserSession
 from storytool.domain.auth.oauth_models import MCPClient, MCPConsent, MCPGrant, MCPToken
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
+from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.narrative.models import (
     Annotation,
     Chapter,
@@ -40,6 +41,7 @@ __all__ = (
     "Character",
     "Event",
     "FieldAuthorship",
+    "GlossaryEntry",
     "Location",
     "MCPClient",
     "MCPConsent",

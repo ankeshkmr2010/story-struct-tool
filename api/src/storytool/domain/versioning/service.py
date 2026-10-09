@@ -170,7 +170,11 @@ def changes(current: dict[str, Any], target: dict[str, Any]) -> tuple[list[Versi
     now, then = semantic(current), semantic(target)
     labels = {
         row["id"]: str(
-            row.get("name") or row.get("title") or row.get("label") or kind.replace("_", " ")
+            row.get("name")
+            or row.get("title")
+            or row.get("label")
+            or row.get("term")
+            or kind.replace("_", " ")
         )
         for graph in [now, then]
         for kind, rows in graph.items()
@@ -193,7 +197,7 @@ def changes(current: dict[str, Any], target: dict[str, Any]) -> tuple[list[Versi
                 )
             continue
         old = {row["id"]: row for row in now[kind]}
-        new = {row["id"]: row for row in then[kind]}
+        new = {row["id"]: row for row in then.get(kind, [])}
         for identifier in sorted(old.keys() | new.keys()):
             before, after = old.get(identifier, {}), new.get(identifier, {})
             if before == after:
@@ -202,9 +206,11 @@ def changes(current: dict[str, Any], target: dict[str, Any]) -> tuple[list[Versi
                 after.get("title")
                 or after.get("name")
                 or after.get("label")
+                or after.get("term")
                 or before.get("title")
                 or before.get("name")
                 or before.get("label")
+                or before.get("term")
                 or kind.replace("_", " ")
             )
             fields = [
@@ -257,7 +263,7 @@ async def restore_state(db: AsyncSession, story_id: UUID, state: dict[str, Any])
         if kind == "story":
             continue
         table = model.__table__
-        for row in state[kind]:
+        for row in state.get(kind, []):
             values = {key: restore_value(table.c[key], value) for key, value in row.items()}
             later = {}
             for column in table.c:

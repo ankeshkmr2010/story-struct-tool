@@ -6,6 +6,7 @@ import { Ladder, type AuthoringMode } from '../components/Ladder'
 import { ChapterBriefCard } from '../components/ChapterBriefCard'
 import { InsightsPanel } from '../components/InsightsPanel'
 import { PlacesPanel } from '../components/PlacesPanel'
+import { GlossaryPanel } from '../components/GlossaryPanel'
 import { CharactersPanel } from '../components/CharactersPanel'
 import { ActsPanel, BeatsPanel, EventsPanel, ThreadsPanel } from '../components/StructurePanels'
 import { AddForm, Chip, DeleteButton, InlineNumber, InlineSelect, InlineText } from '../components/fields'
@@ -32,6 +33,7 @@ const MODES: AuthoringMode[] = ['plotter', 'hybrid', 'pantser']
 const PLACES_VIEW = 100
 const TIMELINE_VIEW = 101
 const ASSISTANT_VIEW = 102
+const GLOSSARY_VIEW = 103
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
@@ -284,6 +286,7 @@ function Workspace() {
         <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
           <button type="button" onClick={() => setLevel(TIMELINE_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === TIMELINE_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Story timeline →</button>
           <button type="button" onClick={() => setLevel(ASSISTANT_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === ASSISTANT_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Story assistant →</button>
+          <button type="button" onClick={() => setLevel(GLOSSARY_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === GLOSSARY_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Glossary →</button>
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
             Levels
           </h2>
@@ -313,6 +316,7 @@ function Workspace() {
         <section className="min-w-0">
           {level === TIMELINE_VIEW && <StoryTimeline storyId={storyId} onOpenScene={(id) => { setSceneId(id || null); setLevel(8) }} />}
           {level === ASSISTANT_VIEW && <AuthoringAssistant storyId={storyId} />}
+          {level === GLOSSARY_VIEW && <GlossaryPanel storyId={storyId} />}
           {level === 1 && (
             <Panel title="Premise" hint="The story's starting point and settings.">
               <div className="space-y-3">

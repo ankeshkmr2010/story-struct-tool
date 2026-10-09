@@ -8,6 +8,8 @@ type S = components['schemas']
 export type Story = S['StoryOut']
 export type StoryCreate = S['StoryCreate']
 export type StoryUpdate = S['StoryUpdate']
+export type GlossaryEntry = S['GlossaryOut']
+export type GlossaryUpdate = S['GlossaryUpdate']
 export type StoryShare = S['ShareOut']
 export type SharedStory = S['SharedStoryOut']
 export type SharedDocument = S['SharedDocumentOut']
@@ -308,6 +310,10 @@ export const api = {
   // Places. Reference data, outside the ladder -- they never gate a level.
   listLocations: (storyId: string) =>
     request<Location[]>(`/api/stories/${storyId}/locations`),
+  listGlossary: (storyId: string) => request<GlossaryEntry[]>(`/api/stories/${storyId}/glossary`),
+  createGlossaryEntry: (storyId: string, body: S['GlossaryCreate']) => post<GlossaryEntry>(`/api/stories/${storyId}/glossary`, body),
+  updateGlossaryEntry: (storyId: string, id: string, body: GlossaryUpdate) => patch<GlossaryEntry>(`/api/stories/${storyId}/glossary/${id}`, body),
+  deleteGlossaryEntry: (storyId: string, id: string) => request<void>(`/api/stories/${storyId}/glossary/${id}`, { method: 'DELETE' }),
   createLocation: (storyId: string, body: { name: string; description?: string }) =>
     post<Location>(`/api/stories/${storyId}/locations`, body),
   updateLocation: (storyId: string, locationId: string, body: Record<string, unknown>) =>

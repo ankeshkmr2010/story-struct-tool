@@ -192,6 +192,10 @@ stage_story_changes takes {story_id, proposal}; proposal contains summary, base_
 and operations. Never omit the fingerprint or substitute names for IDs. Use data.from_id and
 data.to_id for link operations. A new: reference must be declared by a create in this same batch.
 Respect plotter/pantser/hybrid mode, author canon and dismissed notices. Placeholders are valid.
+Story.blurb is the reader-facing pitch; premise is the working story idea. Keep them separate.
+Use glossary_entry for terminology: term, aliases, definition and first_explained_scene_id.
+Query it with query_story_entities, get its schema, then stage create/update/delete operations.
+Explanation scene references must belong to this story. Do not invent explanations in prose.
 For ordered entities, set sort_key explicitly. Append with the highest existing key plus 100;
 do not use the item count as an order key. Keep chapter numbers consistent with the outline.
 World time and reading order are independent. Editorial judgments need evidence and alternatives.
@@ -526,6 +530,15 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     async def get_story_timeline(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
         """Global timeline with people/places, on/off-page events and world vs reading order."""
         return await call(ctx, "/timeline", story_id=story_id)
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_story_glossary(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
+        """Read terms, aliases, definitions and first-explanation scene links.
+
+        To edit, get_entity_schema('glossary_entry'), stage typed operations and apply.
+        This does not judge whether prose has explained a term adequately.
+        """
+        return {"entries": await call(ctx, "/glossary", story_id=story_id)}
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_story_findings(

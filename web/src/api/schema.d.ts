@@ -1591,6 +1591,43 @@ export interface paths {
         patch: operations["ApiStoriesStoryIdSuggestionsSuggestionIdUpdateSuggestion"];
         trace?: never;
     };
+    "/api/stories/{story_id}/glossary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List glossary entries */
+        get: operations["ApiStoriesStoryIdGlossaryListEntries"];
+        put?: never;
+        /** Create a glossary entry */
+        post: operations["ApiStoriesStoryIdGlossaryCreateEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/glossary/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a glossary entry */
+        get: operations["ApiStoriesStoryIdGlossaryEntryIdReadEntry"];
+        put?: never;
+        post?: never;
+        /** Delete a glossary entry */
+        delete: operations["ApiStoriesStoryIdGlossaryEntryIdDeleteEntry"];
+        options?: never;
+        head?: never;
+        /** Update a glossary entry */
+        patch: operations["ApiStoriesStoryIdGlossaryEntryIdUpdateEntry"];
+        trace?: never;
+    };
     "/api/stories/{story_id}/locations": {
         parameters: {
             query?: never;
@@ -2135,6 +2172,36 @@ export interface components {
             entity_type: string | null;
             entity_id: string | null;
         };
+        /** GlossaryCreate */
+        GlossaryCreate: {
+            term: string;
+            aliases?: string[] | null;
+            definition?: string | null;
+            first_explained_scene_id?: string | null;
+        };
+        /** GlossaryOut */
+        GlossaryOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            completeness: components["schemas"]["CompletenessOut"];
+            /** Format: uuid */
+            story_id: string;
+            term: string;
+            aliases: string[] | null;
+            definition: string | null;
+            first_explained_scene_id: string | null;
+        };
+        /** GlossaryUpdate */
+        GlossaryUpdate: {
+            term?: string | null;
+            aliases?: string[] | null;
+            definition?: string | null;
+            first_explained_scene_id?: string | null;
+        };
         /** GoogleCredential */
         GoogleCredential: {
             credential: string;
@@ -2256,7 +2323,7 @@ export interface components {
             /** @enum {string} */
             op: "create" | "update" | "link" | "unlink" | "write_prose" | "delete";
             /** @enum {string} */
-            entity: "story" | "character" | "relationship" | "arc" | "arc_stage" | "act" | "beat" | "thread" | "location" | "chapter" | "scene" | "event" | "chapter_beat" | "scene_beat" | "scene_thread" | "scene_arc_advance" | "event_character" | "scene_presence";
+            entity: "story" | "character" | "relationship" | "arc" | "arc_stage" | "act" | "beat" | "thread" | "location" | "glossary_entry" | "chapter" | "scene" | "event" | "chapter_beat" | "scene_beat" | "scene_thread" | "scene_arc_advance" | "event_character" | "scene_presence";
             ref: string;
             data: {
                 [key: string]: unknown;
@@ -7777,6 +7844,200 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuggestionOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdGlossaryListEntries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlossaryOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdGlossaryCreateEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GlossaryCreate"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlossaryOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdGlossaryEntryIdReadEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlossaryOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdGlossaryEntryIdDeleteEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdGlossaryEntryIdUpdateEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GlossaryUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlossaryOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

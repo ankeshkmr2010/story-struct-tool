@@ -14,6 +14,7 @@ Entity = Literal[
     "beat",
     "thread",
     "location",
+    "glossary_entry",
     "chapter",
     "scene",
     "event",

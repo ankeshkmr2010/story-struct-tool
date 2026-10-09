@@ -41,6 +41,7 @@ _REFERENCE_MODELS = {
     "chapter_id": Chapter,
     "location_id": Location,
     "scene_id": Scene,
+    "first_explained_scene_id": Scene,
     "scene_ids": Scene,
     "thread_id": Thread,
     "thread_ids": Thread,
