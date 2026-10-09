@@ -388,3 +388,5 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .authorship-origin { display: inline-block; margin-left: 8px; padding: 3px 8px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font-size: 11px; }
 .origin-assistant, .origin-mcp { border: 1px solid var(--accent); }
 .field-origin-summary { color: var(--muted); font-size: 11px; line-height: 1.6; margin-top: 8px; }
+
+.shared-reader-blurb { max-width: 680px; margin: 12px 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 16px/1.8 Georgia, serif; color: var(--muted); }

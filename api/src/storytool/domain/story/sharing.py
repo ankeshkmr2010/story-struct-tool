@@ -61,6 +61,7 @@ class SharedStoryOut(BaseModel):
     story_id: UUID
     title: str
     premise: str | None
+    blurb: str | None
     owner_name: str
     allow_import: bool
 
@@ -134,6 +135,7 @@ def shared_summary(story: Story, grant: StoryShare, owner: User) -> SharedStoryO
         story_id=story.id,
         title=story.title,
         premise=story.premise,
+        blurb=story.blurb,
         owner_name=owner.name or "StoryTool author",
         allow_import=grant.allow_import,
     )
@@ -311,6 +313,7 @@ class StoryReaderController(Controller):
                 story_id=source.id,
                 title=source.title,
                 premise=source.premise,
+                blurb=source.blurb,
                 owner_name=owner.name or "Your story",
                 allow_import=False,
             ),

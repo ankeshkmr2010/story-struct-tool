@@ -2551,6 +2551,7 @@ export interface components {
             story_id: string;
             title: string;
             premise: string | null;
+            blurb: string | null;
             owner_name: string;
             allow_import: boolean;
         };
@@ -2577,6 +2578,8 @@ export interface components {
         StoryCreate: {
             title: string;
             premise?: string | null;
+            /** @description Reader-facing pitch, separate from the working premise. */
+            blurb?: string | null;
             thematic_statement?: string | null;
             motifs?: string[] | null;
             world_rules?: string[] | null;
@@ -2598,6 +2601,7 @@ export interface components {
             completeness: components["schemas"]["CompletenessOut"];
             title: string;
             premise: string | null;
+            blurb: string | null;
             thematic_statement: string | null;
             motifs: string[] | null;
             world_rules: string[] | null;
@@ -2630,6 +2634,8 @@ export interface components {
         StoryUpdate: {
             title?: string | null;
             premise?: string | null;
+            /** @description Reader-facing pitch, separate from the working premise. */
+            blurb?: string | null;
             thematic_statement?: string | null;
             motifs?: string[] | null;
             world_rules?: string[] | null;

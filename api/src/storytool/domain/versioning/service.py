@@ -282,7 +282,7 @@ async def restore_state(db: AsyncSession, story_id: UUID, state: dict[str, Any])
         for key, value in state["story"][0].items()
         if key not in AUDIT | ADMIN | {"id"}
     }
-    for field in ("notes", "world_rules", "style_rules", "thematic_statement", "motifs"):
+    for field in ("blurb", "notes", "world_rules", "style_rules", "thematic_statement", "motifs"):
         if field not in state["story"][0]:
             values[field] = None
     await db.execute(update(story_table).where(story_table.c.id == story_id).values(**values))

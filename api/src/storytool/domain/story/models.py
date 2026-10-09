@@ -22,6 +22,7 @@ class Story(StoryToolBase, CompletableMixin):
         DateTime(timezone=True), default=None, index=True
     )
     premise: Mapped[str | None] = mapped_column(Text, default=None)
+    blurb: Mapped[str | None] = mapped_column(Text, default=None)
     thematic_statement: Mapped[str | None] = mapped_column(Text, default=None)
     motifs: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
     world_rules: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
@@ -42,5 +43,4 @@ class Story(StoryToolBase, CompletableMixin):
         ForeignKey("story.id", ondelete="SET NULL"), default=None, index=True
     )
 
-    # NOTE: `status` and `thematic_statement` are deliberately absent.
-    # status is derived (DESIGN.md principle 3); thematic_statement belongs to Theme.
+    # Status is derived (DESIGN.md principle 3).

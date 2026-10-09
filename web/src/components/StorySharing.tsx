@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { errorText } from '../api/errors'
 
-export function StorySharing({ storyId, title, beforeOpen }: { storyId: string; title: string; beforeOpen?: () => Promise<boolean> }) {
+export function StorySharing({ storyId, title, blurb, beforeOpen }: { storyId: string; title: string; blurb?: string | null; beforeOpen?: () => Promise<boolean> }) {
   const qc = useQueryClient()
   const dialog = useRef<HTMLDialogElement>(null)
   const [open, setOpen] = useState(false)
@@ -27,6 +27,7 @@ export function StorySharing({ storyId, title, beforeOpen }: { storyId: string; 
     <dialog ref={dialog} className="story-sharing-dialog" aria-labelledby={`share-title-${storyId}`} onClose={() => setOpen(false)}>
       <div className="sharing-heading"><h2 id={`share-title-${storyId}`}>Share story</h2><button type="button" className="share-story-button" onClick={() => setOpen(false)}>Close</button></div>
       <p className="sharing-story-title">{title}</p>
+      {blurb && <p className="shared-reader-blurb">{blurb}</p>}
       <p className="writer-help">Share the current saved manuscript and story structure with a StoryTool account. Recipients can read beats, arcs, characters, and timeline context. Private annotations, past versions, and AI conversations stay private.</p>
       <form className="sharing-form" onSubmit={event => { event.preventDefault(); if (email.trim() && !pending) save.mutate({ email, allow: allowImport }) }}>
         <label>Recipient’s sign-in email<input type="email" required maxLength={320} autoFocus value={email} onChange={event => setEmail(event.target.value)} placeholder="writer@gmail.com" /></label>

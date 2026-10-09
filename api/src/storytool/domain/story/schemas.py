@@ -17,6 +17,9 @@ class StoryCreate(BaseModel):
 
     title: str = Field(min_length=1, max_length=300)
     premise: str | None = None
+    blurb: str | None = Field(
+        default=None, description="Reader-facing pitch, separate from the working premise."
+    )
     thematic_statement: str | None = None
     motifs: list[str] | None = Field(default=None, max_length=100)
     world_rules: list[str] | None = Field(default=None, max_length=200)
@@ -33,6 +36,9 @@ class StoryUpdate(BaseModel):
 
     title: str | None = Field(default=None, min_length=1, max_length=300)
     premise: str | None = None
+    blurb: str | None = Field(
+        default=None, description="Reader-facing pitch, separate from the working premise."
+    )
     thematic_statement: str | None = None
     motifs: list[str] | None = Field(default=None, max_length=100)
     world_rules: list[str] | None = Field(default=None, max_length=200)
@@ -47,6 +53,7 @@ class StoryUpdate(BaseModel):
 class StoryOut(EntityOut):
     title: str
     premise: str | None
+    blurb: str | None
     thematic_statement: str | None
     motifs: list[str] | None
     world_rules: list[str] | None

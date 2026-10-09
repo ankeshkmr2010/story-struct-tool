@@ -243,7 +243,7 @@ function Workspace() {
           </a>
           <StoryVersions storyId={storyId} />
           <AuthorshipPanel storyId={storyId} />
-          <StorySharing storyId={storyId} title={story.data.title} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} />
+          <StorySharing storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} />
           <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             Mode
             <select
@@ -317,6 +317,7 @@ function Workspace() {
             <Panel title="Premise" hint="The story's starting point and settings.">
               <div className="space-y-3">
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Title<InlineText value={story.data.title} placeholder="Story title" onSave={(title) => updateStory.mutateAsync({ title })} /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">Blurb · shown to readers<InlineText value={story.data.blurb} placeholder="A reader-facing pitch for your story" onSave={(blurb) => updateStory.mutateAsync({ blurb })} multiline /></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Premise<InlineText value={story.data.premise} placeholder="What is this story?" onSave={(premise) => updateStory.mutateAsync({ premise })} multiline /></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Genre<InlineText value={story.data.genre} placeholder="Genre" onSave={(genre) => updateStory.mutateAsync({ genre })} /></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Point of view<InlineSelect value={story.data.pov_style} options={['first', 'third_limited', 'third_omniscient', 'second', 'mixed']} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></label>
