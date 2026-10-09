@@ -153,6 +153,38 @@ async def test_prose_does_not_affect_structural_completeness(client: AsyncTestCl
 # -------------------------------------------------------------- revisions
 
 
+async def test_conditional_prose_save_preserves_a_newer_draft(client: AsyncTestClient) -> None:
+    story_id, _, scene_id = await story_with_scene(client)
+    url = f"{STORIES}/{story_id}/scenes/{scene_id}/content"
+    first = await client.put(url, json={"content": "Original draft.", "expected_content": None})
+    assert first.status_code == 200
+    changed = await client.put(
+        url, json={"content": "Edited elsewhere.", "expected_content": "Original draft."}
+    )
+    assert changed.status_code == 200
+    stale = await client.put(
+        url,
+        json={
+            "content": "Stale browser draft.",
+            "expected_content": "Original draft.",
+            "snapshot": True,
+        },
+    )
+    assert stale.status_code == 409
+    assert (await client.get(url)).json()["content"] == "Edited elsewhere."
+    assert (await client.get(url.removesuffix("/content") + "/revisions")).json() == []
+    recovered = await client.put(
+        url,
+        json={
+            "content": "Reviewed browser draft.",
+            "expected_content": "Edited elsewhere.",
+            "snapshot": True,
+        },
+    )
+    assert recovered.status_code == 200
+    assert recovered.json()["revision_created"] is True
+
+
 async def test_snapshot_captures_the_previous_content_not_the_new_one(
     client: AsyncTestClient,
 ) -> None:

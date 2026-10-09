@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from 'react'
+import { Suspense, lazy, useCallback, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
@@ -19,6 +19,7 @@ import { StoryVersions } from '../components/StoryVersions'
 const SceneEditor = lazy(() =>
   import('../components/SceneEditor').then((m) => ({ default: m.SceneEditor })),
 )
+const StoryWriter = lazy(() => import('../components/StoryWriter').then(m => ({ default: m.StoryWriter })))
 
 const MODES: AuthoringMode[] = ['plotter', 'hybrid', 'pantser']
 
@@ -30,8 +31,30 @@ const ASSISTANT_VIEW = 102
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
+  return <Workspace key={storyId} />
+}
+
+function Workspace() {
+  const { storyId = '' } = useParams()
   const qc = useQueryClient()
   const [level, setLevel] = useState(1)
+  const [tab, setTab] = useState<'write' | 'design'>(() => {
+    try { return localStorage.getItem(`storytool-workspace:${storyId}`) === 'write' ? 'write' : 'design' } catch { return 'design' }
+  })
+  const [writerOpened, setWriterOpened] = useState(tab === 'write')
+  const [tabError, setTabError] = useState<string | null>(null)
+  const writerFlush = useRef<() => Promise<boolean>>(async () => true)
+  const registerFlush = useCallback((flush: () => Promise<boolean>) => { writerFlush.current = flush }, [])
+  const changeTab = async (next: 'write' | 'design') => {
+    if (next === tab) return
+    if (tab === 'write' && !await writerFlush.current()) { setTabError('Your writing has not saved yet. Retry the save before switching to Design.'); return }
+    setTabError(null); setTab(next)
+    if (next === 'write') {
+      setWriterOpened(true)
+      void qc.invalidateQueries({ queryKey: ['content', storyId] })
+    }
+    try { localStorage.setItem(`storytool-workspace:${storyId}`, next) } catch { /* Preference storage is optional. */ }
+  }
 
   const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
   const ladder = useQuery({ queryKey: ['ladder', storyId], queryFn: () => api.getLadder(storyId) })
@@ -227,6 +250,22 @@ export default function StoryWorkspace() {
         </div>
       </header>
 
+      <div className="story-workspace-tabs" role="tablist" aria-label="Story workspace" onKeyDown={event => {
+        if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+          event.preventDefault()
+          const next = event.key === 'Home' ? 'write' : event.key === 'End' ? 'design' : tab === 'write' ? 'design' : 'write'
+          void changeTab(next)
+          document.getElementById(`workspace-tab-${next}`)?.focus()
+        }
+      }}>
+        {(['write', 'design'] as const).map(item => <button key={item} id={`workspace-tab-${item}`} type="button" role="tab" aria-selected={tab === item} aria-controls={`workspace-panel-${item}`} tabIndex={tab === item ? 0 : -1} onClick={() => { void changeTab(item) }}>{item === 'write' ? 'Write' : 'Design'}</button>)}
+      </div>
+      {tabError && <p role="alert" className="writer-error">{tabError}</p>}
+      <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>
+        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} registerFlush={registerFlush} /></Suspense>}
+      </div>
+      <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design" hidden={tab !== 'design'}>
+
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setLevel(TIMELINE_VIEW)} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
       <div className={`mt-6 grid grid-cols-1 gap-5 md:grid-cols-[170px_minmax(0,1fr)] ${level === TIMELINE_VIEW || level === ASSISTANT_VIEW ? 'xl:grid-cols-[180px_minmax(0,1fr)]' : 'xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
         <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
@@ -416,6 +455,7 @@ export default function StoryWorkspace() {
         {level !== TIMELINE_VIEW && level !== ASSISTANT_VIEW && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
           <InsightsPanel storyId={storyId} health={health.data} />
         </aside>}
+      </div>
       </div>
     </main>
   )

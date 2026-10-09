@@ -330,12 +330,16 @@ export default function HowToUse() {
             <Section id="writing" eyebrow="07" title="Writing, reading, exporting">
               <div className="grid gap-5 sm:grid-cols-2">
                 <Item title="Draft in the editor">
-                  Open Scenes, pick a scene, write. Prose is Markdown and autosaves as you
-                  type. The rail beside it keeps the goal, conflict, outcome and chapter
-                  context in view.
+                  Open a story’s <strong className="font-medium">Write</strong> tab and start
+                  typing. A chapter’s scenes appear together on one scrolling manuscript.
+                  Chapter titles and scene names are optional. Add a scene break at the end
+                  or continue into the next chapter. Prose is Markdown and autosaves; Context
+                  opens scene details and the chapter brief, while Focus hides the surrounding
+                  controls. The <strong className="font-medium">Design</strong> tab keeps the
+                  full planning workspace. Both tabs edit the same story.
                 </Item>
                 <Item title="Annotate a line">
-                  Select text and choose <strong className="font-medium">Annotate
+                  In Design → Scenes, select text and choose <strong className="font-medium">Annotate
                   selection</strong> to leave a note on it. Notes follow the sentence as you
                   edit; if the text goes, the note is kept and flagged rather than silently
                   moved.

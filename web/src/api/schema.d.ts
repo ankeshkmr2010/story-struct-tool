@@ -2208,6 +2208,8 @@ export interface components {
              */
             snapshot: boolean;
             snapshot_label?: string | null;
+            /** @description If supplied, save only when the current prose still matches this text. */
+            expected_content?: string | null;
         };
         /** SceneCreate */
         SceneCreate: {

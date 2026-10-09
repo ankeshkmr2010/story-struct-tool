@@ -246,7 +246,7 @@ export const api = {
   saveContent: (
     storyId: string,
     sceneId: string,
-    body: { content: string | null; snapshot?: boolean; snapshot_label?: string },
+    body: { content: string | null; snapshot?: boolean; snapshot_label?: string; expected_content?: string | null },
   ) =>
     request<SaveResult>(`/api/stories/${storyId}/scenes/${sceneId}/content`, {
       method: 'PUT',

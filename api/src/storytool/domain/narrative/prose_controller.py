@@ -9,7 +9,7 @@ from uuid import UUID
 
 from litestar import Controller, MediaType, Response, delete, get, patch, post, put
 from litestar.di import Provide
-from litestar.exceptions import NotFoundException
+from litestar.exceptions import HTTPException, NotFoundException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,6 +66,16 @@ class SceneProseController(Controller):
         data: SceneContentUpdate,
     ) -> SaveResultOut:
         scene = await fetch_or_404(scenes, "scene", id=scene_id, story_id=story_id)
+        if "expected_content" in data.model_fields_set and (scene.content or "") != (
+            data.expected_content or ""
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "This passage changed elsewhere. Your draft has not replaced it. "
+                    "Review the latest text before saving."
+                ),
+            )
         result = await save_scene_content(
             db_session,
             scene,

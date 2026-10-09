@@ -99,7 +99,10 @@ export function AccountMenu() {
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, retry: false })
   const logout = useMutation({
     mutationFn: api.logout,
-    onSuccess: () => window.location.assign('/'),
+    onSuccess: () => {
+      try { for (const key of Object.keys(sessionStorage)) if (key.startsWith('storytool-writer:')) sessionStorage.removeItem(key) } catch { /* Browser storage may be unavailable. */ }
+      window.location.assign('/')
+    },
   })
 
   if (!me.data) return null

@@ -240,6 +240,10 @@ class SceneContentUpdate(BaseModel):
         description="Capture the previous content as a revision before overwriting.",
     )
     snapshot_label: str | None = Field(default=None, max_length=200)
+    expected_content: str | None = Field(
+        default=None,
+        description="If supplied, save only when the current prose still matches this text.",
+    )
 
 
 class SaveResultOut(BaseModel):
