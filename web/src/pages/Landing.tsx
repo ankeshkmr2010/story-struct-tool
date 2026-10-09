@@ -13,9 +13,9 @@ export default function Landing() {
       <div className="hero-copy">
         <p className="eyebrow"><span /> A workspace for fiction writers</p>
         <h1 id="landing-title">A spark of an idea.<br /><em>A story that holds together.</em></h1>
-        <p className="hero-description">Bring your characters, plot, timeline, and prose into one place. Shape the bigger picture in Design, or open Write and begin a chapter. Your story has room to grow either way.</p>
+        <p className="hero-description">Bring your characters, plot, timeline, and prose into one place. Shape the bigger picture in Design, write your chapters, and share your story with readers you choose.</p>
         <div className="hero-actions"><Link to="/library" className="landing-primary">Start your story <span aria-hidden="true">↗</span></Link><Link to="/how-to-use" className="landing-secondary">See how it works <span aria-hidden="true">→</span></Link><a href="#mcp" className="landing-secondary">Connect your AI ↗</a></div>
-        <p className="hero-footnote">For first drafts, ambitious rewrites, and everything between.</p>
+        <p className="hero-footnote">For first drafts, ambitious rewrites, and your first readers. <a href="#sharing">Explore story sharing →</a></p>
       </div>
       <div className="story-preview" aria-label="Illustrative story outline showing linked beats, timeline events, and a character arc">
         <div className="preview-top"><img src="/branding/storytool.svg" width="32" height="32" alt="" /><span>The Last Lantern <small>A glimpse of your workspace</small></span><span className="preview-draft">Draft</span></div>
@@ -33,6 +33,20 @@ export default function Landing() {
       </div>
     </section>
     <section className="landing-features" aria-labelledby="features-title"><div className="section-intro"><p className="eyebrow">FROM FIRST IDEA TO FINAL SCENE</p><h2 id="features-title">Keep the threads in your hands.</h2></div><div className="feature-grid">{features.map(([number, title, description]) => <article key={number}><span className="feature-number">{number}</span><h3>{title}</h3><p>{description}</p></article>)}</div></section>
+    <section id="sharing" className="landing-sharing" aria-labelledby="sharing-title">
+      <div className="section-intro sharing-intro">
+        <p className="eyebrow">BRING YOUR READERS INTO THE STORY</p>
+        <h2 id="sharing-title">Your story, ready to share.</h2>
+        <p>Invite another StoryTool user to read your latest saved draft. They get a dedicated reader, with your characters, arcs, beats, and timeline close at hand when they want the bigger picture.</p>
+        <div className="sharing-actions"><Link to="/library" className="landing-primary">Choose a story to share <span aria-hidden="true">→</span></Link><Link to="/how-to-use#sharing" className="landing-secondary">How sharing works →</Link></div>
+      </div>
+      <div className="sharing-permissions">
+        <article><span className="writing-tab-label">Read only</span><h3>Let them experience your draft.</h3><p>Readers can turn pages or scroll, adjust the type, and enter Focus. Your manuscript and structure stay protected from edits.</p></article>
+        <article><span className="writing-tab-label">Read and import a copy</span><h3>Give an idea room to branch.</h3><p>If you allow it, a reader can import an independent copy into their own stories. Their changes belong to their copy; your original stays yours.</p></article>
+      </div>
+      <ol className="sharing-steps"><li><span>01</span><p>Open <strong>Share</strong> on your story.</p></li><li><span>02</span><p>Add their sign-in email and choose access.</p></li><li><span>03</span><p>Send the reader link, or let them find it in <strong>Shared with you</strong>.</p></li></ol>
+      <p className="sharing-footnote">Your private notes, version history, and AI conversations stay private. You can revoke access later; copies already imported remain independent.</p>
+    </section>
     <section className="landing-writing" aria-labelledby="writing-title">
       <div className="section-intro"><p className="eyebrow">WRITE, READ, AND DESIGN</p><h2 id="writing-title">Plan when you need to.<br />Write when you’re ready.</h2><p>Write, Read, and Design are tabs inside every story. All three work with the same chapters, scenes, and structure.</p></div>
       <div className="writing-workspaces">
