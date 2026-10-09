@@ -17,7 +17,7 @@ from storytool.domain.story.models import Story
 
 class ConsentDecision(BaseModel):
     story_id: UUID | None = None
-    scopes: list[str] = Field(default_factory=list, max_length=4)
+    scopes: list[str] = Field(default_factory=list, max_length=6)
     deny: bool = False
 
 
@@ -69,7 +69,7 @@ class OAuthConsentController(Controller):
             await db_session.execute(
                 select(MCPGrant, MCPClient, Story.title)
                 .join(MCPClient, MCPClient.client_id == MCPGrant.client_id)
-                .join(Story, Story.id == MCPGrant.story_id)
+                .outerjoin(Story, Story.id == MCPGrant.story_id)
                 .where(
                     MCPGrant.user_id == request.scope["state"]["storytool_user_id"],
                 )
@@ -80,7 +80,7 @@ class OAuthConsentController(Controller):
             {
                 "id": str(grant.id),
                 "client_name": client.metadata_json.get("client_name") or "External AI client",
-                "story_title": title,
+                "story_title": title or "All your stories",
                 "scopes": grant.scopes,
                 "expires_at": grant.expires_at.isoformat(),
                 "revoked_at": grant.revoked_at.isoformat() if grant.revoked_at else None,

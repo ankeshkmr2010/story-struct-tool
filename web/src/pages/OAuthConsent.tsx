@@ -21,9 +21,11 @@ export default function OAuthConsent() {
   const [allowProse, setAllowProse] = useState(true)
   const [allowWrite, setAllowWrite] = useState(false)
   const [allowRestore, setAllowRestore] = useState(false)
+  const [allowCreate, setAllowCreate] = useState(false)
+  const library = storyId === '__library__'
   const requested = request.data?.requested_scopes ?? []
-  const scopes = ['story:read', ...(allowProse ? ['prose:read'] : []), ...(allowWrite ? ['story:write'] : []), ...(allowWrite && allowProse && allowRestore ? ['versions:restore'] : [])].filter(scope => requested.includes(scope))
-  const decide = useMutation({ mutationFn: (deny: boolean) => api.decideOAuthConsent(requestId, { story_id: deny ? null : storyId, scopes: deny ? [] : scopes, deny }), onSuccess: ({ redirect_url }) => window.location.assign(redirect_url) })
+  const scopes = ['story:read', ...(allowProse ? ['prose:read'] : []), ...(allowWrite ? ['story:write'] : []), ...(allowWrite && allowProse && allowRestore ? ['versions:restore'] : []), ...(library ? ['library:read'] : []), ...(library && allowCreate ? ['story:create'] : [])].filter(scope => requested.includes(scope))
+  const decide = useMutation({ mutationFn: (deny: boolean) => api.decideOAuthConsent(requestId, { story_id: deny || library ? null : storyId, scopes: deny ? [] : scopes, deny }), onSuccess: ({ redirect_url }) => window.location.assign(redirect_url) })
   return <main className="mx-auto max-w-xl px-5 py-10">
     <p className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">StoryTool connection</p>
     <h1 className="mt-3 text-2xl font-semibold">Connect your AI client</h1>
@@ -34,16 +36,17 @@ export default function OAuthConsent() {
       <p className="break-words text-lg font-medium">{request.data.client_name}</p>
       <p className="mt-2 break-words text-sm text-slate-500 dark:text-slate-400">Return address: {request.data.redirect_host}. The client supplies its display name; check that this address matches the app you are connecting.</p>
       <p className="mt-4 break-words text-sm">Signed in as <strong>{me.data?.email}</strong></p>
-      <label className="mt-5 block text-sm font-medium">Choose one story<select aria-label="Story to connect" value={storyId} onChange={event => setStoryId(event.target.value)} className="mt-2 block w-full rounded border border-slate-300 bg-white p-2 dark:border-slate-600 dark:bg-slate-900"><option value="">Select a story</option>{stories.data?.map(story => <option key={story.id} value={story.id}>{story.title}</option>)}</select></label>
+      <label className="mt-5 block text-sm font-medium">Choose access<select aria-label="Story to connect" value={storyId} onChange={event => setStoryId(event.target.value)} className="mt-2 block w-full rounded border border-slate-300 bg-white p-2 dark:border-slate-600 dark:bg-slate-900"><option value="">Select access</option>{requested.includes('library:read') && <option value="__library__">All my stories, including new stories</option>}{stories.data?.map(story => <option key={story.id} value={story.id}>{story.title}</option>)}</select></label>
       {stories.isError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(stories.error)}</p>}
-      {stories.data?.length === 0 && <p className="mt-3 text-sm">Create or restore a story in your library, then restart the connection.</p>}
+      {stories.data?.length === 0 && !requested.includes('library:read') && <p className="mt-3 text-sm">Create or restore a story in your library, then restart the connection.</p>}
       <div className="mt-5 space-y-3 text-sm">
         <p>{scopeLabels['story:read']} (required)</p>
+        {library && requested.includes('story:create') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowCreate} onChange={event => setAllowCreate(event.target.checked)} />Create new stories in my account</label>}
         {requested.includes('prose:read') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowProse} onChange={event => setAllowProse(event.target.checked)} />{scopeLabels['prose:read']}</label>}
         {requested.includes('story:write') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowWrite} onChange={event => setAllowWrite(event.target.checked)} />{scopeLabels['story:write']}</label>}
         {requested.includes('versions:restore') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowRestore && allowWrite && allowProse} disabled={!allowWrite || !allowProse} onChange={event => setAllowRestore(event.target.checked)} />{scopeLabels['versions:restore']}</label>}
       </div>
-      <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">This connection can access only the selected story. Your provider keys and other stories stay private. Access lasts up to 30 days and can be revoked in Settings. Text you share goes to the connected AI client.</p>
+      <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">{library ? 'This connection can access all active stories in your account, including stories created later.' : 'This connection can access only the selected story.'} Provider keys and other users’ stories stay private. Access lasts up to 30 days and can be revoked in Settings. Text you share goes to the connected AI client.</p>
       {decide.isError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(decide.error)}</p>}
       <div className="mt-5 flex flex-wrap justify-end gap-3"><button type="button" disabled={decide.isPending} onClick={() => decide.mutate(true)} className="rounded border border-slate-300 px-4 py-2 text-sm dark:border-slate-600">Cancel</button><button type="button" disabled={!storyId || decide.isPending || !requested.includes('story:read')} onClick={() => decide.mutate(false)} className="rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{decide.isPending ? 'Connecting…' : 'Allow connection'}</button></div>
     </section>}

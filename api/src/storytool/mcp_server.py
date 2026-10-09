@@ -17,7 +17,8 @@ from storytool.config import get_settings
 from storytool.domain.ai.commands import ENTITIES, LINKS
 from storytool.domain.ai.schemas import Proposal
 from storytool.domain.auth.access import _reject
-from storytool.domain.auth.oauth import Delegation, delegated_access, issuer
+from storytool.domain.auth.oauth import SCOPES, Delegation, delegated_access, issuer
+from storytool.domain.story.schemas import StoryCreate
 
 GUIDELINES = {
     "connections": {
@@ -70,7 +71,9 @@ GUIDELINES = {
 
 INSTRUCTIONS = """StoryTool is an author's story graph and writing workspace.
 First get_connection and read the selected story. Its permission scopes govern access
-to exactly one owned story. Never request provider keys. Respect read-only and prose limits.
+to the selected story or the explicitly authorized account library. Never request provider keys.
+For library access, list_stories first, then pass story_id to other tools. create_story saves a
+new owned story with an initial version. Respect read-only, creation and prose permissions.
 Use schemas, real IDs and typed new: references. Read guidelines and findings before repairs.
 Respect plotter/pantser/hybrid mode, author canon and dismissed notices. Placeholders are valid.
 World time and reading order are independent. Editorial judgments need evidence and alternatives.
@@ -93,20 +96,29 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         async with db_config.get_session() as db:
             return await delegated_access(db, authorization[7:])
 
-    async def call(ctx: Context, suffix: str, method: str = "GET", body: Any = None) -> Any:
+    async def call(
+        ctx: Context,
+        suffix: str,
+        method: str = "GET",
+        body: Any = None,
+        story_id: UUID | None = None,
+        collection: bool = False,
+    ) -> Any:
         headers = ctx.headers or {}
         grant = await principal(headers)
         if grant is None:
             raise ValueError("Authentication expired or revoked. Create a story token in Settings.")
+        identifier = story_id or grant.story_id
+        if not collection and identifier is None:
+            raise ValueError("Choose a story ID from list_stories and pass story_id to this tool")
+        target = "/api/stories" + suffix if collection else f"/api/stories/{identifier}{suffix}"
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=cast(Any, get_app())),
             base_url="http://storytool.internal",
             headers={"Authorization": headers["authorization"]},
             timeout=120,
         ) as client:
-            response = await client.request(
-                method, f"/api/stories/{grant.story_id}{suffix}", json=body
-            )
+            response = await client.request(method, target, json=body)
         if not response.is_success:
             detail = response.json().get("detail", "Request failed")
             raise ValueError(f"StoryTool {response.status_code}: {detail}; no changes applied")
@@ -114,12 +126,15 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_connection(ctx: Context) -> dict[str, Any]:
-        """Discover your selected story and capabilities; no account-wide access."""
+        """Discover your selected-story or account-library access and permission scopes."""
         grant = await principal(ctx.headers or {})
         if grant is None:
             raise ValueError("Story token required")
         return {
-            "story_id": str(grant.story_id),
+            "story_id": str(grant.story_id) if grant.story_id else None,
+            "library_access": "library:read" in grant.scopes,
+            "can_create_stories": "story:create" in grant.scopes,
+            "access_mode": "library" if grant.story_id is None else "story",
             "expires_at": grant.expires_at.isoformat(),
             "permissions": grant.scopes,
             "transport": "Streamable HTTP",
@@ -130,11 +145,51 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         }
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
-    async def get_story_context(ctx: Context, include_prose: bool = False) -> dict[str, Any]:
+    async def list_stories(
+        ctx: Context, offset: int = 0, limit: int = 50, include_trashed: bool = False
+    ) -> dict[str, Any]:
+        """Fetch this account's active stories with explicit library permission; never other users.
+        Story-bound tokens return only their selected story. Pick an ID for story-specific tools.
+        """
+        if offset < 0 or not 1 <= limit <= 100:
+            raise ValueError("Invalid pagination")
+        grant = await principal(ctx.headers or {})
+        if grant is None:
+            raise ValueError("Connection expired")
+        if "library:read" in grant.scopes:
+            rows = await call(ctx, "", collection=True)
+            if include_trashed:
+                rows += await call(ctx, "?trashed=true", collection=True)
+        else:
+            rows = [await call(ctx, "")]
+        rows = sorted(rows, key=lambda row: row["id"])
+        return {
+            "stories": rows[offset : offset + limit],
+            "total": len(rows),
+            "next_offset": offset + limit if offset + limit < len(rows) else None,
+            "scope": "your library" if "library:read" in grant.scopes else "selected story",
+        }
+
+    @server.tool()
+    async def create_story(ctx: Context, story: StoryCreate) -> dict[str, Any]:
+        """Create a story owned by the connected account and save its initial whole-story version.
+        Requires story:create permission. Only a title is required; returns the ID to use next.
+        """
+        grant = await principal(ctx.headers or {})
+        if grant is None or "story:create" not in grant.scopes:
+            raise ValueError("Reconnect and authorize story creation in the consent screen")
+        return await call(ctx, "", "POST", story.model_dump(mode="json"), collection=True)
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_story_context(
+        ctx: Context, include_prose: bool = False, story_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Read graph, schemas, base fingerprint, health/continuity and fresh observations.
         Prose excerpts are opt-in and bounded; use read_scene_prose for complete scene text.
         """
-        return await call(ctx, f"/ai/context?include_prose={str(include_prose).lower()}")
+        return await call(
+            ctx, f"/ai/context?include_prose={str(include_prose).lower()}", story_id=story_id
+        )
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_entity_schema(entity: str) -> dict[str, Any]:
@@ -164,9 +219,11 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         return result
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
-    async def get_arc_trace(ctx: Context, arc_id: UUID) -> dict[str, Any]:
+    async def get_arc_trace(
+        ctx: Context, arc_id: UUID, story_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Read a character/relationship/thread arc's ordered stages and evidence scenes."""
-        context = await call(ctx, "/ai/context?include_prose=false")
+        context = await call(ctx, "/ai/context?include_prose=false", story_id=story_id)
         entities = context["entities"]
         arc = next((r for r in entities["arc"] if r["id"] == str(arc_id)), None)
         if arc is None:
@@ -194,13 +251,14 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         offset: int = 0,
         limit: int = 50,
         search: str | None = None,
+        story_id: UUID | None = None,
     ) -> dict[str, Any]:
         """Browse/search one entity kind or link kind without prose. Returns bounded pages."""
         if entity not in ENTITIES and entity not in LINKS:
             raise ValueError("Unknown entity or link kind")
         if not 0 <= offset <= 100000 or not 1 <= limit <= 100:
             raise ValueError("offset must be nonnegative and limit between 1 and 100")
-        context = await call(ctx, "/ai/context?include_prose=false")
+        context = await call(ctx, "/ai/context?include_prose=false", story_id=story_id)
         rows = context["entities"][entity]
         if search:
             rows = [row for row in rows if search.casefold() in json.dumps(row).casefold()]
@@ -219,11 +277,12 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         scene_id: UUID,
         offset: int = 0,
         limit: int = 8000,
+        story_id: UUID | None = None,
     ) -> dict[str, Any]:
         """Read full scene prose in chunks and get the hash required for staged editing."""
         if offset < 0 or not 1 <= limit <= 24000:
             raise ValueError("offset must be nonnegative; limit 1..24000")
-        result = await call(ctx, f"/scenes/{scene_id}/content")
+        result = await call(ctx, f"/scenes/{scene_id}/content", story_id=story_id)
         content = result.get("content") or ""
         return {
             "scene_id": str(scene_id),
@@ -235,9 +294,11 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         }
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
-    async def get_scene_context(ctx: Context, scene_id: UUID) -> dict[str, Any]:
+    async def get_scene_context(
+        ctx: Context, scene_id: UUID, story_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Scene purpose, POV, place, linked beats/threads/arc stages and computed chapter brief."""
-        context = await call(ctx, "/ai/context?include_prose=false")
+        context = await call(ctx, "/ai/context?include_prose=false", story_id=story_id)
         entities = context["entities"]
         scene = next((row for row in entities["scene"] if row["id"] == str(scene_id)), None)
         if scene is None:
@@ -276,7 +337,9 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
             ],
         }
         if scene.get("chapter_id"):
-            result["chapter_brief"] = await call(ctx, f"/chapters/{scene['chapter_id']}/brief")
+            result["chapter_brief"] = await call(
+                ctx, f"/chapters/{scene['chapter_id']}/brief", story_id=story_id
+            )
         siblings = sorted(
             [s for s in entities["scene"] if s.get("chapter_id") == scene.get("chapter_id")],
             key=lambda s: (s["sort_key"], s["id"]),
@@ -287,26 +350,30 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         return result
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
-    async def read_scene_notes(ctx: Context, scene_id: UUID) -> dict[str, Any]:
+    async def read_scene_notes(
+        ctx: Context, scene_id: UUID, story_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Read author annotations and confirmed/rejected/inferred character mentions."""
         return {
             "scene_id": str(scene_id),
-            "annotations": await call(ctx, f"/scenes/{scene_id}/annotations"),
-            "mentions": await call(ctx, f"/scenes/{scene_id}/mentions"),
+            "annotations": await call(ctx, f"/scenes/{scene_id}/annotations", story_id=story_id),
+            "mentions": await call(ctx, f"/scenes/{scene_id}/mentions", story_id=story_id),
         }
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
-    async def get_story_timeline(ctx: Context) -> dict[str, Any]:
+    async def get_story_timeline(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
         """Global timeline with people/places, on/off-page events and world vs reading order."""
-        return await call(ctx, "/timeline")
+        return await call(ctx, "/timeline", story_id=story_id)
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
-    async def get_story_findings(ctx: Context, include_dismissed: bool = False) -> dict[str, Any]:
+    async def get_story_findings(
+        ctx: Context, include_dismissed: bool = False, story_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Read health issues, readiness, continuity, fresh reader observations and notices.
         This reads stored evidence and deterministic checks, never calls a paid reader.
         """
-        context = await call(ctx, "/ai/context?include_prose=false")
-        suggestions = await call(ctx, "/suggestions?include_dismissed=true")
+        context = await call(ctx, "/ai/context?include_prose=false", story_id=story_id)
+        suggestions = await call(ctx, "/suggestions?include_dismissed=true", story_id=story_id)
         return {
             "base_fingerprint": context["base_fingerprint"],
             "health": context["health"],
@@ -315,7 +382,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
             "dismissed_feedback": context["dismissed_feedback"],
             "character_mentions": context["entities"]["scene_presence"],
             "notices": [s for s in suggestions if include_dismissed or not s["is_dismissed"]],
-            "readiness": await call(ctx, "/ladder"),
+            "readiness": await call(ctx, "/ladder", story_id=story_id),
             "note": "Editorial guesses are distinct from proved graph contradictions.",
             "observations_fresh_only": True,
         }
@@ -330,45 +397,57 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         return {topic: GUIDELINES[topic]}
 
     @server.tool()
-    async def stage_story_changes(ctx: Context, proposal: Proposal) -> dict[str, Any]:
+    async def stage_story_changes(
+        ctx: Context, proposal: Proposal, story_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Validate/stage creates, updates, links, unlinks and hash-guarded write_prose.
         Include base_fingerprint from context. No edits happen until apply.
         """
         if not proposal.base_fingerprint:
             raise ValueError("Read story context and include its base_fingerprint")
-        return await call(ctx, "/ai/stage", "POST", proposal.model_dump(mode="json"))
+        return await call(
+            ctx, "/ai/stage", "POST", proposal.model_dump(mode="json"), story_id=story_id
+        )
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
-    async def inspect_story_proposals(ctx: Context) -> dict[str, Any]:
+    async def inspect_story_proposals(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
         """Read recent staged/applied/undone plans and their text replies for review."""
-        return {"runs": await call(ctx, "/ai/runs")}
+        return {"runs": await call(ctx, "/ai/runs", story_id=story_id)}
 
     @server.tool()
-    async def apply_story_changes(ctx: Context, run_id: UUID) -> dict[str, Any]:
+    async def apply_story_changes(
+        ctx: Context, run_id: UUID, story_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Apply only an author-authorized staged plan. Atomic, stale guarded and retry-safe."""
-        return await call(ctx, f"/ai/runs/{run_id}/apply", "POST", {})
+        return await call(ctx, f"/ai/runs/{run_id}/apply", "POST", {}, story_id=story_id)
 
     @server.tool()
-    async def undo_story_changes(ctx: Context, run_id: UUID) -> dict[str, Any]:
+    async def undo_story_changes(
+        ctx: Context, run_id: UUID, story_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Undo an applied plan only when later author edits will not be overwritten."""
-        return await call(ctx, f"/ai/runs/{run_id}/undo", "POST", {})
+        return await call(ctx, f"/ai/runs/{run_id}/undo", "POST", {}, story_id=story_id)
 
     @server.tool()
-    async def dismiss_story_changes(ctx: Context, run_id: UUID) -> dict[str, Any]:
+    async def dismiss_story_changes(
+        ctx: Context, run_id: UUID, story_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Dismiss a pending proposal without changing the story graph."""
-        return await call(ctx, f"/ai/runs/{run_id}/dismiss", "POST", {})
+        return await call(ctx, f"/ai/runs/{run_id}/dismiss", "POST", {}, story_id=story_id)
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
-    async def list_story_versions(ctx: Context) -> dict[str, Any]:
+    async def list_story_versions(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
         """Read whole-story checkpoint metadata; no full snapshot/prose payloads."""
-        return {"versions": await call(ctx, "/versions")}
+        return {"versions": await call(ctx, "/versions", story_id=story_id)}
 
     @server.tool()
-    async def create_story_version(ctx: Context, label: str) -> dict[str, Any]:
+    async def create_story_version(
+        ctx: Context, label: str, story_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Save a named whole-story checkpoint before a rewrite."""
         if not label.strip() or len(label) > 200:
             raise ValueError("Version label must contain 1..200 characters")
-        return await call(ctx, "/versions", "POST", {"label": label})
+        return await call(ctx, "/versions", "POST", {"label": label}, story_id=story_id)
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def read_story_version(
@@ -378,12 +457,15 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         include_prose: bool = False,
         offset: int = 0,
         limit: int = 50,
+        story_id: UUID | None = None,
     ) -> dict[str, Any]:
         """Read a saved entity/link page. Old state is context, not the writable current draft."""
         if offset < 0 or not 1 <= limit <= 100:
             raise ValueError("Invalid pagination")
         result = await call(
-            ctx, f"/versions/{version_id}?include_prose={str(include_prose).lower()}"
+            ctx,
+            f"/versions/{version_id}?include_prose={str(include_prose).lower()}",
+            story_id=story_id,
         )
         if entity not in result["state"]:
             raise ValueError("Unknown snapshot entity kind")
@@ -397,9 +479,11 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         }
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
-    async def preview_version_restore(ctx: Context, version_id: UUID) -> dict[str, Any]:
+    async def preview_version_restore(
+        ctx: Context, version_id: UUID, story_id: UUID | None = None
+    ) -> dict[str, Any]:
         """Compare saved state with current draft before any whole-story restore."""
-        return await call(ctx, f"/versions/{version_id}/preview")
+        return await call(ctx, f"/versions/{version_id}/preview", story_id=story_id)
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def compare_story_versions(
@@ -407,13 +491,14 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         from_version_id: UUID,
         to_version_id: UUID,
         include_prose: bool = False,
+        story_id: UUID | None = None,
     ) -> dict[str, Any]:
         """Compare two immutable story versions; explain what changed without restoring."""
         from storytool.domain.versioning.service import changes
 
         suffix = f"?include_prose={str(include_prose).lower()}"
-        before = await call(ctx, f"/versions/{from_version_id}{suffix}")
-        after = await call(ctx, f"/versions/{to_version_id}{suffix}")
+        before = await call(ctx, f"/versions/{from_version_id}{suffix}", story_id=story_id)
+        after = await call(ctx, f"/versions/{to_version_id}{suffix}", story_id=story_id)
         items, count = changes(before["state"], after["state"])
         return {
             "from_version": before["version"],
@@ -425,9 +510,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
 
     @server.tool()
     async def restore_story_version(
-        ctx: Context,
-        version_id: UUID,
-        expected_fingerprint: str,
+        ctx: Context, version_id: UUID, expected_fingerprint: str, story_id: UUID | None = None
     ) -> dict[str, Any]:
         """Restore only after author authorization and preview. Preserves a recovery version.
         This replaces prose, structure, arcs, timeline, notes and links together.
@@ -437,6 +520,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
             f"/versions/{version_id}/restore",
             "POST",
             {"expected_fingerprint": expected_fingerprint},
+            story_id=story_id,
         )
 
     @server.resource("storytool://guidelines")
@@ -483,7 +567,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
 
             challenge = (
                 f'Bearer resource_metadata="{issuer()}/.well-known/oauth-protected-resource/mcp", '
-                'scope="story:read"'
+                f'scope="{" ".join(SCOPES)}"'
             )
             await json_response(
                 send, 401, {"error": "invalid_token"}, [(b"www-authenticate", challenge.encode())]

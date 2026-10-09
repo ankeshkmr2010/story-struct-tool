@@ -20,7 +20,7 @@ from mcp.server.auth.provider import (
     construct_redirect_uri,
 )
 from mcp.shared.auth import OAuthClientInformationFull, OAuthToken
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.config import get_settings
@@ -29,7 +29,8 @@ from storytool.domain.ai.models import AgentToken
 from storytool.domain.auth.oauth_models import MCPClient, MCPConsent, MCPGrant, MCPToken
 from storytool.domain.story.models import Story
 
-SCOPES = ["story:read", "prose:read", "story:write", "versions:restore"]
+STORY_SCOPES = ["story:read", "prose:read", "story:write", "versions:restore"]
+SCOPES = [*STORY_SCOPES, "library:read", "story:create"]
 
 
 def digest(raw: str) -> str:
@@ -47,7 +48,7 @@ def resource() -> str:
 @dataclass
 class Delegation:
     user_id: UUID
-    story_id: UUID
+    story_id: UUID | None
     expires_at: datetime
     scopes: list[str]
     oauth: bool
@@ -66,20 +67,22 @@ async def delegated_access(db: AsyncSession, raw: str) -> Delegation | None:
         )
     )
     if legacy:
-        return Delegation(legacy.user_id, legacy.story_id, legacy.expires_at, SCOPES, False)
+        return Delegation(legacy.user_id, legacy.story_id, legacy.expires_at, STORY_SCOPES, False)
     row = (
         await db.execute(
             select(MCPToken, MCPGrant)
             .join(MCPGrant, MCPGrant.id == MCPToken.grant_id)
-            .join(Story, Story.id == MCPGrant.story_id)
+            .outerjoin(Story, Story.id == MCPGrant.story_id)
             .where(
                 MCPToken.token_hash == digest(raw),
                 MCPToken.kind == "access",
                 MCPToken.expires_at > now,
                 MCPGrant.expires_at > now,
                 MCPGrant.revoked_at.is_(None),
-                Story.user_id == MCPGrant.user_id,
-                Story.deleted_at.is_(None),
+                or_(
+                    and_(MCPGrant.story_id.is_(None), MCPGrant.scopes.contains(["library:read"])),
+                    and_(Story.user_id == MCPGrant.user_id, Story.deleted_at.is_(None)),
+                ),
             )
         )
     ).one_or_none()
@@ -102,6 +105,10 @@ class OAuthProvider:
             if record is None:
                 return None
             data = dict(record.metadata_json)
+            # New capabilities may be requested by previously registered default clients.
+            # Existing grants/tokens keep their scopes; expansion still needs fresh consent.
+            if data.get("scope") == " ".join(STORY_SCOPES):
+                data["scope"] = " ".join(SCOPES)
             if data.get("client_secret"):
                 data["client_secret"] = decrypt_key(data["client_secret"])
             return OAuthClientInformationFull.model_validate(data)
@@ -230,7 +237,9 @@ class OAuthProvider:
                     Story.deleted_at.is_(None),
                 )
             )
-            if active is None:
+            if (grant.story_id is None and "library:read" not in scopes) or (
+                grant.story_id is not None and active is None
+            ):
                 raise TokenError("invalid_grant", "Story is unavailable")
             row.consumed_at = datetime.now(UTC)
             return await self._issue(db, grant, scopes)
@@ -363,12 +372,14 @@ async def complete_consent(
         )
         .with_for_update()
     )
-    if story is None:
+    if story_id is None and "library:read" not in scopes:
+        raise ValueError("Library access must be explicitly authorized")
+    if story_id is not None and story is None:
         raise ValueError("Select one of your active stories")
     grant = MCPGrant(
         client_id=pending.client_id,
         user_id=user_id,
-        story_id=story.id,
+        story_id=story.id if story else None,
         scopes=scopes,
         expires_at=datetime.now(UTC) + timedelta(days=30),
     )

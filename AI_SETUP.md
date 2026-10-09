@@ -25,6 +25,22 @@ settings, and cannot run in-app billable generation. There are no granular read-
 presets in this release. Grant access only to clients you intend to let edit this story.
 The external AI client supplies its own model and usage billing; MCP does not run a model.
 
+### Fetch your library and create stories
+
+OAuth connections can now choose **All my stories, including new stories** during consent.
+Enable **Create new stories in my account** to allow the `create_story` tool, and enable
+**Propose and apply edits** to populate the new story afterward. Existing story-bound tokens
+and grants keep their original limits; reconnect to authorize the wider library permissions.
+
+`list_stories` returns your owned stories with pagination; `include_trashed=true` also lists
+Trash metadata. `create_story` accepts the StoryCreate fields and returns an owned story with
+an initial version. For a library connection, pass the returned `story_id` to context,
+entity, prose, proposal, timeline, and version tools. No shared server-side story selection
+is used, so parallel agents cannot accidentally switch each other's target.
+
+Example request: "List my stories. Create a new hybrid mystery called The Missing Hour.
+Use its returned ID to build a connected outline, and stage the changes for my review."
+
 Tools cover context, exact schemas, paginated/searchable graph entities and links, arc
 tracing, global timeline, health/continuity/readiness, notices and fresh stored reader
 observations, scene annotations/mentions, prose chunks, writing guidelines, proposals and apply/dismiss/undo, version

@@ -23,7 +23,7 @@ from sqlalchemy import select, text
 
 from storytool.domain.ai.models import AgentToken, AIRun
 from storytool.domain.auth.models import User, UserSession
-from storytool.domain.auth.oauth import SCOPES, Delegation, delegated_access
+from storytool.domain.auth.oauth import STORY_SCOPES, Delegation, delegated_access
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
 from storytool.domain.narrative.models import Chapter, Scene
 from storytool.domain.story.models import Story
@@ -152,7 +152,20 @@ class StoryAccessMiddleware:
                 )
                 if delegated is None:
                     delegated = await delegated_access(db, bearer)
-                story_prefix = f"/api/stories/{delegated.story_id}" if delegated else ""
+                scopes = getattr(delegated, "scopes", STORY_SCOPES)
+                library = (
+                    isinstance(delegated, Delegation)
+                    and delegated.story_id is None
+                    and "library:read" in scopes
+                )
+                addressed_story = _STORY_PATH.match(path)
+                story_prefix = (
+                    f"/api/stories/{addressed_story.group(1)}"
+                    if library and addressed_story
+                    else f"/api/stories/{delegated.story_id}"
+                    if delegated
+                    else ""
+                )
                 suffix = path.removeprefix(story_prefix) if delegated else ""
                 allowed = bool(delegated and path.startswith(story_prefix + "/")) and (
                     http_scope["method"] == "GET"
@@ -172,10 +185,19 @@ class StoryAccessMiddleware:
                 allowed = allowed or bool(
                     delegated and path == story_prefix and http_scope["method"] == "GET"
                 )
+                collection = path.rstrip("/") == "/api/stories"
+                allowed = allowed or bool(
+                    delegated
+                    and collection
+                    and (
+                        (http_scope["method"] == "GET" and "library:read" in scopes)
+                        or (http_scope["method"] == "POST" and "story:create" in scopes)
+                    )
+                )
                 if not delegated or not allowed:
                     await _reject(send, 401, "Invalid or out-of-scope agent token")
                     return
-                scopes = getattr(delegated, "scopes", SCOPES)
+                scopes = getattr(delegated, "scopes", STORY_SCOPES)
                 needed = {"story:read"}
                 query = parse_qs(http_scope.get("query_string", b"").decode())
                 prose_query = query.get("include_prose", ["false"])[0].lower() in {
@@ -191,7 +213,9 @@ class StoryAccessMiddleware:
                     or suffix in {"/ai/runs", "/ai/observations"}
                 ):
                     needed.add("prose:read")
-                if http_scope["method"] != "GET":
+                if collection:
+                    needed.add("story:create" if http_scope["method"] == "POST" else "library:read")
+                elif http_scope["method"] != "GET":
                     needed.add("story:write")
                 if suffix.startswith("/versions/") and suffix.endswith("/restore"):
                     needed.update({"versions:restore", "prose:read"})
@@ -233,7 +257,7 @@ class StoryAccessMiddleware:
                 if (
                     delegated
                     and "/ai/runs/" in path
-                    and "prose:read" not in getattr(delegated, "scopes", SCOPES)
+                    and "prose:read" not in getattr(delegated, "scopes", STORY_SCOPES)
                 ):
                     run_ref = path.split("/ai/runs/", 1)[1].split("/", 1)[0]
                     try:
@@ -281,7 +305,7 @@ class StoryAccessMiddleware:
                                     isinstance(op, dict) and op.get("op") == "write_prose"
                                     for op in operations
                                 )
-                                and "prose:read" not in getattr(delegated, "scopes", SCOPES)
+                                and "prose:read" not in getattr(delegated, "scopes", STORY_SCOPES)
                             ):
                                 await _reject(send, 403, "Prose permission is required")
                                 return
