@@ -25,7 +25,7 @@ const SECTIONS = [
   ['links', 'Linking plan to draft'],
   ['time', 'Story time and flashbacks'],
   ['feedback', 'What the tool tells you'],
-  ['writing', 'Writing and exporting'],
+  ['writing', 'Write, Focus, and exporting'],
 ] as const
 
 const LEVELS: readonly (readonly [string, string])[] = [
@@ -146,13 +146,13 @@ export default function HowToUse() {
                 {[
                   <>Sign in with Google. Your library belongs to your account.</>,
                   <>
-                    Type a title on the home page, choose{' '}
+                    Open Your stories, type a title, choose{' '}
                     <strong className="font-medium text-slate-900 dark:text-slate-100">Create</strong>, and open
                     the story.
                   </>,
                   <>Pick an authoring mode in the header — Hybrid is the default.</>,
-                  <>Add a premise and a protagonist, or jump to Scenes and start writing.</>,
-                  <>Come back to the other levels later. Half-filled entries are fine.</>,
+                  <>Open <strong className="font-medium">Write</strong>, add an optional chapter title, and start typing. You don’t need to name a scene first.</>,
+                  <>Use <strong className="font-medium">Design</strong> for your premise, protagonist, outline, and timeline. Come back to structure whenever useful; half-filled entries are fine.</>,
                 ].map((step, index) => (
                   <li key={index} className="flex gap-3">
                     <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-slate-900 dark:bg-slate-200 text-[11px] font-medium text-white dark:text-slate-950">
@@ -327,7 +327,7 @@ export default function HowToUse() {
               </p>
             </Section>
 
-            <Section id="writing" eyebrow="07" title="Writing, reading, exporting">
+            <Section id="writing" eyebrow="07" title="Write, Design, and your writing flow">
               <div className="grid gap-5 sm:grid-cols-2">
                 <Item title="Draft in the editor">
                   Open a story’s <strong className="font-medium">Write</strong> tab and start
@@ -337,6 +337,40 @@ export default function HowToUse() {
                   opens scene details and the chapter brief, while Focus hides the surrounding
                   controls. The <strong className="font-medium">Design</strong> tab keeps the
                   full planning workspace. Both tabs edit the same story.
+                </Item>
+                <Item title="Switch between Write and Design">
+                  Both tabs use the same chapters, scenes, and prose. Your chosen tab and
+                  chapter are remembered on this device. Write saves pending prose before
+                  you switch tabs or chapters; if saving fails, resolve the error first.
+                  Write is available in Plotter, Pantser, and Hybrid.
+                </Item>
+                <Item title="Enter Focus">
+                  Choose <strong className="font-medium">Focus</strong> in the writing toolbar
+                  for a full-screen manuscript with navigation and context hidden. Use
+                  <strong className="font-medium"> Exit focus</strong> or Escape to return.
+                  You can keep typing while focused; save status stays beside each passage.
+                </Item>
+                <Item title="Open Context when useful">
+                  Click into a passage, then choose <strong className="font-medium">Context</strong>.
+                  The panel shows its chapter brief and scene details: POV, characters,
+                  location, goal, conflict, outcome, beats, threads, and arc stages.
+                  On smaller screens, Context opens as a side panel; Chapters reveals your
+                  chapter list. Close either to give the manuscript its full width.
+                </Item>
+                <Item title="Add scenes and chapters as you go">
+                  You can write a whole chapter without naming scenes. Choose
+                  <strong className="font-medium"> Scene break at end</strong> when you want
+                  another scene, or <strong className="font-medium"> Next chapter</strong>
+                  to continue. Titles can be changed in place. Existing unattached scenes
+                  appear under Unfiled writing; scenes follow reading order, including flashbacks.
+                </Item>
+                <Item title="Recover a draft or resolve a conflict">
+                  Wait for <strong className="font-medium">Saved</strong> before closing your
+                  browser tab. Failed saves keep your draft in that tab for retry, including
+                  after a reload. If another client changed a passage, choose Review latest
+                  text, then explicitly keep your draft or use the latest saved text.
+                  Browser-tab recovery is temporary: closing the tab can remove it, and
+                  signing out clears it. Versions preserve saved story state separately.
                 </Item>
                 <Item title="Annotate a line">
                   In Design → Scenes, select text and choose <strong className="font-medium">Annotate

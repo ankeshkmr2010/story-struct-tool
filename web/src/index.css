@@ -68,6 +68,17 @@ button:not(:disabled), summary { cursor: pointer; }
 .feature-grid p { font-size: 13px; line-height: 1.8; color: var(--muted); margin-top: 10px; }
 .landing-modes { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 64px; padding: 40px; background: var(--accent-soft); border-radius: 12px; }
 .landing-modes .landing-secondary { margin-top: 20px; }
+.landing-writing { border-top: 1px solid var(--line); padding: 48px 0 56px; }
+.landing-writing .section-intro > p:last-child { max-width: 600px; margin-top: 16px; color: var(--muted); font-size: 14px; line-height: 1.8; }
+.writing-workspaces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 28px; }
+.writing-workspaces article { padding: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.writing-tab-label { display: inline-block; padding: 6px 16px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 600; border-radius: 8px; }
+.writing-workspaces h3 { font: 400 24px/1.3 Georgia, serif; margin: 18px 0 12px; }
+.writing-workspaces p, .writing-controls span { color: var(--muted); font-size: 13px; line-height: 1.8; }
+.writing-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; margin: 28px 0; }
+.writing-controls strong, .writing-controls span { display: block; }
+.writing-controls strong { margin-bottom: 8px; font-size: 14px; }
+@media (max-width: 640px) { .writing-workspaces, .writing-controls { grid-template-columns: 1fr; gap: 20px; } .writing-workspaces article { padding: 22px; } }
 .mode-list p { display: flex; align-items: baseline; gap: 16px; padding: 17px 0; border-bottom: 1px solid var(--line); }
 .mode-list p:last-child { border: 0; }
 .mode-list strong { min-width: 60px; font-size: 14px; font-weight: 600; }
