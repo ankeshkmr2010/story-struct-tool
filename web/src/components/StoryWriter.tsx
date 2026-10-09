@@ -8,6 +8,7 @@ import { errorText } from '../api/errors'
 import { orderChapters, orderScenes } from '../api/ordering'
 import { ChapterBriefCard } from './ChapterBriefCard'
 import { SceneDetails } from './SceneDetails'
+import { SceneDelete } from './SceneDelete'
 import { InlineText } from './fields'
 import { useTheme } from './theme-context'
 import { flushWriter, writerDraft, writerHasUnsaved } from './writerDraft'
@@ -199,6 +200,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     <div className="writer-passage-heading">
       {scene ? <InlineText value={scene.title} placeholder="Scene name (optional)" onSave={async title => { await api.updateScene(storyId, scene.id, { title }); refresh() }} /> : <span className="writer-help">Start writing…</span>}
       <span className="writer-passage-status" role="status">{words} words · {state.status === 'error' ? 'Not saved' : state.status === 'saving' ? 'Saving…' : state.status === 'unsaved' ? 'Unsaved' : 'Saved'}</span>
+      {scene && <SceneDelete storyId={storyId} scene={scene} onDeleted={refresh} />}
     </div>
     {state.status === 'error' && <div role="alert" className="writer-error"><p>{state.error}</p><p>Your draft is preserved in this browser tab.</p><button type="button" onClick={() => { void draft.flush() }}>Retry save</button> <button type="button" onClick={() => { void review() }}>Review latest text</button>{reviewError && <p>{reviewError}</p>}{latest !== null && <div><h3>Latest saved text</h3><pre className="writer-latest">{latest || '(Empty passage)'}</pre><button type="button" onClick={() => { if (window.confirm('Replace your local draft with the latest saved text?')) { draft.useLatest(latest); setLatest(null) } }}>Use latest text</button> <button type="button" onClick={() => { if (window.confirm('Save your draft over the latest text? A prose revision will preserve the previous text.')) { lastCheckpoint.current = 0; draft.rebase(latest); setLatest(null); void draft.flush() } }}>Keep my draft</button></div>}</div>}
     <CodeMirror value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder="Start writing your story…" onChange={draft.change} onCreateEditor={editor => { view.current = editor; if (focus) editor.focus() }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[

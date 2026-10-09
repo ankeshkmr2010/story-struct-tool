@@ -3,7 +3,7 @@
 from collections.abc import AsyncGenerator
 from uuid import UUID
 
-from litestar import Controller, delete, get, patch, post
+from litestar import Controller, Request, delete, get, patch, post
 from litestar.di import Provide
 from litestar.exceptions import ClientException, NotFoundException
 from sqlalchemy import select
@@ -217,10 +217,32 @@ class SceneController(Controller):
         record = await scenes.update(apply_patch(record, data))
         return SceneOut.model_validate(record)
 
-    @delete("/{scene_id:uuid}", summary="Delete a scene")
-    async def delete_scene(self, scenes: SceneService, story_id: UUID, scene_id: UUID) -> None:
-        await fetch_or_404(scenes, "scene", id=scene_id, story_id=story_id)
+    @delete("/{scene_id:uuid}", summary="Delete a scene with whole-story recovery versions")
+    async def delete_scene(
+        self,
+        scenes: SceneService,
+        story_id: UUID,
+        scene_id: UUID,
+        db_session: AsyncSession,
+        request: Request,
+    ) -> None:
+        from storytool.domain.versioning.service import automatic_checkpoint, checkpoint, full_state
+
+        scene = await fetch_or_404(scenes, "scene", id=scene_id, story_id=story_id)
+        user_id = request.scope["state"]["storytool_user_id"]
+        title = scene.title or "Untitled scene"
+        await checkpoint(
+            db_session, story_id, user_id, f"Before deleting scene: {title}"[:200], "recovery"
+        )
         await scenes.delete(scene_id)
+        await automatic_checkpoint(
+            db_session,
+            story_id,
+            user_id,
+            await full_state(db_session, story_id),
+            f"After deleting scene: {title}"[:200],
+            force=True,
+        )
 
     @post(
         "/{scene_id:uuid}/move",

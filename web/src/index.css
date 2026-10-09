@@ -192,6 +192,11 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .workspace-shortcut { border: 1px solid var(--line); background: var(--accent-soft); color: var(--accent); }
 .workspace-shortcut:hover { border-color: var(--accent); }
 .story-card-actions { display: flex; align-items: center; gap: 8px; }
+.scene-delete-button { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: var(--surface); font-size: 11px; }
+.scene-delete-button:hover { border-color: #b54747; color: #b54747; }
+:root[data-theme="dark"] .scene-delete-button:hover { border-color: #f0a0a0; color: #f0a0a0; }
+.scene-delete-button:disabled { opacity: .5; }
+.scene-details-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
 .share-story-button, .sharing-primary { display: inline-block; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 12px; text-decoration: none; }
 .share-story-button:hover { background: var(--accent-soft); }
 .sharing-primary { background: var(--accent); color: var(--button-ink); border-color: var(--accent); }

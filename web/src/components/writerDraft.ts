@@ -54,6 +54,11 @@ export class WriterDraft {
   }
   // Called only after the author explicitly chooses which copy to retain.
   useLatest(text: string) { this.publish({ text, base: text, status: 'saved' }) }
+  forget() {
+    clearTimeout(this.timer)
+    this.state = { text: '', base: '', status: 'saved' }
+    try { sessionStorage.removeItem(this.key) } catch { /* Storage is optional. */ }
+  }
   rebase(text: string) { this.publish({ ...this.state, base: text, status: 'unsaved', error: undefined }) }
   flush = (): Promise<boolean> => {
     clearTimeout(this.timer)
@@ -88,6 +93,15 @@ export function writerDraft(key: string, initial: string) {
 }
 export function writerHasUnsaved(prefix: string) {
   return [...drafts.entries()].some(([key, draft]) => key.startsWith(prefix) && (draft.state.text !== draft.state.base || draft.state.status === 'saving'))
+}
+export function forgetWriterDraft(key: string) {
+  const draft = drafts.get(key)
+  if (!draft) return
+  draft.forget()
+  for (const [alias, candidate] of drafts) if (candidate === draft) {
+    drafts.delete(alias)
+    try { sessionStorage.removeItem(alias) } catch { /* Storage is optional. */ }
+  }
 }
 export async function flushWriter(prefix: string) {
   const active = [...new Set([...drafts.entries()].filter(([key]) => key.startsWith(prefix)).map(([, draft]) => draft))]

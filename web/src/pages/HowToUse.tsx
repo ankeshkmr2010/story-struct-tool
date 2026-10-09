@@ -396,6 +396,14 @@ export default function HowToUse() {
                   to continue. Titles can be changed in place. Existing unattached scenes
                   appear under Unfiled writing; scenes follow reading order, including flashbacks.
                 </Item>
+                <Item title="Delete a scene safely">
+                  Choose Delete scene beside a passage in Write, or above Scene details in
+                  Design. Confirm the deletion; Cancel keeps the scene. Unsaved prose must
+                  save successfully first. Every deletion saves a whole-story recovery
+                  version before removing the scene, plus a version of the result. Use
+                  Versions in the story header to recover it; restoring a version restores
+                  the whole story, including prose, notes, and structural links.
+                </Item>
                 <Item title="Recover a draft or resolve a conflict">
                   Wait for <strong className="font-medium">Saved</strong> before closing your
                   browser tab. Failed saves keep your draft in that tab for retry, including

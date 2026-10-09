@@ -1,6 +1,7 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type Scene } from '../api/client'
-import { Chip, DeleteButton, InlineNumber, InlineSelect, InlineText } from './fields'
+import { SceneDelete } from './SceneDelete'
+import { Chip, InlineNumber, InlineSelect, InlineText } from './fields'
 
 const STATUSES = ['placeholder', 'outlined', 'drafted', 'revised']
 
@@ -28,10 +29,6 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
     mutationFn: (body: Record<string, unknown>) => api.updateScene(storyId, scene.id, body),
     onSuccess: refresh,
   })
-  const remove = useMutation({
-    mutationFn: () => api.deleteScene(storyId, scene.id),
-    onSuccess: () => { onDeleted(); refresh() },
-  })
   const toggle = useMutation({
     mutationFn: async ({ kind, id, checked }: { kind: 'beat' | 'thread' | 'stage'; id: string; checked: boolean }) => {
       if (kind === 'beat') { await (checked ? api.linkSceneBeat(storyId, scene.id, id) : api.unlinkSceneBeat(storyId, scene.id, id)); return }
@@ -47,7 +44,7 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
   })))
 
   return (
-    <details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+    <div><div className="scene-details-actions"><SceneDelete storyId={storyId} scene={scene} onDeleted={() => { onDeleted(); refresh() }} /></div><details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
       <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-950">
         <span>Scene details and links</span>
         <span className="truncate text-xs font-normal text-slate-400">Draft: {scene.status} · {scene.word_count} words</span>
@@ -55,7 +52,7 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
       <div className="border-t border-slate-100 dark:border-slate-800 p-3">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Structure</h3>
-        <div className="flex items-center gap-2"><Chip complete={scene.completeness.is_complete} missing={scene.completeness.missing} /><DeleteButton onConfirm={() => remove.mutate()} what="scene" /></div>
+        <div className="flex items-center gap-2"><Chip complete={scene.completeness.is_complete} missing={scene.completeness.missing} /></div>
       </div>
       <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Field label="Title"><InlineText value={scene.title} placeholder="Scene title" onSave={save('title')} /></Field>
@@ -85,6 +82,6 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
         {stages.length > 0 && <div><h4 className="text-xs font-semibold">Arc stages advanced</h4><div className="mt-1 flex flex-wrap gap-2">{stages.map((stage) => <label key={stage.id} className="text-xs"><input type="checkbox" checked={links.data?.arc_stage_ids.includes(stage.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'stage', id: stage.id, checked: event.target.checked })} /> {stage.owner}: {stage.label}</label>)}</div></div>}
       </div>
       </div>
-    </details>
+    </details></div>
   )
 }
