@@ -186,6 +186,7 @@ async def test_mcp_stale_context_bad_references_and_atomic_prose_undo(client):
         },
     )
     assert stale["isError"]
+    assert "story changed" in stale["content"][0]["text"].lower()
     scene = (await client.post(base + "/scenes", json={"title": "Draft"})).json()
     await client.put(base + f"/scenes/{scene['id']}/content", json={"content": "Maya waits."})
     note = (
@@ -230,6 +231,7 @@ async def test_mcp_stale_context_bad_references_and_atomic_prose_undo(client):
         },
     )
     assert bad["isError"]
+    assert "Referenced story item not found" in bad["content"][0]["text"]
     assert (await client.get(base + f"/scenes/{scene['id']}/content")).json()[
         "content"
     ] == "Maya waits."
@@ -241,6 +243,72 @@ async def test_mcp_stale_context_bad_references_and_atomic_prose_undo(client):
     ] == "Maya waits."
     annotations = (await client.get(base + f"/scenes/{scene['id']}/annotations")).json()
     assert annotations[0]["id"] == note["id"] and not annotations[0]["is_orphaned"]
+
+
+async def test_mcp_call_guide_required_fingerprint_and_recovery_after_bad_stage(client):
+    import json
+
+    sid, _, headers = await connect(client)
+    catalog = await rpc(client, headers, "tools/list")
+    stage = next(item for item in catalog["tools"] if item["name"] == "stage_story_changes")
+    schema = stage["inputSchema"]
+    proposal_schema = schema["properties"]["proposal"]
+    if "$ref" in proposal_schema:
+        proposal_schema = schema["$defs"][proposal_schema["$ref"].split("/")[-1]]
+    assert "base_fingerprint" in proposal_schema["required"]
+    assert (await tool(client, headers, "get_connection"))["call_guide"] == "get_tool_usage"
+    guide = await tool(client, headers, "get_tool_usage")
+    assert guide["templates_not_ready_to_submit"]
+
+    missing = await rpc(
+        client,
+        headers,
+        "tools/call",
+        {"name": "stage_story_changes", "arguments": {"proposal": {"summary": "Missing context"}}},
+    )
+    assert missing["isError"]
+    assert "base_fingerprint" in missing["content"][0]["text"]
+    # A failed write is a tool result; the same connection remains usable.
+    context = await tool(client, headers, "get_story_context")
+    invalid = await rpc(
+        client,
+        headers,
+        "tools/call",
+        {
+            "name": "stage_story_changes",
+            "arguments": {
+                "story_id": sid,
+                "proposal": {
+                    "summary": "Invalid chapter reference",
+                    "base_fingerprint": context["base_fingerprint"],
+                    "operations": [
+                        {
+                            "op": "create",
+                            "entity": "scene",
+                            "ref": "new:opening",
+                            "data": {"chapter_id": "Chapter 1"},
+                        }
+                    ],
+                },
+            },
+        },
+    )
+    assert invalid["isError"]
+    assert "chapter_id" in invalid["content"][0]["text"]
+    assert "existing UUID" in invalid["content"][0]["text"]
+    assert (await tool(client, headers, "inspect_story_proposals"))["runs"] == []
+    current = await tool(client, headers, "get_story_context")
+    assert current["base_fingerprint"] == context["base_fingerprint"]
+    example = guide["examples"]["create_connected_draft"]["arguments"]
+    arguments = json.loads(json.dumps(example))
+    arguments["story_id"] = sid
+    arguments["proposal"]["base_fingerprint"] = current["base_fingerprint"]
+    staged = await tool(client, headers, "stage_story_changes", arguments)
+    assert staged["status"] == "proposed"
+    assert (await client.get(f"/api/stories/{sid}/scenes")).json() == []
+    applied = await tool(client, headers, "apply_story_changes", {"run_id": staged["id"]})
+    assert applied["status"] == "applied"
+    assert len((await client.get(f"/api/stories/{sid}/scenes")).json()) == 1
 
 
 async def test_modern_mcp_protocol_and_foreign_scene_denial(client):
@@ -382,6 +450,9 @@ async def test_mcp_reads_dismissed_notices_and_checkpoint_failure_rolls_back(
         },
     )
     assert result["isError"]
+    assert "could not complete" in result["content"][0]["text"]
+    assert "Injected checkpoint failure" not in str(result)
+    assert (await tool(client, headers, "get_connection"))["story_id"] == sid
     assert (await client.get(f"/api/stories/{sid}/characters")).json() == []
     assert (await tool(client, headers, "inspect_story_proposals"))["runs"][0][
         "status"

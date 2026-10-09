@@ -178,7 +178,7 @@ async def execute_proposal(
             raise ClientException(detail="Each created entity needs a unique new: reference")
         refs[operation.ref] = (operation.entity, uuid4())
 
-    async def resolve(kind: str, value: Any) -> UUID:
+    async def resolve(kind: str, value: Any, field: str = "reference") -> UUID:
         if isinstance(value, str) and value in refs:
             ref_kind, identifier = refs[value]
             if ref_kind != kind:
@@ -187,7 +187,13 @@ async def execute_proposal(
         try:
             identifier = UUID(str(value))
         except ValueError as exc:
-            raise ClientException(detail="Invalid story reference") from exc
+            raise ClientException(
+                detail=(
+                    f"Invalid {kind} reference in {field}. Use an existing UUID from "
+                    "get_story_context, or a new: reference declared by a create operation "
+                    "in this same proposal. A name or label is not an entity ID."
+                )
+            ) from exc
         await owned_entity(db, kind, identifier, story_id)
         return identifier
 
@@ -204,7 +210,7 @@ async def execute_proposal(
         data = dict(operation.data)
         for field, kind in REFERENCES.items():
             if data.get(field) is not None:
-                data[field] = await resolve(kind, data[field])
+                data[field] = await resolve(kind, data[field], field)
         arc_id = data.pop("arc_id", None) if operation.entity == "arc_stage" else None
         try:
             values = schema.model_validate(data).model_dump(exclude_unset=not creating)
@@ -326,8 +332,8 @@ async def execute_proposal(
         if "is_primary" in operation.data and operation.entity != "scene_thread":
             raise ClientException(detail="Only scene threads can be primary")
         table, left_kind, right_kind, left_col, right_col = LINKS[operation.entity]
-        left = await resolve(left_kind, operation.data.get("from_id"))
-        right = await resolve(right_kind, operation.data.get("to_id"))
+        left = await resolve(left_kind, operation.data.get("from_id"), "from_id")
+        right = await resolve(right_kind, operation.data.get("to_id"), "to_id")
         condition = (table.c[left_col] == left) & (table.c[right_col] == right)
         old = (await db.execute(select(table).where(condition))).mappings().one_or_none()
         inverse.append(

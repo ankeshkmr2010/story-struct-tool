@@ -11,7 +11,9 @@ from advanced_alchemy.extensions.litestar import SQLAlchemyAsyncConfig
 from litestar import asgi
 from litestar.types import ASGIApp, Receive, Scope, Send
 from mcp.server.mcpserver import Context, MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp_types import Icon, ToolAnnotations
+from pydantic import Field
 
 from storytool.config import get_settings
 from storytool.domain.ai.commands import ENTITIES, LINKS
@@ -69,12 +71,125 @@ GUIDELINES = {
     },
 }
 
+
+class StageProposal(Proposal):
+    """MCP staging always requires a fresh context fingerprint, unlike model generation."""
+
+    base_fingerprint: str = Field(
+        min_length=64,
+        max_length=64,
+        description="Copy the exact base_fingerprint returned by get_story_context for this story.",
+    )
+
+
+TOOL_USAGE = {
+    "templates_not_ready_to_submit": True,
+    "template_note": "Replace every <...> placeholder with values from fresh tool results. "
+    "Examples illustrate the call shape; do not create example characters unless requested.",
+    "workflow": [
+        "get_connection: check scopes; list_stories: choose an owned story for library access.",
+        "get_story_context(story_id): copy base_fingerprint and existing entity UUIDs.",
+        "get_entity_schema(entity): use supported fields; check link endpoint types.",
+        "stage_story_changes(story_id, proposal): include fingerprint INSIDE proposal.",
+        "Inspect the proposal; apply_story_changes(story_id, run_id) only for requested edits.",
+        "After applying, read fresh context before staging another batch.",
+    ],
+    "reference_rules": [
+        "story_id is an existing story UUID, never a title, email, or new: reference.",
+        "Existing references use UUIDs from this story's context, never names or invented IDs.",
+        "Each create needs a unique ref such as new:maya. Reuse that exact ref in this batch.",
+        "A new: reference is local to one proposal. Use the returned real UUID after applying.",
+        "Links use data.from_id and data.to_id, not names or chapter_id/beat_id keys.",
+        "ref is required on every operation; a link ref labels that operation, not an entity.",
+    ],
+    "examples": {
+        "read_context": {
+            "name": "get_story_context",
+            "arguments": {"story_id": "<story UUID from list_stories>"},
+        },
+        "create_connected_draft": {
+            "name": "stage_story_changes",
+            "arguments": {
+                "story_id": "<same story UUID>",
+                "proposal": {
+                    "summary": "Create a protagonist, chapter, and connected opening scene",
+                    "base_fingerprint": "<exact base_fingerprint from get_story_context>",
+                    "operations": [
+                        {
+                            "op": "create",
+                            "entity": "character",
+                            "ref": "new:maya",
+                            "data": {"name": "Maya", "role": "protagonist"},
+                        },
+                        {
+                            "op": "create",
+                            "entity": "chapter",
+                            "ref": "new:chapter-1",
+                            "data": {"number": 1, "title": "The light goes out"},
+                        },
+                        {
+                            "op": "create",
+                            "entity": "scene",
+                            "ref": "new:opening",
+                            "data": {
+                                "title": "The failing lantern",
+                                "chapter_id": "new:chapter-1",
+                                "pov_character_id": "new:maya",
+                            },
+                        },
+                        {
+                            "op": "link",
+                            "entity": "scene_presence",
+                            "ref": "presence:maya",
+                            "data": {"from_id": "new:opening", "to_id": "new:maya"},
+                        },
+                    ],
+                },
+            },
+        },
+        "update_existing_character": {
+            "name": "stage_story_changes",
+            "arguments": {
+                "story_id": "<story UUID>",
+                "proposal": {
+                    "summary": "Clarify the protagonist's external goal",
+                    "base_fingerprint": "<fresh context fingerprint>",
+                    "operations": [
+                        {
+                            "op": "update",
+                            "entity": "character",
+                            "ref": "<character UUID from this story's context>",
+                            "data": {"want": "Repair the island's last lantern"},
+                        }
+                    ],
+                },
+            },
+        },
+        "apply_reviewed_proposal": {
+            "name": "apply_story_changes",
+            "arguments": {"story_id": "<same story UUID>", "run_id": "<id returned by staging>"},
+        },
+    },
+    "error_recovery": {
+        "missing_fingerprint": "Read context and set proposal.base_fingerprint. Do not invent it.",
+        "invalid_reference": "Use context UUIDs or declare matching new: creates in this proposal.",
+        "stale_context_409": "Read fresh context, reconcile author edits, rebuild and stage again.",
+        "permission_denied": "Reconnect and authorize edits; never try a different user's story.",
+        "server_or_transport_error": "Inspect proposals and fresh context before retrying.",
+        "isError": "Read the error message and correct the call; tool errors keep MCP available.",
+    },
+}
+
 INSTRUCTIONS = """StoryTool is an author's story graph and writing workspace.
 First get_connection and read the selected story. Its permission scopes govern access
 to the selected story or the explicitly authorized account library. Never request provider keys.
 For library access, list_stories first, then pass story_id to other tools. create_story saves a
 new owned story with an initial version. Respect read-only, creation and prose permissions.
 Use schemas, real IDs and typed new: references. Read guidelines and findings before repairs.
+Read get_tool_usage before your first staging call; it supplies the exact argument structure.
+stage_story_changes takes {story_id, proposal}; proposal contains summary, base_fingerprint,
+and operations. Never omit the fingerprint or substitute names for IDs. Use data.from_id and
+data.to_id for link operations. A new: reference must be declared by a create in this same batch.
 Respect plotter/pantser/hybrid mode, author canon and dismissed notices. Placeholders are valid.
 World time and reading order are independent. Editorial judgments need evidence and alternatives.
 Stage changes with the base_fingerprint from your context read, inspect the proposal, and apply
@@ -90,7 +205,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     server = MCPServer(
         "StoryTool",
         instructions=INSTRUCTIONS,
-        version="1.1.0",
+        version="1.1.1",
         website_url=issuer(),
         icons=[
             Icon(
@@ -119,21 +234,35 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         headers = ctx.headers or {}
         grant = await principal(headers)
         if grant is None:
-            raise ValueError("Authentication expired or revoked. Create a story token in Settings.")
+            raise ToolError("Authentication expired or revoked. Reconnect or sign in again.")
         identifier = story_id or grant.story_id
         if not collection and identifier is None:
-            raise ValueError("Choose a story ID from list_stories and pass story_id to this tool")
+            raise ToolError("Choose a story ID from list_stories and pass story_id to this tool")
         target = "/api/stories" + suffix if collection else f"/api/stories/{identifier}{suffix}"
         async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=cast(Any, get_app())),
+            transport=httpx.ASGITransport(app=cast(Any, get_app()), raise_app_exceptions=False),
             base_url="http://storytool.internal",
             headers={"Authorization": headers["authorization"]},
             timeout=120,
         ) as client:
-            response = await client.request(method, target, json=body)
+            try:
+                response = await client.request(method, target, json=body)
+            except httpx.TransportError:
+                raise ToolError(
+                    "The app request could not complete. Retry reads; before retrying a write, "
+                    "inspect_story_proposals and read fresh story context to check its status."
+                ) from None
         if not response.is_success:
-            detail = response.json().get("detail", "Request failed")
-            raise ValueError(f"StoryTool {response.status_code}: {detail}; no changes applied")
+            if response.status_code >= 500:
+                raise ToolError(
+                    f"StoryTool {response.status_code}: the app could not complete this request. "
+                    "Inspect existing proposals and read fresh context before retrying a write."
+                )
+            try:
+                detail = response.json().get("detail", "Request rejected")
+            except (ValueError, AttributeError):
+                detail = "Request rejected. Read fresh story context and check your permissions."
+            raise ToolError(f"StoryTool {response.status_code}: {detail}")
         return response.json() if response.content else {}
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
@@ -141,7 +270,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         """Discover your selected-story or account-library access and permission scopes."""
         grant = await principal(ctx.headers or {})
         if grant is None:
-            raise ValueError("Story token required")
+            raise ToolError("Story token required")
         return {
             "story_id": str(grant.story_id) if grant.story_id else None,
             "library_access": "library:read" in grant.scopes,
@@ -153,8 +282,14 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
             "auth": "OAuth" if grant.oauth else "story-scoped bearer token",
             "oauth_supported": True,
             "fork_supported": False,
+            "call_guide": "get_tool_usage",
             "limits": {"operations": 200, "prose_characters": 200000},
         }
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    def get_tool_usage() -> dict[str, Any]:
+        """Read exact MCP call templates and ID/fingerprint rules before staging any edits."""
+        return TOOL_USAGE
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def list_stories(
@@ -164,10 +299,10 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         Story-bound tokens return only their selected story. Pick an ID for story-specific tools.
         """
         if offset < 0 or not 1 <= limit <= 100:
-            raise ValueError("Invalid pagination")
+            raise ToolError("Invalid pagination")
         grant = await principal(ctx.headers or {})
         if grant is None:
-            raise ValueError("Connection expired")
+            raise ToolError("Connection expired")
         if "library:read" in grant.scopes:
             rows = await call(ctx, "", collection=True)
             if include_trashed:
@@ -189,7 +324,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         """
         grant = await principal(ctx.headers or {})
         if grant is None or "story:create" not in grant.scopes:
-            raise ValueError("Reconnect and authorize story creation in the consent screen")
+            raise ToolError("Reconnect and authorize story creation in the consent screen")
         return await call(ctx, "", "POST", story.model_dump(mode="json"), collection=True)
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
@@ -207,7 +342,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     async def get_entity_schema(entity: str) -> dict[str, Any]:
         """Exact create/update fields and reference kinds. No World/Theme/lore models yet."""
         if entity not in ENTITIES:
-            raise ValueError("Choose: " + ", ".join(ENTITIES))
+            raise ToolError("Choose: " + ", ".join(ENTITIES))
         _, create, update = ENTITIES[entity]
         result = {
             "entity": entity,
@@ -239,7 +374,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         entities = context["entities"]
         arc = next((r for r in entities["arc"] if r["id"] == str(arc_id)), None)
         if arc is None:
-            raise ValueError("Arc not found in selected story")
+            raise ToolError("Arc not found in selected story")
         stages = sorted(
             [r for r in entities["arc_stage"] if r["arc_id"] == str(arc_id)],
             key=lambda r: (r["sort_key"], r["id"]),
@@ -267,9 +402,9 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     ) -> dict[str, Any]:
         """Browse/search one entity kind or link kind without prose. Returns bounded pages."""
         if entity not in ENTITIES and entity not in LINKS:
-            raise ValueError("Unknown entity or link kind")
+            raise ToolError("Unknown entity or link kind")
         if not 0 <= offset <= 100000 or not 1 <= limit <= 100:
-            raise ValueError("offset must be nonnegative and limit between 1 and 100")
+            raise ToolError("offset must be nonnegative and limit between 1 and 100")
         context = await call(ctx, "/ai/context?include_prose=false", story_id=story_id)
         rows = context["entities"][entity]
         if search:
@@ -293,7 +428,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     ) -> dict[str, Any]:
         """Read full scene prose in chunks and get the hash required for staged editing."""
         if offset < 0 or not 1 <= limit <= 24000:
-            raise ValueError("offset must be nonnegative; limit 1..24000")
+            raise ToolError("offset must be nonnegative; limit 1..24000")
         result = await call(ctx, f"/scenes/{scene_id}/content", story_id=story_id)
         content = result.get("content") or ""
         return {
@@ -314,7 +449,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         entities = context["entities"]
         scene = next((row for row in entities["scene"] if row["id"] == str(scene_id)), None)
         if scene is None:
-            raise ValueError("Scene not found in selected story")
+            raise ToolError("Scene not found in selected story")
         result = {
             "scene": scene,
             "base_fingerprint": context["base_fingerprint"],
@@ -405,18 +540,24 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         if topic == "all":
             return GUIDELINES
         if topic not in GUIDELINES:
-            raise ValueError("Choose all or " + ", ".join(GUIDELINES))
+            raise ToolError("Choose all or " + ", ".join(GUIDELINES))
         return {topic: GUIDELINES[topic]}
 
     @server.tool()
     async def stage_story_changes(
-        ctx: Context, proposal: Proposal, story_id: UUID | None = None
+        ctx: Context, proposal: StageProposal, story_id: UUID | None = None
     ) -> dict[str, Any]:
         """Validate/stage creates, updates, links, unlinks and hash-guarded write_prose.
         Include base_fingerprint from context. No edits happen until apply.
+        Arguments are {story_id, proposal: {summary, base_fingerprint, operations}}.
+        Read get_tool_usage for examples. Names are not UUIDs; new: refs need matching creates.
         """
         if not proposal.base_fingerprint:
-            raise ValueError("Read story context and include its base_fingerprint")
+            raise ToolError(
+                "Call get_story_context for this story, then put its base_fingerprint "
+                "inside proposal.base_fingerprint and retry stage_story_changes. "
+                "No proposal was staged."
+            )
         return await call(
             ctx, "/ai/stage", "POST", proposal.model_dump(mode="json"), story_id=story_id
         )
@@ -458,7 +599,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     ) -> dict[str, Any]:
         """Save a named whole-story checkpoint before a rewrite."""
         if not label.strip() or len(label) > 200:
-            raise ValueError("Version label must contain 1..200 characters")
+            raise ToolError("Version label must contain 1..200 characters")
         return await call(ctx, "/versions", "POST", {"label": label}, story_id=story_id)
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
@@ -473,14 +614,14 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     ) -> dict[str, Any]:
         """Read a saved entity/link page. Old state is context, not the writable current draft."""
         if offset < 0 or not 1 <= limit <= 100:
-            raise ValueError("Invalid pagination")
+            raise ToolError("Invalid pagination")
         result = await call(
             ctx,
             f"/versions/{version_id}?include_prose={str(include_prose).lower()}",
             story_id=story_id,
         )
         if entity not in result["state"]:
-            raise ValueError("Unknown snapshot entity kind")
+            raise ToolError("Unknown snapshot entity kind")
         rows = result["state"][entity]
         return {
             "version": result["version"],
@@ -538,6 +679,10 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     @server.resource("storytool://guidelines")
     def writing_guidelines_resource() -> str:
         return json.dumps(GUIDELINES)
+
+    @server.resource("storytool://tool-usage")
+    def tool_usage_resource() -> str:
+        return json.dumps(TOOL_USAGE)
 
     @server.prompt()
     def writing_workflow(

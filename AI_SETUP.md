@@ -89,6 +89,18 @@ is different from a rejected token.
 
 ### Outline and prose example
 
+Before the first edit, ask the connected client to call `get_tool_usage`. It supplies
+exact argument templates, ID rules, and error recovery. The same guide is available as
+`storytool://tool-usage`. A staging call has the shape
+`stage_story_changes({story_id, proposal: {summary, base_fingerprint, operations}})`;
+`base_fingerprint` is required inside `proposal`, copied from fresh story context.
+Use UUIDs from that story for existing entities. Names and titles are not IDs.
+Each `new:...` reference must match a create operation in the same proposal; later
+batches use the real UUID returned by Apply. Link data uses `from_id` and `to_id`.
+Validation failures return a readable MCP tool error. Correct the call and retry;
+they do not require reconnecting. If a client cached old tool schemas, refresh its
+StoryTool connection to discover the updated staging schema and guide.
+
 An outline proposal uses the `base_fingerprint` returned by current context, owned IDs,
 and `new:...` references for creates. Stage is a validation preview, not a write to the draft.
 The author can inspect external proposals in the story's **Story assistant** panel.
