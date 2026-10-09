@@ -12,7 +12,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <header className="site-header">
-        <Link to="/" className="site-brand"><span aria-hidden="true">S</span>StoryTool</Link>
+        <Link to="/" className="site-brand"><img src="/branding/storytool.svg" alt="" width="32" height="32" />StoryTool</Link>
         <nav aria-label="Main navigation">
           <Link to="/how-to-use" className="site-guide">How to use</Link>
           <Link to="/library">Your stories</Link>

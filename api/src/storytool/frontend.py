@@ -30,6 +30,10 @@ def frontend_router(directory: Path) -> Router:
         index,
         create_static_files_router("/assets", directories=[directory / "assets"]),
     ]
+    if (directory / "branding").is_dir():
+        handlers.append(
+            create_static_files_router("/branding", directories=[directory / "branding"])
+        )
     if (directory / "vite.svg").is_file():
 
         @get("/vite.svg", include_in_schema=False)

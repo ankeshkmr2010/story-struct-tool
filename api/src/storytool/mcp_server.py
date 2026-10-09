@@ -11,7 +11,7 @@ from advanced_alchemy.extensions.litestar import SQLAlchemyAsyncConfig
 from litestar import asgi
 from litestar.types import ASGIApp, Receive, Scope, Send
 from mcp.server.mcpserver import Context, MCPServer
-from mcp_types import ToolAnnotations
+from mcp_types import Icon, ToolAnnotations
 
 from storytool.config import get_settings
 from storytool.domain.ai.commands import ENTITIES, LINKS
@@ -87,7 +87,19 @@ No tool calls a billable LLM or runs shell/database commands. The connected clie
 
 
 def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) -> tuple[Any, Any]:
-    server = MCPServer("StoryTool", instructions=INSTRUCTIONS, version="1.0.0")
+    server = MCPServer(
+        "StoryTool",
+        instructions=INSTRUCTIONS,
+        version="1.1.0",
+        website_url=issuer(),
+        icons=[
+            Icon(
+                src=issuer() + "/branding/storytool-icon.png",
+                mime_type="image/png",
+                sizes=["512x512"],
+            )
+        ],
+    )
 
     async def principal(headers: Any) -> Delegation | None:
         authorization = headers.get("authorization", "")

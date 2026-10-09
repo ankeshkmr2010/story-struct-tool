@@ -65,6 +65,8 @@ async def test_hosted_mcp_discovery_auth_context_resources_and_revocation(client
         },
     )
     assert init["serverInfo"]["name"] == "StoryTool"
+    assert init["serverInfo"]["icons"][0]["src"].endswith("/branding/storytool-icon.png")
+    assert init["serverInfo"]["icons"][0]["mimeType"] == "image/png"
     tools = await rpc(client, headers, "tools/list")
     names = {t["name"] for t in tools["tools"]}
     assert {"stage_story_changes", "get_story_findings", "restore_story_version"} <= names

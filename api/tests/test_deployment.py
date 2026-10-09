@@ -31,6 +31,11 @@ def test_frontend_routes_support_reload_without_serving_api_or_private_files(tmp
     (tmp_path / "index.html").write_text("<html>StoryTool frontend</html>")
     (tmp_path / "assets").mkdir()
     (tmp_path / "assets" / "app.js").write_text("console.log('StoryTool')")
+    (tmp_path / "branding").mkdir()
+    (tmp_path / "branding" / "storytool.svg").write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+    )
+    (tmp_path / "branding" / "storytool-icon.png").write_bytes(b"\x89PNG\r\n\x1a\n")
     (tmp_path / ".env").write_text("not-a-real-secret")
     app = Litestar(route_handlers=[frontend_router(tmp_path)])
     with TestClient(app) as client:
@@ -41,6 +46,13 @@ def test_frontend_routes_support_reload_without_serving_api_or_private_files(tmp
             assert "attachment" not in response.headers.get("content-disposition", "")
             assert "StoryTool frontend" in response.text
         assert client.get("/assets/app.js").status_code == 200
+        assert (
+            client.get("/branding/storytool.svg")
+            .headers["content-type"]
+            .startswith("image/svg+xml")
+        )
+        assert client.get("/branding/storytool-icon.png").status_code == 200
+        assert client.get("/branding/.env").status_code == 404
         assert client.get("/.env").status_code == 404
         assert client.get("/api/missing").status_code == 404
         assert client.get("/assets/missing.js").status_code == 404
