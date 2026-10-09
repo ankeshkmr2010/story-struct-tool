@@ -37,6 +37,9 @@ def snapshot_from_graph(graph: StoryGraph) -> StorySnapshot:
         character_count=len(graph.characters),
         complete_character_count=sum(1 for c in graph.characters if c.is_complete),
         has_protagonist=any(c.role == CharacterRole.PROTAGONIST for c in graph.characters),
+        protagonist_is_complete=any(
+            c.role == CharacterRole.PROTAGONIST and c.is_complete for c in graph.characters
+        ),
         act_count=len(graph.acts),
         complete_act_count=sum(1 for a in graph.acts if a.is_complete),
         beat_count=len(graph.beats),

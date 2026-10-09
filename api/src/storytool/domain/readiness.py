@@ -18,7 +18,7 @@ from storytool.domain.enums import Level
 
 # Advisory thresholds. The brief asks for "3-5 major turning points" at Level 2.
 MIN_TURNING_POINTS = 3
-MIN_ACTS = 2
+MIN_ACTS = 1
 MIN_BEATS = 3
 
 
@@ -31,6 +31,7 @@ class StorySnapshot:
     character_count: int = 0
     complete_character_count: int = 0
     has_protagonist: bool = False
+    protagonist_is_complete: bool | None = None
     act_count: int = 0
     complete_act_count: int = 0
     beat_count: int = 0
@@ -70,8 +71,12 @@ def _blockers(level: Level, s: StorySnapshot) -> tuple[str, ...]:
             reasons = []
             if not s.has_protagonist:
                 reasons.append("No character is marked protagonist.")
+            if s.protagonist_is_complete is False:
+                reasons.append(
+                    "The protagonist still needs the details required for their role and arc."
+                )
             if s.complete_character_count < 1:
-                reasons.append("No character has both a want and a need defined.")
+                reasons.append("No character meets the requirements for its role and arc.")
             return tuple(reasons)
         case Level.BEATS:
             if s.act_count < MIN_ACTS:
@@ -89,7 +94,14 @@ def _blockers(level: Level, s: StorySnapshot) -> tuple[str, ...]:
 
 
 def readiness(level: Level, snapshot: StorySnapshot) -> Readiness:
-    blockers = _blockers(level, snapshot)
+    blockers = tuple(
+        dict.fromkeys(
+            reason
+            for prerequisite in Level
+            if prerequisite <= level
+            for reason in _blockers(prerequisite, snapshot)
+        )
+    )
     return Readiness(level=level, is_ready=not blockers, blocked_by=blockers)
 
 

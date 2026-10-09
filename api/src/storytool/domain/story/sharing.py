@@ -88,7 +88,10 @@ def activity(source: Story) -> StoryActivityOut:
 
 
 def visible_state(state: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
-    return {kind: state[kind] for kind in (*ENTITIES, *LINKS)}
+    return {
+        kind: [{key: value for key, value in row.items() if key != "notes"} for row in state[kind]]
+        for kind in (*ENTITIES, *LINKS)
+    }
 
 
 def actor(request: Request) -> UUID:
@@ -138,6 +141,10 @@ def shared_summary(story: Story, grant: StoryShare, owner: User) -> SharedStoryO
 
 async def import_graph(db: AsyncSession, source: Story, user_id: UUID) -> Story:
     state = copy.deepcopy(await full_state(db, source.id))
+    for kind in ENTITIES:
+        for row in state[kind]:
+            if "notes" in row:
+                row["notes"] = None
     created = Story(title=source.title, user_id=user_id, parent_story_id=source.id)
     db.add(created)
     await db.flush()
@@ -161,6 +168,11 @@ async def import_graph(db: AsyncSession, source: Story, user_id: UUID) -> Story:
         state[kind] = []
     await restore_state(db, created.id, state)
     await db.refresh(created)
+    from storytool.domain.story.authorship import record_changes
+
+    await record_changes(
+        db, created.id, user_id, {}, await full_state(db, created.id), "import", "Imported copy"
+    )
     await checkpoint(db, created.id, user_id, "Imported shared story", "initial")
     return created
 

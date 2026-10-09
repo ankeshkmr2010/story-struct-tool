@@ -88,11 +88,11 @@ TOOL_USAGE = {
     "Examples illustrate the call shape; do not create example characters unless requested.",
     "workflow": [
         "get_connection: check scopes; list_stories: choose an owned story for library access.",
-        "get_story_context(story_id): copy base_fingerprint and existing entity UUIDs.",
+        "Read context once for entity IDs; get_story_fingerprint refreshes only the write guard.",
         "get_entity_schema(entity): use supported fields; check link endpoint types.",
         "stage_story_changes(story_id, proposal): include fingerprint INSIDE proposal.",
         "Inspect the proposal; apply_story_changes(story_id, run_id) only for requested edits.",
-        "After applying, read fresh context before staging another batch.",
+        "After applying, use returned real UUIDs and get_story_fingerprint before the next batch.",
     ],
     "reference_rules": [
         "story_id is an existing story UUID, never a title, email, or new: reference.",
@@ -186,6 +186,7 @@ to the selected story or the explicitly authorized account library. Never reques
 For library access, list_stories first, then pass story_id to other tools. create_story saves a
 new owned story with an initial version. Respect read-only, creation and prose permissions.
 Use schemas, real IDs and typed new: references. Read guidelines and findings before repairs.
+Use get_story_fingerprint to refresh the guard when context is already known.
 Read get_tool_usage before your first staging call; it supplies the exact argument structure.
 stage_story_changes takes {story_id, proposal}; proposal contains summary, base_fingerprint,
 and operations. Never omit the fingerprint or substitute names for IDs. Use data.from_id and
@@ -339,6 +340,13 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         return await call(
             ctx, f"/ai/context?include_prose={str(include_prose).lower()}", story_id=story_id
         )
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_story_fingerprint(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
+        """Fetch only the current write guard; skips health, continuity and observations.
+        Use before a write when you already have the entity IDs and story context.
+        """
+        return await call(ctx, "/ai/fingerprint", story_id=story_id)
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_entity_schema(entity: str) -> dict[str, Any]:
@@ -554,8 +562,10 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     async def stage_story_changes(
         ctx: Context, proposal: StageProposal, story_id: UUID | None = None
     ) -> dict[str, Any]:
-        """Validate/stage creates, updates, links, unlinks and hash-guarded write_prose.
-        Include base_fingerprint from context. No edits happen until apply.
+        """Validate/stage creates, updates, links, unlinks, deletes and hash-guarded write_prose.
+        Use get_story_fingerprint for a fresh base_fingerprint if context is already known.
+        Delete uses an owned UUID, empty data, and requires reviewing destructive impact.
+        No edits happen until apply; deletion creates a recovery version.
         Arguments are {story_id, proposal: {summary, base_fingerprint, operations}}.
         Read get_tool_usage for examples. Names are not UUIDs; new: refs need matching creates.
         """

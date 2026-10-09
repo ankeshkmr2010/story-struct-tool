@@ -20,6 +20,7 @@ from storytool.domain.narrative.models import (
     scene_beat,
     scene_thread,
 )
+from storytool.domain.story.authorship import FieldAuthorship
 from storytool.domain.story.models import Story
 from storytool.domain.story.sharing import StoryShare
 from storytool.domain.structure.models import Act, Beat, Event, Thread, event_character
@@ -38,6 +39,7 @@ __all__ = (
     "Chapter",
     "Character",
     "Event",
+    "FieldAuthorship",
     "Location",
     "MCPClient",
     "MCPConsent",

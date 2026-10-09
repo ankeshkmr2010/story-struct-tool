@@ -1,5 +1,6 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type Scene } from '../api/client'
+import { OriginSummary } from './AuthorshipPanel'
 import { SceneDelete } from './SceneDelete'
 import { Chip, InlineNumber, InlineSelect, InlineText } from './fields'
 
@@ -70,6 +71,8 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
         <Field label="Summary"><InlineText value={scene.summary} placeholder="What happens?" onSave={save('summary')} multiline /></Field>
         <Field label="Goal"><InlineText value={scene.goal} placeholder="What does the POV character want?" onSave={save('goal')} multiline /></Field>
         <Field label="Conflict"><InlineText value={scene.conflict} placeholder="What opposes them?" onSave={save('conflict')} multiline /></Field>
+        <OriginSummary storyId={storyId} entityId={scene.id} entityType="scene" />
+        <Field label="Private scene notes"><InlineText value={scene.notes} placeholder="Notes belong here; summary describes the scene" onSave={save('notes')} multiline /></Field>
         <Field label="Outcome"><InlineText value={scene.outcome} placeholder="What changes?" onSave={save('outcome')} multiline /></Field>
       </div>
       <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">

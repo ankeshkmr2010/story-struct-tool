@@ -282,7 +282,9 @@ class StoryAccessMiddleware:
                         )
                     )
                     if run and any(
-                        op.get("op") == "write_prose" for op in run.proposal.get("operations", [])
+                        op.get("op") == "write_prose"
+                        or (op.get("op") == "delete" and op.get("entity") in {"scene", "chapter"})
+                        for op in run.proposal.get("operations", [])
                     ):
                         await _reject(send, 403, "Prose permission is required for this proposal")
                         return
@@ -314,7 +316,14 @@ class StoryAccessMiddleware:
                             if (
                                 isinstance(operations, list)
                                 and any(
-                                    isinstance(op, dict) and op.get("op") == "write_prose"
+                                    isinstance(op, dict)
+                                    and (
+                                        op.get("op") == "write_prose"
+                                        or (
+                                            op.get("op") == "delete"
+                                            and op.get("entity") in {"scene", "chapter"}
+                                        )
+                                    )
                                     for op in operations
                                 )
                                 and "prose:read" not in getattr(delegated, "scopes", STORY_SCOPES)
@@ -376,6 +385,7 @@ class StoryAccessMiddleware:
                     lock_story_id = await db.scalar(select(Arc.story_id).where(Arc.id == arc_id))
 
         scope.setdefault("state", {})["storytool_user_id"] = user_id
+        scope["state"]["storytool_write_origin"] = "mcp" if delegated else "author"
 
         async def replay_receive() -> Any:
             return replay.pop(0) if replay else await receive()

@@ -65,6 +65,53 @@ def build_db_config() -> SQLAlchemyAsyncConfig:
                 await db.flush()
                 if context:
                     after = await versions.full_state(db, context["story_id"])
+                    from uuid import UUID
+
+                    from storytool.domain.ai.models import AIRun
+                    from storytool.domain.story.authorship import record_changes
+
+                    origin = scope.get("state", {}).get("storytool_write_origin", "author")
+                    actor_label = "External MCP client" if origin == "mcp" else "Author"
+                    path = scope.get("path", "")
+                    if path.endswith("/scaffold"):
+                        origin, actor_label = "system", "Framework scaffold"
+                    if context["ai_batch"]:
+                        run_id = path.split("/ai/runs/", 1)[1].split("/", 1)[0]
+                        run = await db.get(AIRun, UUID(run_id))
+                        if run:
+                            origin = "mcp" if run.provider == "external" else "assistant"
+                            actor_label = (
+                                "External MCP client"
+                                if origin == "mcp"
+                                else f"App assistant ({run.model})"
+                            )
+                        if path.endswith("/undo"):
+                            origin, actor_label = "undo", "Undo applied changes"
+                    removed = [
+                        (kind, row)
+                        for kind in after
+                        if isinstance(after[kind], list)
+                        for row in context["before"].get(kind, [])
+                        if "id" in row and row["id"] not in {r.get("id") for r in after[kind]}
+                    ]
+                    if removed and not scope.get("state", {}).get("explicit_deletion_checkpoint"):
+                        await versions.checkpoint(
+                            db,
+                            context["story_id"],
+                            context["user_id"],
+                            "Before deleting story entities",
+                            "recovery",
+                            context["before"],
+                        )
+                    await record_changes(
+                        db,
+                        context["story_id"],
+                        context["user_id"],
+                        context["before"],
+                        after,
+                        origin,
+                        actor_label,
+                    )
                     if context["initial"]:
                         await versions.checkpoint(
                             db,
@@ -92,7 +139,7 @@ def build_db_config() -> SQLAlchemyAsyncConfig:
                             "After assistant changes"
                             if context["ai_batch"]
                             else "Editing checkpoint",
-                            force=context["ai_batch"],
+                            force=context["ai_batch"] or bool(removed),
                         )
                 if live_id:
                     await db.execute(

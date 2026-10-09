@@ -147,6 +147,17 @@ class StoryVersionController(Controller):
             db_session, story_id, user_id, f"Before restoring v{record.number}", "recovery", current
         )
         await service.restore_state(db_session, story_id, record.state)
+        from storytool.domain.story.authorship import record_changes
+
+        await record_changes(
+            db_session,
+            story_id,
+            user_id,
+            current,
+            await service.full_state(db_session, story_id),
+            "restore",
+            "Version restore",
+        )
         restored = await service.checkpoint(
             db_session,
             story_id,

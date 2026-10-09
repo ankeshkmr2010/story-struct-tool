@@ -55,6 +55,7 @@ class SceneCreate(BaseModel):
     type: SceneType = SceneType.SCENE
     chapter_id: UUID | None = None
     summary: str | None = None
+    notes: str | None = None
     location: str | None = Field(default=None, max_length=200)
     location_id: UUID | None = None
     story_time_ordinal: int | None = None
@@ -75,6 +76,7 @@ class SceneUpdate(BaseModel):
     type: SceneType | None = None
     chapter_id: UUID | None = None
     summary: str | None = None
+    notes: str | None = None
     location: str | None = Field(default=None, max_length=200)
     location_id: UUID | None = None
     story_time_ordinal: int | None = None
@@ -97,6 +99,7 @@ class SceneOut(EntityOut):
     type: str
     title: str | None
     summary: str | None
+    notes: str | None
     location: str | None
     location_id: UUID | None
     story_time_ordinal: int | None

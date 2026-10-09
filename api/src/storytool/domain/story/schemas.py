@@ -17,6 +17,11 @@ class StoryCreate(BaseModel):
 
     title: str = Field(min_length=1, max_length=300)
     premise: str | None = None
+    thematic_statement: str | None = None
+    motifs: list[str] | None = Field(default=None, max_length=100)
+    world_rules: list[str] | None = Field(default=None, max_length=200)
+    style_rules: list[str] | None = Field(default=None, max_length=200)
+    notes: str | None = None
     genre: str | None = Field(default=None, max_length=120)
     pov_style: PovStyle | None = None
     structure_framework: StructureFramework = StructureFramework.THREE_ACT
@@ -28,6 +33,11 @@ class StoryUpdate(BaseModel):
 
     title: str | None = Field(default=None, min_length=1, max_length=300)
     premise: str | None = None
+    thematic_statement: str | None = None
+    motifs: list[str] | None = Field(default=None, max_length=100)
+    world_rules: list[str] | None = Field(default=None, max_length=200)
+    style_rules: list[str] | None = Field(default=None, max_length=200)
+    notes: str | None = None
     genre: str | None = Field(default=None, max_length=120)
     pov_style: PovStyle | None = None
     structure_framework: StructureFramework | None = None
@@ -37,6 +47,11 @@ class StoryUpdate(BaseModel):
 class StoryOut(EntityOut):
     title: str
     premise: str | None
+    thematic_statement: str | None
+    motifs: list[str] | None
+    world_rules: list[str] | None
+    style_rules: list[str] | None
+    notes: str | None
     genre: str | None
     pov_style: str | None
     structure_framework: str

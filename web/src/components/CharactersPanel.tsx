@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { OriginSummary } from './AuthorshipPanel'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { AddForm, Chip, DeleteButton, InlineSelect, InlineText } from './fields'
 
-const ROLES = ['protagonist', 'antagonist', 'mentor', 'foil', 'supporting'] as const
+const ROLES = ['protagonist', 'antagonist', 'mentor', 'foil', 'supporting', 'minor'] as const
 const ARC_TYPES = ['positive', 'negative', 'flat'] as const
 
 /**
@@ -56,7 +57,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
     onSuccess: refresh,
   })
 
-  const patch = (id: string) => (field: string) => (value: string | null) =>
+  const patch = (id: string) => (field: string) => (value: string | string[] | null) =>
     update.mutateAsync({ id, body: { [field]: value } })
 
   const createArc = useMutation({
@@ -111,7 +112,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
           const set = patch(character.id)
           return (
             <li key={character.id} className="rounded-md border border-slate-200 dark:border-slate-700 p-2.5">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="min-w-0 flex-1">
                   <InlineText
                     value={character.name}
@@ -137,6 +138,14 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                 <DeleteButton onConfirm={() => remove.mutate(character.id)} what="character" />
               </div>
 
+              <OriginSummary storyId={storyId} entityId={character.id} entityType="character" />
+              <div className="mt-3 space-y-2">
+                <label className="block text-xs">Description<InlineText value={character.description} placeholder="Who are they?" onSave={set('description')} multiline /></label>
+                <label className="block text-xs">Aliases (one per line)<InlineText value={character.aliases?.join('\n') ?? null} placeholder="Other names or titles" onSave={value => set('aliases')(value ? value.split('\n').map(item => item.trim()).filter(Boolean) : [])} multiline /></label>
+                <label className="block text-xs">Relation to the protagonist<InlineText value={character.relation_to_protagonist} placeholder="How are they connected?" onSave={set('relation_to_protagonist')} multiline /></label>
+                <label className="block text-xs">Private notes<InlineText value={character.notes} placeholder="Working notes" onSave={set('notes')} multiline /></label>
+                <p className="writer-help">Want and need are required for a protagonist, antagonist, or positive/negative arc. Supporting and minor characters can stay simple. Wounds and misbeliefs are optional.</p>
+              </div>
               <div className="mt-1.5 grid grid-cols-2 gap-2">
                 <label className="block">
                   <span className="text-[10px] uppercase tracking-wide text-slate-400">

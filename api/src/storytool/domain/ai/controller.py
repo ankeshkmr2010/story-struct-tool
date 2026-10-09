@@ -101,6 +101,13 @@ class AIController(Controller):
     tags = ["authoring-ai"]
     signature_namespace = {"AsyncSession": AsyncSession}
 
+    @get("/stories/{story_id:uuid}/ai/fingerprint")
+    async def state_fingerprint(
+        self, request: Request, db_session: AsyncSession, story_id: UUID
+    ) -> dict[str, str]:
+        await owned_story(db_session, story_id, actor(request))
+        return {"base_fingerprint": fingerprint(await snapshot(db_session, story_id))}
+
     @get("/ai/connections")
     async def list_connections(
         self, request: Request, db_session: AsyncSession
@@ -335,9 +342,15 @@ class AIController(Controller):
             raise ConflictException(
                 detail="The story changed since this proposal. Generate a fresh one."
             )
-        result, inverse = await execute_proposal(
-            db_session, story_id, actor(request), Proposal.model_validate(row.proposal)
-        )
+        proposal = Proposal.model_validate(row.proposal)
+        if any(operation.op == "delete" for operation in proposal.operations):
+            request.scope["state"]["explicit_deletion_checkpoint"] = True
+            from storytool.domain.versioning.service import checkpoint
+
+            await checkpoint(
+                db_session, story_id, actor(request), "Before agent deletion", "recovery"
+            )
+        result, inverse = await execute_proposal(db_session, story_id, actor(request), proposal)
         row.result, row.inverse, row.status = result, inverse, "applied"
         row.applied_fingerprint = fingerprint(await snapshot(db_session, story_id))
         await db_session.flush()

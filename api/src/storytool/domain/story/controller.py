@@ -60,6 +60,19 @@ class StoryController(Controller):
         from storytool.domain.versioning.service import checkpoint
 
         await checkpoint(db_session, record.id, user_id, "Story created", "initial")
+        from storytool.domain.story.authorship import record_changes
+        from storytool.domain.versioning.service import full_state
+
+        origin = request.scope["state"].get("storytool_write_origin", "author")
+        await record_changes(
+            db_session,
+            record.id,
+            user_id,
+            {},
+            await full_state(db_session, record.id),
+            origin,
+            "External MCP client" if origin == "mcp" else "Author",
+        )
         return StoryOut.model_validate(record)
 
     @get("/{story_id:uuid}", summary="Get one story")

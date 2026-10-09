@@ -42,6 +42,7 @@ class CharacterRole(StrEnum):
     MENTOR = "mentor"
     FOIL = "foil"
     SUPPORTING = "supporting"
+    MINOR = "minor"
 
 
 class ArcType(StrEnum):

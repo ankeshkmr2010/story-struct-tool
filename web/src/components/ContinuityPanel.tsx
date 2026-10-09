@@ -45,6 +45,7 @@ export function ContinuityPanel({ storyId }: { storyId: string }) {
           {report.contradiction_count} contradiction
           {report.contradiction_count === 1 ? '' : 's'}
           {report.possible_count > 0 && ` · ${report.possible_count} to check`}
+          {report.anomalies.some(item => item.kind === 'planned') && ` · ${report.anomalies.filter(item => item.kind === 'planned').length} planned`}
         </span>
       </div>
 

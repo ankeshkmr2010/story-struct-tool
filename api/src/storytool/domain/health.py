@@ -132,7 +132,11 @@ def story_needs_a_protagonist(g: StoryGraph) -> Iterator[Finding]:
 @rule(Level.CHARACTERS)
 def characters_need_want_and_need(g: StoryGraph) -> Iterator[Finding]:
     for character in g.characters:
-        missing = [f for f in ("want", "need") if not (getattr(character, f) or "").strip()]
+        missing = [
+            f
+            for f in ("want", "need")
+            if f in character.completeness.required and not (getattr(character, f) or "").strip()
+        ]
         if missing:
             yield Finding(
                 code="character.missing_want_or_need",
@@ -317,8 +321,8 @@ def beats_should_be_fulfilled(g: StoryGraph) -> Iterator[Finding]:
             yield Finding(
                 code="beat.unfulfilled",
                 level=Level.CHAPTERS,
-                severity=Severity.WARNING,
-                message=f'{where} has no chapter or scene fulfilling "{beat.label}".',
+                severity=Severity.INFO,
+                message=(f'Planned work: {where} is awaiting fulfilment of "{beat.label}".'),
                 entity_type="beat",
                 entity_id=beat.id,
             )

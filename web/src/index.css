@@ -366,3 +366,9 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 @media (max-width: 900px) { .account-dropdown .account-name { display: none; } }
 @media (max-width: 640px) { .site-header { gap: 12px; padding: 12px 18px; } .site-header nav { order: 3; justify-content: flex-start; gap: 2px; margin: 0; width: 100%; } .site-header nav .site-nav-link { min-height: 38px; padding: 8px 11px; font-size: 12px; } .site-header-actions { margin-left: auto; gap: 4px; } .theme-toggle { padding: 8px; } .story-card { padding: 16px; } .page-heading h1 { font-size: 29px; } }
 @media (max-width: 640px) { .story-card > div:first-child { flex-basis: 100%; } }
+
+.authorship-list li { padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 13px; overflow-wrap: anywhere; }
+.authorship-list p, .authorship-list small { color: var(--muted); font-size: 11px; }
+.authorship-origin { display: inline-block; margin-left: 8px; padding: 3px 8px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font-size: 11px; }
+.origin-assistant, .origin-mcp { border: 1px solid var(--accent); }
+.field-origin-summary { color: var(--muted); font-size: 11px; line-height: 1.6; margin-top: 8px; }

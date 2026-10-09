@@ -14,6 +14,7 @@ import { StoryTimeline } from '../components/StoryTimeline'
 import { AuthoringAssistant } from '../components/AuthoringAssistant'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
+import { AuthorshipPanel } from '../components/AuthorshipPanel'
 import { StorySharing } from '../components/StorySharing'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 // Lazy: CodeMirror is the largest dependency in the app and is only needed once the
@@ -241,6 +242,7 @@ function Workspace() {
             Export .md
           </a>
           <StoryVersions storyId={storyId} />
+          <AuthorshipPanel storyId={storyId} />
           <StorySharing storyId={storyId} title={story.data.title} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} />
           <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             Mode
@@ -320,6 +322,13 @@ function Workspace() {
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Point of view<InlineSelect value={story.data.pov_style} options={['first', 'third_limited', 'third_omniscient', 'second', 'mixed']} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Framework<InlineSelect value={story.data.structure_framework} options={['three_act', 'save_the_cat', 'custom']} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /></label>
               </div>
+              <details className="mt-5 rounded border border-slate-200 p-3 dark:border-slate-700"><summary className="cursor-pointer text-sm font-medium">World, style, theme, and notes</summary><div className="mt-3 space-y-3">
+                <label className="block text-xs">World rules (one per line)<InlineText value={story.data.world_rules?.join('\n') ?? null} placeholder="What is possible in this world?" onSave={value => updateStory.mutateAsync({ world_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
+                <label className="block text-xs">Style rules (one per line)<InlineText value={story.data.style_rules?.join('\n') ?? null} placeholder="Voice, tense, prose constraints" onSave={value => updateStory.mutateAsync({ style_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
+                <label className="block text-xs">Thematic statement<InlineText value={story.data.thematic_statement} placeholder="What does this story explore?" onSave={thematic_statement => updateStory.mutateAsync({ thematic_statement })} multiline /></label>
+                <label className="block text-xs">Motifs (one per line)<InlineText value={story.data.motifs?.join('\n') ?? null} placeholder="Recurring images or ideas" onSave={value => updateStory.mutateAsync({ motifs: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
+                <label className="block text-xs">Private story notes<InlineText value={story.data.notes} placeholder="Reference and working notes; keep the premise one sentence" onSave={notes => updateStory.mutateAsync({ notes })} multiline /></label>
+              </div></details>
             </Panel>
           )}
 

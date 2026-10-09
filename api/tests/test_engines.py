@@ -110,12 +110,12 @@ def test_characters_unlock_at_the_turning_point_threshold() -> None:
 
 def test_acts_report_every_blocker_at_once_not_just_the_first() -> None:
     result = readiness(Level.ACTS, StorySnapshot())
-    assert len(result.blocked_by) == 2, "author should see all reasons, not be drip-fed them"
+    assert len(result.blocked_by) == 4, "include earlier prerequisites as well as local blockers"
 
 
 def test_blockers_are_human_readable_and_quantified() -> None:
     result = readiness(Level.CHARACTERS, StorySnapshot(turning_point_count=1))
-    assert "currently 1" in result.blocked_by[0]
+    assert any("currently 1" in reason for reason in result.blocked_by)
 
 
 def test_furthest_ready_level_stops_at_the_first_closed_gate() -> None:

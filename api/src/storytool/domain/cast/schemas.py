@@ -19,6 +19,10 @@ class CharacterCreate(BaseModel):
     need: str | None = None
     arc_type: ArcType | None = None
     voice_notes: str | None = None
+    description: str | None = None
+    aliases: list[str] | None = Field(default=None, max_length=30)
+    relation_to_protagonist: str | None = None
+    notes: str | None = None
 
 
 class CharacterUpdate(BaseModel):
@@ -30,6 +34,10 @@ class CharacterUpdate(BaseModel):
     need: str | None = None
     arc_type: ArcType | None = None
     voice_notes: str | None = None
+    description: str | None = None
+    aliases: list[str] | None = Field(default=None, max_length=30)
+    relation_to_protagonist: str | None = None
+    notes: str | None = None
 
 
 class CharacterOut(EntityOut):
@@ -42,6 +50,10 @@ class CharacterOut(EntityOut):
     need: str | None
     arc_type: str | None
     voice_notes: str | None
+    description: str | None
+    aliases: list[str] | None
+    relation_to_protagonist: str | None
+    notes: str | None
 
 
 # -------------------------------------------------------------- Relationship

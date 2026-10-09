@@ -3,6 +3,7 @@
 from uuid import UUID
 
 from sqlalchemy import CheckConstraint, Float, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import CompletableMixin, StoryToolBase
@@ -15,7 +16,14 @@ class Character(StoryToolBase, CompletableMixin):
 
     # want/need are the load-bearing pair -- a character without the gap between them
     # has no arc to advance.
-    complete_when = ("name", "role", "want", "need")
+    complete_when = ("name", "role")
+
+    def completeness_fields(self) -> tuple[str, ...]:
+        major = self.role in {"protagonist", "antagonist"} or self.arc_type in {
+            "positive",
+            "negative",
+        }
+        return ("name", "role", "want", "need") if major else ("name", "role")
 
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(200))
@@ -28,6 +36,10 @@ class Character(StoryToolBase, CompletableMixin):
 
     arc_type: Mapped[str | None] = mapped_column(String(20), default=None)
     voice_notes: Mapped[str | None] = mapped_column(Text, default=None)
+    description: Mapped[str | None] = mapped_column(Text, default=None)
+    aliases: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
+    relation_to_protagonist: Mapped[str | None] = mapped_column(Text, default=None)
+    notes: Mapped[str | None] = mapped_column(Text, default=None)
 
 
 class Relationship(StoryToolBase, CompletableMixin):

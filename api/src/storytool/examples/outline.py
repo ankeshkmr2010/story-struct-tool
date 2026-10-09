@@ -63,6 +63,7 @@ async def seed_outline(session: AsyncSession, owner_id: UUID, outline: StudyOutl
         user_id=owner_id,
         title=outline.title,
         premise=outline.premise,
+        notes=outline.voice_notes,
         genre=outline.genre,
         pov_style=outline.pov_style,
         structure_framework="custom",
@@ -83,7 +84,6 @@ async def seed_outline(session: AsyncSession, owner_id: UUID, outline: StudyOutl
             else ("antagonist" if name in outline.antagonists else "supporting"),
             want=outline.protagonist_want if name == outline.protagonist else None,
             need=outline.protagonist_need if name == outline.protagonist else None,
-            voice_notes=outline.voice_notes,
         )
         session.add(character)
         characters[name] = character
@@ -154,8 +154,8 @@ async def seed_outline(session: AsyncSession, owner_id: UUID, outline: StudyOutl
             time_label=moment.when,
             is_flashback=moment.flashback,
             pov_character_id=characters[pov].id,
-            goal="Understand or change the situation",
-            conflict="A crucial obstacle remains",
+            goal=None,
+            conflict=None,
             outcome=moment.summary,
         )
         session.add(scene)
@@ -192,4 +192,16 @@ async def seed_outline(session: AsyncSession, owner_id: UUID, outline: StudyOutl
             insert(scene_beat).values(scene_id=scene.id, beat_id=beats[moment.chapter].id)
         )
     await session.flush()
+    from storytool.domain.story.authorship import record_changes
+    from storytool.domain.versioning.service import full_state
+
+    await record_changes(
+        session,
+        story.id,
+        owner_id,
+        {},
+        await full_state(session, story.id),
+        "system",
+        "Sample study outline",
+    )
     return story

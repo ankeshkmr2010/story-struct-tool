@@ -330,6 +330,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/ai/fingerprint": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** StateFingerprint */
+        get: operations["ApiStoriesStoryIdAiFingerprintStateFingerprint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/connections/{connection_id}/test": {
         parameters: {
             query?: never;
@@ -498,6 +515,23 @@ export interface paths {
         put?: never;
         /** Restore a story from Trash */
         post: operations["ApiStoriesStoryIdRestoreRestoreStory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/authorship": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** History */
+        get: operations["ApiStoriesStoryIdAuthorshipHistory"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1176,7 +1210,7 @@ export interface paths {
         get: operations["ApiStoriesStoryIdScenesSceneIdGetScene"];
         put?: never;
         post?: never;
-        /** Delete a scene */
+        /** Delete a scene with whole-story recovery versions */
         delete: operations["ApiStoriesStoryIdScenesSceneIdDeleteScene"];
         options?: never;
         head?: never;
@@ -1803,6 +1837,18 @@ export interface components {
          * @enum {string}
          */
         AuthoringMode: "plotter" | "pantser" | "hybrid";
+        /** AuthorshipOut */
+        AuthorshipOut: {
+            entity_type: string;
+            /** Format: uuid */
+            entity_id: string;
+            field: string;
+            origin: string;
+            actor_label: string;
+            action: string;
+            /** Format: date-time */
+            created_at: string;
+        };
         /** BeatCreate */
         BeatCreate: {
             label: string;
@@ -1942,6 +1988,10 @@ export interface components {
             need?: string | null;
             arc_type?: components["schemas"]["ArcType"] | null;
             voice_notes?: string | null;
+            description?: string | null;
+            aliases?: string[] | null;
+            relation_to_protagonist?: string | null;
+            notes?: string | null;
         };
         /** CharacterOut */
         CharacterOut: {
@@ -1962,6 +2012,10 @@ export interface components {
             need: string | null;
             arc_type: string | null;
             voice_notes: string | null;
+            description: string | null;
+            aliases: string[] | null;
+            relation_to_protagonist: string | null;
+            notes: string | null;
         };
         /** CharacterPresenceUpdate */
         CharacterPresenceUpdate: {
@@ -1971,7 +2025,7 @@ export interface components {
          * CharacterRole
          * @enum {string}
          */
-        CharacterRole: "protagonist" | "antagonist" | "mentor" | "foil" | "supporting";
+        CharacterRole: "protagonist" | "antagonist" | "mentor" | "foil" | "supporting" | "minor";
         /** CharacterUpdate */
         CharacterUpdate: {
             name?: string | null;
@@ -1982,6 +2036,10 @@ export interface components {
             need?: string | null;
             arc_type?: components["schemas"]["ArcType"] | null;
             voice_notes?: string | null;
+            description?: string | null;
+            aliases?: string[] | null;
+            relation_to_protagonist?: string | null;
+            notes?: string | null;
         };
         /** CompletenessOut */
         CompletenessOut: {
@@ -2196,7 +2254,7 @@ export interface components {
         /** Operation */
         Operation: {
             /** @enum {string} */
-            op: "create" | "update" | "link" | "unlink" | "write_prose";
+            op: "create" | "update" | "link" | "unlink" | "write_prose" | "delete";
             /** @enum {string} */
             entity: "story" | "character" | "relationship" | "arc" | "arc_stage" | "act" | "beat" | "thread" | "location" | "chapter" | "scene" | "event" | "chapter_beat" | "scene_beat" | "scene_thread" | "scene_arc_advance" | "event_character" | "scene_presence";
             ref: string;
@@ -2354,6 +2412,7 @@ export interface components {
             type?: components["schemas"]["SceneType"];
             chapter_id?: string | null;
             summary?: string | null;
+            notes?: string | null;
             location?: string | null;
             location_id?: string | null;
             story_time_ordinal?: number | null;
@@ -2401,6 +2460,7 @@ export interface components {
             type: string;
             title: string | null;
             summary: string | null;
+            notes: string | null;
             location: string | null;
             location_id: string | null;
             story_time_ordinal: number | null;
@@ -2442,6 +2502,7 @@ export interface components {
             type?: components["schemas"]["SceneType"] | null;
             chapter_id?: string | null;
             summary?: string | null;
+            notes?: string | null;
             location?: string | null;
             location_id?: string | null;
             story_time_ordinal?: number | null;
@@ -2516,6 +2577,11 @@ export interface components {
         StoryCreate: {
             title: string;
             premise?: string | null;
+            thematic_statement?: string | null;
+            motifs?: string[] | null;
+            world_rules?: string[] | null;
+            style_rules?: string[] | null;
+            notes?: string | null;
             genre?: string | null;
             pov_style?: components["schemas"]["PovStyle"] | null;
             structure_framework?: components["schemas"]["StructureFramework"];
@@ -2532,6 +2598,11 @@ export interface components {
             completeness: components["schemas"]["CompletenessOut"];
             title: string;
             premise: string | null;
+            thematic_statement: string | null;
+            motifs: string[] | null;
+            world_rules: string[] | null;
+            style_rules: string[] | null;
+            notes: string | null;
             genre: string | null;
             pov_style: string | null;
             structure_framework: string;
@@ -2559,6 +2630,11 @@ export interface components {
         StoryUpdate: {
             title?: string | null;
             premise?: string | null;
+            thematic_statement?: string | null;
+            motifs?: string[] | null;
+            world_rules?: string[] | null;
+            style_rules?: string[] | null;
+            notes?: string | null;
             genre?: string | null;
             pov_style?: components["schemas"]["PovStyle"] | null;
             structure_framework?: components["schemas"]["StructureFramework"] | null;
@@ -3465,6 +3541,45 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdAiFingerprintStateFingerprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiAiConnectionsConnectionIdTestTestConnection: {
         parameters: {
             query?: never;
@@ -3986,6 +4101,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StoryOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdAuthorshipHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorshipOut"][];
                 };
             };
             /** @description Bad request syntax or unsupported method */

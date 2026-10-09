@@ -47,7 +47,10 @@ def is_blank(value: Any) -> bool:
 
 def evaluate(entity: object) -> Completeness:
     """Compute completeness from the entity class's ``complete_when`` declaration."""
-    required: Sequence[str] = getattr(type(entity), "complete_when", ())
+    dynamic = getattr(entity, "completeness_fields", None)
+    required: Sequence[str] = (
+        dynamic() if callable(dynamic) else getattr(type(entity), "complete_when", ())
+    )
     missing = tuple(field for field in required if is_blank(getattr(entity, field, None)))
     return Completeness(is_complete=not missing, missing=missing, required=tuple(required))
 

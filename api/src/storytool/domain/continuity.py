@@ -36,6 +36,7 @@ MIN_NAME_LENGTH = 5
 class AnomalyKind(StrEnum):
     CONTRADICTION = "contradiction"
     POSSIBLE = "possible"
+    PLANNED = "planned"
 
 
 @dataclass(frozen=True, slots=True)
@@ -264,9 +265,10 @@ def event_on_page_without_a_scene(graph: StoryGraph) -> Iterator[Anomaly]:
         if event.is_on_page and event.scene_id is None:
             yield Anomaly(
                 code="event.on_page_without_scene",
-                kind=AnomalyKind.CONTRADICTION,
+                kind=AnomalyKind.PLANNED,
                 message=(
-                    f'"{event.label}" is marked as happening on the page, but no scene depicts it.'
+                    f'"{event.label}" is awaiting a linked on-page scene. '
+                    'This is planned work, not a contradiction.'
                 ),
                 event_id=event.id,
             )

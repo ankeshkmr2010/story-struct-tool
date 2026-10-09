@@ -120,6 +120,7 @@ class Scene(StoryToolBase, CompletableMixin):
     type: Mapped[str] = mapped_column(String(10), default=SceneType.SCENE)
     title: Mapped[str | None] = mapped_column(String(200), default=None)
     summary: Mapped[str | None] = mapped_column(Text, default=None)
+    notes: Mapped[str | None] = mapped_column(Text, default=None)
 
     # Free text is the *placeholder*: a scene can name a place before that place exists as an
     # entity. `location_id` is the committed form, and continuity checks only use that --

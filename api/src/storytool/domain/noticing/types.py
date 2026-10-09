@@ -25,13 +25,47 @@ Confidence = Literal["low", "medium", "high"]
 # every other "Mr Wilson" in the book and reports one character as present everywhere.
 HONORIFICS = frozenset(
     {
-        "mr", "mrs", "ms", "miss", "mister", "madam", "madame",
-        "dr", "doctor", "prof", "professor",
-        "sir", "dame", "lord", "lady",
-        "capt", "captain", "col", "colonel", "gen", "general", "lt", "lieutenant",
-        "sgt", "sergeant", "insp", "inspector", "det", "detective", "officer",
-        "rev", "reverend", "father", "sister", "brother",
-        "king", "queen", "prince", "princess", "duke", "duchess",
+        "mr",
+        "mrs",
+        "ms",
+        "miss",
+        "mister",
+        "madam",
+        "madame",
+        "dr",
+        "doctor",
+        "prof",
+        "professor",
+        "sir",
+        "dame",
+        "lord",
+        "lady",
+        "capt",
+        "captain",
+        "col",
+        "colonel",
+        "gen",
+        "general",
+        "lt",
+        "lieutenant",
+        "sgt",
+        "sergeant",
+        "insp",
+        "inspector",
+        "det",
+        "detective",
+        "officer",
+        "rev",
+        "reverend",
+        "father",
+        "sister",
+        "brother",
+        "king",
+        "queen",
+        "prince",
+        "princess",
+        "duke",
+        "duchess",
     }
 )
 
@@ -42,6 +76,7 @@ class KnownCharacter:
 
     id: UUID
     name: str
+    explicit_aliases: tuple[str, ...] = ()
 
     @property
     def aliases(self) -> tuple[str, ...]:
@@ -53,11 +88,9 @@ class KnownCharacter:
         an unknown name. Honorifics are stripped, because "Mr" is not what anyone is called.
         """
         parts = [part for part in self.name.split() if part]
-        meaningful = [
-            part for part in parts if part.strip(".,").casefold() not in HONORIFICS
-        ]
+        meaningful = [part for part in parts if part.strip(".,").casefold() not in HONORIFICS]
 
-        candidates = [self.name]
+        candidates = [self.name, *self.explicit_aliases]
         if len(meaningful) > 1:
             candidates.append(meaningful[-1])
             candidates.append(meaningful[0])
@@ -71,7 +104,9 @@ class KnownCharacter:
     def name_tokens(self) -> frozenset[str]:
         """Every word of the full name, so matching one form does not leave the others looking
         like strangers."""
-        return frozenset(self.name.split())
+        return frozenset(
+            word for name in (self.name, *self.explicit_aliases) for word in name.split()
+        )
 
 
 @dataclass(frozen=True, slots=True)

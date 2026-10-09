@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 
-const storyKeys = new Set(['story', 'chapters', 'scenes', 'acts', 'beats', 'threads', 'characters', 'relationships', 'arcs', 'locations', 'events', 'progress', 'health', 'ladder', 'brief', 'timeline', 'content', 'annotations', 'scene-links', 'suggestions', 'observations', 'mentions', 'continuity', 'location-usage', 'ai-runs', 'ai-observations', 'ai-context', 'versions', 'reading-document', 'shared-document', 'story-shares'])
+const storyKeys = new Set(['story', 'chapters', 'scenes', 'acts', 'beats', 'threads', 'characters', 'relationships', 'arcs', 'locations', 'events', 'progress', 'health', 'ladder', 'brief', 'timeline', 'content', 'annotations', 'scene-links', 'suggestions', 'observations', 'mentions', 'continuity', 'location-usage', 'ai-runs', 'ai-observations', 'ai-context', 'versions', 'reading-document', 'shared-document', 'story-shares', 'authorship'])
 
 export function useStoryLiveUpdates(storyId: string, shared = false, enabled = true) {
   const qc = useQueryClient()

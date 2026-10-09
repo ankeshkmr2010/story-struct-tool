@@ -26,6 +26,7 @@ from storytool.domain.narrative.prose_controller import (
 )
 from storytool.domain.noticing.controller import NoticingController
 from storytool.domain.story.analysis_controller import StoryAnalysisController
+from storytool.domain.story.authorship import AuthorshipController
 from storytool.domain.story.controller import StoryController
 from storytool.domain.story.sharing import (
     SharedStoriesController,
@@ -73,6 +74,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             AIController,
             StoryVersionController,
             StoryController,
+            AuthorshipController,
             StoryShareController,
             SharedStoriesController,
             StoryReaderController,

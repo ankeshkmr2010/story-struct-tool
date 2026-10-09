@@ -43,7 +43,10 @@ class PassResult:
 async def run_noticing_pass(
     session: AsyncSession, graph: StoryGraph, noticer: object
 ) -> PassResult:
-    known_characters = tuple(KnownCharacter(id=c.id, name=c.name) for c in graph.characters)
+    known_characters = tuple(
+        KnownCharacter(id=c.id, name=c.name, explicit_aliases=tuple(c.aliases or ()))
+        for c in graph.characters
+    )
     known_beats = tuple(
         KnownBeat(id=b.id, label=b.label, description=b.description) for b in graph.beats
     )

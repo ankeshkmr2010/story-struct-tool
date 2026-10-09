@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type TimelineEntry } from '../api/client'
+import { EventDelete } from './EventDelete'
 import { AddForm, InlineNumber, InlineSelect, InlineText } from './fields'
 
 const entryKey = (entry: TimelineEntry) => `${entry.kind}:${entry.id}`
@@ -125,6 +126,7 @@ export function StoryTimeline({ storyId, onOpenScene }: {
               {selected.chapter_title && <p className="text-xs text-slate-500 dark:text-slate-400">Chapter: {selected.chapter_title}</p>}
               {selected.arc_stages?.length > 0 && <p className="text-xs text-violet-700 dark:text-violet-300">Arc advancing: {selected.arc_stages.join(' · ')}</p>}
               {selected.reading_label && <p className="text-xs text-violet-700 dark:text-violet-300">{selected.is_flashback ? 'Revealed in a flashback' : 'Told'}: {selected.reading_label}</p>}
+              {selected.kind === 'event' && <EventDelete storyId={storyId} eventId={selected.id} title={selected.title} onDeleted={() => { setSelectedKey(null); refresh() }} />}
               {selected.scene_id && <button type="button" onClick={() => onOpenScene(selected.scene_id!)} className="text-sm text-sky-700 dark:text-sky-300 underline">{selected.kind === 'scene' ? 'Open scene editor' : 'Open linked scene'} →</button>}
               {edit.isError && <p role="alert" className="text-xs text-red-600 dark:text-red-300">Could not save this change. Please try again.</p>}
             </div>

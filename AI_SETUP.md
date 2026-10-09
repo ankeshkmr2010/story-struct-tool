@@ -285,3 +285,20 @@ unplaced event as simultaneous at position zero.
 The in-app adapters use the [Claude Messages tool API](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
 and [OpenAI Responses function calling](https://developers.openai.com/api/docs/guides/function-calling).
 They do not run a coding agent's shell or file tools on behalf of app users.
+
+
+### Reference fields, authorship, and safe deletion
+
+Use description and aliases for character identity, relation_to_protagonist for a plain
+reference, notes for working notes, and voice_notes for voice. minor is a supported role.
+Only protagonists, antagonists, and positive/negative arcs require want/need for completeness.
+Wounds are optional. Story fields world_rules, style_rules, thematic_statement, motifs and
+notes keep reference material out of premise; scenes have notes separate from summary.
+Private notes are excluded from shared reading and imports.
+
+If you already know the entity IDs and intent, call get_story_fingerprint rather than the
+full health/context read to refresh the write guard. Existing guards from context remain valid.
+Delete uses {op:"delete", entity:"event", ref:"<owned UUID>", data:{}} inside a staged
+proposal. Explain its impact and obtain the author's approval before applying. Story deletion
+is not a proposal operation. Applied deletes preserve a recovery version; undo refuses later
+edits. Field authorship is recorded from authenticated writes, not claimed model instructions.

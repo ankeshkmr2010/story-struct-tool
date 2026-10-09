@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import CompletableMixin, StoryToolBase
@@ -21,6 +22,11 @@ class Story(StoryToolBase, CompletableMixin):
         DateTime(timezone=True), default=None, index=True
     )
     premise: Mapped[str | None] = mapped_column(Text, default=None)
+    thematic_statement: Mapped[str | None] = mapped_column(Text, default=None)
+    motifs: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
+    world_rules: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
+    style_rules: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
+    notes: Mapped[str | None] = mapped_column(Text, default=None)
     genre: Mapped[str | None] = mapped_column(String(120), default=None)
     pov_style: Mapped[str | None] = mapped_column(String(40), default=None)
     structure_framework: Mapped[str] = mapped_column(

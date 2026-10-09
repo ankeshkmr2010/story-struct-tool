@@ -188,6 +188,16 @@ async def execute_proposal(
     await owned_story(db, story_id, user_id)
     refs: dict[str, tuple[str, UUID]] = {}
     inverse: list[dict[str, Any]] = []
+    if any(operation.op == "delete" for operation in proposal.operations):
+        from storytool.domain.versioning.service import full_state
+
+        inverse.append(
+            {
+                "op": "restore_deleted_graph",
+                "entity": "story",
+                "state": await full_state(db, story_id),
+            }
+        )
     created = [operation for operation in proposal.operations if operation.op == "create"]
     for operation in created:
         if operation.entity not in ENTITIES or operation.entity == "story":
@@ -272,6 +282,19 @@ async def execute_proposal(
 
     for operation in proposal.operations:
         if operation.op == "create":
+            continue
+        if operation.op == "delete":
+            if operation.entity not in ENTITIES or operation.entity == "story" or operation.data:
+                raise ClientException(
+                    detail=(
+                        "Delete an existing entity by UUID with empty data; "
+                        "whole-story deletion is not an agent operation"
+                    )
+                )
+            identifier = await resolve(operation.entity, operation.ref)
+            record = await owned_entity(db, operation.entity, identifier, story_id)
+            await db.delete(record)
+            await db.flush()
             continue
         if operation.op == "write_prose":
             if operation.entity != "scene" or set(operation.data) != {
@@ -418,6 +441,12 @@ def restore_value(column: Any, value: Any) -> Any:
 
 
 async def undo_operations(db: AsyncSession, story_id: UUID, inverse: list[dict[str, Any]]) -> None:
+    recovery = next((item for item in inverse if item["op"] == "restore_deleted_graph"), None)
+    if recovery:
+        from storytool.domain.versioning.service import restore_state
+
+        await restore_state(db, story_id, recovery["state"])
+        return
     for operation in reversed(inverse):
         kind = operation["entity"]
         if operation["op"] == "restore_link":

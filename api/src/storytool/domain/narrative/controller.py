@@ -231,6 +231,7 @@ class SceneController(Controller):
         scene = await fetch_or_404(scenes, "scene", id=scene_id, story_id=story_id)
         user_id = request.scope["state"]["storytool_user_id"]
         title = scene.title or "Untitled scene"
+        request.scope["state"]["explicit_deletion_checkpoint"] = True
         await checkpoint(
             db_session, story_id, user_id, f"Before deleting scene: {title}"[:200], "recovery"
         )
