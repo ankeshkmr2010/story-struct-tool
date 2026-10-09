@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api, type Story } from '../api/client'
+import { StorySharing } from '../components/StorySharing'
 
 function CompletenessBar({ story }: { story: Story }) {
   const { is_complete, missing, ratio } = story.completeness
@@ -42,6 +43,7 @@ export default function StoryList() {
 
   const stories = useQuery({ queryKey: ['stories'], queryFn: api.listStories })
   const trash = useQuery({ queryKey: ['trashed-stories'], queryFn: api.listTrashedStories })
+  const shared = useQuery({ queryKey: ['shared-stories'], queryFn: api.listSharedStories })
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ['stories'] })
     void qc.invalidateQueries({ queryKey: ['trashed-stories'] })
@@ -138,17 +140,19 @@ export default function StoryList() {
                 <CompletenessBar story={story} />
               </div>
             </div>
-            {showTrash ? <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => restore.mutate(story.id)} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm disabled:opacity-50">Restore</button><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => { purge.reset(); setPurgeConfirmation(''); setPendingPurge(story) }} className="text-xs text-red-700 dark:text-red-300">Delete permanently</button></div> : <button
+            {showTrash ? <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => restore.mutate(story.id)} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm disabled:opacity-50">Restore</button><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => { purge.reset(); setPurgeConfirmation(''); setPendingPurge(story) }} className="text-xs text-red-700 dark:text-red-300">Delete permanently</button></div> : <div className="story-card-actions"><StorySharing storyId={story.id} title={story.title} /><button
               type="button"
               aria-label={`Delete ${story.title}`}
               onClick={() => { remove.reset(); setPendingDelete(story) }}
               className="story-delete-button ml-3 shrink-0"
             >
               Delete
-            </button>}
+            </button></div>}
           </li>
         ))}
       </ul>
+
+      {!showTrash && <section className="shared-library" aria-labelledby="shared-library-title"><h2 id="shared-library-title">Shared with you</h2><p className="writer-help">Read stories shared with your sign-in email. Authors decide whether you can import an independent copy.</p>{shared.isPending && <p className="writer-help">Loading shared stories…</p>}{shared.isError && <p role="alert" className="writer-error">{(shared.error as Error).message}</p>}{shared.data?.length === 0 && <p className="writer-help">No stories have been shared with you yet.</p>}<ul className="story-library">{shared.data?.map(item => <li key={item.story_id} className="story-card"><div><Link className="story-card-title" to={`/shared/${item.story_id}`}>{item.title}</Link><p className="writer-help">By {item.owner_name} · {item.allow_import ? 'Read and import' : 'Read only'}</p></div><Link className="share-story-button" to={`/shared/${item.story_id}`}>Read story</Link></li>)}</ul></section>}
 
       {showTrash && trash.isPending && <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">Loading Trash…</p>}
       {(trash.isError || restore.isError) && <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-300">{String(trash.error ?? restore.error)}</p>}

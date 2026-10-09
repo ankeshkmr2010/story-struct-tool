@@ -241,6 +241,9 @@ class StoryAccessMiddleware:
             story_match = _STORY_PATH.match(path)
             arc_match = _ARC_PATH.match(path)
             if story_match:
+                if delegated and "/shares" in path:
+                    await _reject(send, 403, "Manage sharing in StoryTool's browser interface")
+                    return
                 try:
                     story_id = UUID(story_match.group(1))
                 except ValueError:

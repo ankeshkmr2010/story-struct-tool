@@ -14,6 +14,7 @@ import { StoryTimeline } from '../components/StoryTimeline'
 import { AuthoringAssistant } from '../components/AuthoringAssistant'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
+import { StorySharing } from '../components/StorySharing'
 // Lazy: CodeMirror is the largest dependency in the app and is only needed once the
 // author reaches level 8, so it should not sit in the initial bundle.
 const SceneEditor = lazy(() =>
@@ -236,6 +237,7 @@ function Workspace() {
             Export .md
           </a>
           <StoryVersions storyId={storyId} />
+          <StorySharing storyId={storyId} title={story.data.title} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} />
           <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             Mode
             <select

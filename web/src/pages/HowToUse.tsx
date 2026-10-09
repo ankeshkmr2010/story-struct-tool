@@ -26,6 +26,7 @@ const SECTIONS = [
   ['time', 'Story time and flashbacks'],
   ['feedback', 'What the tool tells you'],
   ['writing', 'Write, Focus, and exporting'],
+  ['sharing', 'Sharing and reading stories'],
 ] as const
 
 const LEVELS: readonly (readonly [string, string])[] = [
@@ -327,7 +328,16 @@ export default function HowToUse() {
               </p>
             </Section>
 
-            <Section id="writing" eyebrow="07" title="Write, Design, and your writing flow">
+            <Section id="sharing" eyebrow="07" title="Share a story, keep control of your draft">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Item title="Share an individual story">Choose Share on a library card or in the story header. Enter the recipient’s StoryTool sign-in email. Read only is the default; choose Read and import a copy if you want them to have an editable independent draft. Copy the reader link and send it yourself. No email is sent automatically.</Item>
+                <Item title="Read stories shared with you">Open Shared with you in your library, or follow the reader link while signed in with the authorized email. The separate reader shows the manuscript with chapter navigation and a timeline. Context shows linked beats, arc stages, characters, and places without editing controls.</Item>
+                <Item title="Import only when permitted">If the author allows it, choose Import a copy and confirm. The copy includes current prose, structure, arcs, and timeline links, starts its own version history, and belongs to your account. Changes to either draft do not sync. Private annotations, past versions, and AI conversations aren’t shared or imported.</Item>
+                <Item title="Change or revoke access">Open Share again to change a recipient’s permission or revoke access. The reader shows the author’s current saved draft; Refresh story loads newer changes. Moving the original to Trash hides it from recipients until restored. Revoking or deleting the original does not remove copies already imported.</Item>
+              </div>
+            </Section>
+
+            <Section id="writing" eyebrow="08" title="Write, Design, and your writing flow">
               <div className="grid gap-5 sm:grid-cols-2">
                 <Item title="Draft in the editor">
                   Open a story’s <strong className="font-medium">Write</strong> tab and start

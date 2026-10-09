@@ -1,10 +1,11 @@
 import { Link, NavLink, Outlet, Route, Routes, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import Landing from './pages/Landing'
 import { ThemeProvider, ThemeToggle } from './components/Theme'
 import { AccountMenu, AuthGate } from './components/AuthGate'
 import StoryList from './pages/StoryList'
 import StoryWorkspace from './pages/StoryWorkspace'
+const SharedStoryReader = lazy(() => import('./pages/SharedStoryReader'))
 import HowToUse from './pages/HowToUse'
 import UserSettings from './pages/UserSettings'
 import OAuthConsent from './pages/OAuthConsent'
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/settings" element={<UserSettings />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/stories/:storyId" element={<StoryWorkspace />} />
+        <Route path="/shared/:storyId" element={<Suspense fallback={<p className="p-8">Loading reader…</p>}><SharedStoryReader /></Suspense>} />
       </Route>
     </Routes>
     </ThemeProvider>

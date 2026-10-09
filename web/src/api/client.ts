@@ -7,6 +7,9 @@ type S = components['schemas']
 export type Story = S['StoryOut']
 export type StoryCreate = S['StoryCreate']
 export type StoryUpdate = S['StoryUpdate']
+export type StoryShare = S['ShareOut']
+export type SharedStory = S['SharedStoryOut']
+export type SharedDocument = S['SharedDocumentOut']
 export type Completeness = S['CompletenessOut']
 export type AuthUser = S['UserOut']
 export type AuthConfig = S['AuthConfigOut']
@@ -76,6 +79,13 @@ const patch = <T,>(path: string, body: unknown) =>
   request<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 
 export const api = {
+  listShares: (id: string) => request<StoryShare[]>(`/api/stories/${id}/shares`),
+  shareStory: (id: string, recipient_email: string, allow_import: boolean) =>
+    request<StoryShare>(`/api/stories/${id}/shares`, { method: 'PUT', body: JSON.stringify({ recipient_email, allow_import }) }),
+  revokeShare: (id: string, shareId: string) => request<void>(`/api/stories/${id}/shares/${shareId}`, { method: 'DELETE' }),
+  listSharedStories: () => request<SharedStory[]>('/api/shared-stories'),
+  readSharedStory: (id: string) => request<SharedDocument>(`/api/shared-stories/${id}`),
+  importSharedStory: (id: string, expected_fingerprint: string) => post<Story>(`/api/shared-stories/${id}/import`, { expected_fingerprint }),
   getOAuthConsent: (id: string) => request<{ client_name: string; redirect_host: string; requested_scopes: string[]; expires_at: string }>(`/api/mcp/consent/${encodeURIComponent(id)}`),
   decideOAuthConsent: (id: string, data: { story_id: string | null; scopes: string[]; deny: boolean }) => post<{ redirect_url: string }>(`/api/mcp/consent/${encodeURIComponent(id)}`, data),
   listOAuthGrants: () => request<OAuthGrant[]>('/api/mcp/grants'),
