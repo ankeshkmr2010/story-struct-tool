@@ -39,7 +39,7 @@ def test_frontend_routes_support_reload_without_serving_api_or_private_files(tmp
     (tmp_path / ".env").write_text("not-a-real-secret")
     app = Litestar(route_handlers=[frontend_router(tmp_path)])
     with TestClient(app) as client:
-        for route in ["/", "/settings", "/how-to-use", f"/stories/{uuid4()}"]:
+        for route in ["/", "/settings", "/how-to-use", f"/stories/{uuid4()}", f"/shared/{uuid4()}"]:
             response = client.get(route)
             assert response.status_code == 200
             assert response.headers["content-type"].startswith("text/html")
