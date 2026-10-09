@@ -142,9 +142,9 @@ export default function StoryList() {
               type="button"
               aria-label={`Delete ${story.title}`}
               onClick={() => { remove.reset(); setPendingDelete(story) }}
-              className="ml-3 shrink-0 text-xs text-slate-400 hover:text-red-600 dark:hover:text-red-300"
+              className="story-delete-button ml-3 shrink-0"
             >
-              delete
+              Delete
             </button>}
           </li>
         ))}

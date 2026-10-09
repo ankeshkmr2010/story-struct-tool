@@ -162,6 +162,22 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .story-card > div:first-child { flex: 1; min-width: 0; }
 .story-card-title { overflow-wrap: anywhere; }
 .story-card > button { padding: 8px; border-radius: 6px; }
+.story-card > .story-delete-button {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+}
+.story-card > .story-delete-button:hover {
+  border-color: #b54747;
+  color: #b54747;
+}
+:root[data-theme="dark"] .story-card > .story-delete-button:hover {
+  border-color: #f0a0a0;
+  color: #f0a0a0;
+}
 .workspace-shortcut { border: 1px solid var(--line); background: var(--accent-soft); color: var(--accent); }
 .workspace-shortcut:hover { border-color: var(--accent); }
 @media (max-width: 900px) { .account-dropdown .account-name { display: none; } }
