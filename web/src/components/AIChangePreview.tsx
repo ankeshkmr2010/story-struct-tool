@@ -33,12 +33,17 @@ export function AIChangePreview({ run, entities = {} }: { run: AIRun; entities?:
         {operations.slice(0, 4).map((operation, index) => {
           const title = labels.get(operation.ref) ?? operation.entity.replaceAll('_', ' ')
           const name = operation.entity.replaceAll('_', ' ')
-          const verbs = run.status === 'applied' ? { create: 'Added', update: 'Updated', link: 'Connected', unlink: 'Disconnected', write_prose: 'Rewrote prose in' } : { create: 'Add', update: 'Update', link: 'Connect', unlink: 'Disconnect', write_prose: 'Rewrite prose in' }
+          const verbs: Record<string, string> = run.status === 'applied' ? { create: 'Added', update: 'Updated', link: 'Connected', unlink: 'Disconnected', write_prose: 'Rewrote prose in', patch_prose: 'Edited passage in', patch_list: 'Edited list in', delete: 'Deleted' } : { create: 'Add', update: 'Update', link: 'Connect', unlink: 'Disconnect', write_prose: 'Rewrite prose in', patch_prose: 'Edit passage in', patch_list: 'Edit list in', delete: 'Delete' }
           const verb = verbs[operation.op]
-          const changes = Object.entries(operation.data).filter(([field]) => !['name', 'title', 'label', 'from_id', 'to_id', 'expected_content_hash'].includes(field)).slice(0, 2)
+          const changes = Object.entries(operation.data).filter(([field]) => !['name', 'title', 'label', 'from_id', 'to_id', 'expected_content_hash', 'expected_field_hash'].includes(field)).slice(0, 2)
           return <li key={index} className="text-xs leading-5 text-slate-700 dark:text-slate-200">
             <p className="font-medium">{verb} {name}{title !== name ? `: ${title}` : ''}{operation.op === 'link' || operation.op === 'unlink' ? ` · ${short(operation.data.from_id)} → ${short(operation.data.to_id)}` : ''}</p>
             {changes.length > 0 && <p className="break-words text-slate-500 dark:text-slate-400">{changes.map(([field, value]) => {
+              if (field === 'edits' && Array.isArray(value)) return value.slice(0, 2).map(edit => {
+                const action = edit.action ?? 'replace'
+                if (operation.op === 'patch_prose') return `${action}: “${short(edit.find)}” → ${edit.replace === '' ? 'delete passage' : `“${short(edit.replace)}”`}`
+                return `${action}${edit.index == null ? '' : ` item ${edit.index + 1}`}: ${edit.expected_value == null ? '' : short(edit.expected_value) + ' → '}${action === 'remove' ? 'remove item' : action === 'move' ? `position ${Number(edit.to_index) + 1}` : short(edit.value)}`
+              }).join(' · ')
               const before = rows.get(operation.ref)?.[field]
               const label = field === 'sort_ordinal' || field === 'story_time_ordinal' ? 'World time' : field === 'sort_key' ? 'Reading order' : field.replace(/_id$/, '').replaceAll('_', ' ')
               return `${label}: ${run.status === 'proposed' && operation.op === 'update' ? short(before) + ' → ' : ''}${short(value)}`

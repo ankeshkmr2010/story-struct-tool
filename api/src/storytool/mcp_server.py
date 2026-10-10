@@ -203,6 +203,11 @@ do not use the item count as an order key. Keep chapter numbers consistent with 
 World time and reading order are independent. Editorial judgments need evidence and alternatives.
 Stage changes with the base_fingerprint from your context read, inspect the proposal, and apply
 only work the author requested. Prose changes use write_prose and expected_content_hash.
+Prefer patch_prose for small changes: expected_content_hash and edits with exact unique find,
+replace, and optional action insert_before/insert_after. All prose targets use the original text.
+Use read_list_field then patch_list for world_rules/style_rules/motifs or character/glossary
+aliases. Supply expected_field_hash; indices are zero-based and applied sequentially.
+Existing-item edits need expected_value. Never guess a hash or use fuzzy matching.
 Never claim a proposal was applied until apply returns applied. Stale plans must be rebuilt.
 Undo refuses later edits. Version restore replaces the whole draft: preview, get explicit author
 authorization, then use its exact fingerprint; a recovery checkpoint preserves the previous draft.
@@ -368,6 +373,17 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         if entity == "arc_stage":
             result["proposal_note"] = "Creates additionally need arc_id: UUID or new:arc reference"
         if entity == "scene":
+            result["prose_patch"] = {
+                "op": "patch_prose",
+                "entity": "scene",
+                "ref": "owned scene UUID",
+                "data": {
+                    "expected_content_hash": "from read_scene_prose",
+                    "edits": [{"find": "exact unique passage", "replace": "new passage"}],
+                },
+                "note": "Empty replace deletes. Optional action: insert_before or insert_after. "
+                "All matches use original text; overlapping/ambiguous edits are rejected.",
+            }
             result["prose_operation"] = {
                 "op": "write_prose",
                 "entity": "scene",
@@ -379,6 +395,34 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
                 "note": "Full-scene replacement, not a partial chunk patch",
             }
         result["reference_note"] = "Use owned UUIDs or new: references; ownership is set by server"
+        from storytool.domain.ai.patches import LIST_FIELDS
+
+        if entity in LIST_FIELDS:
+            result["list_patch"] = {
+                "op": "patch_list",
+                "fields": sorted(LIST_FIELDS[entity]),
+                "data": {
+                    "field": "one listed field",
+                    "expected_field_hash": "from read_list_field",
+                    "edits": [
+                        {
+                            "action": "replace",
+                            "index": 0,
+                            "expected_value": "old item",
+                            "value": "new item",
+                        }
+                    ],
+                },
+                "actions": {
+                    "append": ["value"],
+                    "insert": ["index", "value"],
+                    "replace": ["index", "expected_value", "value"],
+                    "remove": ["index", "expected_value"],
+                    "move": ["index", "expected_value", "to_index"],
+                },
+                "note": "Indices follow earlier edits in this batch. Move destination is indexed "
+                "after removing the source. Hash protects the whole original list.",
+            }
         if "sort_key" in update.model_fields:
             result["ordering_note"] = (
                 "sort_key determines order. Append with max(existing sort_key) + 100, "
@@ -541,6 +585,34 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         This does not judge whether prose has explained a term adequately.
         """
         return {"entries": await call(ctx, "/glossary", story_id=story_id)}
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def read_list_field(
+        ctx: Context,
+        entity: str,
+        entity_id: UUID,
+        field: str,
+        offset: int = 0,
+        limit: int = 50,
+        story_id: UUID | None = None,
+    ) -> dict[str, Any]:
+        """Read indexed string-list items and the exact hash required by patch_list.
+
+        Supports story world_rules/style_rules/motifs and character/glossary_entry aliases.
+        Pagination keeps indices from the full list. The server calculates the hash.
+        """
+        from urllib.parse import urlencode
+
+        query = urlencode(
+            {
+                "entity": entity,
+                "entity_id": str(entity_id),
+                "field": field,
+                "offset": offset,
+                "limit": limit,
+            }
+        )
+        return await call(ctx, "/ai/list-field?" + query, story_id=story_id)
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_story_findings(

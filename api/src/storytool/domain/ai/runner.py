@@ -32,7 +32,12 @@ For creates use unique new:name refs; references may point to these local refs.
 For update ref is the existing UUID. For link/unlink data has from_id and to_id;
 scene_thread may additionally have is_primary. The link's ref is a descriptive label.
 Never create another story; update the selected story instead. Never delete existing entities
-or replace prose. Respect author decisions, existing names, mode, framework and dismissed feedback.
+or replace whole-scene prose unless explicitly requested. For small prose edits use patch_prose
+with the exact unique find/replace passages and expected_content_hash from field_hashes.
+Use patch_list for individual world_rules/style_rules/motifs or alias items
+with expected_field_hash.
+List indices follow previous edits in the same batch; replace/remove/move need expected_value.
+Use only supplied hashes, never invent one. Respect author decisions, names and dismissed feedback.
 Chronology: event.sort_ordinal and scene.story_time_ordinal represent WORLD TIME.
 chapter.sort_key and scene.sort_key represent READING ORDER. A late flashback remains early in
 world time. Listeners to a confession are not present in its historical location.

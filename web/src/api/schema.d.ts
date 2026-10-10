@@ -296,6 +296,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/ai/list-field": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a patchable list and its hash */
+        get: operations["ApiStoriesStoryIdAiListFieldReadListField"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/agent-tokens/{token_id}": {
         parameters: {
             query?: never;
@@ -2330,7 +2347,7 @@ export interface components {
         /** Operation */
         Operation: {
             /** @enum {string} */
-            op: "create" | "update" | "link" | "unlink" | "write_prose" | "delete";
+            op: "create" | "update" | "link" | "unlink" | "write_prose" | "patch_prose" | "patch_list" | "delete";
             /** @enum {string} */
             entity: "story" | "character" | "relationship" | "arc" | "arc_stage" | "act" | "beat" | "thread" | "location" | "glossary_entry" | "chapter" | "scene" | "event" | "chapter_beat" | "scene_beat" | "scene_thread" | "scene_arc_advance" | "event_character" | "scene_presence";
             ref: string;
@@ -3528,6 +3545,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdAiListFieldReadListField: {
+        parameters: {
+            query: {
+                entity: string;
+                entity_id: string;
+                field: string;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Bad request syntax or unsupported method */

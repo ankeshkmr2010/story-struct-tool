@@ -283,7 +283,7 @@ class StoryAccessMiddleware:
                         )
                     )
                     if run and any(
-                        op.get("op") == "write_prose"
+                        op.get("op") in {"write_prose", "patch_prose"}
                         or (op.get("op") == "delete" and op.get("entity") in {"scene", "chapter"})
                         for op in run.proposal.get("operations", [])
                     ):
@@ -319,7 +319,7 @@ class StoryAccessMiddleware:
                                 and any(
                                     isinstance(op, dict)
                                     and (
-                                        op.get("op") == "write_prose"
+                                        op.get("op") in {"write_prose", "patch_prose"}
                                         or (
                                             op.get("op") == "delete"
                                             and op.get("entity") in {"scene", "chapter"}

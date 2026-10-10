@@ -44,7 +44,9 @@ class ConnectionOut(BaseModel):
 
 class Operation(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    op: Literal["create", "update", "link", "unlink", "write_prose", "delete"]
+    op: Literal[
+        "create", "update", "link", "unlink", "write_prose", "patch_prose", "patch_list", "delete"
+    ]
     entity: Entity
     ref: str = Field(min_length=1, max_length=100)
     data: dict[str, Any]

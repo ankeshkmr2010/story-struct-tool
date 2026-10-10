@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.ai.commands import ENTITIES, LINKS, fingerprint, json_value, snapshot
 from storytool.domain.ai.models import StoryObservation
+from storytool.domain.ai.patches import LIST_FIELDS, field_hash
 from storytool.domain.analysis import load_graph_by_id
 from storytool.domain.continuity import run_continuity
 from storytool.domain.graph import StoryGraph
@@ -122,6 +123,25 @@ async def story_context(
         "story_id": str(story_id),
         "base_fingerprint": fingerprint(state),
         "entities": entities,
+        "field_hashes": [
+            {"entity": kind, "id": row["id"], "field": field, "hash": field_hash(row[field])}
+            for kind, fields in LIST_FIELDS.items()
+            for row in state[kind]
+            for field in sorted(fields)
+        ]
+        + (
+            [
+                {
+                    "entity": "scene",
+                    "id": row["id"],
+                    "field": "content",
+                    "hash": prose_revision(row.get("content")),
+                }
+                for row in state["scene"]
+            ]
+            if include_prose
+            else []
+        ),
         "create_schemas": create_schemas,
         "update_schemas": {
             kind: schema.model_json_schema() for kind, (_, _, schema) in ENTITIES.items()

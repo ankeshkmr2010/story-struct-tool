@@ -12,6 +12,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from storytool.domain.ai.patches import LIST_FIELDS, patch_list, patch_prose
 from storytool.domain.ai.schemas import Proposal
 from storytool.domain.cast import models as cast_models
 from storytool.domain.cast import schemas as cast_schemas
@@ -299,17 +300,26 @@ async def execute_proposal(
             await db.delete(record)
             await db.flush()
             continue
-        if operation.op == "write_prose":
-            if operation.entity != "scene" or set(operation.data) != {
-                "content",
-                "expected_content_hash",
-            }:
+        if operation.op in {"write_prose", "patch_prose"}:
+            fields = (
+                {"edits", "expected_content_hash"}
+                if operation.op == "patch_prose"
+                else {
+                    "content",
+                    "expected_content_hash",
+                }
+            )
+            if operation.entity != "scene" or set(operation.data) != fields:
                 raise ClientException(
                     detail="Prose edits need a scene, content and expected_content_hash"
                 )
             identifier = await resolve("scene", operation.ref)
             scene = await owned_entity(db, "scene", identifier, story_id)
-            content = operation.data["content"]
+            content = (
+                patch_prose(scene.content or "", operation.data)
+                if operation.op == "patch_prose"
+                else operation.data["content"]
+            )
             if not isinstance(content, str) or len(content) > 200000:
                 raise ClientException(
                     detail="Prose content must be text, at most 200000 characters"
@@ -350,6 +360,26 @@ async def execute_proposal(
             await save_scene_content(
                 db, scene, content, snapshot=True, snapshot_label="Before assistant prose edit"
             )
+            continue
+        if operation.op == "patch_list":
+            field = operation.data.get("field")
+            if not isinstance(field, str) or field not in LIST_FIELDS.get(operation.entity, set()):
+                raise ClientException(detail="This field does not support list patches")
+            identifier = await resolve(operation.entity, operation.ref)
+            record = await owned_entity(db, operation.entity, identifier, story_id)
+            field, value = patch_list(getattr(record, field), operation.data)
+            update = operation.model_copy(update={"op": "update", "data": {field: value}})
+            values = await validated_data(update, False)
+            inverse.append(
+                {
+                    "op": "update",
+                    "entity": operation.entity,
+                    "id": str(identifier),
+                    "data": {field: getattr(record, field)},
+                }
+            )
+            setattr(record, field, values[field])
+            await db.flush()
             continue
         if operation.op == "update":
             if operation.entity not in ENTITIES:

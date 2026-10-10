@@ -18,6 +18,7 @@ from storytool.domain.ai.commands import (
     execute_proposal,
     fingerprint,
     matches_fingerprint,
+    owned_entity,
     owned_story,
     snapshot,
     undo_operations,
@@ -26,6 +27,7 @@ from storytool.domain.ai.context import story_context
 from storytool.domain.ai.credentials import decrypt_key, encrypt_key
 from storytool.domain.ai.diagnostics import response_log
 from storytool.domain.ai.models import AgentToken, AIConnection, AIRun
+from storytool.domain.ai.patches import LIST_FIELDS, field_hash
 from storytool.domain.ai.schemas import (
     ConnectionOut,
     ConnectionSave,
@@ -100,6 +102,39 @@ class AIController(Controller):
     path = "/api"
     tags = ["authoring-ai"]
     signature_namespace = {"AsyncSession": AsyncSession}
+
+    @get("/stories/{story_id:uuid}/ai/list-field", summary="Read a patchable list and its hash")
+    async def read_list_field(
+        self,
+        request: Request,
+        db_session: AsyncSession,
+        story_id: UUID,
+        entity: str,
+        entity_id: UUID,
+        field: str,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> dict[str, Any]:
+        await owned_story(db_session, story_id, actor(request))
+        if field not in LIST_FIELDS.get(entity, set()) or offset < 0 or not 1 <= limit <= 200:
+            raise ClientException(detail="Choose a patchable list field and valid pagination")
+        record = await owned_entity(db_session, entity, entity_id, story_id)
+        value = getattr(record, field)
+        items = value or []
+        return {
+            "entity": entity,
+            "entity_id": str(entity_id),
+            "field": field,
+            "field_hash": field_hash(value),
+            "is_unset": value is None,
+            "items": [
+                {"index": i, "value": v}
+                for i, v in enumerate(items)
+                if offset <= i < offset + limit
+            ],
+            "total": len(items),
+            "next_offset": offset + limit if offset + limit < len(items) else None,
+        }
 
     @get("/stories/{story_id:uuid}/ai/fingerprint")
     async def state_fingerprint(
@@ -352,7 +387,30 @@ class AIController(Controller):
             )
         result, inverse = await execute_proposal(db_session, story_id, actor(request), proposal)
         row.result, row.inverse, row.status = result, inverse, "applied"
-        row.applied_fingerprint = fingerprint(await snapshot(db_session, story_id))
+        state = await snapshot(db_session, story_id)
+        row.applied_fingerprint = fingerprint(state)
+        hashes = {}
+        for operation in proposal.operations:
+            if operation.op not in {"write_prose", "patch_prose", "patch_list"}:
+                continue
+            identifier = str(UUID(result.get("created", {}).get(operation.ref, operation.ref)))
+            record = next((r for r in state[operation.entity] if r["id"] == identifier), None)
+            if record is None:
+                continue
+            field = "content" if operation.op != "patch_list" else operation.data["field"]
+            hashes[(operation.entity, identifier, field)] = {
+                "entity": operation.entity,
+                "id": identifier,
+                "field": field,
+                "hash": hashlib.sha256((record[field] or "").encode()).hexdigest()
+                if field == "content"
+                else field_hash(record[field]),
+            }
+        row.result = {
+            **result,
+            "base_fingerprint": row.applied_fingerprint,
+            "updated_hashes": list(hashes.values()),
+        }
         await db_session.flush()
         return RunOut.model_validate(row)
 
