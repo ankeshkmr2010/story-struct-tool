@@ -438,7 +438,10 @@ export default function HowToUse() {
                 <Item title="Take the words with you">
                   <strong className="font-medium">Export .md</strong> compiles the manuscript
                   in reading order. Undrafted chapters are marked rather than skipped, so the
-                  export doubles as a to-do list.
+                  export doubles as a to-do list. <strong className="font-medium">Export .docx</strong> gives
+                  the same manuscript as a Word document. <strong className="font-medium">Backup</strong> downloads
+                  everything, including notes and scene revisions; use Restore backup in your library to bring
+                  it back as a new story.
                 </Item>
               </div>
             </Section>

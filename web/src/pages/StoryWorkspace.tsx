@@ -249,6 +249,19 @@ function Workspace() {
           >
             Export .md
           </a>
+          <a
+            href={api.manuscriptDocxUrl(storyId)}
+            className="rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950"
+          >
+            Export .docx
+          </a>
+          <a
+            href={api.backupUrl(storyId)}
+            title="Everything in this story, including notes and scene revisions. Restore it from your library."
+            className="rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950"
+          >
+            Backup
+          </a>
           <StoryVersions storyId={storyId} />
           <AuthorshipPanel storyId={storyId} />
           <StorySharing storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} />

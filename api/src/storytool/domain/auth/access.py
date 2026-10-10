@@ -216,6 +216,9 @@ class StoryAccessMiddleware:
                             "/revisions",
                             "/preview",
                             "/reader",
+                            "/manuscript",
+                            "/manuscript.docx",
+                            "/backup",
                         )
                     )
                     or suffix in {"/ai/runs", "/ai/observations"}

@@ -12,13 +12,13 @@ from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint, select, te
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
-from uuid_utils import uuid7
 
 from storytool.db.base import StoryToolBase
 from storytool.domain.ai.commands import ENTITIES, LINKS, owned_story
 from storytool.domain.analysis import load_graph_by_id
 from storytool.domain.auth.models import User
 from storytool.domain.narrative.prose import compile_manuscript
+from storytool.domain.story.backup import rehome
 from storytool.domain.story.models import Story
 from storytool.domain.story.schemas import StoryOut
 from storytool.domain.versioning.service import (
@@ -150,25 +150,10 @@ async def import_graph(db: AsyncSession, source: Story, user_id: UUID) -> Story:
     created = Story(title=source.title, user_id=user_id, parent_story_id=source.id)
     db.add(created)
     await db.flush()
-    identifiers = {row["id"]: str(uuid7()) for kind in ENTITIES for row in state[kind]}
-    identifiers[str(source.id)] = str(created.id)
-    for kind, (model, _, _) in ENTITIES.items():
-        for row in state[kind]:
-            row["id"] = identifiers[row["id"]]
-            for column in model.__table__.c:
-                if column.foreign_keys and row.get(column.name) in identifiers:
-                    row[column.name] = identifiers[row[column.name]]
-    for kind, (table, _, _, _, _) in LINKS.items():
-        for row in state[kind]:
-            if "id" in row:
-                row["id"] = str(uuid7())
-            for column in table.c:
-                if column.foreign_keys and row.get(column.name) in identifiers:
-                    row[column.name] = identifiers[row[column.name]]
     # Only the visible current graph is copied, never private notes, past prose, or findings.
     for kind in EXTRAS:
         state[kind] = []
-    await restore_state(db, created.id, state)
+    await restore_state(db, created.id, rehome(state, created.id))
     await db.refresh(created)
     from storytool.domain.story.authorship import record_changes
 

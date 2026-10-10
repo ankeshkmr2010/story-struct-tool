@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api, type Story } from '../api/client'
+import { errorText } from '../api/errors'
 import { StorySharing } from '../components/StorySharing'
 
 function CompletenessBar({ story }: { story: Story }) {
@@ -53,6 +54,19 @@ export default function StoryList() {
     mutationFn: () => api.createStory({ title }),
     onSuccess: () => {
       setTitle('')
+      void qc.invalidateQueries({ queryKey: ['stories'] })
+    },
+  })
+
+  const backupInput = useRef<HTMLInputElement>(null)
+  const importBackup = useMutation({
+    mutationFn: async (file: File) => {
+      let backup: unknown
+      try { backup = JSON.parse(await file.text()) } catch { throw new Error('That file is not a StoryTool backup.') }
+      return api.importBackup(backup)
+    },
+    onSuccess: (story) => {
+      setMessage(`“${story.title}” restored from backup as a new story.`)
       void qc.invalidateQueries({ queryKey: ['stories'] })
     },
   })
@@ -115,7 +129,28 @@ export default function StoryList() {
         >
           Create
         </button>
+        <button
+          type="button"
+          disabled={importBackup.isPending}
+          onClick={() => backupInput.current?.click()}
+          title="Restore a StoryTool backup file as a new story"
+          className="rounded border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm disabled:opacity-40"
+        >
+          {importBackup.isPending ? 'Restoring…' : 'Restore backup'}
+        </button>
+        <input
+          ref={backupInput}
+          type="file"
+          accept=".json,application/json"
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            e.target.value = ''
+            if (file) importBackup.mutate(file)
+          }}
+        />
       </form>
+      {importBackup.isError && <p role="alert" className="mt-2 text-sm text-red-700 dark:text-red-300">{errorText(importBackup.error)}</p>}
       </>}
 
       {stories.isPending && <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">Loading…</p>}
