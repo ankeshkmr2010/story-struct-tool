@@ -7,6 +7,7 @@ from uuid import UUID
 
 from litestar import Controller, Request, delete, get, post, put
 from litestar.exceptions import ClientException, NotFoundException
+from litestar.params import Parameter
 from pydantic import ValidationError
 from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
@@ -215,15 +216,18 @@ class AIController(Controller):
 
     @get("/stories/{story_id:uuid}/ai/runs")
     async def list_runs(
-        self, request: Request, db_session: AsyncSession, story_id: UUID
+        self,
+        request: Request,
+        db_session: AsyncSession,
+        story_id: UUID,
+        status: str | None = Parameter(default=None, description="Only runs with this status."),
+        limit: int = Parameter(default=30, ge=1, le=200),
     ) -> list[RunOut]:
+        query = select(AIRun).where(AIRun.story_id == story_id, AIRun.user_id == actor(request))
+        if status:
+            query = query.where(AIRun.status == status)
         rows = (
-            await db_session.execute(
-                select(AIRun)
-                .where(AIRun.story_id == story_id, AIRun.user_id == actor(request))
-                .order_by(AIRun.created_at.desc())
-                .limit(30)
-            )
+            await db_session.execute(query.order_by(AIRun.created_at.desc()).limit(limit))
         ).scalars()
         runs = [RunOut.model_validate(row) for row in rows]
         response_log(

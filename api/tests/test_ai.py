@@ -267,6 +267,11 @@ async def test_chat_remembers_advice_and_populates_only_when_applied(
     assert (await client.post(f"{base}/ai/runs/{second.json()['id']}/apply")).status_code == 201
     assert (await client.get(base + "/characters")).json()[0]["name"] == "Maya"
     assert len((await client.get(base + "/ai/runs")).json()) == 2
+    applied = (await client.get(base + "/ai/runs", params={"status": "applied"})).json()
+    assert [row["id"] for row in applied] == [second.json()["id"]]
+    assert applied[0]["created_at"]
+    assert len((await client.get(base + "/ai/runs", params={"limit": 1})).json()) == 1
+    assert (await client.get(base + "/ai/runs", params={"limit": 0})).status_code == 400
     other = await story(client, "Other conversation")
     invalid = await client.post(
         f"/api/stories/{other}/ai/propose",

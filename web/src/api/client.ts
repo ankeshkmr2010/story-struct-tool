@@ -106,7 +106,8 @@ export const api = {
   saveAIConnection: (body: { provider: AIConnection['provider']; model: string; api_key: string }) => request<AIConnection>('/api/ai/connections', { method: 'PUT', body: JSON.stringify(body) }),
   testAIConnection: (id: string) => post<{ connected: boolean }>(`/api/ai/connections/${id}/test`),
   deleteAIConnection: (id: string) => request<void>(`/api/ai/connections/${id}`, { method: 'DELETE' }),
-  listAIRuns: (id: string) => request<AIRun[]>(`/api/stories/${id}/ai/runs`),
+  listAIRuns: (id: string, status?: string, limit = 30) =>
+    request<AIRun[]>(`/api/stories/${id}/ai/runs?limit=${limit}${status ? `&status=${status}` : ''}`),
   listAIObservations: (id: string) => request<AIObservation[]>(`/api/stories/${id}/ai/observations`),
   getAIContext: (id: string) => request<{ entities: Record<string, Record<string, unknown>[]> }>(`/api/stories/${id}/ai/context`),
   proposeAIChanges: (id: string, body: S['PromptRequest']) => post<AIRun>(`/api/stories/${id}/ai/propose`, body),

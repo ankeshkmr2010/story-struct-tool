@@ -2466,6 +2466,8 @@ export interface components {
                 [key: string]: unknown;
             };
             evidence: components["schemas"]["ObservationOut"][];
+            /** Format: date-time */
+            created_at: string;
         };
         /** SaveResultOut */
         SaveResultOut: {
@@ -3454,7 +3456,11 @@ export interface operations {
     };
     ApiStoriesStoryIdAiRunsListRuns: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Only runs with this status. */
+                status?: string | null;
+                limit?: number;
+            };
             header?: never;
             path: {
                 story_id: string;

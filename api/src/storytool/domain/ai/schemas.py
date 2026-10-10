@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
@@ -102,6 +103,7 @@ class RunOut(BaseModel):
     result: dict[str, Any] | None
     usage: dict[str, Any]
     evidence: list[ObservationOut]
+    created_at: datetime
 
 
 class TokenRequest(BaseModel):
