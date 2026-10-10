@@ -13,6 +13,7 @@ import { AddForm, Chip, DeleteButton, InlineNumber, InlineSelect, InlineText } f
 import { SceneDetails } from '../components/SceneDetails'
 import { StoryTimeline } from '../components/StoryTimeline'
 import { AuthoringAssistant } from '../components/AuthoringAssistant'
+import { StoryGrid } from '../components/StoryGrid'
 import { ProposalInbox, isTestRun } from '../components/ProposalInbox'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
@@ -36,6 +37,7 @@ const TIMELINE_VIEW = 101
 const ASSISTANT_VIEW = 102
 const GLOSSARY_VIEW = 103
 const INBOX_VIEW = 104
+const GRID_VIEW = 105
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
@@ -286,9 +288,10 @@ function Workspace() {
       <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design" hidden={tab !== 'design'}>
 
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setLevel(TIMELINE_VIEW)} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
-      <div className={`mt-6 grid grid-cols-1 gap-5 md:grid-cols-[170px_minmax(0,1fr)] ${level === TIMELINE_VIEW || level === ASSISTANT_VIEW || level === INBOX_VIEW ? 'xl:grid-cols-[180px_minmax(0,1fr)]' : 'xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
+      <div className={`mt-6 grid grid-cols-1 gap-5 md:grid-cols-[170px_minmax(0,1fr)] ${level === TIMELINE_VIEW || level === ASSISTANT_VIEW || level === INBOX_VIEW || level === GRID_VIEW ? 'xl:grid-cols-[180px_minmax(0,1fr)]' : 'xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
         <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
           <button type="button" onClick={() => setLevel(TIMELINE_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === TIMELINE_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Story timeline →</button>
+          <button type="button" onClick={() => setLevel(GRID_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === GRID_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Story grid →</button>
           <button type="button" onClick={() => setLevel(INBOX_VIEW)} className={`mb-4 flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-medium ${level === INBOX_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Agent changes →{pendingRuns > 0 && <span aria-label={`${pendingRuns} pending`} className="rounded-full bg-amber-500 px-2 text-xs font-semibold text-white">{pendingRuns}</span>}</button>
           <button type="button" onClick={() => setLevel(ASSISTANT_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === ASSISTANT_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Story assistant →</button>
           <button type="button" onClick={() => setLevel(GLOSSARY_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === GLOSSARY_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Glossary →</button>
@@ -322,6 +325,7 @@ function Workspace() {
           {level === TIMELINE_VIEW && <StoryTimeline storyId={storyId} onOpenScene={(id) => { setSceneId(id || null); setLevel(8) }} />}
           {level === ASSISTANT_VIEW && <AuthoringAssistant storyId={storyId} />}
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
+          {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
           {level === GLOSSARY_VIEW && <GlossaryPanel storyId={storyId} />}
           {level === 1 && (
             <Panel title="Premise" hint="The story's starting point and settings.">
@@ -484,7 +488,7 @@ function Workspace() {
           )}
         </section>
 
-        {level !== TIMELINE_VIEW && level !== ASSISTANT_VIEW && level !== INBOX_VIEW && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
+        {level !== TIMELINE_VIEW && level !== ASSISTANT_VIEW && level !== INBOX_VIEW && level !== GRID_VIEW && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
           <InsightsPanel storyId={storyId} health={health.data} />
         </aside>}
       </div>
