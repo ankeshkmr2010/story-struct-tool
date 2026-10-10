@@ -85,6 +85,9 @@ class Chapter(StoryToolBase, CompletableMixin):
     number: Mapped[int] = mapped_column(Integer, default=1)
     title: Mapped[str | None] = mapped_column(String(200), default=None)
     summary: Mapped[str | None] = mapped_column(Text, default=None)
+    epigraph: Mapped[str | None] = mapped_column(Text, default=None)
+    opening_note: Mapped[str | None] = mapped_column(Text, default=None)
+    closing_note: Mapped[str | None] = mapped_column(Text, default=None)
 
     pov_character_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("character.id", ondelete="SET NULL"), default=None

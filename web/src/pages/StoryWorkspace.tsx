@@ -381,6 +381,7 @@ function Workspace() {
                     <label className="text-xs text-slate-500 dark:text-slate-400">Emotional shift from<InlineText value={chapter.emotional_shift_from} placeholder="from" onSave={(emotional_shift_from) => updateChapter.mutateAsync({ emotional_shift_from })} /></label>
                     <label className="text-xs text-slate-500 dark:text-slate-400">Emotional shift to<InlineText value={chapter.emotional_shift_to} placeholder="to" onSave={(emotional_shift_to) => updateChapter.mutateAsync({ emotional_shift_to })} /></label>
                   </div>
+                  {(['epigraph', 'opening_note', 'closing_note'] as const).map(field => <label key={field} className="mt-2 block text-xs text-slate-500 dark:text-slate-400">{field === 'epigraph' ? 'Epigraph' : field === 'opening_note' ? 'Opening note' : 'Closing note'}<InlineText value={chapter[field]} placeholder="Optional reader-facing chapter text" onSave={value => updateChapter.mutateAsync({ [field]: value })} multiline /></label>)}
                   <label className="mt-2 block text-xs text-slate-500 dark:text-slate-400">Summary<InlineText value={chapter.summary} placeholder="What does this chapter do?" onSave={(summary) => updateChapter.mutateAsync({ summary })} multiline /></label>
                   </div>
                 </details>

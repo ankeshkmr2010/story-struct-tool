@@ -193,6 +193,8 @@ and operations. Never omit the fingerprint or substitute names for IDs. Use data
 data.to_id for link operations. A new: reference must be declared by a create in this same batch.
 Respect plotter/pantser/hybrid mode, author canon and dismissed notices. Placeholders are valid.
 Story.blurb is the reader-facing pitch; premise is the working story idea. Keep them separate.
+Chapter.epigraph is an opening quote; opening_note and closing_note are reader-facing flavour
+text before and after the chapter prose. Keep them separate from the planning summary.
 Use glossary_entry for terminology: term, aliases, definition and first_explained_scene_id.
 Query it with query_story_entities, get its schema, then stage create/update/delete operations.
 Explanation scene references must belong to this story. Do not invent explanations in prose.

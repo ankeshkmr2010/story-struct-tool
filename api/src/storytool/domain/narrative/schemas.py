@@ -14,6 +14,9 @@ class ChapterCreate(BaseModel):
     number: int = Field(default=1, ge=1)
     title: str | None = Field(default=None, max_length=200)
     summary: str | None = None
+    epigraph: str | None = None
+    opening_note: str | None = None
+    closing_note: str | None = None
     act_id: UUID | None = None
     pov_character_id: UUID | None = None
     emotional_shift_from: str | None = Field(default=None, max_length=120)
@@ -26,6 +29,9 @@ class ChapterUpdate(BaseModel):
     number: int | None = Field(default=None, ge=1)
     title: str | None = Field(default=None, max_length=200)
     summary: str | None = None
+    epigraph: str | None = None
+    opening_note: str | None = None
+    closing_note: str | None = None
     act_id: UUID | None = None
     pov_character_id: UUID | None = None
     emotional_shift_from: str | None = Field(default=None, max_length=120)
@@ -40,6 +46,9 @@ class ChapterOut(EntityOut):
     number: int
     title: str | None
     summary: str | None
+    epigraph: str | None
+    opening_note: str | None
+    closing_note: str | None
     pov_character_id: UUID | None
     emotional_shift_from: str | None
     emotional_shift_to: str | None

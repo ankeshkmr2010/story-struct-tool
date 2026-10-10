@@ -390,3 +390,8 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .field-origin-summary { color: var(--muted); font-size: 11px; line-height: 1.6; margin-top: 8px; }
 
 .shared-reader-blurb { max-width: 680px; margin: 12px 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 16px/1.8 Georgia, serif; color: var(--muted); }
+
+.chapter-epigraph { margin: 0 0 2em 15%; font-style: italic; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chapter-flavour { margin: 0 0 2em; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chapter-closing { margin: 2em 0 0; padding-top: 1em; border-top: 1px solid var(--line); }
+.writer-chapter-extras { margin: 20px 0; display: grid; gap: 16px; }

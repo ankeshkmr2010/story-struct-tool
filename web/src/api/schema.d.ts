@@ -1959,6 +1959,9 @@ export interface components {
             number: number;
             title?: string | null;
             summary?: string | null;
+            epigraph?: string | null;
+            opening_note?: string | null;
+            closing_note?: string | null;
             act_id?: string | null;
             pov_character_id?: string | null;
             emotional_shift_from?: string | null;
@@ -1987,6 +1990,9 @@ export interface components {
             number: number;
             title: string | null;
             summary: string | null;
+            epigraph: string | null;
+            opening_note: string | null;
+            closing_note: string | null;
             pov_character_id: string | null;
             emotional_shift_from: string | null;
             emotional_shift_to: string | null;
@@ -2008,6 +2014,9 @@ export interface components {
             number?: number | null;
             title?: string | null;
             summary?: string | null;
+            epigraph?: string | null;
+            opening_note?: string | null;
+            closing_note?: string | null;
             act_id?: string | null;
             pov_character_id?: string | null;
             emotional_shift_from?: string | null;

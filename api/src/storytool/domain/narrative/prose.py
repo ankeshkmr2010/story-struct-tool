@@ -213,6 +213,10 @@ def compile_manuscript(graph: StoryGraph, *, include_unplaced: bool = True) -> s
         if chapter.title:
             heading += f" — {chapter.title}"
         parts.append(heading + "\n")
+        if chapter.epigraph:
+            parts.append("\n".join("> " + line for line in chapter.epigraph.splitlines()) + "\n")
+        if chapter.opening_note:
+            parts.append(chapter.opening_note.strip() + "\n")
 
         scenes = sorted(by_chapter.get(chapter.id, []), key=scene_order_key)
         written = [s for s in scenes if (s.content or "").strip()]
@@ -220,8 +224,10 @@ def compile_manuscript(graph: StoryGraph, *, include_unplaced: bool = True) -> s
             # Say so rather than emitting a silent gap, so the export doubles as a
             # to-do list.
             parts.append(f"*[{len(scenes)} scene(s) not yet drafted]*\n")
-            continue
-        parts.append(SCENE_SEPARATOR.join((s.content or "").strip() for s in written) + "\n")
+        else:
+            parts.append(SCENE_SEPARATOR.join((s.content or "").strip() for s in written) + "\n")
+        if chapter.closing_note:
+            parts.append(chapter.closing_note.strip() + "\n")
 
     unplaced = [s for s in by_chapter.get(None, []) if (s.content or "").strip()]
     if include_unplaced and unplaced:
