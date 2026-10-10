@@ -46,7 +46,11 @@ class Operation(BaseModel):
     model_config = ConfigDict(extra="forbid")
     op: Literal[
         "create", "update", "link", "unlink", "write_prose", "patch_prose", "patch_list", "delete"
-    ]
+    ] = Field(
+        description="Allowed operations: create, update, link, unlink, delete, write_prose, "
+        "patch_prose, patch_list. Prefer patch_prose for small exact-text prose edits "
+        "and patch_list for individual string-list items."
+    )
     entity: Entity
     ref: str = Field(min_length=1, max_length=100)
     data: dict[str, Any]

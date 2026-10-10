@@ -79,3 +79,46 @@ def test_failed_list_batch_does_not_mutate_original() -> None:
             },
         )
     assert original == ["a"]
+
+
+@pytest.mark.parametrize("find,reason", [("typo", "zero matches"), ("a", "multiple matches")])
+def test_patch_error_identifies_edit_and_match_problem(find: str, reason: str) -> None:
+    content = "First. a a"
+    with pytest.raises(PatchConflict) as error:
+        patch_prose(
+            content,
+            prose_data(
+                content,
+                [
+                    {"find": "First.", "text": "Opening."},
+                    {"find": find, "text": "replacement"},
+                ],
+            ),
+        )
+    assert "Edit 2:" in error.value.detail and reason in error.value.detail
+
+
+def test_neutral_text_and_legacy_replace_cannot_both_be_sent() -> None:
+    content = "Hello."
+    assert (
+        patch_prose(
+            content,
+            prose_data(
+                content,
+                [
+                    {"find": "Hello.", "text": " More.", "action": "insert_after"},
+                ],
+            ),
+        )
+        == "Hello. More."
+    )
+    with pytest.raises(ClientException):
+        patch_prose(
+            content,
+            prose_data(
+                content,
+                [
+                    {"find": "Hello.", "text": "One", "replace": "Two"},
+                ],
+            ),
+        )

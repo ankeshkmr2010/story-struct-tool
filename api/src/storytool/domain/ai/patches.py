@@ -5,7 +5,7 @@ import json
 from typing import Literal
 
 from litestar.exceptions import ClientException
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, StrictInt, ValidationError
 
 LIST_FIELDS = {
     "story": {"world_rules", "style_rules", "motifs"},
@@ -27,7 +27,12 @@ def field_hash(value: object) -> str:
 class TextEdit(BaseModel):
     model_config = ConfigDict(extra="forbid")
     find: str = Field(min_length=1, max_length=200000)
-    replace: str = Field(max_length=200000)
+    text: str = Field(
+        max_length=200000,
+        validation_alias=AliasChoices("text", "replace"),
+        description="Replacement or insertion text. Empty text deletes for replace. "
+        "Legacy replace is accepted instead; never send both.",
+    )
     action: Literal["replace", "insert_before", "insert_after"] = "replace"
 
 
@@ -41,14 +46,26 @@ def patch_prose(content: str, data: dict) -> str:
     try:
         patch = ProsePatch.model_validate(data)
     except ValidationError as exc:
-        raise ClientException(detail="Invalid prose patch fields") from exc
+        error = exc.errors()[0]
+        location = error["loc"]
+        if len(location) > 1 and location[0] == "edits" and isinstance(location[1], int):
+            raise ClientException(detail=f"Edit {location[1] + 1}: {error['msg']}") from exc
+        raise ClientException(detail=f"Invalid prose patch: {error['msg']}") from exc
     if hashlib.sha256(content.encode()).hexdigest() != patch.expected_content_hash:
         raise PatchConflict(detail="Scene prose changed. Read it again before patching.")
     ranges: list[tuple[int, int, str]] = []
-    for edit in patch.edits:
+    for index, edit in enumerate(patch.edits, 1):
         start = content.find(edit.find)
-        if start < 0 or content.find(edit.find, start + 1) >= 0:
-            raise PatchConflict(detail="Each find/anchor must match exactly once. Add context.")
+        if start < 0:
+            raise PatchConflict(
+                detail=f"Edit {index}: zero matches for find/anchor. "
+                "Check spelling, punctuation, whitespace and the current prose."
+            )
+        if content.find(edit.find, start + 1) >= 0:
+            raise PatchConflict(
+                detail=f"Edit {index}: multiple matches for find/anchor. "
+                "Include surrounding text to identify one passage."
+            )
         end = start + len(edit.find)
         if edit.action == "insert_before":
             end = start
@@ -61,8 +78,10 @@ def patch_prose(content: str, data: dict) -> str:
             if left == right:
                 overlap = overlap or start <= left <= end
             if overlap:
-                raise ClientException(detail="Prose edits overlap or share an insertion point.")
-        ranges.append((start, end, edit.replace))
+                raise ClientException(
+                    detail=f"Edit {index}: overlaps an earlier edit or shares its insertion point."
+                )
+        ranges.append((start, end, edit.text))
     result = content
     for start, end, replacement in sorted(ranges, reverse=True):
         result = result[:start] + replacement + result[end:]

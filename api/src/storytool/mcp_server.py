@@ -17,6 +17,7 @@ from pydantic import Field
 
 from storytool.config import get_settings
 from storytool.domain.ai.commands import ENTITIES, LINKS
+from storytool.domain.ai.patches import ListPatch, ProsePatch
 from storytool.domain.ai.schemas import Proposal
 from storytool.domain.auth.access import _reject
 from storytool.domain.auth.oauth import SCOPES, Delegation, delegated_access, issuer
@@ -83,6 +84,16 @@ class StageProposal(Proposal):
 
 
 TOOL_USAGE = {
+    "allowed_operations": [
+        "create",
+        "update",
+        "link",
+        "unlink",
+        "delete",
+        "write_prose",
+        "patch_prose",
+        "patch_list",
+    ],
     "templates_not_ready_to_submit": True,
     "template_note": "Replace every <...> placeholder with values from fresh tool results. "
     "Examples illustrate the call shape; do not create example characters unless requested.",
@@ -92,7 +103,7 @@ TOOL_USAGE = {
         "get_entity_schema(entity): use supported fields; check link endpoint types.",
         "stage_story_changes(story_id, proposal): include fingerprint INSIDE proposal.",
         "Inspect the proposal; apply_story_changes(story_id, run_id) only for requested edits.",
-        "After applying, use returned real UUIDs and get_story_fingerprint before the next batch.",
+        "After applying, use result.base_fingerprint and result.updated_hashes for the next batch.",
     ],
     "reference_rules": [
         "story_id is an existing story UUID, never a title, email, or new: reference.",
@@ -180,6 +191,106 @@ TOOL_USAGE = {
     },
 }
 
+TOOL_USAGE["patch_rules"] = {
+    "prose": "Use patch_prose with expected_content_hash and edits: find, text, optional action "
+    "replace (default), insert_before, or insert_after. Empty text deletes for replace. "
+    "All edits match the original scene; every anchor must be unique and edits cannot overlap. "
+    "Legacy replace is accepted instead of text; never send both.",
+    "lists": "Use read_list_field and patch_list with expected_field_hash. Actions are append, "
+    "insert, replace, remove, move; existing-item edits require expected_value. Zero-based "
+    "indices follow earlier edits; move destination is indexed after removing the source.",
+}
+TOOL_USAGE["patch_schemas"] = {
+    "patch_prose": ProsePatch.model_json_schema(),
+    "patch_list": ListPatch.model_json_schema(),
+}
+TOOL_USAGE["examples"].update(
+    {
+        "read_prose_for_patch": {
+            "name": "read_scene_prose",
+            "arguments": {
+                "story_id": "<story UUID>",
+                "scene_id": "<scene UUID>",
+            },
+        },
+        "patch_prose": {
+            "name": "stage_story_changes",
+            "arguments": {
+                "story_id": "<story UUID>",
+                "proposal": {
+                    "summary": "Edit a passage and insert a sentence",
+                    "base_fingerprint": "<fresh story fingerprint>",
+                    "operations": [
+                        {
+                            "op": "patch_prose",
+                            "entity": "scene",
+                            "ref": "<scene UUID>",
+                            "data": {
+                                "expected_content_hash": "<content_hash from read_scene_prose>",
+                                "edits": [
+                                    {
+                                        "find": "<exact unique passage>",
+                                        "text": "<replacement text>",
+                                    },
+                                    {
+                                        "action": "insert_after",
+                                        "find": "<another unique anchor>",
+                                        "text": "<text to insert, including desired whitespace>",
+                                    },
+                                ],
+                            },
+                        }
+                    ],
+                },
+            },
+        },
+        "read_list_for_patch": {
+            "name": "read_list_field",
+            "arguments": {
+                "story_id": "<story UUID>",
+                "entity": "story",
+                "entity_id": "<story UUID>",
+                "field": "world_rules",
+            },
+        },
+        "patch_list": {
+            "name": "stage_story_changes",
+            "arguments": {
+                "story_id": "<story UUID>",
+                "proposal": {
+                    "summary": "Change one world rule",
+                    "base_fingerprint": "<fresh fingerprint>",
+                    "operations": [
+                        {
+                            "op": "patch_list",
+                            "entity": "story",
+                            "ref": "<story UUID>",
+                            "data": {
+                                "field": "world_rules",
+                                "expected_field_hash": "<field_hash from read_list_field>",
+                                "edits": [
+                                    {
+                                        "action": "replace",
+                                        "index": 0,
+                                        "expected_value": "<current item at index 0>",
+                                        "value": "<revised rule>",
+                                    }
+                                ],
+                            },
+                        }
+                    ],
+                },
+            },
+        },
+    }
+)
+TOOL_USAGE["error_recovery"].update(
+    {
+        "zero_matches": "The numbered edit found no passage; correct its literal find text.",
+        "multiple_matches": "The numbered edit is ambiguous; add surrounding context to find.",
+    }
+)
+
 INSTRUCTIONS = """StoryTool is an author's story graph and writing workspace.
 First get_connection and read the selected story. Its permission scopes govern access
 to the selected story or the explicitly authorized account library. Never request provider keys.
@@ -204,7 +315,7 @@ World time and reading order are independent. Editorial judgments need evidence 
 Stage changes with the base_fingerprint from your context read, inspect the proposal, and apply
 only work the author requested. Prose changes use write_prose and expected_content_hash.
 Prefer patch_prose for small changes: expected_content_hash and edits with exact unique find,
-replace, and optional action insert_before/insert_after. All prose targets use the original text.
+text, and optional action insert_before/insert_after. All prose targets use the original text.
 Use read_list_field then patch_list for world_rules/style_rules/motifs or character/glossary
 aliases. Supply expected_field_hash; indices are zero-based and applied sequentially.
 Existing-item edits need expected_value. Never guess a hash or use fuzzy matching.
@@ -379,9 +490,12 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
                 "ref": "owned scene UUID",
                 "data": {
                     "expected_content_hash": "from read_scene_prose",
-                    "edits": [{"find": "exact unique passage", "replace": "new passage"}],
+                    "edits": [{"find": "exact unique passage", "text": "new passage"}],
                 },
-                "note": "Empty replace deletes. Optional action: insert_before or insert_after. "
+                "schema": ProsePatch.model_json_schema(),
+                "note": "Empty text deletes for replace. "
+                "Legacy replace is accepted instead of text. "
+                "Optional action: insert_before or insert_after. "
                 "All matches use original text; overlapping/ambiguous edits are rejected.",
             }
             result["prose_operation"] = {
@@ -649,7 +763,10 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     async def stage_story_changes(
         ctx: Context, proposal: StageProposal, story_id: UUID | None = None
     ) -> dict[str, Any]:
-        """Validate/stage creates, updates, links, unlinks, deletes and hash-guarded write_prose.
+        """Stage allowed operations: create, update, link, unlink, delete, write_prose, patch_prose,
+        patch_list. Prefer patch_prose for small prose edits: expected_content_hash plus edits
+        with exact find and text; optional action replace, insert_before or insert_after.
+        Use read_list_field plus patch_list for individual list items with expected_field_hash.
         Use get_story_fingerprint for a fresh base_fingerprint if context is already known.
         Delete uses an owned UUID, empty data, and requires reviewing destructive impact.
         No edits happen until apply; deletion creates a recovery version.

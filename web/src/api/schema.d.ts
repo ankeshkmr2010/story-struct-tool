@@ -2346,7 +2346,10 @@ export interface components {
         };
         /** Operation */
         Operation: {
-            /** @enum {string} */
+            /**
+             * @description Allowed operations: create, update, link, unlink, delete, write_prose, patch_prose, patch_list. Prefer patch_prose for small exact-text prose edits and patch_list for individual string-list items.
+             * @enum {string}
+             */
             op: "create" | "update" | "link" | "unlink" | "write_prose" | "patch_prose" | "patch_list" | "delete";
             /** @enum {string} */
             entity: "story" | "character" | "relationship" | "arc" | "arc_stage" | "act" | "beat" | "thread" | "location" | "glossary_entry" | "chapter" | "scene" | "event" | "chapter_beat" | "scene_beat" | "scene_thread" | "scene_arc_advance" | "event_character" | "scene_presence";

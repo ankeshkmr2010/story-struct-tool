@@ -41,7 +41,7 @@ export function AIChangePreview({ run, entities = {} }: { run: AIRun; entities?:
             {changes.length > 0 && <p className="break-words text-slate-500 dark:text-slate-400">{changes.map(([field, value]) => {
               if (field === 'edits' && Array.isArray(value)) return value.slice(0, 2).map(edit => {
                 const action = edit.action ?? 'replace'
-                if (operation.op === 'patch_prose') return `${action}: “${short(edit.find)}” → ${edit.replace === '' ? 'delete passage' : `“${short(edit.replace)}”`}`
+                if (operation.op === 'patch_prose') return `${action}: “${short(edit.find)}” → ${(edit.text ?? edit.replace) === '' ? 'delete passage' : `“${short(edit.text ?? edit.replace)}”`}`
                 return `${action}${edit.index == null ? '' : ` item ${edit.index + 1}`}: ${edit.expected_value == null ? '' : short(edit.expected_value) + ' → '}${action === 'remove' ? 'remove item' : action === 'move' ? `position ${Number(edit.to_index) + 1}` : short(edit.value)}`
               }).join(' · ')
               const before = rows.get(operation.ref)?.[field]
