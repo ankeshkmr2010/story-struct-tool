@@ -9,6 +9,7 @@ import { orderChapters, orderScenes } from '../api/ordering'
 import { ChapterBriefCard } from './ChapterBriefCard'
 import { SceneDetails } from './SceneDetails'
 import { SceneDelete } from './SceneDelete'
+import { SceneRevisions } from './SceneRevisions'
 import { InlineText } from './fields'
 import { useTheme } from './theme-context'
 import { flushWriter, writerDraft, writerHasUnsaved } from './writerDraft'
@@ -151,6 +152,7 @@ export function StoryWriter({ storyId, registerFlush }: { storyId: string; regis
         <div className="writer-context-heading"><h2>Writing context</h2><button type="button" onClick={() => setShowContext(false)} aria-label="Close writing context">×</button></div>
         {brief.data && <ChapterBriefCard brief={brief.data} />}
         {contextScene ? <SceneDetails key={contextScene.id} storyId={storyId} scene={contextScene} onDeleted={() => { setActiveScene(null); refresh() }} /> : <p>Start writing to add scene details. Beats, characters, and locations are optional.</p>}
+        {contextScene && <SceneRevisions key={`rev-${contextScene.id}`} storyId={storyId} sceneId={contextScene.id} flush={() => flushWriter(prefix)} onRestored={text => writerDraft(prefix + contextScene.id, text).useLatest(text)} />}
         <p className="writer-help">Use Design for the full outline, timeline, arcs, and story assistant.</p>
       </aside>}
     </div>
