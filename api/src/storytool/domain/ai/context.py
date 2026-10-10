@@ -22,8 +22,11 @@ def prose_revision(content: str | None) -> str:
 
 def reader_revision(graph: StoryGraph, scene: Scene) -> str:
     value = {
+        "reader_rules_version": 2,
         "prose": prose_revision(scene.content),
-        "characters": sorted((str(item.id), item.name) for item in graph.characters),
+        "characters": sorted(
+            (str(item.id), item.name, tuple(item.aliases or ())) for item in graph.characters
+        ),
         "beats": sorted((str(item.id), item.label, item.description) for item in graph.beats),
         "locations": sorted(
             (str(item.id), item.name, item.description) for item in graph.locations

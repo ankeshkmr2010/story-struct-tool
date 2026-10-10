@@ -24,7 +24,7 @@ from storytool.domain.noticing.schemas import (
     SuggestionOut,
     SuggestionUpdate,
 )
-from storytool.domain.noticing.service import run_noticing_pass
+from storytool.domain.noticing.service import current_unknown_names, run_noticing_pass
 
 
 class NoticingController(Controller):
@@ -67,7 +67,22 @@ class NoticingController(Controller):
         if not include_dismissed:
             stmt = stmt.where(Suggestion.is_dismissed.is_(False))
         rows = await db_session.execute(stmt.order_by(Suggestion.created_at.desc()))
-        return [SuggestionOut.model_validate(r) for r in rows.scalars().all()]
+        records = list(rows.scalars())
+        lexical = [
+            r
+            for r in records
+            if r.code == "character.recurring_unknown_name"
+            and not r.is_dismissed
+            and r.noticed_by != "claude"
+        ]
+        supported = await current_unknown_names(db_session, story_id) if lexical else set()
+        return [
+            SuggestionOut.model_validate(r).model_copy(update={"noticed_by": "deterministic"})
+            if r in lexical
+            else SuggestionOut.model_validate(r)
+            for r in records
+            if r not in lexical or r.subject_key in supported
+        ]
 
     @patch(
         "/stories/{story_id:uuid}/suggestions/{suggestion_id:uuid}",

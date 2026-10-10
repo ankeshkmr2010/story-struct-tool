@@ -173,6 +173,51 @@ NOT_NAMES = frozenset(
 
 EVIDENCE_WINDOW = 60
 
+# These are sentence/dialogue starters or forms of address, not inferred identities.
+# Explicitly defined characters still match normally, even if their name is in this set.
+NOT_NAMES = NOT_NAMES | frozenset(
+    {
+        "Did",
+        "Does",
+        "Doing",
+        "Was",
+        "Were",
+        "Could",
+        "Would",
+        "Should",
+        "Can",
+        "Good",
+        "Put",
+        "Next",
+        "Nobody",
+        "Without",
+        "Feet",
+        "Father",
+        "Mother",
+        "Brother",
+        "Sister",
+        "Grandfather",
+        "Grandmother",
+        "Thank",
+        "Thanks",
+        "Well",
+        "Come",
+        "Hold",
+        "Keep",
+        "Look",
+        "Listen",
+        "Welcome",
+        "Please",
+        "Let",
+        "Leave",
+    }
+)
+PERSON_ACTION = re.compile(
+    r"\s+(?:was|is|were|said|asked|replied|whispered|shouted|waited|argued|stood|sat|"
+    r"walked|watched|turned|nodded|smiled|laughed|ran|came|went|looked|thought|felt)\b",
+    re.IGNORECASE,
+)
+
 
 def _trim_stopwords(run: str) -> str:
     """Strip leading and trailing non-name words from a capitalised run.
@@ -214,9 +259,7 @@ def unambiguous_aliases(
 
     resolved: dict[UUID, tuple[str, ...]] = {}
     for character in known_characters:
-        unique = tuple(
-            alias for alias in character.aliases if counts[alias.casefold()] == 1
-        )
+        unique = tuple(alias for alias in character.aliases if counts[alias.casefold()] == 1)
         resolved[character.id] = unique or (character.name,)
     return resolved
 
@@ -239,6 +282,10 @@ class DeterministicNoticer:
         characters: list[CharacterNotice] = []
         matched_words: set[str] = set()
         aliases = unambiguous_aliases(known_characters)
+        known_words = {word.casefold() for c in known_characters for word in c.name_tokens}
+        place_names = tuple(
+            re.sub(r"\s*\([^)]*\)", "", place.name).strip().casefold() for place in known_locations
+        )
 
         for character in known_characters:
             for alias in aliases[character.id]:
@@ -266,6 +313,31 @@ class DeterministicNoticer:
             # stranger -- e.g. "Maya Okonkwo" when both tokens matched above.
             if all(word in matched_words for word in candidate.split()):
                 continue
+            folded = candidate.casefold()
+            # Existing places and their displayed English names are not new people.
+            if any(
+                folded == place.removeprefix("the ")
+                or place.removeprefix("the ").startswith(folded + " ")
+                for place in place_names
+            ):
+                continue
+            # Family plurals (the Mengs) and known aliases are not extra cast members.
+            if all(
+                word.casefold() in known_words or word.casefold().removesuffix("s") in known_words
+                for word in candidate.split()
+            ):
+                continue
+            # Do not extract "Don" from "Don't" or "Forty" from "Forty-one".
+            tail = prose[match.end() :]
+            if re.match(r"(?:['\u2019](?:t|re|ve|ll|d|m)\b|-[a-z])", tail):
+                continue
+            if len(candidate.split()) == 1:
+                if re.search(rf"\b{re.escape(folded)}\b", prose):
+                    continue  # The same word is used as an ordinary lowercase word.
+                prefix = prose[: match.start()].rstrip(' \t\r\n"“”\u2018\u2019')
+                starts_sentence = not prefix or prefix[-1] in ".!?"
+                if starts_sentence and not PERSON_ACTION.match(tail):
+                    continue  # Capitalization alone is insufficient at sentence starts.
             unknown[candidate] = UnknownNameNotice(
                 name=candidate, evidence=_sentence_around(prose, match.start())
             )

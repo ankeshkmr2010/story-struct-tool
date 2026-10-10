@@ -130,7 +130,7 @@ class ClaudeNoticer:
             )
         except Exception:
             logger.warning("Claude noticing failed; falling back to deterministic")
-            return await self._degrade(prose, known_characters, known_beats)
+            return await self._degrade(prose, known_characters, known_beats, known_locations)
 
         # A safety decline is expected occasionally on fiction. Degrade, do not fail.
         if getattr(response, "stop_reason", None) == "refusal":
@@ -139,11 +139,11 @@ class ClaudeNoticer:
                 "Claude declined to read a scene (category=%s); using deterministic noticing",
                 getattr(details, "category", None),
             )
-            return await self._degrade(prose, known_characters, known_beats)
+            return await self._degrade(prose, known_characters, known_beats, known_locations)
 
         parsed = getattr(response, "parsed_output", None)
         if parsed is None:
-            return await self._degrade(prose, known_characters, known_beats)
+            return await self._degrade(prose, known_characters, known_beats, known_locations)
 
         return self._resolve(parsed, prose, known_characters, known_beats)
 
@@ -152,9 +152,10 @@ class ClaudeNoticer:
         prose: str,
         known_characters: tuple[KnownCharacter, ...],
         known_beats: tuple[KnownBeat, ...],
+        known_locations: tuple[KnownLocation, ...] = (),
     ) -> SceneNotices:
         return await self._fallback.notice_scene(  # type: ignore[attr-defined]
-            prose, known_characters, known_beats
+            prose, known_characters, known_beats, known_locations
         )
 
     def _resolve(

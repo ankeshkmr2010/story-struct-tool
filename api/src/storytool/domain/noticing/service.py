@@ -63,6 +63,7 @@ async def run_noticing_pass(
     pending_mentions: list[tuple[UUID, UUID]] = []
     scenes_read = 0
     noticed_by = getattr(noticer, "name", "deterministic")
+    sources: set[str] = set()
 
     # Rows the author has already ruled on, so counts reflect their decisions rather than
     # the raw inference.
@@ -87,6 +88,7 @@ async def run_noticing_pass(
         notices = await noticer.notice_scene(  # type: ignore[attr-defined]
             prose, known_characters, known_beats, known_locations
         )
+        sources.add(notices.noticed_by)
         payload = json_value(asdict(notices))
         await session.execute(
             insert(StoryObservation)
@@ -159,6 +161,7 @@ async def run_noticing_pass(
         location_readings=location_readings,
     )
     proposed = propose_suggestions(graph, state)
+    noticed_by = ", ".join(sorted(sources)) if sources else noticed_by
 
     suggestions_added = 0
     if proposed:
@@ -174,7 +177,12 @@ async def run_noticing_pass(
                         "scene_id": s.scene_id,
                         "thread_id": s.thread_id,
                         "subject_key": s.subject_key,
-                        "noticed_by": noticed_by,
+                        "noticed_by": (
+                            "deterministic"
+                            if s.code == "character.recurring_unknown_name"
+                            and sources != {"claude"}
+                            else noticed_by
+                        ),
                     }
                     for s in proposed
                 ]
@@ -204,3 +212,29 @@ async def characters_present(session: AsyncSession, scene_id: UUID) -> list[UUID
         )
     )
     return [row.character_id for row in rows]
+
+
+async def current_unknown_names(session: AsyncSession, story_id: UUID) -> set[str]:
+    """Cheap local revalidation of stored lexical notices; never calls a model."""
+    from collections import Counter
+
+    from storytool.domain.cast.models import Character
+    from storytool.domain.narrative.models import Scene
+    from storytool.domain.noticing.deterministic import DeterministicNoticer
+    from storytool.domain.world.models import Location
+
+    characters = tuple(
+        KnownCharacter(c.id, c.name, tuple(c.aliases or ()))
+        for c in await session.scalars(select(Character).where(Character.story_id == story_id))
+    )
+    locations = tuple(
+        KnownLocation(loc.id, loc.name, loc.description)
+        for loc in await session.scalars(select(Location).where(Location.story_id == story_id))
+    )
+    counts: Counter[str] = Counter()
+    for prose in await session.scalars(select(Scene.content).where(Scene.story_id == story_id)):
+        notices = await DeterministicNoticer().notice_scene(prose or "", characters, (), locations)
+        counts.update({notice.name for notice in notices.unknown_names})
+    from storytool.domain.noticing.suggestions import MIN_SCENES_FOR_UNKNOWN_NAME
+
+    return {name for name, count in counts.items() if count >= MIN_SCENES_FOR_UNKNOWN_NAME}

@@ -191,7 +191,7 @@ class JevNoticer:
         known_locations: tuple[KnownLocation, ...] = (),
     ) -> SceneNotices:
         base: SceneNotices = await self._deterministic.notice_scene(  # type: ignore[attr-defined]
-            prose, known_characters, known_beats
+            prose, known_characters, known_beats, known_locations
         )
         if not prose.strip():
             return replace(base, noticed_by=self.name)

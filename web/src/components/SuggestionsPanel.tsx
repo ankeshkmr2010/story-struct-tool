@@ -46,14 +46,14 @@ export function SuggestionsPanel({ storyId }: { storyId: string }) {
       {noticer.data && (
         <p className="mb-2 text-[11px] text-slate-400">
           {noticer.data.noticer === 'deterministic'
-            ? 'name matching only (no model key set)'
+            ? 'Local name matching · no semantic reader active'
             : `${noticer.data.model} — noticing only, never writing`}
         </p>
       )}
 
       {runPass.data && (
         <p className="mb-2 text-[11px] text-slate-500 dark:text-slate-400">
-          Read {runPass.data.scenes_read} scene
+          Reader: {runPass.data.noticed_by}. Read {runPass.data.scenes_read} scene
           {runPass.data.scenes_read === 1 ? '' : 's'};{' '}
           {runPass.data.suggestions_added === 0
             ? 'nothing new.'
@@ -77,6 +77,7 @@ export function SuggestionsPanel({ storyId }: { storyId: string }) {
           >
             <p className="text-sm text-slate-800 dark:text-slate-100">{suggestion.message}</p>
             <div className="mt-1 flex items-center gap-2">
+              <span className="text-[10px] text-slate-500">{suggestion.noticed_by === 'deterministic' ? 'Local name matcher' : suggestion.noticed_by}</span>
               <span className="font-mono text-[10px] text-slate-400">{suggestion.code}</span>
               <button
                 onClick={() => dismiss.mutate(suggestion.id)}
