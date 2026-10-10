@@ -93,9 +93,17 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) => api.updateScene(storyId, id, body),
     onSuccess: refresh,
   })
+  // Moves show instantly: the cached scene gets its new chapter and sort key, and is rolled back on failure.
   const move = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: { chapter_id: string | null; before_scene_id?: string; after_scene_id?: string } }) => api.moveScene(storyId, id, body),
-    onSuccess: refresh,
+    mutationFn: ({ id, body }: { id: string; body: { chapter_id: string | null; before_scene_id?: string; after_scene_id?: string }; sortKey: number }) => api.moveScene(storyId, id, body),
+    onMutate: async ({ id, body, sortKey }) => {
+      await qc.cancelQueries({ queryKey: ['scenes', storyId] })
+      const previous = qc.getQueryData<Scene[]>(['scenes', storyId])
+      qc.setQueryData<Scene[]>(['scenes', storyId], (current) => current?.map((scene) => scene.id === id ? { ...scene, chapter_id: body.chapter_id, sort_key: sortKey } : scene))
+      return { previous }
+    },
+    onError: (_error, _vars, context) => { if (context?.previous) qc.setQueryData(['scenes', storyId], context.previous) },
+    onSettled: refresh,
   })
   const save = (id: string, field: string) => (value: string | number | null) => update.mutateAsync({ id, body: { [field]: value } })
 
@@ -183,13 +191,23 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
       setEditing(cursor)
     }
   }
+  const over = (id: string) => (event: React.DragEvent) => {
+    if (!dragging) return
+    event.preventDefault()
+    if (dropTarget !== id) setDropTarget(id)
+  }
   const dropOnScene = (target: Scene) => {
-    if (dragging && dragging !== target.id) move.mutate({ id: dragging, body: { chapter_id: target.chapter_id ?? null, before_scene_id: target.id } })
+    if (dragging && dragging !== target.id) {
+      const siblings = orderScenes(all.filter((scene) => (scene.chapter_id ?? null) === (target.chapter_id ?? null) && scene.id !== dragging))
+      const previous = siblings[siblings.findIndex((scene) => scene.id === target.id) - 1]
+      const sortKey = previous ? (previous.sort_key + target.sort_key) / 2 : target.sort_key - 100
+      move.mutate({ id: dragging, body: { chapter_id: target.chapter_id ?? null, before_scene_id: target.id }, sortKey })
+    }
     setDragging(null); setDropTarget(null)
   }
   const dropOnChapter = (group: (typeof groupsAll)[number]) => {
     const last = group.all.filter((scene) => scene.id !== dragging).at(-1)
-    if (dragging) move.mutate({ id: dragging, body: { chapter_id: group.id, ...(last ? { after_scene_id: last.id } : {}) } })
+    if (dragging) move.mutate({ id: dragging, body: { chapter_id: group.id, ...(last ? { after_scene_id: last.id } : {}) }, sortKey: (last?.sort_key ?? 0) + 100 })
     setDragging(null); setDropTarget(null)
   }
 
@@ -223,6 +241,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
           </div>
         </details>
         <button type="button" onClick={() => setPrefs({ collapsed: prefs.collapsed.length ? [] : groupsAll.map((group) => group.key) })} className={toolButton(false)}>{prefs.collapsed.length ? 'Expand' : 'Collapse'} all</button>
+        {move.isPending && <span role="status" className="flex items-center gap-1 text-xs text-slate-500"><span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600 dark:border-slate-600 dark:border-t-slate-200" />Saving order…</span>}
         {agentEdits.size > 0 && <button type="button" onClick={onOpenInbox} className="ml-auto rounded-full border border-[var(--accent)] px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">{agentEdits.size} agent edits since your last visit →</button>}
       </div>
       {scenes.isLoading && <p className="mt-4 text-sm text-slate-500">Loading scenes…</p>}
@@ -248,7 +267,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                   <th
                     colSpan={span}
                     onClick={() => toggleGroup(group.key)}
-                    onDragOver={(event) => { if (dragging) { event.preventDefault(); setDropTarget(group.key) } }}
+                    onDragOver={over(group.key)}
                     onDrop={() => dropOnChapter(group)}
                     aria-expanded={!group.shut}
                     className={`sticky top-8 z-10 cursor-pointer px-2 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300 ${dropTarget === group.key ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700'}`}
@@ -273,7 +292,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                       draggable={!isEditing}
                       onDragStart={() => setDragging(scene.id)}
                       onDragEnd={() => { setDragging(null); setDropTarget(null) }}
-                      onDragOver={(event) => { if (dragging) { event.preventDefault(); setDropTarget(scene.id) } }}
+                      onDragOver={over(scene.id)}
                       onDrop={() => dropOnScene(scene)}
                       onClick={() => { setCursor(scene.id); if (!isEditing) setEditing(scene.id) }}
                       className={[
@@ -281,7 +300,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                         isEditing ? 'bg-slate-50 dark:bg-slate-800/40 [&_select]:w-full [&_select]:max-w-full' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40',
                         cursor === scene.id ? 'outline outline-2 -outline-offset-2 outline-slate-400' : '',
                         dropTarget === scene.id ? 'border-t-2 border-t-emerald-500' : '',
-                        dragging === scene.id ? 'opacity-40' : '',
+                        dragging === scene.id || (move.isPending && move.variables?.id === scene.id) ? 'opacity-40' : '',
                       ].join(' ')}
                     >
                       <td className={`px-2 ${pad} text-xs text-slate-400`}>{numbers.get(scene.id)}</td>
