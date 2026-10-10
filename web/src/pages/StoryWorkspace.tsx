@@ -325,7 +325,7 @@ function Workspace() {
           {level === TIMELINE_VIEW && <StoryTimeline storyId={storyId} onOpenScene={(id) => { setSceneId(id || null); setLevel(8) }} />}
           {level === ASSISTANT_VIEW && <AuthoringAssistant storyId={storyId} />}
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
-          {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
+          {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
           {level === GLOSSARY_VIEW && <GlossaryPanel storyId={storyId} />}
           {level === 1 && (
             <Panel title="Premise" hint="The story's starting point and settings.">
