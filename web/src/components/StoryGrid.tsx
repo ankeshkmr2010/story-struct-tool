@@ -178,8 +178,12 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
     document.getElementById(`grid-row-${id}`)?.scrollIntoView({ block: 'nearest' })
   }
   const onKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') { setEditing(null); setDrawer(null); return }
     const target = event.target as HTMLElement
+    if (event.key === 'Escape') {
+      // Fields save on blur, and an unmounted input never blurs: blur first so typed text is kept.
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) target.blur()
+      setEditing(null); setDrawer(null); return
+    }
     if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName)) return
     const at = navigable.findIndex((scene) => scene.id === cursor)
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
