@@ -7,6 +7,7 @@ import { api, type ChapterBrief, type Scene } from '../api/client'
 import { errorText } from '../api/errors'
 import { useTheme } from './theme-context'
 import { writerDraft } from './writerDraft'
+import { SceneRevisions } from './SceneRevisions'
 
 
 /**
@@ -161,6 +162,8 @@ export function SceneEditor({
           Markdown. Autosaves while you type; a revision is kept when you click away.
         </p>
       </div>
+
+      <SceneRevisions storyId={storyId} sceneId={scene.id} flush={buffer.flush} onRestored={buffer.useLatest.bind(buffer)} />
 
       <details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/60 px-3 py-2 text-xs">
         <summary className="cursor-pointer font-medium text-slate-600 dark:text-slate-300">
