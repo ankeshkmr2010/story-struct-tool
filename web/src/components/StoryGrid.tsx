@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, type Authorship, type Scene } from '../api/client'
 import { orderScenes } from '../api/ordering'
 import { InlineSelect, InlineText } from './fields'
@@ -83,6 +83,9 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
   const [drawer, setDrawer] = useState<string | null>(null)
   const [dragging, setDragging] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
+  // The scene whose move is saving; held for at least a second so the spinner is noticeable.
+  const [moving, setMoving] = useState<string | null>(null)
+  const movingSince = useRef(0)
 
   const refresh = () => {
     for (const key of ['scenes', 'brief', 'health', 'ladder', 'continuity', 'location-usage', 'progress', 'suggestions', 'timeline', 'authorship']) {
@@ -93,17 +96,31 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) => api.updateScene(storyId, id, body),
     onSuccess: refresh,
   })
-  // Moves show instantly: the cached scene gets its new chapter and sort key, and is rolled back on failure.
+  // Moves show instantly: the target chapter's order is rebuilt in the cache (sequential keys, so tied
+  // agent-written sort keys can't misplace it) and rolled back on failure.
   const move = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: { chapter_id: string | null; before_scene_id?: string; after_scene_id?: string }; sortKey: number }) => api.moveScene(storyId, id, body),
-    onMutate: async ({ id, body, sortKey }) => {
-      await qc.cancelQueries({ queryKey: ['scenes', storyId] })
+    mutationFn: ({ id, body }: { id: string; body: { chapter_id: string | null; before_scene_id?: string; after_scene_id?: string } }) => api.moveScene(storyId, id, body),
+    onMutate: ({ id, body }) => {
+      setMoving(id)
+      movingSince.current = Date.now()
+      void qc.cancelQueries({ queryKey: ['scenes', storyId] })
       const previous = qc.getQueryData<Scene[]>(['scenes', storyId])
-      qc.setQueryData<Scene[]>(['scenes', storyId], (current) => current?.map((scene) => scene.id === id ? { ...scene, chapter_id: body.chapter_id, sort_key: sortKey } : scene))
+      qc.setQueryData<Scene[]>(['scenes', storyId], (current) => {
+        const moved = current?.find((scene) => scene.id === id)
+        if (!current || !moved) return current
+        const siblings = orderScenes(current.filter((scene) => (scene.chapter_id ?? null) === body.chapter_id && scene.id !== id))
+        const at = body.before_scene_id ? siblings.findIndex((scene) => scene.id === body.before_scene_id) : siblings.length
+        siblings.splice(at < 0 ? siblings.length : at, 0, { ...moved, chapter_id: body.chapter_id })
+        const keys = new Map(siblings.map((scene, index) => [scene.id, (index + 1) * 100]))
+        return current.map((scene) => keys.has(scene.id) ? { ...scene, chapter_id: scene.id === id ? body.chapter_id : scene.chapter_id, sort_key: keys.get(scene.id)! } : scene)
+      })
       return { previous }
     },
     onError: (_error, _vars, context) => { if (context?.previous) qc.setQueryData(['scenes', storyId], context.previous) },
-    onSettled: refresh,
+    onSettled: (_data, _error, { id }) => {
+      refresh()
+      window.setTimeout(() => setMoving((current) => current === id ? null : current), Math.max(0, 1000 - (Date.now() - movingSince.current)))
+    },
   })
   const save = (id: string, field: string) => (value: string | number | null) => update.mutateAsync({ id, body: { [field]: value } })
 
@@ -198,20 +215,18 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
   const over = (id: string) => (event: React.DragEvent) => {
     if (!dragging) return
     event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
     if (dropTarget !== id) setDropTarget(id)
   }
-  const dropOnScene = (target: Scene) => {
-    if (dragging && dragging !== target.id) {
-      const siblings = orderScenes(all.filter((scene) => (scene.chapter_id ?? null) === (target.chapter_id ?? null) && scene.id !== dragging))
-      const previous = siblings[siblings.findIndex((scene) => scene.id === target.id) - 1]
-      const sortKey = previous ? (previous.sort_key + target.sort_key) / 2 : target.sort_key - 100
-      move.mutate({ id: dragging, body: { chapter_id: target.chapter_id ?? null, before_scene_id: target.id }, sortKey })
-    }
+  const dropOnScene = (event: React.DragEvent, target: Scene) => {
+    event.preventDefault()
+    if (dragging && dragging !== target.id) move.mutate({ id: dragging, body: { chapter_id: target.chapter_id ?? null, before_scene_id: target.id } })
     setDragging(null); setDropTarget(null)
   }
-  const dropOnChapter = (group: (typeof groupsAll)[number]) => {
+  const dropOnChapter = (event: React.DragEvent, group: (typeof groupsAll)[number]) => {
+    event.preventDefault()
     const last = group.all.filter((scene) => scene.id !== dragging).at(-1)
-    if (dragging) move.mutate({ id: dragging, body: { chapter_id: group.id, ...(last ? { after_scene_id: last.id } : {}) }, sortKey: (last?.sort_key ?? 0) + 100 })
+    if (dragging) move.mutate({ id: dragging, body: { chapter_id: group.id, ...(last ? { after_scene_id: last.id } : {}) } })
     setDragging(null); setDropTarget(null)
   }
 
@@ -245,7 +260,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
           </div>
         </details>
         <button type="button" onClick={() => setPrefs({ collapsed: prefs.collapsed.length ? [] : groupsAll.map((group) => group.key) })} className={toolButton(false)}>{prefs.collapsed.length ? 'Expand' : 'Collapse'} all</button>
-        {move.isPending && <span role="status" className="flex items-center gap-1 text-xs text-slate-500"><span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600 dark:border-slate-600 dark:border-t-slate-200" />Saving order…</span>}
+        {moving && <span role="status" className="flex items-center gap-1 text-xs text-slate-500"><span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600 dark:border-slate-600 dark:border-t-slate-200" />Saving order…</span>}
         {agentEdits.size > 0 && <button type="button" onClick={onOpenInbox} className="ml-auto rounded-full border border-[var(--accent)] px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">{agentEdits.size} agent edits since your last visit →</button>}
       </div>
       {scenes.isLoading && <p className="mt-4 text-sm text-slate-500">Loading scenes…</p>}
@@ -272,7 +287,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                     colSpan={span}
                     onClick={() => toggleGroup(group.key)}
                     onDragOver={over(group.key)}
-                    onDrop={() => dropOnChapter(group)}
+                    onDrop={(event) => dropOnChapter(event, group)}
                     aria-expanded={!group.shut}
                     className={`sticky top-8 z-10 cursor-pointer px-2 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300 ${dropTarget === group.key ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700'}`}
                   >
@@ -294,20 +309,20 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                       key={scene.id}
                       id={`grid-row-${scene.id}`}
                       draggable={!isEditing}
-                      onDragStart={() => setDragging(scene.id)}
+                      onDragStart={(event) => { event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', scene.id); setDragging(scene.id) }}
                       onDragEnd={() => { setDragging(null); setDropTarget(null) }}
                       onDragOver={over(scene.id)}
-                      onDrop={() => dropOnScene(scene)}
+                      onDrop={(event) => dropOnScene(event, scene)}
                       onClick={() => { setCursor(scene.id); if (!isEditing) setEditing(scene.id) }}
                       className={[
                         'border-t border-slate-100 align-top dark:border-slate-800',
                         isEditing ? 'bg-slate-50 dark:bg-slate-800/40 [&_select]:w-full [&_select]:max-w-full' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40',
                         cursor === scene.id ? 'outline outline-2 -outline-offset-2 outline-slate-400' : '',
                         dropTarget === scene.id ? 'border-t-2 border-t-emerald-500' : '',
-                        dragging === scene.id || (move.isPending && move.variables?.id === scene.id) ? 'opacity-40' : '',
+                        dragging === scene.id ? 'opacity-40' : moving === scene.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : '',
                       ].join(' ')}
                     >
-                      <td className={`px-2 ${pad} text-xs text-slate-400`}>{numbers.get(scene.id)}</td>
+                      <td className={`px-2 ${pad} text-xs text-slate-400`}>{moving === scene.id ? <span aria-label="Saving order" className="mt-0.5 block h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-600 dark:border-slate-600 dark:border-t-emerald-300" /> : numbers.get(scene.id)}</td>
                       <td className={`px-2 ${pad}`}>
                         <button type="button" onClick={(event) => { event.stopPropagation(); setDrawer(scene.id) }} className="text-left font-medium text-slate-800 hover:underline dark:text-slate-100">{scene.title || 'Untitled scene'}</button>
                         {scene.is_flashback && <span className="ml-1 rounded bg-indigo-100 px-1 text-[10px] text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">flashback</span>}
