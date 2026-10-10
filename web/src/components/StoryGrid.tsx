@@ -19,6 +19,14 @@ function Shift({ scene }: { scene: Scene }) {
   return <span title={flat ? 'Value does not change in this scene' : undefined} className={`mt-1 inline-block rounded-full px-2 text-[11px] ${flat ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{from || '?'} → {to || '?'}{flat ? ' · no shift' : ''}</span>
 }
 
+function Plain({ text }: { text: string | null | undefined }) {
+  return text?.trim()
+    ? <span title={text} className="line-clamp-2 text-slate-700 dark:text-slate-300">{text}</span>
+    : <span className="text-slate-300 dark:text-slate-600">—</span>
+}
+
+const name = (options: { value: string; label: string }[], id: string | null | undefined) => options.find((option) => option.value === id)?.label ?? null
+
 export function StoryGrid({ storyId, onOpenScene }: { storyId: string; onOpenScene: (scene: Scene) => void }) {
   const qc = useQueryClient()
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
@@ -29,6 +37,7 @@ export function StoryGrid({ storyId, onOpenScene }: { storyId: string; onOpenSce
   const [pov, setPov] = useState('')
   const [noShift, setNoShift] = useState(false)
   const [drama, setDrama] = useState(() => readDrama(storyId))
+  const [editing, setEditing] = useState<string | null>(null)
 
   const update = useMutation({
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) => api.updateScene(storyId, id, body),
@@ -68,7 +77,7 @@ export function StoryGrid({ storyId, onOpenScene }: { storyId: string; onOpenSce
     <div className="min-w-0">
       <p className="eyebrow">STORY GRID</p>
       <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Every scene at a glance</h2>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Edit cells in place. Empty cells are allowed; a value that does not change is flagged, not blocked.</p>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Click a row to edit it. Click a title to open the scene.</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <select aria-label="Filter by status" value={status} onChange={(event) => setStatus(event.target.value)} className={filter}>
           <option value="">All statuses</option>
@@ -86,7 +95,12 @@ export function StoryGrid({ storyId, onOpenScene }: { storyId: string; onOpenSce
       {scenes.data && all.length === 0 && <p className="mt-4 text-sm text-slate-500">No scenes yet.</p>}
       {all.length > 0 && (
         <div className="mt-4 overflow-x-auto rounded-md border border-slate-200 dark:border-slate-700">
-          <table className="w-full min-w-[960px] border-collapse text-left text-sm">
+          <table className={`w-full table-fixed border-collapse text-left text-sm ${drama ? 'min-w-[1300px]' : 'min-w-[860px]'}`}>
+            <colgroup>
+              <col className="w-8" /><col className="w-44" /><col className="w-24" /><col className="w-28" /><col className="w-36" /><col className="w-24" />
+              {drama && <><col /><col /><col /></>}
+              <col className="w-32" /><col className="w-16" />
+            </colgroup>
             <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-400 dark:bg-slate-950">
               <tr>
                 <th className="px-2 py-2">#</th>
@@ -105,24 +119,43 @@ export function StoryGrid({ storyId, onOpenScene }: { storyId: string; onOpenSce
                 <tr key={`group-${group.id ?? 'unfiled'}`} className="bg-slate-100/70 dark:bg-slate-800/60">
                   <th colSpan={columns + 1} className="px-2 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">{group.label}</th>
                 </tr>,
-                ...group.scenes.map((scene) => (
-                  <tr key={scene.id} className="border-t border-slate-100 align-top dark:border-slate-800">
+                ...group.scenes.map((scene) => editing !== scene.id ? (
+                  <tr key={scene.id} onClick={() => setEditing(scene.id)} title="Click to edit this row" className="cursor-pointer border-t border-slate-100 align-top hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40">
                     <td className="px-2 py-2 text-xs text-slate-400">{++index}</td>
-                    <td className="min-w-[160px] px-2 py-2">
-                      <button type="button" onClick={() => onOpenScene(scene)} className="text-left font-medium text-slate-800 hover:underline dark:text-slate-100">{scene.title || 'Untitled scene'}</button>
+                    <td className="px-2 py-2">
+                      <button type="button" onClick={(event) => { event.stopPropagation(); onOpenScene(scene) }} className="text-left font-medium text-slate-800 hover:underline dark:text-slate-100">{scene.title || 'Untitled scene'}</button>
                       {scene.is_flashback && <span className="ml-1 rounded bg-indigo-100 px-1 text-[10px] text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">flashback</span>}
                     </td>
-                    <td className="px-2 py-2"><InlineSelect value={scene.status} options={STATUSES} onSave={save(scene.id, 'status')} /></td>
-                    <td className="min-w-[120px] px-2 py-2"><InlineSelect value={scene.pov_character_id} options={characterOptions} onSave={save(scene.id, 'pov_character_id')} /></td>
-                    <td className="min-w-[120px] px-2 py-2"><InlineSelect value={scene.location_id} options={locationOptions} onSave={save(scene.id, 'location_id')} /></td>
-                    <td className="min-w-[110px] px-2 py-2"><InlineText value={scene.time_label} placeholder="—" onSave={save(scene.id, 'time_label')} /></td>
+                    <td className="px-2 py-2 text-xs text-slate-500">{scene.status}</td>
+                    <td className="px-2 py-2"><Plain text={name(characterOptions, scene.pov_character_id)} /></td>
+                    <td className="px-2 py-2"><Plain text={name(locationOptions, scene.location_id)} /></td>
+                    <td className="px-2 py-2"><Plain text={scene.time_label} /></td>
                     {drama && <>
-                      <td className="min-w-[160px] px-2 py-2"><InlineText value={scene.goal} placeholder="—" multiline onSave={save(scene.id, 'goal')} /></td>
-                      <td className="min-w-[160px] px-2 py-2"><InlineText value={scene.conflict} placeholder="—" multiline onSave={save(scene.id, 'conflict')} /></td>
-                      <td className="min-w-[160px] px-2 py-2"><InlineText value={scene.outcome} placeholder="—" multiline onSave={save(scene.id, 'outcome')} /></td>
+                      <td className="px-2 py-2"><Plain text={scene.goal} /></td>
+                      <td className="px-2 py-2"><Plain text={scene.conflict} /></td>
+                      <td className="px-2 py-2"><Plain text={scene.outcome} /></td>
                     </>}
-                    <td className="min-w-[150px] px-2 py-2">
-                      <div className="flex gap-1">
+                    <td className="px-2 py-2"><Shift scene={scene} /></td>
+                    <td className="px-2 py-2 text-right tabular-nums text-slate-500">{scene.word_count ?? 0}</td>
+                  </tr>
+                ) : (
+                  <tr key={scene.id} className="border-t border-slate-100 bg-slate-50 align-top dark:border-slate-800 dark:bg-slate-800/40 [&_select]:w-full [&_select]:max-w-full">
+                    <td className="px-2 py-2 text-xs text-slate-400">{++index}</td>
+                    <td className="px-2 py-2">
+                      <button type="button" onClick={() => onOpenScene(scene)} className="text-left font-medium text-slate-800 hover:underline dark:text-slate-100">{scene.title || 'Untitled scene'}</button>
+                      <button type="button" onClick={() => setEditing(null)} className="workspace-shortcut mt-2 block rounded px-2 text-xs">Done</button>
+                    </td>
+                    <td className="px-2 py-2"><InlineSelect value={scene.status} options={STATUSES} onSave={save(scene.id, 'status')} /></td>
+                    <td className="px-2 py-2"><InlineSelect value={scene.pov_character_id} options={characterOptions} onSave={save(scene.id, 'pov_character_id')} /></td>
+                    <td className="px-2 py-2"><InlineSelect value={scene.location_id} options={locationOptions} onSave={save(scene.id, 'location_id')} /></td>
+                    <td className="px-2 py-2"><InlineText value={scene.time_label} placeholder="—" onSave={save(scene.id, 'time_label')} /></td>
+                    {drama && <>
+                      <td className="px-2 py-2"><InlineText value={scene.goal} placeholder="—" multiline onSave={save(scene.id, 'goal')} /></td>
+                      <td className="px-2 py-2"><InlineText value={scene.conflict} placeholder="—" multiline onSave={save(scene.id, 'conflict')} /></td>
+                      <td className="px-2 py-2"><InlineText value={scene.outcome} placeholder="—" multiline onSave={save(scene.id, 'outcome')} /></td>
+                    </>}
+                    <td className="px-2 py-2">
+                      <div className="flex flex-col gap-1">
                         <InlineText value={scene.emotional_value_from} placeholder="from" onSave={save(scene.id, 'emotional_value_from')} />
                         <InlineText value={scene.emotional_value_to} placeholder="to" onSave={save(scene.id, 'emotional_value_to')} />
                       </div>
