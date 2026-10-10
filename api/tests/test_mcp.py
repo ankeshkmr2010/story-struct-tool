@@ -457,3 +457,7 @@ async def test_mcp_reads_dismissed_notices_and_checkpoint_failure_rolls_back(
     assert (await tool(client, headers, "inspect_story_proposals"))["runs"][0][
         "status"
     ] == "proposed"
+    pending = await tool(client, headers, "inspect_story_proposals", {"status": "proposed"})
+    assert len(pending["runs"]) == 1
+    applied = await tool(client, headers, "inspect_story_proposals", {"status": "applied"})
+    assert applied["runs"] == []

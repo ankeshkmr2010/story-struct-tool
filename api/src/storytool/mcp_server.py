@@ -3,7 +3,7 @@
 import hashlib
 import json
 from collections.abc import Callable
-from typing import Any, Literal, cast
+from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 
 import httpx
@@ -784,9 +784,16 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         )
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
-    async def inspect_story_proposals(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
-        """Read recent staged/applied/undone plans and their text replies for review."""
-        return {"runs": await call(ctx, "/ai/runs", story_id=story_id)}
+    async def inspect_story_proposals(
+        ctx: Context,
+        story_id: UUID | None = None,
+        status: Literal["proposed", "applied", "dismissed", "undone", "invalid"] | None = None,
+        limit: Annotated[int, Field(ge=1, le=200)] = 30,
+    ) -> dict[str, Any]:
+        """Read staged/applied/undone plans, newest first. Use status="proposed" for pending
+        batches awaiting review; raise limit (max 200) to see further back."""
+        suffix = f"/ai/runs?limit={limit}" + (f"&status={status}" if status else "")
+        return {"runs": await call(ctx, suffix, story_id=story_id)}
 
     @server.tool()
     async def apply_story_changes(
