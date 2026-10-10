@@ -38,6 +38,8 @@ export function StoryGrid({ storyId, onOpenScene }: { storyId: string; onOpenSce
   const [noShift, setNoShift] = useState(false)
   const [drama, setDrama] = useState(() => readDrama(storyId))
   const [editing, setEditing] = useState<string | null>(null)
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+  const toggleGroup = (key: string) => setCollapsed((current) => { const next = new Set(current); if (next.has(key)) next.delete(key); else next.add(key); return next })
 
   const update = useMutation({
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) => api.updateScene(storyId, id, body),
@@ -90,6 +92,7 @@ export function StoryGrid({ storyId, onOpenScene }: { storyId: string; onOpenSce
         </select>
         <label className="flex items-center gap-1 text-sm text-slate-600 dark:text-slate-300"><input type="checkbox" checked={noShift} onChange={(event) => setNoShift(event.target.checked)} />Missing or flat value shift</label>
         <button type="button" onClick={toggleDrama} className="workspace-shortcut rounded-md px-2 py-1 text-sm">{drama ? 'Hide' : 'Show'} goal / conflict / outcome</button>
+        <button type="button" onClick={() => setCollapsed(collapsed.size ? new Set() : new Set(groups.map((group) => group.id ?? 'unfiled')))} className="workspace-shortcut rounded-md px-2 py-1 text-sm">{collapsed.size ? 'Expand' : 'Collapse'} all chapters</button>
       </div>
       {scenes.isLoading && <p className="mt-4 text-sm text-slate-500">Loading scenes…</p>}
       {scenes.data && all.length === 0 && <p className="mt-4 text-sm text-slate-500">No scenes yet.</p>}
@@ -115,11 +118,11 @@ export function StoryGrid({ storyId, onOpenScene }: { storyId: string; onOpenSce
               </tr>
             </thead>
             <tbody>
-              {groups.map((group) => [
-                <tr key={`group-${group.id ?? 'unfiled'}`} className="bg-slate-100/70 dark:bg-slate-800/60">
-                  <th colSpan={columns + 1} className="px-2 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">{group.label}</th>
+              {groups.map((group) => { const key = group.id ?? 'unfiled'; const shut = collapsed.has(key); if (shut) index += group.scenes.length; return [
+                <tr key={`group-${key}`} onClick={() => toggleGroup(key)} aria-expanded={!shut} className="cursor-pointer bg-slate-100/70 hover:bg-slate-200/70 dark:bg-slate-800/60 dark:hover:bg-slate-700/60">
+                  <th colSpan={columns + 1} className="px-2 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300"><span className="inline-block w-4">{shut ? '▸' : '▾'}</span>{group.label}<span className="ml-2 font-normal text-slate-400">{group.scenes.length} scenes · {group.scenes.reduce((sum, scene) => sum + (scene.word_count ?? 0), 0)} words</span></th>
                 </tr>,
-                ...group.scenes.map((scene) => editing !== scene.id ? (
+                ...(shut ? [] : group.scenes).map((scene) => editing !== scene.id ? (
                   <tr key={scene.id} onClick={() => setEditing(scene.id)} title="Click to edit this row" className="cursor-pointer border-t border-slate-100 align-top hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40">
                     <td className="px-2 py-2 text-xs text-slate-400">{++index}</td>
                     <td className="px-2 py-2">
@@ -164,7 +167,7 @@ export function StoryGrid({ storyId, onOpenScene }: { storyId: string; onOpenSce
                     <td className="px-2 py-2 text-right tabular-nums text-slate-500">{scene.word_count ?? 0}</td>
                   </tr>
                 )),
-              ])}
+              ]})}
             </tbody>
             <tfoot className="border-t border-slate-200 text-xs text-slate-500 dark:border-slate-700">
               <tr>
