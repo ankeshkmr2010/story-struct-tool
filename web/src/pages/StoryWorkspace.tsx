@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useRef, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
@@ -60,8 +60,8 @@ function Workspace() {
   const writerFlush = useRef<() => Promise<boolean>>(async () => true)
   const registerFlush = useCallback((flush: () => Promise<boolean>) => { writerFlush.current = flush }, [])
   const changeTab = async (next: 'write' | 'read' | 'design') => {
-    if (next === tab) return
-    if (tab === 'write' && !await writerFlush.current()) { setTabError('Your writing has not saved yet. Retry the save before switching workspaces.'); return }
+    if (next === tab) return true
+    if (tab === 'write' && !await writerFlush.current()) { setTabError('Your writing has not saved yet. Retry the save before switching workspaces.'); return false }
     setTabError(null); setTab(next)
     if (next === 'write') {
       setWriterOpened(true)
@@ -69,7 +69,11 @@ function Workspace() {
     }
     if (next === 'read') void qc.invalidateQueries({ queryKey: ['reading-document', storyId] })
     try { localStorage.setItem(`storytool-workspace:${storyId}`, next) } catch { /* Preference storage is optional. */ }
+    return true
   }
+  // Views live in the Design panel but open from any tab via the second nav row.
+  const openView = async (view: number) => { if (await changeTab('design')) setLevel(view) }
+  const viewItem = (view: number, label: ReactNode) => <button type="button" aria-current={tab === 'design' && level === view ? 'page' : undefined} onClick={() => { void openView(view) }}>{label}</button>
 
   const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
   const ladder = useQuery({ queryKey: ['ladder', storyId], queryFn: () => api.getLadder(storyId) })
@@ -259,6 +263,17 @@ function Workspace() {
       }}>
         {(['write', 'read', 'design'] as const).map(item => <button key={item} id={`workspace-tab-${item}`} type="button" role="tab" aria-selected={tab === item} aria-controls={`workspace-panel-${item}`} tabIndex={tab === item ? 0 : -1} onClick={() => { void changeTab(item) }}>{item === 'write' ? 'Write' : item === 'read' ? 'Read' : 'Design'}</button>)}
       </div>
+      <nav aria-label="Story views" className="workspace-views">
+        <div>{viewItem(TIMELINE_VIEW, 'Timeline')}{viewItem(GRID_VIEW, 'Grid')}</div>
+        <div>{viewItem(PLACES_VIEW, 'Places')}{viewItem(GLOSSARY_VIEW, 'Glossary')}</div>
+        <div>
+          {viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
+          <StoryVersions storyId={storyId} triggerLabel="Versions" className="workspace-views-item" />
+          <AuthorshipPanel storyId={storyId} label="Who wrote what" className="workspace-views-item" />
+          {viewItem(CATCHUP_VIEW, 'Catch up')}
+        </div>
+        <div>{viewItem(ASSISTANT_VIEW, 'Story assistant')}</div>
+      </nav>
       {tabError && <p role="alert" className="writer-error">{tabError}</p>}
       <p className="live-update-status" role="status">{live.isError ? 'Live updates paused.' : 'Live · checks for changes every 5 seconds.'}{live.isError && <button type="button" onClick={() => { void live.refetch() }}>Retry</button>}</p>
       <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>
@@ -282,19 +297,6 @@ function Workspace() {
                 onSelect={setLevel}
               />
             )}
-            <h2>Views</h2>
-            <button type="button" aria-current={level === TIMELINE_VIEW ? 'page' : undefined} onClick={() => setLevel(TIMELINE_VIEW)}>Timeline</button>
-            <button type="button" aria-current={level === GRID_VIEW ? 'page' : undefined} onClick={() => setLevel(GRID_VIEW)}>Grid</button>
-            <h2>World</h2>
-            <button type="button" aria-current={level === PLACES_VIEW ? 'page' : undefined} onClick={() => setLevel(PLACES_VIEW)}>Places</button>
-            <button type="button" aria-current={level === GLOSSARY_VIEW ? 'page' : undefined} onClick={() => setLevel(GLOSSARY_VIEW)}>Glossary</button>
-            <h2>Review</h2>
-            <button type="button" aria-current={level === INBOX_VIEW ? 'page' : undefined} onClick={() => setLevel(INBOX_VIEW)}>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</button>
-            <StoryVersions storyId={storyId} triggerLabel="Versions" className="workspace-nav-item" />
-            <AuthorshipPanel storyId={storyId} label="Who wrote what" className="workspace-nav-item" />
-            <button type="button" aria-current={level === CATCHUP_VIEW ? 'page' : undefined} onClick={() => setLevel(CATCHUP_VIEW)}>Catch up outline</button>
-            <h2>Assistant</h2>
-            <button type="button" aria-current={level === ASSISTANT_VIEW ? 'page' : undefined} onClick={() => setLevel(ASSISTANT_VIEW)}>Story assistant</button>
           </nav>
         </aside>
 
