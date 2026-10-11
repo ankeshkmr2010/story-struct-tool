@@ -58,12 +58,22 @@ export function AuthoringAssistant({ storyId }: { storyId: string }) {
     if (typeof value === 'string') return labels.get(value) ?? (value.startsWith('new:') ? value.slice(4).replaceAll('_', ' ') : value)
     return JSON.stringify(value)
   }
+  // No AI connected yet: show only the way in, not chat controls that cannot work.
+  if (!connections.isPending && !connections.isError && available.length === 0) return (
+    <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+      <h2 className="section-title">Connect an AI to use the assistant</h2>
+      <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-200">
+        <li>Get an API key from OpenRouter, Anthropic (Claude) or OpenAI.</li>
+        <li>Add it in Settings. It's used only for your account.</li>
+      </ol>
+      <Link to="/settings" className="inline-block rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-950 dark:hover:bg-slate-300">Add your API key →</Link>
+    </div>
+  )
   return (
     <div className="space-y-5">
       <header><p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-300">Your story, in conversation</p><h2 className="mt-1 text-2xl font-semibold">Story assistant</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Chat about your ideas, ask questions, and develop a plan together. Ask the assistant to populate characters, beats, arcs, chapters, scenes, places, or the timeline, then review and apply its changes here.</p></header>
       {connections.isPending && <p className="text-sm text-slate-500 dark:text-slate-400">Loading your AI connections…</p>}
       {connections.isError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(connections.error)}</p>}
-      {!connections.isPending && available.length === 0 && <p className="rounded-lg bg-emerald-50 dark:bg-emerald-950 p-4 text-sm text-emerald-900 dark:text-emerald-300"><Link to="/settings" className="font-medium underline">Connect OpenRouter, Claude or OpenAI in Settings</Link> to start authoring. Your provider key is used only for your account.</p>}
       <form className="space-y-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5" onSubmit={(event) => { event.preventDefault(); if (!busy && selectedConnection && prompt.trim()) { setElapsed(0); generate.mutate(prompt.trim()) } }}>
         <div className="flex flex-wrap gap-3"><label className="text-xs text-slate-600 dark:text-slate-300">Model<select aria-label="Authoring model" value={selectedConnection} onChange={(event) => setConnectionId(event.target.value)} className="ml-2 max-w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-1.5 text-sm"><option value="" disabled>Choose a connection</option>{available.map((item) => <option key={item.id} value={item.id}>{item.provider === 'anthropic' ? 'Claude' : item.provider === 'openrouter' ? 'OpenRouter' : 'OpenAI'} · {item.model}</option>)}</select></label><select aria-label="Assistant task" value={mode} onChange={(event) => setMode(event.target.value as 'author' | 'review')} className="rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-1.5 text-sm"><option value="author">Build or change structure</option><option value="review">Review and suggest</option></select></div>
         <div className="flex flex-wrap gap-2">{['Build an outline', 'Improve suggestions', 'Map the timeline'].map((label, index) => <button key={label} type="button" onClick={() => { setPrompt(prompts[index]); setMode(index === 1 ? 'review' : 'author') }} className="rounded-full border border-slate-200 dark:border-slate-700 px-3 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950">{label}</button>)}</div>
