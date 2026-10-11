@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { AddForm, Chip, DeleteButton, InlineNumber, InlineSelect, InlineText } from './fields'
+import { HelpTip } from './HelpTip'
 
 function useRefresh(storyId: string, collection: string) {
   const qc = useQueryClient()
@@ -41,7 +42,7 @@ export function EventsPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="text-sm font-semibold">Arc skeleton</h2>
+      <h2 className="text-sm font-semibold">Arc skeleton<HelpTip label="a turning point">A turning point is a timeline event that changes the story's direction, such as the inciting incident, the midpoint or the climax. Mark three to five of them; they become the skeleton the rest of the plan hangs on.</HelpTip></h2>
       <p className="mb-3 text-xs text-slate-400">Map three to five major turning points, then refine their order and place on the page.</p>
       <AddForm placeholder="Turning point…" onAdd={(label) => create.mutateAsync(label)} pending={create.isPending} />
       <ul className="mt-4 space-y-3">
@@ -144,7 +145,7 @@ export function BeatsPanel({ storyId, framework }: { storyId: string; framework:
 
   return (
     <div>
-      <h2 className="text-sm font-semibold">Beats</h2>
+      <h2 className="text-sm font-semibold">Beats<HelpTip label="a beat">A beat is a moment the story must reach, such as "the hero refuses the call". Beats sit inside acts; chapters and scenes then fulfil them.</HelpTip></h2>
       <p className="mb-3 text-xs text-slate-400">What must happen to fulfil each act? Seeded beats are ordinary editable rows.</p>
       <div className="flex flex-wrap gap-2">
         <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40">Seed {framework.replaceAll('_', ' ')}</button>
@@ -183,7 +184,7 @@ export function ThreadsPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="text-sm font-semibold">Threads</h2>
+      <h2 className="text-sm font-semibold">Threads<HelpTip label="a thread">A thread is one storyline running through the book. The A-story is the main plot; B and C stories are subplots. Scenes move threads forward.</HelpTip></h2>
       <p className="mb-3 text-xs text-slate-400">Which storylines carry the scenes?</p>
       <AddForm placeholder="Thread title…" onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} />
       <ul className="mt-4 space-y-3">

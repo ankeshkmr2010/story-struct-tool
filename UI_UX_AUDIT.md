@@ -130,7 +130,7 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [x] T4 (a947a4c) Health panel: plain wording, no rule codes, quiet warning style, per-finding "Fix in <level> →" link, count badge on the tab. Fixes the turning-point confusion (§6). `api/src/storytool/domain/health.py` messages + the health panel component.
 - [ ] T5 Readable option labels with one-line descriptions for POV / Framework / Mode, plus one reusable ⓘ help component; then apply it to jargon (levels, beats, threads, turning points, pantser/plotter). `StoryWorkspace.tsx:354-355`.
 - [ ] T6 Replace "Live · checks for changes every 5 seconds" with a quiet dot that speaks only on change; remove Read's "Refresh story".
-- [ ] T7 Token migration for the workspace shell (header, sidebar, panels): Tailwind palette classes → `index.css` tokens (C1, partial).
+- [x] T7 (c8f760a, via T15) Token migration for the workspace shell (header, sidebar, panels): Tailwind palette classes → `index.css` tokens (C1, partial).
 
 **Tranche 2 — friction**
 - [ ] T8 Read: no repeated blurb; context panel closed by default. `SharedStoryReader.tsx` (`StoryReader`).
@@ -142,7 +142,7 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [ ] T14 (parked, D3 = later) "Generate" entry points after Design and in Chapters/Scenes (§6).
 
 **Tranche 3 — finish**
-- [ ] T15 Full token migration + new dark palette (C1). Needs D4.
+- [x] T15 (c8f760a) Full token migration + new dark palette (C1). Needs D4.
 - [ ] T16 Landing: reorder to write → plan → share; sell the public showcase.
 - [ ] T17 Dead code: `api.listAIObservations`, unused exported types in `web/src/api/client.ts` (C5).
 - [ ] T18 Make the in-app assistant discoverable: own ASSISTANT sidebar group, obvious "add your API key" step (`AuthoringAssistant.tsx`, `UserSettings.tsx`).

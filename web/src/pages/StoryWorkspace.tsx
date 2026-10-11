@@ -22,10 +22,31 @@ import { AuthorshipPanel } from '../components/AuthorshipPanel'
 import { StorySharing } from '../components/StorySharing'
 import { DownloadMenu } from '../components/DownloadMenu'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
+import { HelpTip } from '../components/HelpTip'
 const StoryWriter = lazy(() => import('../components/StoryWriter').then(m => ({ default: m.StoryWriter })))
 const StoryReader = lazy(() => import('./SharedStoryReader').then(m => ({ default: m.StoryReader })))
 
-const MODES: AuthoringMode[] = ['plotter', 'hybrid', 'pantser']
+// Premise settings in plain words: a label for each choice and one line on what it means (T5).
+type Choice = { value: string; label: string; description: string }
+const POV_OPTIONS: Choice[] = [
+  { value: 'first', label: 'First person', description: '"I" tells the story; readers know only what the narrator knows.' },
+  { value: 'third_limited', label: 'Third person, close', description: '"She" or "he", staying inside one character at a time.' },
+  { value: 'third_omniscient', label: 'Third person, all-knowing', description: 'A narrator who can see into anyone\'s head.' },
+  { value: 'second', label: 'Second person', description: '"You" are the main character.' },
+  { value: 'mixed', label: 'Mixed', description: 'Different viewpoints in different parts of the book.' },
+]
+const FRAMEWORK_OPTIONS: Choice[] = [
+  { value: 'three_act', label: 'Three acts', description: 'Setup, confrontation, resolution: the classic story shape.' },
+  { value: 'save_the_cat', label: 'Save the Cat', description: '15 named beats, from Opening Image to Final Image.' },
+  { value: 'custom', label: 'Custom', description: 'Your own acts and beats; nothing is pre-filled.' },
+]
+const MODE_OPTIONS: Choice[] = [
+  { value: 'plotter', label: 'Plotter (plan first)', description: 'Levels after the first unfinished one are dimmed and show what they still need. Nothing is locked.' },
+  { value: 'hybrid', label: 'Hybrid', description: 'Every level is open; gaps show as gentle nudges.' },
+  { value: 'pantser', label: 'Pantser (write first)', description: 'Gaps are hidden. Work on whatever you like.' },
+]
+const describe = (choices: Choice[], value: string | null) => choices.find((choice) => choice.value === value)?.description
+const choiceList = (choices: Choice[]) => <ul className="space-y-1">{choices.map((choice) => <li key={choice.value}><strong>{choice.label}:</strong> {choice.description}</li>)}</ul>
 
 // Places are reference data, not a rung. The sentinel keeps them out of the ladder's
 // readiness logic entirely.
@@ -351,9 +372,9 @@ function Workspace() {
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Blurb · shown to readers<InlineText value={story.data.blurb} placeholder="A reader-facing pitch for your story" onSave={(blurb) => updateStory.mutateAsync({ blurb })} multiline /></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Premise<InlineText value={story.data.premise} placeholder="What is this story?" onSave={(premise) => updateStory.mutateAsync({ premise })} multiline /></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Genre<InlineText value={story.data.genre} placeholder="Genre" onSave={(genre) => updateStory.mutateAsync({ genre })} /></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400">Point of view<InlineSelect value={story.data.pov_style} options={['first', 'third_limited', 'third_omniscient', 'second', 'mixed']} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400">Framework<InlineSelect value={story.data.structure_framework} options={['three_act', 'save_the_cat', 'custom']} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400">Mode<InlineSelect value={story.data.authoring_mode} options={MODES} onSave={(authoring_mode) => updateStory.mutateAsync({ authoring_mode })} /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">Point of view<HelpTip label="point of view">Whose eyes the reader sees the story through.{choiceList(POV_OPTIONS)}</HelpTip><InlineSelect value={story.data.pov_style} options={POV_OPTIONS} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /><span className="mt-1 block text-[11px]">{describe(POV_OPTIONS, story.data.pov_style)}</span></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">Framework<HelpTip label="a framework">The story shape used to seed your acts and beats. You can change any of them afterwards.{choiceList(FRAMEWORK_OPTIONS)}</HelpTip><InlineSelect value={story.data.structure_framework} options={FRAMEWORK_OPTIONS} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /><span className="mt-1 block text-[11px]">{describe(FRAMEWORK_OPTIONS, story.data.structure_framework)}</span></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">Mode<HelpTip label="mode">How much the plan guides you. It only changes what is flagged; nothing is ever blocked.{choiceList(MODE_OPTIONS)}</HelpTip><InlineSelect value={story.data.authoring_mode} options={MODE_OPTIONS} onSave={(authoring_mode) => updateStory.mutateAsync({ authoring_mode })} /><span className="mt-1 block text-[11px]">{describe(MODE_OPTIONS, story.data.authoring_mode)}</span></label>
               </div>
               <details className="mt-5 rounded border border-slate-200 p-3 dark:border-slate-700"><summary className="cursor-pointer text-sm font-medium">World, style, theme, and notes</summary><div className="mt-3 space-y-3">
                 <label className="block text-xs">World rules (one per line)<InlineText value={story.data.world_rules?.join('\n') ?? null} placeholder="What is possible in this world?" onSave={value => updateStory.mutateAsync({ world_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
