@@ -21,6 +21,27 @@ class CharacterPresenceUpdate(BaseModel):
     is_present: bool
 
 
+async def story_timeline(db_session: AsyncSession, story_id: UUID) -> TimelineOut:
+    graph = await load_graph_by_id(db_session, story_id)
+    if graph is None:
+        raise NotFoundException(detail="Story not found")
+    mentions = await db_session.execute(
+        select(SceneCharacterMention)
+        .join(Scene, Scene.id == SceneCharacterMention.scene_id)
+        .where(Scene.story_id == story_id, SceneCharacterMention.is_rejected.is_(False))
+    )
+    event_people = await db_session.execute(
+        select(event_character.c.event_id, event_character.c.character_id)
+        .join(Event, Event.id == event_character.c.event_id)
+        .where(Event.story_id == story_id)
+    )
+    return build_timeline(
+        graph,
+        {(row.scene_id, row.character_id): row.source for row in mentions.scalars()},
+        [(row.event_id, row.character_id) for row in event_people],
+    )
+
+
 class TimelineController(Controller):
     path = "/api/stories/{story_id:uuid}"
     tags = ["timeline"]
@@ -28,24 +49,7 @@ class TimelineController(Controller):
 
     @get("/timeline", summary="Global world-time timeline with character appearances")
     async def timeline(self, db_session: AsyncSession, story_id: UUID) -> TimelineOut:
-        graph = await load_graph_by_id(db_session, story_id)
-        if graph is None:
-            raise NotFoundException(detail="Story not found")
-        mentions = await db_session.execute(
-            select(SceneCharacterMention)
-            .join(Scene, Scene.id == SceneCharacterMention.scene_id)
-            .where(Scene.story_id == story_id, SceneCharacterMention.is_rejected.is_(False))
-        )
-        event_people = await db_session.execute(
-            select(event_character.c.event_id, event_character.c.character_id)
-            .join(Event, Event.id == event_character.c.event_id)
-            .where(Event.story_id == story_id)
-        )
-        return build_timeline(
-            graph,
-            {(row.scene_id, row.character_id): row.source for row in mentions.scalars()},
-            [(row.event_id, row.character_id) for row in event_people],
-        )
+        return await story_timeline(db_session, story_id)
 
     @put(
         "/events/{event_id:uuid}/presence/{character_id:uuid}",

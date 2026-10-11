@@ -25,6 +25,8 @@ from storytool.domain.narrative.prose import compile_manuscript
 from storytool.domain.story.authorship import FieldAuthorship
 from storytool.domain.story.models import Story
 from storytool.domain.story.sharing import actor, visible_state
+from storytool.domain.story.timeline_controller import story_timeline
+from storytool.domain.timeline import TimelineOut
 from storytool.domain.versioning.models import StoryVersion
 from storytool.domain.versioning.service import full_state
 
@@ -73,6 +75,7 @@ class ShowcaseDocumentOut(BaseModel):
     versions: list[ShowcaseVersionOut]
     authorship: dict[str, int]
     changes: list[ShowcaseChangeOut]
+    timeline: TimelineOut
 
 
 def new_token() -> str:
@@ -194,4 +197,5 @@ class PublicShowcaseController(Controller):
                 ShowcaseChangeOut(summary=r.summary, status=r.status, created_at=r.created_at)
                 for r in runs
             ],
+            timeline=await story_timeline(db_session, story.id),
         )

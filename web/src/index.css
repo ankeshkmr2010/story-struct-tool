@@ -317,6 +317,28 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .showcase-glossary div { border-top: 1px solid var(--line); padding-top: 10px; }
 .showcase-glossary p { color: var(--muted); font-size: 14px; margin: 4px 0 0; }
 @media (max-width: 700px) { .showcase-premise { font-size: 18px; } .showcase-wantneed { grid-template-columns: 1fr; } }
+.showcase-story-card { padding: 24px 28px; margin-bottom: 12px; }
+.showcase-story-card .showcase-premise { margin-bottom: 16px; }
+.showcase-story-card .showcase-theme { margin-bottom: 0; }
+.showcase-timeline-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 20px; }
+.showcase-timeline-head p { margin: 0; flex: 1 1 280px; }
+.showcase-segment { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.showcase-segment button { padding: 6px 14px; border-radius: 6px; font-size: 13px; color: var(--muted); }
+.showcase-segment button[aria-pressed=true] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.showcase-timeline > li { padding-bottom: 20px; }
+.showcase-entry { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; }
+.showcase-timeline > li.showcase-entry::before { left: -31px; top: 18px; }
+.showcase-entry-event::before { background: transparent !important; border: 2px solid var(--accent); }
+.showcase-entry-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.showcase-entry-tags small { color: var(--muted); font-size: 12px; }
+.showcase-pill-accent { border-color: var(--accent); color: var(--accent); }
+.showcase-entry h3 { margin: 8px 0 4px; }
+.showcase-entry > p { font-size: 14px; color: var(--ink); margin: 4px 0; }
+.showcase-timeline .showcase-entry p.showcase-entry-meta { font-size: 12px; color: var(--muted); }
+.showcase-entry-events { margin: 8px 0 0; padding: 8px 0 0 12px; border-top: 1px dashed var(--line); font-size: 13px; }
+.showcase-entry-events li { margin: 2px 0; }
+.showcase-entry-events li::before { content: '◇ '; color: var(--accent); }
+.showcase-entry-events small { color: var(--muted); }
 .showcase-shift { color: var(--accent); font-size: 13px; margin: 6px 0; }
 .showcase-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 32px; }
 .showcase-stats div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }

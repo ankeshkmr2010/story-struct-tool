@@ -2806,6 +2806,7 @@ export interface components {
                 [key: string]: number;
             };
             changes: components["schemas"]["ShowcaseChangeOut"][];
+            timeline: components["schemas"]["TimelineOut"];
         };
         /** ShowcaseInput */
         ShowcaseInput: {

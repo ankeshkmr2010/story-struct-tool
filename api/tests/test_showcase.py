@@ -19,6 +19,7 @@ async def test_showcase_is_opt_in_public_readonly_and_revocable(client):
     body = page.json()
     assert "Maya waits." in body["manuscript"]
     assert body["versions"] and body["changes"]
+    assert "entries" in body["timeline"]
     assert "Private note" not in page.text
     assert not {"annotation", "scene_revision", "suggestion"} & body["structure"].keys()
     assert all("notes" not in row for rows in body["structure"].values() for row in rows)
