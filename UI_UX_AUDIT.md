@@ -133,7 +133,7 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [x] T7 (c8f760a, via T15) Token migration for the workspace shell (header, sidebar, panels): Tailwind palette classes → `index.css` tokens (C1, partial).
 
 **Tranche 2 — friction**
-- [ ] T8 Read: no repeated blurb; context panel closed by default. `SharedStoryReader.tsx` (`StoryReader`).
+- [x] T8 (c48a0d2, 7dc48a9) Read: no repeated blurb; context panel closed by default. `SharedStoryReader.tsx` (`StoryReader`).
 - [ ] T9 Write: collapse empty Epigraph / Opening / Closing note into "+ Add epigraph / note". `StoryWriter.tsx`.
 - [ ] T10 Library cards: Delete into a ⋯ menu; last edited + word count instead of the "complete" bar; mark examples/tutorial; New story ▾ (Blank / From backup); on-palette tutorial CTA. `web/src/pages/StoryList.tsx`.
 - [ ] T11 First run: "Start with the demo" card; empty state per tab saying what it is for.
