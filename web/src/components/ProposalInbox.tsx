@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type AIRun } from '../api/client'
 import { errorText } from '../api/errors'
-import { OutlineCatchup } from './OutlineCatchup'
 
 type Operation = AIRun['proposal']['operations'][number]
 type StatusFilter = 'pending' | 'applied' | 'closed' | 'all'
@@ -58,7 +57,6 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
         <h2 className="text-2xl font-semibold">Agent changes</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Every batch an agent or the assistant staged for this story. Apply or dismiss pending batches; undo an applied batch while nothing has changed since.</p>
       </header>
-      <OutlineCatchup storyId={storyId} />
       <div className="flex flex-wrap items-center gap-2">
         {(['pending', 'applied', 'closed', 'all'] as StatusFilter[]).map((key) => (
           <button key={key} type="button" aria-pressed={status === key} onClick={() => setStatus(key)} className={`rounded-full border px-3 py-1 text-xs capitalize ${status === key ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-200 dark:text-slate-950' : 'border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-300'}`}>
