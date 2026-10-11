@@ -20,6 +20,7 @@ import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
 import { AuthorshipPanel } from '../components/AuthorshipPanel'
 import { StorySharing } from '../components/StorySharing'
+import { DownloadMenu } from '../components/DownloadMenu'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 // Lazy: CodeMirror is the largest dependency in the app and is only needed once the
 // author reaches level 8, so it should not sit in the initial bundle.
@@ -232,9 +233,6 @@ function Workspace() {
       <header className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{story.data.title}</h1>
-          <p className="mt-0.5 text-xs text-slate-400">
-            {story.data.structure_framework.replace('_', ' ')}
-          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {progress.data && (
@@ -243,30 +241,12 @@ function Workspace() {
               {progress.data.drafted_scene_count}/{progress.data.scene_count} scenes drafted
             </span>
           )}
-          {/* Export is first-class: this tool augments a writer's process, so the words
-              must always be able to leave. */}
-          <a
-            href={api.manuscriptUrl(storyId)}
-            className="rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950"
-          >
-            Export .md
-          </a>
-          <a
-            href={api.manuscriptDocxUrl(storyId)}
-            className="rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950"
-          >
-            Export .docx
-          </a>
-          <a
-            href={api.backupUrl(storyId)}
-            title="Everything in this story, including notes and scene revisions. Restore it from your library."
-            className="rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950"
-          >
-            Backup
-          </a>
           <StoryVersions storyId={storyId} />
           <AuthorshipPanel storyId={storyId} />
           <StorySharing storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} />
+          {/* Export is first-class: this tool augments a writer's process, so the words
+              must always be able to leave. */}
+          <DownloadMenu storyId={storyId} />
           <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             Mode
             <select

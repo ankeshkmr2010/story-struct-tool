@@ -215,6 +215,14 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .scene-details-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
 .share-story-button, .sharing-primary { display: inline-block; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 12px; text-decoration: none; }
 .share-story-button:hover { background: var(--accent-soft); }
+.download-menu { position: relative; }
+.download-menu > summary { list-style: none; cursor: pointer; }
+.download-menu > summary::-webkit-details-marker { display: none; }
+.download-menu-panel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: 280px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 12px 32px rgb(0 0 0 / .25); }
+.download-menu-panel a { display: block; padding: 8px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+.download-menu-panel a:hover, .download-menu-panel a:focus-visible { background: var(--accent-soft); }
+.download-menu-panel strong { display: block; font-size: 13px; font-weight: 600; }
+.download-menu-panel span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
 .sharing-primary { background: var(--accent); color: var(--button-ink); border-color: var(--accent); }
 .sharing-primary:disabled, .share-story-button:disabled { opacity: .5; }
 .story-sharing-dialog { width: min(640px, calc(100% - 32px)); max-height: 85dvh; margin: auto; padding: 28px; overflow: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); box-shadow: 0 20px 80px #0003; }
