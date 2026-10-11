@@ -84,11 +84,11 @@ export function StoryTimeline({ storyId, onOpenScene }: {
       </div>
 
       {moments.length > 0 ? (
-        <section className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-b from-slate-50 to-white" aria-label="Visual story timeline">
+        <section className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900" aria-label="Visual story timeline">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-4 py-3 text-xs text-slate-500 dark:text-slate-400"><span>{order === 'world' ? 'Earlier ← when it happened → Later' : 'Opening ← when it is told → Ending'}</span><span>◆ Turning point</span></div>
           <div className="overflow-x-auto px-6 py-5" tabIndex={0} aria-label="Scroll horizontally through story events">
             <div className="relative flex w-max min-w-full gap-7 pb-4">
-              <div aria-hidden="true" className="absolute left-0 right-0 top-[60px] h-0.5 bg-sky-200" />
+              <div aria-hidden="true" className="absolute left-0 right-0 top-[60px] h-0.5 bg-sky-200 dark:bg-sky-900" />
               {moments.map((moment, index) => (
                 <section key={moment.position} className="relative w-72 shrink-0">
                   <div className="h-20">
