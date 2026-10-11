@@ -598,3 +598,11 @@ ol.showcase-list { list-style: decimal; }
 @keyframes live-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 /* In the tab bar the live dot sits right after Write/Read/Design and pushes the panel toggles right. */
 .live-update-status.in-bar { margin: 0 auto 0 4px; }
+/* Library card extras: example/tutorial tag and the ⋯ menu that holds Delete. */
+.story-card-tag { display: inline-block; margin: 2px 0 4px; padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 11px; font-weight: 600; }
+.story-card-menu { position: relative; }
+.story-card-menu > summary { list-style: none; cursor: pointer; padding: 4px 10px; border-radius: 6px; color: var(--muted); font-size: 18px; line-height: 1; }
+.story-card-menu > summary::-webkit-details-marker { display: none; }
+.story-card-menu > summary:hover, .story-card-menu[open] > summary { background: var(--accent-soft); color: var(--ink); }
+.story-card-menu > div { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 140px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 8px 24px rgb(0 0 0 / .15); }
+.story-card-menu .story-delete-button { width: 100%; text-align: left; }

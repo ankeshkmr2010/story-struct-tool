@@ -5,21 +5,20 @@ import { api, type Story } from '../api/client'
 import { errorText } from '../api/errors'
 import { StorySharing } from '../components/StorySharing'
 
-function CompletenessBar({ story }: { story: Story }) {
-  const { is_complete, missing, ratio } = story.completeness
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-        <div
-          className={is_complete ? 'h-full bg-emerald-500' : 'h-full bg-amber-500'}
-          style={{ width: `${ratio * 100}%` }}
-        />
-      </div>
-      <span className="text-xs text-slate-500 dark:text-slate-400">
-        {is_complete ? 'complete' : `needs: ${missing.join(', ')}`}
-      </span>
-    </div>
-  )
+// Library cards show when a story was last touched rather than a completeness bar.
+function editedLabel(iso: string) {
+  const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60_000)
+  if (minutes < 1) return 'Edited just now'
+  if (minutes < 60) return `Edited ${minutes} min ago`
+  if (minutes < 60 * 24) return `Edited ${Math.round(minutes / 60)} h ago`
+  return `Edited ${new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+}
+
+// Seeded study examples and the tutorial are marked so they read as practice material.
+function exampleTag(story: Story) {
+  if (story.genre === 'Tutorial · timelines and arcs') return 'Tutorial'
+  if (story.genre?.endsWith('original study outline')) return 'Example'
+  return null
 }
 
 export default function StoryList() {
@@ -168,21 +167,20 @@ export default function StoryList() {
               >
                 {story.title}
               </Link>}
+              {exampleTag(story) && <span className="story-card-tag">{exampleTag(story)}</span>}
               <p className="truncate text-xs text-slate-400">
                 {story.premise ?? 'no premise yet'}
               </p>
-              <div className="mt-1.5">
-                <CompletenessBar story={story} />
-              </div>
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{editedLabel(story.updated_at)}</p>
             </div>
-            {showTrash ? <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => restore.mutate(story.id)} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm disabled:opacity-50">Restore</button><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => { purge.reset(); setPurgeConfirmation(''); setPendingPurge(story) }} className="text-xs text-red-700 dark:text-red-300">Delete permanently</button></div> : <div className="story-card-actions"><StorySharing storyId={story.id} title={story.title} blurb={story.blurb} /><button
+            {showTrash ? <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => restore.mutate(story.id)} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm disabled:opacity-50">Restore</button><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => { purge.reset(); setPurgeConfirmation(''); setPendingPurge(story) }} className="text-xs text-red-700 dark:text-red-300">Delete permanently</button></div> : <div className="story-card-actions"><StorySharing storyId={story.id} title={story.title} blurb={story.blurb} />{/* Delete stays one step away so it is not as prominent as Share. */}<details className="story-card-menu"><summary aria-label={`More actions for ${story.title}`}>⋯</summary><div><button
               type="button"
               aria-label={`Delete ${story.title}`}
-              onClick={() => { remove.reset(); setPendingDelete(story) }}
-              className="story-delete-button ml-3 shrink-0"
+              onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); remove.reset(); setPendingDelete(story) }}
+              className="story-delete-button"
             >
               Delete
-            </button></div>}
+            </button></div></details></div>}
           </li>
         ))}
       </ul>
