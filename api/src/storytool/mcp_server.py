@@ -795,12 +795,29 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         suffix = f"/ai/runs?limit={limit}" + (f"&status={status}" if status else "")
         return {"runs": await call(ctx, suffix, story_id=story_id)}
 
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_outline_catchup(
+        ctx: Context,
+        story_id: UUID | None = None,
+        limit: Annotated[int, Field(ge=1, le=20)] = 6,
+    ) -> dict[str, Any]:
+        """Reverse outline worklist: drafted scenes whose outline lags the prose (no summary,
+        prose changed since the summary, no characters or no location), in reading order, with
+        their prose, known characters/locations/events and a base_fingerprint. Follow its
+        instructions and stage one proposal; the author accepts all, some or none."""
+        return await call(ctx, f"/ai/catchup?limit={limit}", story_id=story_id)
+
     @server.tool()
     async def apply_story_changes(
-        ctx: Context, run_id: UUID, story_id: UUID | None = None
+        ctx: Context,
+        run_id: UUID,
+        story_id: UUID | None = None,
+        operations: list[int] | None = None,
     ) -> dict[str, Any]:
-        """Apply only an author-authorized staged plan. Atomic, stale guarded and retry-safe."""
-        return await call(ctx, f"/ai/runs/{run_id}/apply", "POST", {}, story_id=story_id)
+        """Apply only an author-authorized staged plan. Atomic, stale guarded and retry-safe.
+        operations: optional zero-based indices to apply only the ones the author accepted."""
+        body = {"operations": operations} if operations is not None else {}
+        return await call(ctx, f"/ai/runs/{run_id}/apply", "POST", body, story_id=story_id)
 
     @server.tool()
     async def undo_story_changes(
@@ -926,6 +943,17 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
                 "Show alternatives and preserve the author's voice. Stage a focused batch, inspect "
                 "its impact, apply only requested changes, and read findings again."
             )
+        )
+
+    @server.prompt()
+    def catch_up_outline() -> str:
+        """Reverse outline: update summaries, cast, places and events from the written prose."""
+        return (
+            INSTRUCTIONS
+            + "Call get_outline_catchup. Follow its instructions for the listed scenes and stage "
+            "one proposal with its base_fingerprint. Do not apply it: tell the author it is "
+            "waiting in the StoryTool inbox, where they can accept all, some or none. If "
+            "pending_scenes is larger than the list, say how many remain."
         )
 
     # SDK 2.3 high-level wrapper drops host/security arguments; use its low-level factory.

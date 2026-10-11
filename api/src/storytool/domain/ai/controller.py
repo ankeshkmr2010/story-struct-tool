@@ -15,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.ai import runner
+from storytool.domain.ai.catchup import catchup_worklist
 from storytool.domain.ai.commands import (
     execute_proposal,
     fingerprint,
@@ -30,6 +31,7 @@ from storytool.domain.ai.diagnostics import response_log
 from storytool.domain.ai.models import AgentToken, AIConnection, AIRun
 from storytool.domain.ai.patches import LIST_FIELDS, field_hash
 from storytool.domain.ai.schemas import (
+    ApplyRequest,
     ConnectionOut,
     ConnectionSave,
     ObservationOut,
@@ -42,6 +44,32 @@ from storytool.domain.ai.schemas import (
 
 class ConflictException(ClientException):
     status_code = 409
+
+
+def partial_proposal(proposal: Proposal, chosen: list[int]) -> Proposal:
+    """Keep only the accepted operations, refusing a choice that breaks a new: reference."""
+    if not chosen or any(i < 0 or i >= len(proposal.operations) for i in chosen):
+        raise ClientException(detail="Choose at least one operation from this proposal")
+    kept = [proposal.operations[i] for i in sorted(set(chosen))]
+    declared = {op.ref: i for i, op in enumerate(proposal.operations) if op.op == "create"}
+    created = {op.ref for op in kept if op.op == "create"}
+
+    def refs(value: Any) -> set[str]:
+        if isinstance(value, str):
+            return {value} if value in declared else set()
+        if isinstance(value, dict):
+            return set().union(*(refs(item) for item in value.values()))
+        if isinstance(value, list):
+            return set().union(*(refs(item) for item in value))
+        return set()
+
+    missing = {ref for op in kept for ref in refs([op.ref, op.data])} - created
+    if missing:
+        needed = ", ".join(str(declared[ref] + 1) for ref in sorted(missing))
+        raise ClientException(
+            detail=f"Also accept change {needed}: the selected changes refer to what it creates"
+        )
+    return proposal.model_copy(update={"operations": kept})
 
 
 def actor(request: Request) -> UUID:
@@ -214,6 +242,19 @@ class AIController(Controller):
         )
         return await story_context(db_session, story_id, include_prose)
 
+    @get("/stories/{story_id:uuid}/ai/catchup")
+    async def catchup(
+        self,
+        request: Request,
+        db_session: AsyncSession,
+        story_id: UUID,
+        limit: int = Parameter(default=6, ge=1, le=20),
+    ) -> dict[str, Any]:
+        await owned_story(db_session, story_id, actor(request))
+        state = await snapshot(db_session, story_id)
+        worklist = await catchup_worklist(db_session, story_id, state, limit)
+        return {"base_fingerprint": fingerprint(state), **worklist}
+
     @get("/stories/{story_id:uuid}/ai/runs")
     async def list_runs(
         self,
@@ -283,6 +324,8 @@ class AIController(Controller):
             )
         context["conversation"] = conversation
         context["assistant_mode"] = data.mode
+        if data.catchup:
+            context["reverse_outline"] = await catchup_worklist(db_session, story_id, state)
         if len(json.dumps(context)) > 180000:
             raise ClientException(
                 detail="This story exceeds the current context limit. Try without prose."
@@ -370,7 +413,12 @@ class AIController(Controller):
 
     @post("/stories/{story_id:uuid}/ai/runs/{run_id:uuid}/apply")
     async def apply(
-        self, request: Request, db_session: AsyncSession, story_id: UUID, run_id: UUID
+        self,
+        request: Request,
+        db_session: AsyncSession,
+        story_id: UUID,
+        run_id: UUID,
+        data: ApplyRequest | None = None,
     ) -> RunOut:
         row = await run_record(db_session, actor(request), story_id, run_id)
         if row.status == "applied":
@@ -382,6 +430,9 @@ class AIController(Controller):
                 detail="The story changed since this proposal. Generate a fresh one."
             )
         proposal = Proposal.model_validate(row.proposal)
+        chosen = data.operations if data and data.operations is not None else None
+        if chosen is not None:
+            proposal = partial_proposal(proposal, chosen)
         if any(operation.op == "delete" for operation in proposal.operations):
             request.scope["state"]["explicit_deletion_checkpoint"] = True
             from storytool.domain.versioning.service import checkpoint
@@ -412,6 +463,9 @@ class AIController(Controller):
             }
         row.result = {
             **result,
+            "applied_operations": sorted(set(chosen))
+            if chosen is not None
+            else list(range(len(proposal.operations))),
             "base_fingerprint": row.applied_fingerprint,
             "updated_hashes": list(hashes.values()),
         }

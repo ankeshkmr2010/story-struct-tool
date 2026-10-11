@@ -221,7 +221,7 @@ class StoryAccessMiddleware:
                             "/backup",
                         )
                     )
-                    or suffix in {"/ai/runs", "/ai/observations"}
+                    or suffix in {"/ai/runs", "/ai/observations", "/ai/catchup"}
                 ):
                     needed.add("prose:read")
                 if collection:

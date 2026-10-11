@@ -58,6 +58,8 @@ export type StoryTimeline = S['TimelineOut']
 export type TimelineEntry = S['TimelineEntryOut']
 export type AIConnection = S['ConnectionOut']
 export type AIRun = S['RunOut']
+export type CatchupScene = { id: string; title: string | null; chapter: { id: string; title: string | null } | null; reasons: string[]; summary: string | null }
+export type OutlineCatchup = { drafted_scenes: number; pending_scenes: number; scenes: CatchupScene[] }
 export type StoryVersion = S['VersionOut']
 export type StoryVersionPreview = S['VersionPreview']
 export type AIProposal = S['Proposal']
@@ -109,9 +111,10 @@ export const api = {
   listAIRuns: (id: string, status?: string, limit = 30) =>
     request<AIRun[]>(`/api/stories/${id}/ai/runs?limit=${limit}${status ? `&status=${status}` : ''}`),
   listAIObservations: (id: string) => request<AIObservation[]>(`/api/stories/${id}/ai/observations`),
+  getOutlineCatchup: (id: string) => request<OutlineCatchup>(`/api/stories/${id}/ai/catchup?limit=20`),
   getAIContext: (id: string) => request<{ entities: Record<string, Record<string, unknown>[]> }>(`/api/stories/${id}/ai/context`),
   proposeAIChanges: (id: string, body: S['PromptRequest']) => post<AIRun>(`/api/stories/${id}/ai/propose`, body),
-  applyAIRun: (id: string, runId: string) => post<AIRun>(`/api/stories/${id}/ai/runs/${runId}/apply`),
+  applyAIRun: (id: string, runId: string, operations?: number[]) => post<AIRun>(`/api/stories/${id}/ai/runs/${runId}/apply`, operations ? { operations } : undefined),
   undoAIRun: (id: string, runId: string) => post<AIRun>(`/api/stories/${id}/ai/runs/${runId}/undo`),
   dismissAIRun: (id: string, runId: string) => post<AIRun>(`/api/stories/${id}/ai/runs/${runId}/dismiss`),
   listAgentTokens: () => request<AgentToken[]>('/api/ai/agent-tokens'),

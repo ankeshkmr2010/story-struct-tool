@@ -80,6 +80,14 @@ class PromptRequest(BaseModel):
     include_prose: bool = False
     mode: Literal["author", "review"] = "author"
     conversation_run_ids: list[UUID] = Field(default_factory=list, max_length=20)
+    # Adds the reverse-outline worklist (scenes whose outline lags the prose) to the context.
+    catchup: bool = False
+
+
+class ApplyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    # Zero-based indices of the accepted operations; omitted means all of them.
+    operations: list[int] | None = Field(default=None, max_length=200)
 
 
 class ObservationOut(BaseModel):

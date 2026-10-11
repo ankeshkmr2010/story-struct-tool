@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type AIRun } from '../api/client'
 import { errorText } from '../api/errors'
+import { OutlineCatchup } from './OutlineCatchup'
 
 type Operation = AIRun['proposal']['operations'][number]
 type StatusFilter = 'pending' | 'applied' | 'closed' | 'all'
@@ -33,10 +34,12 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
   const [source, setSource] = useState<SourceFilter>('all')
   const [hideTests, setHideTests] = useState(true)
   const [openId, setOpenId] = useState<string | null>(null)
+  // Unticked operation indices per pending run; everything is accepted by default.
+  const [skipped, setSkipped] = useState<Record<string, number[]>>({})
   const refresh = () => { void qc.invalidateQueries({ predicate: (query) => query.queryKey.includes(storyId) }); void qc.invalidateQueries({ queryKey: ['stories'] }) }
   const act = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: 'apply' | 'undo' | 'dismiss' }) =>
-      action === 'apply' ? api.applyAIRun(storyId, id) : action === 'undo' ? api.undoAIRun(storyId, id) : api.dismissAIRun(storyId, id),
+    mutationFn: ({ id, action, operations }: { id: string; action: 'apply' | 'undo' | 'dismiss'; operations?: number[] }) =>
+      action === 'apply' ? api.applyAIRun(storyId, id, operations) : action === 'undo' ? api.undoAIRun(storyId, id) : api.dismissAIRun(storyId, id),
     onSuccess: refresh,
   })
 
@@ -61,6 +64,7 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
         <h2 className="text-2xl font-semibold">Agent changes</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Every batch an agent or the assistant staged for this story. Apply or dismiss pending batches; undo an applied batch while nothing has changed since.</p>
       </header>
+      <OutlineCatchup storyId={storyId} />
       <div className="flex flex-wrap items-center gap-2">
         {(['pending', 'applied', 'closed', 'all'] as StatusFilter[]).map((key) => (
           <button key={key} type="button" aria-pressed={status === key} onClick={() => setStatus(key)} className={`rounded-full border px-3 py-1 text-xs capitalize ${status === key ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-200 dark:text-slate-950' : 'border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-300'}`}>
@@ -85,18 +89,22 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
           const created = new Map(operations.filter((operation) => operation.op === 'create').map((operation) => [operation.ref, String(operation.data.name ?? operation.data.title ?? operation.data.label ?? operation.entity.replaceAll('_', ' '))]))
           const label = (value: unknown) => typeof value === 'string' ? labels.get(value) ?? created.get(value) : undefined
           const busy = act.isPending && act.variables?.id === run.id
+          const off = skipped[run.id] ?? []
+          const chosen = operations.map((_, index) => index).filter((index) => !off.includes(index))
+          const applied = Array.isArray(run.result?.applied_operations) ? run.result.applied_operations as number[] : undefined
+          const toggle = (index: number) => setSkipped((current) => ({ ...current, [run.id]: off.includes(index) ? off.filter((item) => item !== index) : [...off, index] }))
           return (
             <li key={run.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className={`rounded-full px-2 py-0.5 capitalize ${statusTone[run.status] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{run.status === 'proposed' ? 'pending' : run.status}</span>
-                <span className="text-slate-500 dark:text-slate-400">{run.provider === 'external' ? 'External agent' : 'Assistant'} · {new Date(run.created_at).toLocaleString()} · {operations.length} change{operations.length === 1 ? '' : 's'}</span>
+                <span className="text-slate-500 dark:text-slate-400">{run.provider === 'external' ? 'External agent' : 'Assistant'} · {new Date(run.created_at).toLocaleString()} · {operations.length} change{operations.length === 1 ? '' : 's'}{applied && applied.length < operations.length ? ` · ${applied.length} accepted` : ''}</span>
                 {isTestRun(run) && <span className="text-slate-400">· looks like a test</span>}
               </div>
               <p className={`mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200 ${open ? '' : 'line-clamp-2'}`}>{run.summary}</p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 {operations.length > 0 && <button type="button" aria-expanded={open} onClick={() => setOpenId(open ? null : run.id)} className="text-xs font-medium underline">{open ? 'Hide changes' : 'Show changes'}</button>}
                 {run.status === 'proposed' && <>
-                  <button type="button" disabled={act.isPending || !operations.length} onClick={() => act.mutate({ id: run.id, action: 'apply' })} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{busy && act.variables?.action === 'apply' ? 'Applying…' : 'Apply'}</button>
+                  <button type="button" disabled={act.isPending || !chosen.length} onClick={() => act.mutate({ id: run.id, action: 'apply', operations: off.length ? chosen : undefined })} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{busy && act.variables?.action === 'apply' ? 'Applying…' : off.length ? `Apply ${chosen.length} of ${operations.length}` : 'Apply'}</button>
                   <button type="button" disabled={act.isPending} onClick={() => act.mutate({ id: run.id, action: 'dismiss' })} className="text-xs text-slate-500 disabled:opacity-40 dark:text-slate-400">Dismiss</button>
                 </>}
                 {run.status === 'applied' && <button type="button" disabled={act.isPending} onClick={() => act.mutate({ id: run.id, action: 'undo' })} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs disabled:opacity-40 dark:border-slate-600">{busy ? 'Undoing…' : 'Undo batch'}</button>}
@@ -104,7 +112,8 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
               </div>
               {open && <>
                 {run.proposal.assumptions.length > 0 && <ul className="mt-3 list-disc space-y-1 rounded-lg bg-amber-50 p-3 pl-7 text-xs leading-5 text-amber-900 dark:bg-amber-950 dark:text-amber-300">{run.proposal.assumptions.map((item, index) => <li key={index}>{item}</li>)}</ul>}
-                <ol className="mt-3 space-y-2">{operations.map((operation, index) => <OperationDiff key={index} operation={operation} pending={run.status === 'proposed'} before={rows.get(operation.ref)} title={label(operation.ref)} label={label} />)}</ol>
+                {run.status === 'proposed' && operations.length > 1 && <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Untick any change you don't want, then apply the rest.</p>}
+                <ol className="mt-3 list-decimal space-y-2 pl-6 text-xs text-slate-500 dark:text-slate-400">{operations.map((operation, index) => <OperationDiff key={index} operation={operation} pending={run.status === 'proposed'} before={rows.get(operation.ref)} title={label(operation.ref)} label={label} checked={run.status === 'proposed' ? !off.includes(index) : undefined} onToggle={() => toggle(index)} notApplied={applied ? !applied.includes(index) : false} />)}</ol>
               </>}
             </li>
           )
@@ -114,7 +123,7 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
   )
 }
 
-function OperationDiff({ operation, pending, before, title, label }: { operation: Operation; pending: boolean; before?: Record<string, unknown>; title?: string; label: (value: unknown) => string | undefined }) {
+function OperationDiff({ operation, pending, before, title, label, checked, onToggle, notApplied }: { operation: Operation; pending: boolean; before?: Record<string, unknown>; title?: string; label: (value: unknown) => string | undefined; checked?: boolean; onToggle?: () => void; notApplied?: boolean }) {
   const show = (value: unknown) => {
     if (value === null || value === undefined || value === '') return 'Not set'
     if (typeof value === 'boolean') return value ? 'Yes' : 'No'
@@ -123,8 +132,11 @@ function OperationDiff({ operation, pending, before, title, label }: { operation
   }
   const fields = Object.entries(operation.data).filter(([field]) => !hidden.has(field))
   return (
-    <li className="rounded-md bg-slate-50 p-3 text-xs leading-5 dark:bg-slate-950">
-      <p className="font-semibold text-slate-700 dark:text-slate-200">{verbs[operation.op] ?? operation.op} {operation.entity.replaceAll('_', ' ')}{title ? ` · ${title}` : ''}</p>
+    <li className={`rounded-md bg-slate-50 p-3 text-xs leading-5 dark:bg-slate-950 ${checked === false || notApplied ? 'opacity-50' : ''}`}>
+      <p className="font-semibold text-slate-700 dark:text-slate-200">
+        {checked !== undefined && <input type="checkbox" checked={checked} onChange={onToggle} aria-label="Accept this change" className="mr-2 align-middle" />}
+        {verbs[operation.op] ?? operation.op} {operation.entity.replaceAll('_', ' ')}{title ? ` · ${title}` : ''}{notApplied ? ' · not accepted' : ''}
+      </p>
       {operation.op === 'patch_prose' && Array.isArray(operation.data.edits) ? (
         <ul className="mt-2 space-y-2">{(operation.data.edits as { find?: string; text?: string; replace?: string; action?: string }[]).map((edit, index) => (
           <li key={index} className="grid gap-1">
