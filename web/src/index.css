@@ -609,3 +609,8 @@ ol.showcase-list { list-style: decimal; }
 .writer-extra-add { margin-right: 14px; padding: 2px 0; color: var(--muted); font-size: 12px; }
 .writer-extra-add:hover { color: var(--accent); text-decoration: underline; }
 .library-create-more > summary { display: flex; height: 100%; align-items: center; padding: 0 12px; border: 1px solid var(--line); border-radius: 4px; font-size: 14px; }
+/* The reading box grows with its row (e.g. when Story context is taller); its usual height is the minimum. */
+.reader-book-shell { display: flex; flex-direction: column; }
+.reader-book-shell > .manuscript-reading { flex: 1 1 auto; display: flex; flex-direction: column; }
+.reader-book-shell .reading-paper { flex: 1 1 0; display: flex; flex-direction: column; }
+.reader-book-shell .reading-scrollport { flex: 1 1 0; height: auto; min-height: min(68dvh, 780px); }
