@@ -14,7 +14,7 @@ import { SceneDetails } from '../components/SceneDetails'
 import { StoryTimeline } from '../components/StoryTimeline'
 import { AuthoringAssistant } from '../components/AuthoringAssistant'
 import { StoryGrid } from '../components/StoryGrid'
-import { ProposalInbox, isTestRun } from '../components/ProposalInbox'
+import { ProposalInbox } from '../components/ProposalInbox'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
 import { AuthorshipPanel } from '../components/AuthorshipPanel'
@@ -71,7 +71,7 @@ function Workspace() {
   const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
   const ladder = useQuery({ queryKey: ['ladder', storyId], queryFn: () => api.getLadder(storyId) })
   const pending = useQuery({ queryKey: ['ai-runs', storyId, 'pending'], queryFn: () => api.listAIRuns(storyId, 'proposed', 200) })
-  const pendingRuns = pending.data?.filter((run) => !isTestRun(run)).length ?? 0
+  const pendingRuns = pending.data?.length ?? 0
   const health = useQuery({
     queryKey: ['health', storyId, level],
     queryFn: () => api.getHealth(storyId, Math.min(level, 8)),

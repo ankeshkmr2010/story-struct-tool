@@ -8,9 +8,6 @@ type Operation = AIRun['proposal']['operations'][number]
 type StatusFilter = 'pending' | 'applied' | 'closed' | 'all'
 type SourceFilter = 'all' | 'agent' | 'assistant'
 
-// No stored flag marks a run as a test, so this is a summary heuristic the author can switch off.
-export const isTestRun = (run: AIRun) => /\b(test(ing|s)?|smoke|probe|dry[ -]?run)\b/i.test(run.summary)
-
 const statusGroups: Record<StatusFilter, (status: string) => boolean> = {
   pending: (status) => status === 'proposed',
   applied: (status) => status === 'applied',
@@ -32,7 +29,6 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
   const context = useQuery({ queryKey: ['ai-context', storyId], queryFn: () => api.getAIContext(storyId) })
   const [status, setStatus] = useState<StatusFilter>('pending')
   const [source, setSource] = useState<SourceFilter>('all')
-  const [hideTests, setHideTests] = useState(true)
   const [openId, setOpenId] = useState<string | null>(null)
   // Unticked operation indices per pending run; everything is accepted by default.
   const [skipped, setSkipped] = useState<Record<string, number[]>>({})
@@ -52,9 +48,7 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
   }))
 
   const all = runs.data ?? []
-  const bySource = all.filter((run) => source === 'all' || (source === 'agent') === (run.provider === 'external'))
-  const visible = bySource.filter((run) => !hideTests || !isTestRun(run))
-  const tests = bySource.length - visible.length
+  const visible = all.filter((run) => source === 'all' || (source === 'agent') === (run.provider === 'external'))
   const shown = visible.filter((run) => statusGroups[status](run.status))
   const count = (key: StatusFilter) => visible.filter((run) => statusGroups[key](run.status)).length
 
@@ -76,7 +70,6 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
           <option value="agent">External agents (MCP)</option>
           <option value="assistant">In-app assistant</option>
         </select>
-        <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><input type="checkbox" checked={hideTests} onChange={(event) => setHideTests(event.target.checked)} />Hide test runs{tests > 0 ? ` (${tests})` : ''}</label>
       </div>
       {runs.isPending && <p className="text-sm text-slate-500 dark:text-slate-400">Loading changes…</p>}
       {runs.isError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(runs.error)}</p>}
@@ -98,7 +91,6 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className={`rounded-full px-2 py-0.5 capitalize ${statusTone[run.status] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{run.status === 'proposed' ? 'pending' : run.status}</span>
                 <span className="text-slate-500 dark:text-slate-400">{run.provider === 'external' ? 'External agent' : 'Assistant'} · {new Date(run.created_at).toLocaleString()} · {operations.length} change{operations.length === 1 ? '' : 's'}{applied && applied.length < operations.length ? ` · ${applied.length} accepted` : ''}</span>
-                {isTestRun(run) && <span className="text-slate-400">· looks like a test</span>}
               </div>
               <p className={`mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200 ${open ? '' : 'line-clamp-2'}`}>{run.summary}</p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
