@@ -64,12 +64,15 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
     try { localStorage.setItem(positionKey, id) } catch { /* Device preferences are optional. */ }
   }
   // A scene picked in the Timeline panel: open its chapter and put the cursor in it.
+  // Waits for scenes to load, since Write may mount with the request (Design → Open in Write).
+  const handledScene = useRef(0)
   useEffect(() => {
-    const scene = openScene && scenes.data?.find(item => item.id === openScene.id)
+    const scene = openScene && openScene.at !== handledScene.current && scenes.data?.find(item => item.id === openScene.id)
     if (!scene) return
+    handledScene.current = openScene.at
     void chooseChapter(scene.chapter_id ?? 'unfiled').then(ok => { if (ok) { setActiveScene(scene.id); setFocusTarget(scene.id) } })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openScene])
+  }, [openScene, scenes.data])
   const chooseChapter = async (id: string) => {
     if (!await flushWriter(prefix)) { setError('Your draft is still here. Resolve the save error before switching chapters.'); return false }
     setError(null); remember(id)

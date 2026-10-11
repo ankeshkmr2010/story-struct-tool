@@ -22,11 +22,6 @@ import { AuthorshipPanel } from '../components/AuthorshipPanel'
 import { StorySharing } from '../components/StorySharing'
 import { DownloadMenu } from '../components/DownloadMenu'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
-// Lazy: CodeMirror is the largest dependency in the app and is only needed once the
-// author reaches level 8, so it should not sit in the initial bundle.
-const SceneEditor = lazy(() =>
-  import('../components/SceneEditor').then((m) => ({ default: m.SceneEditor })),
-)
 const StoryWriter = lazy(() => import('../components/StoryWriter').then(m => ({ default: m.StoryWriter })))
 const StoryReader = lazy(() => import('./SharedStoryReader').then(m => ({ default: m.StoryReader })))
 
@@ -129,11 +124,6 @@ function Workspace() {
     ?? null
   const sceneSiblings = scenes.data?.filter((item) => item.chapter_id === selectedScene?.chapter_id) ?? []
   const sceneIndex = sceneSiblings.findIndex((item) => item.id === selectedScene?.id)
-  const sceneBrief = useQuery({
-    queryKey: ['brief', storyId, selectedScene?.chapter_id],
-    queryFn: () => api.getBrief(storyId, selectedScene!.chapter_id!),
-    enabled: Boolean(selectedScene?.chapter_id),
-  })
 
   const progress = useQuery({
     queryKey: ['progress', storyId],
@@ -473,20 +463,8 @@ function Workspace() {
 
               {selectedScene && <SceneDetails key={selectedScene.id} storyId={storyId} scene={selectedScene} onDeleted={() => setSceneId(null)} />}
 
-              {selectedScene && (
-                <div className="mt-4">
-                  <Suspense
-                    fallback={<p className="text-sm text-slate-400">Loading editor…</p>}
-                  >
-                  <SceneEditor
-                    key={selectedScene.id}
-                    storyId={storyId}
-                    scene={selectedScene}
-                    brief={sceneBrief.data}
-                  />
-                  </Suspense>
-                </div>
-              )}
+              {/* Prose is written in Write only; Design keeps the scene's plan. */}
+              {selectedScene && <button type="button" className="share-story-button mt-4" onClick={() => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id: selectedScene.id, at: Date.now() }) }) }}>Open in Write →</button>}
 
               {scenes.data?.length === 0 && <Empty>No scenes yet.</Empty>}
             </Panel>

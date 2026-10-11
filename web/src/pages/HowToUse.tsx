@@ -416,12 +416,6 @@ export default function HowToUse() {
                   Browser-tab recovery is temporary: closing the tab can remove it, and
                   signing out clears it. Versions preserve saved story state separately.
                 </Item>
-                <Item title="Annotate a line">
-                  In Design → Scenes, select text and choose <strong className="font-medium">Annotate
-                  selection</strong> to leave a note on it. Notes follow the sentence as you
-                  edit; if the text goes, the note is kept and flagged rather than silently
-                  moved.
-                </Item>
                 <Item title="Define your places">
                   Under Reference, give locations a description and atmosphere, then link
                   scenes to them. Places shows where each one appears and who was there.
