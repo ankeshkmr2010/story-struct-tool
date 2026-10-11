@@ -146,5 +146,5 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [ ] T16 Landing: reorder to write → plan → share; sell the public showcase.
 - [ ] T17 Dead code: `api.listAIObservations`, unused exported types in `web/src/api/client.ts` (C5).
 - [ ] T18 Make the in-app assistant discoverable: own ASSISTANT sidebar group, obvious "add your API key" step (`AuthoringAssistant.tsx`, `UserSettings.tsx`).
-- [ ] T19 Mobile pass.
+- [~] T19 (c48a0d2) Mobile pass: phone fix bundle from the 400px walkthrough (2026-10-11). Still open: Write epigraph/opening note above prose; Read reading-layout chrome; full purple → token migration (T15).
 - [ ] T20 Audit the parts not yet walked: Story timeline in depth, Settings, MCP setup.
