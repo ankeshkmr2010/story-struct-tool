@@ -2884,6 +2884,11 @@ export interface components {
             authoring_mode: string;
             parent_story_id: string | null;
             deleted_at: string | null;
+            /**
+             * Word Count
+             * @default 0
+             */
+            word_count: number;
         };
         /** StoryProgressOut */
         StoryProgressOut: {

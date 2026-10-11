@@ -13,8 +13,10 @@ from litestar import Controller, Request, delete, get, patch, post
 from litestar.di import Provide
 from litestar.exceptions import ClientException, NotFoundException
 from sqlalchemy import delete as sql_delete
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from storytool.domain.narrative.models import Scene
 from storytool.domain.story.models import Story
 from storytool.domain.story.schemas import StoryCreate, StoryOut, StoryPurge, StoryUpdate
 from storytool.domain.story.services import StoryService
@@ -38,6 +40,7 @@ class StoryController(Controller):
         self,
         stories: StoryService,
         request: Request,
+        db_session: AsyncSession,
         trashed: bool = False,
     ) -> list[StoryOut]:
         user_id = request.scope["state"]["storytool_user_id"]
@@ -45,7 +48,21 @@ class StoryController(Controller):
             Story.user_id == user_id,
             Story.deleted_at.is_not(None) if trashed else Story.deleted_at.is_(None),
         )
-        return [StoryOut.model_validate(record) for record in records]
+        # One grouped sum for the library cards; scene.word_count is server-maintained.
+        words: dict[UUID, int] = {}
+        if records:
+            rows = await db_session.execute(
+                select(Scene.story_id, func.coalesce(func.sum(Scene.word_count), 0))
+                .where(Scene.story_id.in_([record.id for record in records]))
+                .group_by(Scene.story_id)
+            )
+            words = {story_id: int(total) for story_id, total in rows.all()}
+        return [
+            StoryOut.model_validate(record).model_copy(
+                update={"word_count": words.get(record.id, 0)}
+            )
+            for record in records
+        ]
 
     @post(status_code=201, summary="Create a story")
     async def create_story(

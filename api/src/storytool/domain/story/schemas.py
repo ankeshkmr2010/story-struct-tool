@@ -65,6 +65,8 @@ class StoryOut(EntityOut):
     authoring_mode: str
     parent_story_id: UUID | None
     deleted_at: datetime | None
+    # Filled by the library list (sum of scene word counts); other routes leave it 0.
+    word_count: int = 0
 
 
 class StoryPurge(BaseModel):
