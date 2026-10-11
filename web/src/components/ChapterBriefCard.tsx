@@ -18,7 +18,7 @@ import type { ChapterBrief } from '../api/client'
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="brief-row grid grid-cols-[150px_1fr] gap-3 py-1.5">
-      <dt className="text-xs text-slate-400">{label}</dt>
+      <dt className="field-label">{label}</dt>
       <dd className="text-sm text-slate-800 dark:text-slate-100">{children}</dd>
     </div>
   )
@@ -32,7 +32,7 @@ export function ChapterBriefCard({ brief }: { brief: ChapterBrief }) {
   return (
     <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
       <div className="flex items-baseline justify-between">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="section-title">
           Chapter {brief.number}
           {brief.title && <span className="font-normal text-slate-500 dark:text-slate-400"> — {brief.title}</span>}
         </h3>
