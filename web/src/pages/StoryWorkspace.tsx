@@ -41,6 +41,7 @@ const GLOSSARY_VIEW = 103
 const INBOX_VIEW = 104
 const GRID_VIEW = 105
 const CATCHUP_VIEW = 106
+const HISTORY_VIEW = 107
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
@@ -52,6 +53,7 @@ function Workspace() {
   const qc = useQueryClient()
   const live = useStoryLiveUpdates(storyId)
   const [level, setLevel] = useState(1)
+  const [historyTab, setHistoryTab] = useState<'versions' | 'authorship'>('versions')
   const [tab, setTab] = useState<'write' | 'read' | 'design'>(() => {
     try { const saved = localStorage.getItem(`storytool-workspace:${storyId}`); return saved === 'write' || saved === 'read' ? saved : 'design' } catch { return 'design' }
   })
@@ -268,8 +270,7 @@ function Workspace() {
         <div>{viewItem(PLACES_VIEW, 'Places')}{viewItem(GLOSSARY_VIEW, 'Glossary')}</div>
         <div>
           {viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
-          <StoryVersions storyId={storyId} triggerLabel="Versions" className="workspace-views-item" />
-          <AuthorshipPanel storyId={storyId} label="Who wrote what" className="workspace-views-item" />
+          {viewItem(HISTORY_VIEW, 'History')}
           {viewItem(CATCHUP_VIEW, 'Catch up')}
         </div>
         <div>{viewItem(ASSISTANT_VIEW, 'Story assistant')}</div>
@@ -285,7 +286,7 @@ function Workspace() {
       <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design" hidden={tab !== 'design'}>
 
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setLevel(TIMELINE_VIEW)} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
-      <div className={`mt-6 grid grid-cols-1 gap-5 md:grid-cols-[170px_minmax(0,1fr)] ${level === TIMELINE_VIEW || level === ASSISTANT_VIEW || level === INBOX_VIEW || level === GRID_VIEW || level === CATCHUP_VIEW ? 'xl:grid-cols-[180px_minmax(0,1fr)]' : 'xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
+      <div className={`mt-6 grid grid-cols-1 gap-5 md:grid-cols-[170px_minmax(0,1fr)] ${level === TIMELINE_VIEW || level === ASSISTANT_VIEW || level === INBOX_VIEW || level === GRID_VIEW || level === CATCHUP_VIEW || level === HISTORY_VIEW ? 'xl:grid-cols-[180px_minmax(0,1fr)]' : 'xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
         <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
           <nav aria-label="Story design" className="workspace-nav">
             <h2>Plan</h2>
@@ -307,6 +308,13 @@ function Workspace() {
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
           {level === GLOSSARY_VIEW && <GlossaryPanel storyId={storyId} />}
+          {level === HISTORY_VIEW && <div>
+            <div className="history-tabs" role="tablist" aria-label="History">
+              <button type="button" role="tab" aria-selected={historyTab === 'versions'} onClick={() => setHistoryTab('versions')}>Versions</button>
+              <button type="button" role="tab" aria-selected={historyTab === 'authorship'} onClick={() => setHistoryTab('authorship')}>Who wrote what</button>
+            </div>
+            {historyTab === 'versions' ? <StoryVersions storyId={storyId} /> : <AuthorshipPanel storyId={storyId} />}
+          </div>}
           {level === 1 && (
             <Panel title="Premise" hint="The story's starting point and settings.">
               <div className="space-y-3">
@@ -469,7 +477,7 @@ function Workspace() {
           )}
         </section>
 
-        {level !== TIMELINE_VIEW && level !== ASSISTANT_VIEW && level !== INBOX_VIEW && level !== GRID_VIEW && level !== CATCHUP_VIEW && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
+        {level !== TIMELINE_VIEW && level !== ASSISTANT_VIEW && level !== INBOX_VIEW && level !== GRID_VIEW && level !== CATCHUP_VIEW && level !== HISTORY_VIEW && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
           <InsightsPanel storyId={storyId} health={health.data} />
         </aside>}
       </div>
