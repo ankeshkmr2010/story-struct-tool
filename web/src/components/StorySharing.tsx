@@ -42,6 +42,28 @@ export function StorySharing({ storyId, title, blurb, beforeOpen }: { storyId: s
       {shares.data?.length === 0 && <p className="writer-help">This story is private. Grant access to share it.</p>}
       <ul className="sharing-people">{shares.data?.map(share => <li key={share.id}><span>{share.recipient_email}</span><select aria-label={`Permission for ${share.recipient_email}`} disabled={pending} value={share.allow_import ? 'import' : 'read'} onChange={event => save.mutate({ email: share.recipient_email, allow: event.target.value === 'import' })}><option value="read">Read only</option><option value="import">Read and import a copy</option></select><button type="button" className="share-story-button" disabled={pending} onClick={() => { if (window.confirm(`Revoke access for ${share.recipient_email}? Copies already imported will remain theirs.`)) revoke.mutate(share.id) }}>Revoke</button></li>)}</ul>
       <p className="writer-help">You keep ownership. Imports are independent drafts; later changes and revoked access do not remove copies already imported. Moving this story to Trash hides it from recipients until restored.</p>
+      {open && <ShowcaseControls storyId={storyId} />}
     </dialog>
   </>
+}
+
+function ShowcaseControls({ storyId }: { storyId: string }) {
+  const qc = useQueryClient()
+  const [message, setMessage] = useState('')
+  const key = ['story-showcase', storyId]
+  const showcase = useQuery({ queryKey: key, queryFn: () => api.getShowcase(storyId) })
+  const done = (text: string) => (data: Awaited<ReturnType<typeof api.getShowcase>>) => { qc.setQueryData(key, data); setMessage(text) }
+  const toggle = useMutation({ mutationFn: (enabled: boolean) => api.setShowcase(storyId, enabled), onSuccess: (data, enabled) => done(enabled ? 'Public showcase is on. Anyone with the link can view it.' : 'Public showcase is off. The link no longer works.')(data) })
+  const rotate = useMutation({ mutationFn: () => api.rotateShowcase(storyId), onSuccess: done('New link created. The old link no longer works.') })
+  const link = showcase.data?.token ? `${location.origin}/showcase/${showcase.data.token}` : ''
+  const busy = toggle.isPending || rotate.isPending
+  const copy = async () => { try { await navigator.clipboard.writeText(link); setMessage('Showcase link copied.') } catch { setMessage(`Copy this link: ${link}`) } }
+  return <section aria-labelledby={`showcase-${storyId}`}>
+    <h3 id={`showcase-${storyId}`} className="sharing-subheading">Public showcase</h3>
+    <p className="writer-help">A read-only page anyone can open without signing in: manuscript, story context, timeline, design, and version history. Private notes, annotations, and AI conversations stay private. Search engines are asked not to index it.</p>
+    <label className="sharing-form"><input type="checkbox" disabled={busy || showcase.isPending} checked={showcase.data?.enabled ?? false} onChange={event => toggle.mutate(event.target.checked)} /> Anyone with the link can view</label>
+    {link && <div className="sharing-link"><input readOnly aria-label="Showcase link" value={link} onFocus={event => event.target.select()} /><button type="button" className="share-story-button" onClick={() => { void copy() }}>Copy link</button><a className="share-story-button" href={link} target="_blank" rel="noreferrer">Open</a><button type="button" className="share-story-button" disabled={busy} onClick={() => { if (window.confirm('Replace the showcase link? Anyone using the old link will lose access.')) rotate.mutate() }}>New link</button></div>}
+    {message && <p role="status" className="sharing-message">{message}</p>}
+    {(showcase.isError || toggle.isError || rotate.isError) && <p role="alert" className="writer-error">{errorText(showcase.error ?? toggle.error ?? rotate.error)}</p>}
+  </section>
 }

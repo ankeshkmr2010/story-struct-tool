@@ -23,10 +23,11 @@ def frontend_router(directory: Path) -> Router:
             "/oauth/consent",
             "/stories/{story_id:uuid}",
             "/shared/{story_id:uuid}",
+            "/showcase/{token:str}",
         ],
         include_in_schema=False,
     )
-    async def index(story_id: UUID | None = None) -> File:
+    async def index(story_id: UUID | None = None, token: str | None = None) -> File:
         return File(
             directory / "index.html",
             media_type="text/html",

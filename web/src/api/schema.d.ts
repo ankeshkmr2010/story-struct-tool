@@ -675,6 +675,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/showcase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetShowcase */
+        get: operations["ApiStoriesStoryIdShowcaseGetShowcase"];
+        /** SetShowcase */
+        put: operations["ApiStoriesStoryIdShowcaseSetShowcase"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/showcase/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate */
+        post: operations["ApiStoriesStoryIdShowcaseRotateRotate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/showcase/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ReadShowcase */
+        get: operations["ApiShowcaseTokenReadShowcase"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/backup": {
         parameters: {
             query?: never;
@@ -2727,6 +2779,52 @@ export interface components {
             owner_name: string;
             allow_import: boolean;
         };
+        /** ShowcaseChangeOut */
+        ShowcaseChangeOut: {
+            summary: string;
+            status: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /** ShowcaseDocumentOut */
+        ShowcaseDocumentOut: {
+            title: string;
+            premise: string | null;
+            blurb: string | null;
+            genre: string | null;
+            owner_name: string;
+            /** Format: date-time */
+            updated_at: string;
+            manuscript: string;
+            structure: {
+                [key: string]: {
+                    [key: string]: unknown;
+                }[];
+            };
+            versions: components["schemas"]["ShowcaseVersionOut"][];
+            authorship: {
+                [key: string]: number;
+            };
+            changes: components["schemas"]["ShowcaseChangeOut"][];
+        };
+        /** ShowcaseInput */
+        ShowcaseInput: {
+            enabled: boolean;
+        };
+        /** ShowcaseOut */
+        ShowcaseOut: {
+            enabled: boolean;
+            token: string | null;
+        };
+        /** ShowcaseVersionOut */
+        ShowcaseVersionOut: {
+            number: number;
+            label: string;
+            source: string;
+            /** Format: date-time */
+            created_at: string;
+            word_count: number | null;
+        };
         /** SnapshotOut */
         SnapshotOut: {
             story_is_complete: boolean;
@@ -4659,6 +4757,158 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StoryActivityOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdShowcaseGetShowcase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShowcaseOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdShowcaseSetShowcase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShowcaseInput"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShowcaseOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdShowcaseRotateRotate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShowcaseOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiShowcaseTokenReadShowcase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShowcaseDocumentOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

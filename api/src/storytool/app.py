@@ -35,6 +35,7 @@ from storytool.domain.story.sharing import (
     StoryReaderController,
     StoryShareController,
 )
+from storytool.domain.story.showcase import PublicShowcaseController, StoryShowcaseController
 from storytool.domain.story.timeline_controller import TimelineController
 from storytool.domain.structure.controller import (
     ActController,
@@ -79,6 +80,8 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             AuthorshipController,
             StoryShareController,
             SharedStoriesController,
+            StoryShowcaseController,
+            PublicShowcaseController,
             StoryBackupController,
             BackupImportController,
             StoryReaderController,

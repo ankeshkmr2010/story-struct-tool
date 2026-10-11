@@ -123,7 +123,11 @@ class StoryAccessMiddleware:
             ):
                 await _reject(send, 403, "Use this site's own origin for browser writes")
                 return
-        if not path.startswith("/api/") or path in _PUBLIC_PATHS or path.startswith("/api/schema"):
+        if (
+            not path.startswith("/api/")
+            or path in _PUBLIC_PATHS
+            or path.startswith(("/api/schema", "/api/showcase/"))
+        ):
             await self.app(scope, receive, send)
             return
 
@@ -252,7 +256,7 @@ class StoryAccessMiddleware:
             story_match = _STORY_PATH.match(path)
             arc_match = _ARC_PATH.match(path)
             if story_match:
-                if delegated and "/shares" in path:
+                if delegated and ("/shares" in path or path.endswith("/showcase")):
                     await _reject(send, 403, "Manage sharing in StoryTool's browser interface")
                     return
                 try:
