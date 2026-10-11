@@ -69,18 +69,6 @@ export function OutlineCatchup({ storyId, onOpenInbox }: { storyId: string; onOp
       )}
       {run.isError && <p role="alert" className="mt-2 text-xs text-red-600 dark:text-red-300">{errorText(run.error)}</p>}
       {run.isSuccess && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{run.data.status === 'invalid' ? `The assistant's batch couldn't be validated: ${String(run.data.result?.validation_error ?? '')}` : <>The assistant's batch is ready for review. <button type="button" onClick={onOpenInbox} className="font-medium underline">Open Agent changes</button></>}</p>}
-      {data.scenes.length > 0 && (
-        <details className="mt-3 text-xs">
-          <summary className="cursor-pointer text-slate-600 dark:text-slate-300">Scenes to catch up{data.pending_scenes > data.scenes.length ? ` (first ${data.scenes.length})` : ''}</summary>
-          <ul className="mt-2 space-y-1">{data.scenes.map((scene) => (
-            <li key={scene.id}>
-              <span className="font-medium text-slate-700 dark:text-slate-200">{scene.title || 'Untitled scene'}</span>
-              {scene.chapter && <span className="text-slate-500 dark:text-slate-400"> · {scene.chapter.title || 'Untitled chapter'}</span>}
-              <span className="text-slate-500 dark:text-slate-400"> — {scene.reasons.map((reason) => reasonLabels[reason] ?? reason).join(', ')}</span>
-            </li>
-          ))}</ul>
-        </details>
-      )}
     </section>}
       <OutlineView storyId={storyId} behind={new Map((data?.scenes ?? []).map((scene) => [scene.id, scene.reasons]))} />
     </div>
