@@ -140,15 +140,15 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
 
               <OriginSummary storyId={storyId} entityId={character.id} entityType="character" />
               <div className="mt-3 space-y-2">
-                <label className="block text-xs">Description<InlineText value={character.description} placeholder="Who are they?" onSave={set('description')} multiline /></label>
-                <label className="block text-xs">Aliases (one per line)<InlineText value={character.aliases?.join('\n') ?? null} placeholder="Other names or titles" onSave={value => set('aliases')(value ? value.split('\n').map(item => item.trim()).filter(Boolean) : [])} multiline /></label>
-                <label className="block text-xs">Relation to the protagonist<InlineText value={character.relation_to_protagonist} placeholder="How are they connected?" onSave={set('relation_to_protagonist')} multiline /></label>
-                <label className="block text-xs">Private notes<InlineText value={character.notes} placeholder="Working notes" onSave={set('notes')} multiline /></label>
+                <label className="block text-xs"><span className="field-label">Description</span><InlineText value={character.description} placeholder="Who are they?" onSave={set('description')} multiline /></label>
+                <label className="block text-xs"><span className="field-label">Aliases</span> (one per line)<InlineText value={character.aliases?.join('\n') ?? null} placeholder="Other names or titles" onSave={value => set('aliases')(value ? value.split('\n').map(item => item.trim()).filter(Boolean) : [])} multiline /></label>
+                <label className="block text-xs"><span className="field-label">Relation to the protagonist</span><InlineText value={character.relation_to_protagonist} placeholder="How are they connected?" onSave={set('relation_to_protagonist')} multiline /></label>
+                <label className="block text-xs"><span className="field-label">Private notes</span><InlineText value={character.notes} placeholder="Working notes" onSave={set('notes')} multiline /></label>
                 <p className="writer-help">Want and need are required for a protagonist, antagonist, or positive/negative arc. Supporting and minor characters can stay simple. Wounds and misbeliefs are optional.</p>
               </div>
               <div className="mt-1.5 grid grid-cols-2 gap-2">
                 <label className="block">
-                  <span className="text-[10px] uppercase tracking-wide text-slate-400">
+                  <span className="field-label">
                     Want (external)
                   </span>
                   <InlineText
@@ -158,7 +158,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                   />
                 </label>
                 <label className="block">
-                  <span className="text-[10px] uppercase tracking-wide text-slate-400">
+                  <span className="field-label">
                     Need (actual)
                   </span>
                   <InlineText
@@ -268,9 +268,9 @@ function RelationshipsSection({ storyId, characters }: { storyId: string; charac
               <DeleteButton onConfirm={() => remove.mutate(relationship.id)} what="relationship" />
             </div>
             <div className="mt-2 space-y-2">
-              <label className="block text-[10px] uppercase text-slate-400">History<InlineText value={relationship.history} placeholder="What happened before?" onSave={(history) => update.mutateAsync({ id: relationship.id, body: { history } })} multiline /></label>
-              <label className="block text-[10px] uppercase text-slate-400">Current dynamic<InlineText value={relationship.current_dynamic} placeholder="How do they relate now?" onSave={(current_dynamic) => update.mutateAsync({ id: relationship.id, body: { current_dynamic } })} multiline /></label>
-              <label className="block text-[10px] uppercase text-slate-400">Tension<InlineText value={relationship.tension_notes} placeholder="What is unresolved?" onSave={(tension_notes) => update.mutateAsync({ id: relationship.id, body: { tension_notes } })} multiline /></label>
+              <label className="block text-xs"><span className="field-label">History</span><InlineText value={relationship.history} placeholder="What happened before?" onSave={(history) => update.mutateAsync({ id: relationship.id, body: { history } })} multiline /></label>
+              <label className="block text-xs"><span className="field-label">Current dynamic</span><InlineText value={relationship.current_dynamic} placeholder="How do they relate now?" onSave={(current_dynamic) => update.mutateAsync({ id: relationship.id, body: { current_dynamic } })} multiline /></label>
+              <label className="block text-xs"><span className="field-label">Tension</span><InlineText value={relationship.tension_notes} placeholder="What is unresolved?" onSave={(tension_notes) => update.mutateAsync({ id: relationship.id, body: { tension_notes } })} multiline /></label>
             </div>
           </li>
         ))}
@@ -316,7 +316,7 @@ function CharacterArc({
         <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-200">Character arc</h3>
         <DeleteButton onConfirm={() => remove.mutate()} what="arc" />
       </div>
-      <label className="mt-1 block text-[10px] uppercase text-slate-400">Resolution
+      <label className="mt-1 block text-xs"><span className="field-label">Resolution</span>
         <InlineText value={resolution} placeholder="How does this arc resolve?" onSave={(value) => update.mutateAsync(value)} multiline />
       </label>
       <ul className="mt-2 space-y-1">

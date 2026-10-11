@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
-import { AddForm, Chip, DeleteButton, InlineNumber, InlineSelect, InlineText } from './fields'
+import { AddForm, Chip, DeleteButton, Field, InlineNumber, InlineSelect, InlineText } from './fields'
 import { HelpTip } from './HelpTip'
 
 function useRefresh(storyId: string, collection: string) {
@@ -12,14 +12,6 @@ function useRefresh(storyId: string, collection: string) {
   }
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block min-w-0">
-      <span className="text-[10px] uppercase tracking-wide text-slate-400">{label}</span>
-      <span className="block">{children}</span>
-    </label>
-  )
-}
 
 const TYPE_OPTIONS = ['a_story', 'b_story', 'c_story', 'throughline']
 

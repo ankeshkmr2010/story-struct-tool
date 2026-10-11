@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 /**
  * Inline editing primitives.
@@ -286,4 +286,12 @@ export function AddForm({
       </button>
     </form>
   )
+}
+
+/**
+ * The one labelled form field. Every field name uses `.field-label` (index.css), so a
+ * restyle of all labels is a single CSS edit; new forms should use this, not their own label markup.
+ */
+export function Field({ label, children }: { label: ReactNode; children: ReactNode }) {
+  return <label className="block min-w-0"><span className="field-label">{label}</span><span className="block">{children}</span></label>
 }

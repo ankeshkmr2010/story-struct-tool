@@ -2,13 +2,10 @@ import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/rea
 import { api, type Scene } from '../api/client'
 import { OriginSummary } from './AuthorshipPanel'
 import { SceneDelete } from './SceneDelete'
-import { Chip, InlineNumber, InlineSelect, InlineText } from './fields'
+import { Chip, Field, InlineNumber, InlineSelect, InlineText } from './fields'
 
 const STATUSES = ['placeholder', 'outlined', 'drafted', 'revised']
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block min-w-0"><span className="text-[10px] uppercase tracking-wide text-slate-400">{label}</span><span className="block">{children}</span></label>
-}
 
 export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; scene: Scene; onDeleted: () => void }) {
   const qc = useQueryClient()
