@@ -6,10 +6,10 @@ import { SuggestionsPanel } from './SuggestionsPanel'
 
 type Tab = 'health' | 'continuity' | 'noticed'
 
-export function InsightsPanel({ storyId, health }: { storyId: string; health?: Health }) {
+export function InsightsPanel({ storyId, health, level, levelNames, onOpenLevel }: { storyId: string; health?: Health; level?: number; levelNames?: Record<number, string>; onOpenLevel?: (level: number) => void }) {
   const [tab, setTab] = useState<Tab>('health')
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'health', label: `Health${health?.warning_count ? ` ${health.warning_count}` : ''}` },
+    { id: 'health', label: 'Health' },
     { id: 'continuity', label: 'Continuity' },
     { id: 'noticed', label: 'Noticed' },
   ]
@@ -30,11 +30,11 @@ export function InsightsPanel({ storyId, health }: { storyId: string; health?: H
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100',
             ].join(' ')}
           >
-            {item.label}
+            {item.label}{item.id === 'health' && Boolean(health?.warning_count) && <span className="workspace-nav-badge ml-1.5" aria-label={`${health?.warning_count} to fix`}>{health?.warning_count}</span>}
           </button>
         ))}
       </div>
-      {tab === 'health' && (health ? <HealthPanel health={health} /> : <p className="text-xs text-slate-400">Loading health…</p>)}
+      {tab === 'health' && (health ? <HealthPanel health={health} level={level} levelNames={levelNames} onOpenLevel={onOpenLevel} /> : <p className="text-xs text-slate-400">Loading health…</p>)}
       {tab === 'continuity' && <ContinuityPanel storyId={storyId} />}
       {tab === 'noticed' && <SuggestionsPanel storyId={storyId} />}
     </section>

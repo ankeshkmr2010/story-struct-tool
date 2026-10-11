@@ -75,7 +75,7 @@ def story_needs_premise(g: StoryGraph) -> Iterator[Finding]:
             code="story.no_premise",
             level=Level.PREMISE,
             severity=Severity.WARNING,
-            message="The story has no premise. Everything above it is guesswork.",
+            message="Add a premise: the core idea the rest of the plan builds on.",
             entity_type="story",
             entity_id=g.story.id,
         )
@@ -93,7 +93,9 @@ def turning_point_count_is_sane(g: StoryGraph) -> Iterator[Finding]:
             level=Level.ARC_SKELETON,
             severity=Severity.WARNING,
             message=(
-                f"Only {count} turning point(s) marked; an arc skeleton wants at least "
+                f"{count} of {MIN_TURNING_POINTS} turning points marked. A turning point "
+                "is a timeline event that changes the story's direction (for example the "
+                "inciting incident, midpoint and climax); set Turning point to Yes on at least "
                 f"{MIN_TURNING_POINTS}."
             ),
             entity_type="story",
@@ -106,7 +108,7 @@ def turning_point_count_is_sane(g: StoryGraph) -> Iterator[Finding]:
             severity=Severity.INFO,
             message=(
                 f"{count} turning points marked. More than {MAX_TURNING_POINTS} usually "
-                "means some are beats rather than major turns."
+                "means some are smaller beats rather than major turns."
             ),
             entity_type="story",
             entity_id=g.story.id,
@@ -123,7 +125,7 @@ def story_needs_a_protagonist(g: StoryGraph) -> Iterator[Finding]:
             code="character.no_protagonist",
             level=Level.CHARACTERS,
             severity=Severity.WARNING,
-            message="No character is marked as protagonist.",
+            message="No character is marked as the protagonist.",
             entity_type="story",
             entity_id=g.story.id,
         )
@@ -142,7 +144,10 @@ def characters_need_want_and_need(g: StoryGraph) -> Iterator[Finding]:
                 code="character.missing_want_or_need",
                 level=Level.CHARACTERS,
                 severity=Severity.WARNING,
-                message=f"{character.name} has no {' or '.join(missing)} defined.",
+                message=(
+                    f"{character.name} has no {' or '.join(missing)} yet. "
+                    "Want is what they chase; need is what they actually lack."
+                ),
                 entity_type="character",
                 entity_id=character.id,
             )
@@ -160,8 +165,8 @@ def want_should_differ_from_need(g: StoryGraph) -> Iterator[Finding]:
                 level=Level.CHARACTERS,
                 severity=Severity.INFO,
                 message=(
-                    f"{character.name}'s want and need are identical, so there is no "
-                    "internal conflict to resolve."
+                    f"{character.name}'s want and need are the same, so there is no "
+                    "inner conflict to resolve."
                 ),
                 entity_type="character",
                 entity_id=character.id,
@@ -178,7 +183,8 @@ def arcs_need_stages_and_resolution(g: StoryGraph) -> Iterator[Finding]:
                 level=Level.CHARACTERS,
                 severity=Severity.WARNING,
                 message=(
-                    f"An arc has fewer than {MIN_ARC_STAGES} stages, so it describes no change."
+                    f"An arc has fewer than {MIN_ARC_STAGES} stages, "
+                    "so the character does not change."
                 ),
                 entity_type="arc",
                 entity_id=arc.id,
@@ -188,7 +194,7 @@ def arcs_need_stages_and_resolution(g: StoryGraph) -> Iterator[Finding]:
                 code="arc.no_resolution",
                 level=Level.CHARACTERS,
                 severity=Severity.INFO,
-                message="An arc has no resolution recorded.",
+                message="An arc has no ending recorded.",
                 entity_type="arc",
                 entity_id=arc.id,
             )
@@ -207,7 +213,7 @@ def acts_need_emotional_shift(g: StoryGraph) -> Iterator[Finding]:
                 code="act.no_emotional_shift",
                 level=Level.ACTS,
                 severity=Severity.WARNING,
-                message=f"Act {act.number} records no emotional shift, so nothing changes in it.",
+                message=f"Act {act.number} has no emotional shift, so nothing changes in it.",
                 entity_type="act",
                 entity_id=act.id,
             )
@@ -235,7 +241,7 @@ def acts_should_turn_on_events(g: StoryGraph) -> Iterator[Finding]:
                 code="act.no_closing_turning_point",
                 level=Level.ACTS,
                 severity=Severity.INFO,
-                message=f"Act {act.number} has no turning point marking its end.",
+                message=f"Act {act.number} does not end on a turning point.",
                 entity_type="act",
                 entity_id=act.id,
             )
@@ -252,7 +258,7 @@ def beats_should_belong_to_an_act(g: StoryGraph) -> Iterator[Finding]:
             code="beat.unassigned_to_act",
             level=Level.BEATS,
             severity=Severity.WARNING,
-            message=f"{len(orphans)} beat(s) are not assigned to any act.",
+            message=f"{len(orphans)} beat(s) are not in any act.",
             entity_type="story",
             entity_id=g.story.id,
         )
@@ -267,7 +273,7 @@ def acts_should_contain_beats(g: StoryGraph) -> Iterator[Finding]:
                 code="act.no_beats",
                 level=Level.BEATS,
                 severity=Severity.WARNING,
-                message=f"Act {act.number} has no beats, so nothing is required to happen in it.",
+                message=f"Act {act.number} has no beats yet, so nothing has to happen in it.",
                 entity_type="act",
                 entity_id=act.id,
             )
@@ -283,7 +289,7 @@ def story_needs_threads(g: StoryGraph) -> Iterator[Finding]:
             code="thread.none_defined",
             level=Level.THREADS,
             severity=Severity.WARNING,
-            message="Beats exist but no storyline threads carry them.",
+            message="Beats exist, but no storyline thread carries them.",
             entity_type="story",
             entity_id=g.story.id,
         )
@@ -297,7 +303,7 @@ def exactly_one_a_story(g: StoryGraph) -> Iterator[Finding]:
             code="thread.multiple_a_stories",
             level=Level.THREADS,
             severity=Severity.WARNING,
-            message=f"{len(a_stories)} threads are marked A-story; only one can be the spine.",
+            message=f"{len(a_stories)} threads are marked A-story (the main storyline); pick one.",
             entity_type="story",
             entity_id=g.story.id,
         )
@@ -352,7 +358,7 @@ def chapters_should_owe_a_beat(g: StoryGraph) -> Iterator[Finding]:
                 level=Level.CHAPTERS,
                 severity=Severity.WARNING,
                 message=(
-                    f"Chapter {chapter.number} fulfils no beats, directly or through its scenes."
+                    f"Chapter {chapter.number} covers no beats, directly or through its scenes."
                 ),
                 entity_type="chapter",
                 entity_id=chapter.id,
@@ -399,7 +405,7 @@ def scenes_should_sit_in_a_chapter(g: StoryGraph) -> Iterator[Finding]:
             code="scene.not_in_chapter",
             level=Level.SCENES,
             severity=Severity.WARNING,
-            message=f"{len(orphans)} scene(s) do not belong to any chapter.",
+            message=f"{len(orphans)} scene(s) are not in any chapter.",
             entity_type="story",
             entity_id=g.story.id,
         )
@@ -419,7 +425,7 @@ def scenes_should_serve_a_beat(g: StoryGraph) -> Iterator[Finding]:
             code="scene.no_beat",
             level=Level.SCENES,
             severity=Severity.WARNING,
-            message=f"{len(unserved)} scene(s) contribute to no beat.",
+            message=f"{len(unserved)} scene(s) do not cover any beat.",
             entity_type="story",
             entity_id=g.story.id,
         )
@@ -434,7 +440,7 @@ def scenes_should_belong_to_a_thread(g: StoryGraph) -> Iterator[Finding]:
             code="scene.no_thread",
             level=Level.SCENES,
             severity=Severity.INFO,
-            message=f"{len(unthreaded)} scene(s) advance no storyline thread.",
+            message=f"{len(unthreaded)} scene(s) do not move any storyline thread forward.",
             entity_type="story",
             entity_id=g.story.id,
         )

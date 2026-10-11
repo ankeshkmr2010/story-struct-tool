@@ -472,7 +472,7 @@ function Workspace() {
         </section>
 
         {!isView && !refPanel && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
-          <InsightsPanel storyId={storyId} health={health.data} />
+          <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, rung.label]))} onOpenLevel={setLevel} />
         </aside>}
       </div>
       </div>
