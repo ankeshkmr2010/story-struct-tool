@@ -135,7 +135,7 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 **Tranche 2 — friction**
 - [x] T8 (c48a0d2, 7dc48a9) Read: no repeated blurb; context panel closed by default. `SharedStoryReader.tsx` (`StoryReader`).
 - [x] T9 (cc2af78) Write: collapse empty Epigraph / Opening / Closing note into "+ Add epigraph / note". `StoryWriter.tsx`.
-- [ ] T10 Library cards: Delete into a ⋯ menu; last edited + word count instead of the "complete" bar; mark examples/tutorial; New story ▾ (Blank / From backup); on-palette tutorial CTA. `web/src/pages/StoryList.tsx`.
+- [x] T10 (8916eee, 082fc20) Library cards: Delete into a ⋯ menu; last edited + word count instead of the "complete" bar; mark examples/tutorial; New story ▾ (Blank / From backup); on-palette tutorial CTA. `web/src/pages/StoryList.tsx`.
 - [ ] T11 First run: "Start with the demo" card; empty state per tab saying what it is for.
 - [ ] T12 One shared read-only timeline component for app / shared reader / showcase (C2).
 - [~] T13 (ca3ce1e: library done; workspace activity still 5 s) Polling: library 5 s → refetch on focus or 30 s (`StoryList.tsx:45,47`); same for workspace activity (C4).
