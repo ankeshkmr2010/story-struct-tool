@@ -27,7 +27,7 @@ export function StoryReader({ storyId, owned = false, embedded = false }: { stor
   const sequence = useRef(0)
   const [chapterId, setChapterId] = useState<string | null>(null)
   const [sceneId, setSceneId] = useState<string | null>(null)
-  const [contextOpen, setContextOpen] = useState(() => window.matchMedia('(min-width: 1101px)').matches)
+  const [contextOpen, setContextOpen] = useState(false)
   const [chaptersOpen, setChaptersOpen] = useState(false)
   const [view, setView] = useState<'manuscript' | 'timeline'>('manuscript')
   const [importFingerprint, setImportFingerprint] = useState<string | null>(null)
