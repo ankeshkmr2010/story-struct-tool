@@ -14,7 +14,7 @@ import { InlineText } from './fields'
 import { useTheme } from './theme-context'
 import { flushWriter, writerDraft, writerHasUnsaved } from './writerDraft'
 
-export function StoryWriter({ storyId, registerFlush, openScene }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number } | null }) {
+export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onContextOpen }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number } | null; panelOpen?: boolean; onContextOpen?: () => void }) {
   const qc = useQueryClient()
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser })
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
@@ -26,6 +26,8 @@ export function StoryWriter({ storyId, registerFlush, openScene }: { storyId: st
   })
   const [showNavigation, setShowNavigation] = useState(() => window.matchMedia('(min-width: 701px)').matches)
   const [showContext, setShowContext] = useState(false)
+  // One right-hand panel at a time: a workspace reference panel closes Writing context, and vice versa.
+  useEffect(() => { if (panelOpen) setShowContext(false) }, [panelOpen])
   const [focus, setFocus] = useState(false)
   const [activeScene, setActiveScene] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
@@ -130,7 +132,7 @@ export function StoryWriter({ storyId, registerFlush, openScene }: { storyId: st
       <span className="writer-current-chapter">{unfiled ? 'Unfiled writing' : `Chapter ${chapter?.number ?? 1}`}</span>
       <span className="writer-toolbar-spacer" />
       <button type="button" aria-pressed={focus} onClick={() => setFocus(!focus)}>{focus ? 'Exit focus' : 'Focus'}</button>
-      <button type="button" aria-expanded={showContext} onClick={() => { setShowContext(!showContext); setShowNavigation(false) }}>Context</button>
+      <button type="button" aria-expanded={showContext} onClick={() => { if (!showContext) onContextOpen?.(); setShowContext(!showContext); setShowNavigation(false) }}>Context</button>
     </div>
     {error && <p role="alert" className="writer-error">{error}</p>}
     <div className={`writer-layout ${showContext && !focus ? 'writer-with-context' : ''} ${!showNavigation || focus ? 'writer-no-navigation' : ''}`}>
