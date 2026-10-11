@@ -115,9 +115,9 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 
 **Decisions (blockers)**
 - D1 Approve the grouping in §1 — *open* (blocks T1–T3)
-- D2 Keep or remove the in-app assistant — *open* (blocks T18)
-- D3 Generation via copy-prompt for the user's own AI vs in-app assistant — *open* (blocks T14)
-- D4 Dark palette: neutral grey vs blue-grey — *open* (blocks T15)
+- D2 In-app assistant — **keep** (2026-10-11): users bring their own API key, so no cost; it serves writers without an MCP client. T18 becomes "make it discoverable".
+- D3 Generation buttons — **later** (2026-10-11); T14 parked. Likely engine: in-app assistant (own key) and/or copy-prompt.
+- D4 Dark palette — **neutral grey** (2026-10-11): charcoal greys, green only as accent.
 
 **Tranche 1 — biggest change in feel**
 - [ ] T1 Header: Title · stats · [Share] · [Download ▾] (Manuscript .docx / .md, Full backup .json, one line each). Versions + Authorship leave the header. `web/src/pages/StoryWorkspace.tsx`. Needs D1.
@@ -135,12 +135,12 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [ ] T11 First run: "Start with the demo" card; empty state per tab saying what it is for.
 - [ ] T12 One shared read-only timeline component for app / shared reader / showcase (C2).
 - [ ] T13 Polling: library 5 s → refetch on focus or 30 s (`StoryList.tsx:45,47`); same for workspace activity (C4).
-- [ ] T14 "Generate with your AI" entry points after Design and in Chapters/Scenes (§6). Needs D3.
+- [ ] T14 (parked, D3 = later) "Generate" entry points after Design and in Chapters/Scenes (§6).
 
 **Tranche 3 — finish**
 - [ ] T15 Full token migration + new dark palette (C1). Needs D4.
 - [ ] T16 Landing: reorder to write → plan → share; sell the public showcase.
 - [ ] T17 Dead code: `api.listAIObservations`, unused exported types in `web/src/api/client.ts` (C5).
-- [ ] T18 Act on D2 (keep or remove `AuthoringAssistant.tsx` and its API).
+- [ ] T18 Make the in-app assistant discoverable: own ASSISTANT sidebar group, obvious "add your API key" step (`AuthoringAssistant.tsx`, `UserSettings.tsx`).
 - [ ] T19 Mobile pass.
 - [ ] T20 Audit the parts not yet walked: Story timeline in depth, Settings, MCP setup.
