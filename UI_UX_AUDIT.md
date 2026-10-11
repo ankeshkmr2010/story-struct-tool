@@ -105,3 +105,42 @@ Header goes from 9 controls to 4; the sidebar from three unlabelled lists to fou
 
 **Open decisions:** keep or remove the in-app assistant · generation via copy-prompt vs in-app assistant · dark palette (grey vs blue-grey) · approve the grouping above ·
 pick the starting tranche.
+
+---
+
+## Tasks (source of truth for UI/UX work — update status here)
+
+Status: `[ ]` todo · `[~]` in progress · `[x]` done (add commit hash). Rule: propose before
+coding anything vague; verify on prod with the user (Render deploy is manual).
+
+**Decisions (blockers)**
+- D1 Approve the grouping in §1 — *open* (blocks T1–T3)
+- D2 Keep or remove the in-app assistant — *open* (blocks T18)
+- D3 Generation via copy-prompt for the user's own AI vs in-app assistant — *open* (blocks T14)
+- D4 Dark palette: neutral grey vs blue-grey — *open* (blocks T15)
+
+**Tranche 1 — biggest change in feel**
+- [ ] T1 Header: Title · stats · [Share] · [Download ▾] (Manuscript .docx / .md, Full backup .json, one line each). Versions + Authorship leave the header. `web/src/pages/StoryWorkspace.tsx`. Needs D1.
+- [ ] T2 Design sidebar groups PLAN (levels) · VIEWS (Timeline, Grid) · WORLD (Places, Glossary) · REVIEW (Agent changes + badge, Versions, Who wrote what, Catch up). Mode moves into Premise with POV/Framework. `StoryWorkspace.tsx`. Needs D1.
+- [ ] T3 Design → Scenes: drop the prose editor; show the scene card + "Open in Write". `web/src/components/SceneEditor.tsx`, `StoryWorkspace.tsx`. Needs D1.
+- [ ] T4 Health panel: plain wording, no rule codes, quiet warning style, per-finding "Fix in <level> →" link, count badge on the tab. Fixes the turning-point confusion (§6). `api/src/storytool/domain/health.py` messages + the health panel component.
+- [ ] T5 Readable option labels with one-line descriptions for POV / Framework / Mode, plus one reusable ⓘ help component; then apply it to jargon (levels, beats, threads, turning points, pantser/plotter). `StoryWorkspace.tsx:354-355`.
+- [ ] T6 Replace "Live · checks for changes every 5 seconds" with a quiet dot that speaks only on change; remove Read's "Refresh story".
+- [ ] T7 Token migration for the workspace shell (header, sidebar, panels): Tailwind palette classes → `index.css` tokens (C1, partial).
+
+**Tranche 2 — friction**
+- [ ] T8 Read: no repeated blurb; context panel closed by default. `SharedStoryReader.tsx` (`StoryReader`).
+- [ ] T9 Write: collapse empty Epigraph / Opening / Closing note into "+ Add epigraph / note". `StoryWriter.tsx`.
+- [ ] T10 Library cards: Delete into a ⋯ menu; last edited + word count instead of the "complete" bar; mark examples/tutorial; New story ▾ (Blank / From backup); on-palette tutorial CTA. `web/src/pages/StoryList.tsx`.
+- [ ] T11 First run: "Start with the demo" card; empty state per tab saying what it is for.
+- [ ] T12 One shared read-only timeline component for app / shared reader / showcase (C2).
+- [ ] T13 Polling: library 5 s → refetch on focus or 30 s (`StoryList.tsx:45,47`); same for workspace activity (C4).
+- [ ] T14 "Generate with your AI" entry points after Design and in Chapters/Scenes (§6). Needs D3.
+
+**Tranche 3 — finish**
+- [ ] T15 Full token migration + new dark palette (C1). Needs D4.
+- [ ] T16 Landing: reorder to write → plan → share; sell the public showcase.
+- [ ] T17 Dead code: `api.listAIObservations`, unused exported types in `web/src/api/client.ts` (C5).
+- [ ] T18 Act on D2 (keep or remove `AuthoringAssistant.tsx` and its API).
+- [ ] T19 Mobile pass.
+- [ ] T20 Audit the parts not yet walked: Story timeline in depth, Settings, MCP setup.
