@@ -111,7 +111,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
         {characters.data?.map((character) => {
           const set = patch(character.id)
           return (
-            <li key={character.id} className="rounded-md border border-slate-200 dark:border-slate-700 p-2.5">
+            <li key={character.id} id={`character-${character.id}`} className="scroll-mt-4 rounded-md border border-slate-200 dark:border-slate-700 p-2.5">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="min-w-[9rem] flex-1">
                   <InlineText

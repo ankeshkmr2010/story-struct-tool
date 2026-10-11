@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type MouseEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type TimelineEntry } from '../api/client'
 import { EventDelete } from './EventDelete'
@@ -7,9 +7,10 @@ import { AddForm, InlineNumber, InlineSelect, InlineText } from './fields'
 const entryKey = (entry: TimelineEntry) => `${entry.kind}:${entry.id}`
 const isSuggested = (source: string, isPov: boolean) => source === 'inferred' && !isPov
 
-export function StoryTimeline({ storyId, onOpenScene, compact = false }: {
+export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact = false }: {
   storyId: string
   onOpenScene: (id: string) => void
+  onOpenCharacter?: (id: string) => void
   compact?: boolean
 }) {
   const qc = useQueryClient()
@@ -64,6 +65,7 @@ export function StoryTimeline({ storyId, onOpenScene, compact = false }: {
   const moments = [...new Set(timed.map((entry) => positionOf(entry)!))].map((position) => ({ position, entries: timed.filter((entry) => positionOf(entry) === position) }))
   const selected = visibleEntries.find((entry) => entryKey(entry) === selectedKey) ?? visibleEntries[0]
   const select = (entry: TimelineEntry) => setSelectedKey(entryKey(entry))
+  const sceneTitleOf = (entry: TimelineEntry) => entries.find((item) => item.kind === 'scene' && item.id === entry.scene_id)?.title
   const selectedIndex = selected ? visibleEntries.findIndex((entry) => entryKey(entry) === entryKey(selected)) : -1
   const save = (field: string) => (value: string | number | boolean | null) => selected && edit.mutateAsync({ entry: selected, body: { [field]: value } })
   const eventCount = entries.filter((entry) => entry.kind === 'event').length
@@ -97,7 +99,7 @@ export function StoryTimeline({ storyId, onOpenScene, compact = false }: {
                     <p className="mt-1 text-[10px] text-slate-400">{order === 'world' ? `World position ${moment.position}` : `Reading position ${moment.position}`}</p>
                     <button type="button" aria-label={`Select ${order === 'world' ? 'story time' : 'reading position'} ${moment.position}`} onClick={() => select(moment.entries[0])} className={`absolute left-0 top-[52px] z-10 size-4 border-2 border-white shadow-sm ${moment.entries.some((entry) => entry.is_turning_point) ? 'rotate-45 rounded-sm bg-amber-500' : 'rounded-full bg-sky-500'} ${selected && positionOf(selected) === moment.position ? 'ring-2 ring-sky-400 ring-offset-2' : ''}`} />
                   </div>
-                  <div className={`relative space-y-3 border-l border-sky-200 dark:border-sky-800 pl-4 ${index % 2 && !compact ? 'pt-8' : ''}`}>{moment.entries.map((entry) => <EventCard key={entryKey(entry)} entry={entry} active={Boolean(selected && entryKey(selected) === entryKey(entry))} onSelect={() => select(entry)} />)}</div>
+                  <div className={`relative space-y-3 border-l border-sky-200 dark:border-sky-800 pl-4 ${index % 2 && !compact ? 'pt-8' : ''}`}>{moment.entries.map((entry) => <EventCard key={entryKey(entry)} entry={entry} active={Boolean(selected && entryKey(selected) === entryKey(entry))} onSelect={() => select(entry)} sceneTitle={sceneTitleOf(entry)} onOpenScene={onOpenScene} onOpenCharacter={onOpenCharacter} />)}</div>
                 </section>
               ))}
               {!compact && <span aria-hidden="true" className="absolute right-0 top-[53px] text-sky-300">→</span>}
@@ -112,7 +114,7 @@ export function StoryTimeline({ storyId, onOpenScene, compact = false }: {
         </section>
       )}
 
-      {unplaced.length > 0 && <section className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/40 p-4"><h3 className="text-sm font-medium text-amber-900 dark:text-amber-300">{order === 'world' ? 'Time not assigned' : 'Not placed in reading order'} · {unplaced.length}</h3><p className="mt-1 text-xs text-amber-800 dark:text-amber-300">{order === 'world' ? 'Select a scene and set its story time to place it on the timeline.' : 'Link an event to the scene that depicts it, and assign scenes to chapters to place them in reading order.'}</p><div className={`mt-3 grid gap-3 ${compact ? "" : "sm:grid-cols-2 lg:grid-cols-3"}`}>{unplaced.map((entry) => <EventCard key={entryKey(entry)} entry={entry} active={Boolean(selected && entryKey(selected) === entryKey(entry))} onSelect={() => select(entry)} />)}</div></section>}
+      {unplaced.length > 0 && <section className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/40 p-4"><h3 className="text-sm font-medium text-amber-900 dark:text-amber-300">{order === 'world' ? 'Time not assigned' : 'Not placed in reading order'} · {unplaced.length}</h3><p className="mt-1 text-xs text-amber-800 dark:text-amber-300">{order === 'world' ? 'Select a scene and set its story time to place it on the timeline.' : 'Link an event to the scene that depicts it, and assign scenes to chapters to place them in reading order.'}</p><div className={`mt-3 grid gap-3 ${compact ? "" : "sm:grid-cols-2 lg:grid-cols-3"}`}>{unplaced.map((entry) => <EventCard key={entryKey(entry)} entry={entry} active={Boolean(selected && entryKey(selected) === entryKey(entry))} onSelect={() => select(entry)} sceneTitle={sceneTitleOf(entry)} onOpenScene={onOpenScene} onOpenCharacter={onOpenCharacter} />)}</div></section>}
 
       {selected && (
         <section className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 sm:p-6" aria-label="Selected timeline event">
@@ -148,17 +150,22 @@ export function StoryTimeline({ storyId, onOpenScene, compact = false }: {
   )
 }
 
-function EventCard({ entry, active, onSelect }: { entry: TimelineEntry; active: boolean; onSelect: () => void }) {
+function EventCard({ entry, active, onSelect, sceneTitle, onOpenScene, onOpenCharacter }: { entry: TimelineEntry; active: boolean; onSelect: () => void; sceneTitle?: string; onOpenScene: (id: string) => void; onOpenCharacter?: (id: string) => void }) {
+  // Scene and people are links of their own; a click elsewhere on the card selects it.
+  const go = (event: MouseEvent, action: () => void) => { event.stopPropagation(); action() }
   return (
-    <button type="button" onClick={onSelect} aria-pressed={active} className={`w-full rounded-xl border bg-white dark:bg-slate-900 p-4 text-left shadow-sm transition hover:border-sky-300 dark:hover:border-sky-800 hover:shadow-md ${active ? 'border-sky-400 ring-2 ring-sky-200' : 'border-slate-200 dark:border-slate-700'}`}>
+    <div role="button" tabIndex={0} onClick={onSelect} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onSelect() } }} aria-pressed={active} className={`w-full rounded-xl border bg-white dark:bg-slate-900 p-4 text-left shadow-sm transition hover:border-sky-300 dark:hover:border-sky-800 hover:shadow-md ${active ? 'border-sky-400 ring-2 ring-sky-200' : 'border-slate-200 dark:border-slate-700'}`}>
       <span className="flex flex-wrap gap-2 text-[10px] uppercase tracking-wide text-slate-400"><span>{entry.kind}</span>{entry.is_turning_point && <span className="text-amber-700 dark:text-amber-300">◆ Turning point</span>}{entry.is_flashback && <span className="text-violet-600 dark:text-violet-300">Flashback</span>}</span>
-      <span className="mt-2 block text-sm font-semibold leading-5 text-slate-900 dark:text-slate-100">{entry.title}</span>
+      {entry.kind === 'scene'
+        ? <button type="button" onClick={(event) => go(event, () => onOpenScene(entry.id))} className="mt-2 block text-left text-sm font-semibold leading-5 text-slate-900 hover:underline dark:text-slate-100">{entry.title} →</button>
+        : <span className="mt-2 block text-sm font-semibold leading-5 text-slate-900 dark:text-slate-100">{entry.title}</span>}
+      {entry.kind === 'event' && entry.scene_id && <button type="button" onClick={(event) => go(event, () => onOpenScene(entry.scene_id!))} className="mt-1 block text-left text-xs font-medium text-[var(--accent)] hover:underline">Scene: {sceneTitle ?? 'linked scene'} →</button>}
       {entry.summary && <span className="mt-2 line-clamp-3 text-xs leading-5 text-slate-500 dark:text-slate-400">{entry.summary}</span>}
       <span className="mt-2 block text-[10px] text-slate-400">Happens: {entry.time_label ?? (entry.ordinal === null ? 'Time unknown' : `world position ${entry.ordinal}`)}</span>
       {entry.reading_label && <span className="mt-1 block text-[10px] text-violet-600 dark:text-violet-300">{entry.is_flashback ? 'Revealed later' : 'Told'}: {entry.reading_label}</span>}
       <span className="mt-3 flex items-start gap-2 border-t border-slate-100 dark:border-slate-800 pt-3 text-xs text-slate-600 dark:text-slate-300"><span aria-hidden="true">⌖</span><span>{entry.location_name ?? 'Location not set'}</span></span>
-      <span className="mt-2 flex flex-wrap gap-1.5">{entry.participants.length > 0 ? entry.participants.map((person) => <span key={person.character_id} className={`rounded-full border px-2 py-0.5 text-[10px] ${isSuggested(person.source, person.is_pov) ? 'border-dashed border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300' : 'border-sky-100 dark:border-sky-800 bg-sky-50 dark:bg-sky-950 text-sky-800 dark:text-sky-300'}`}>{person.name}{isSuggested(person.source, person.is_pov) ? ' ?' : ''}</span>) : <span className="text-xs text-slate-400">People not set</span>}</span>
+      <span className="mt-2 flex flex-wrap gap-1.5">{entry.participants.length > 0 ? entry.participants.map((person) => <button type="button" key={person.character_id} title={`Open ${person.name}`} onClick={(event) => go(event, () => onOpenCharacter?.(person.character_id))} className={`rounded-full border hover:underline px-2 py-0.5 text-[10px] ${isSuggested(person.source, person.is_pov) ? 'border-dashed border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300' : 'border-sky-100 dark:border-sky-800 bg-sky-50 dark:bg-sky-950 text-sky-800 dark:text-sky-300'}`}>{person.name}{isSuggested(person.source, person.is_pov) ? ' ?' : ''}</button>) : <span className="text-xs text-slate-400">People not set</span>}</span>
       {entry.arc_stages?.map((stage) => <span key={stage} className="mt-2 block rounded-md bg-violet-50 dark:bg-violet-950 px-2 py-1 text-[10px] leading-4 text-violet-700 dark:text-violet-300">Arc · {stage}</span>)}
-    </button>
+    </div>
   )
 }

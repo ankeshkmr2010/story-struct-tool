@@ -96,6 +96,17 @@ function Workspace() {
     else if (tab === 'read') document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     else { const scene = scenes.data?.find(item => item.id === id); setChapterId(scene?.chapter_id ?? null); setSceneId(id); setLevel(8) }
   }
+  // Characters live in Design → Characters; open it and bring that character's card into view.
+  const openCharacter = async (id: string) => {
+    if (!await changeTab('design')) return
+    if (window.matchMedia('(max-width: 1100px)').matches) setRefPanel(null)
+    setLevel(3)
+    for (let attempt = 0; attempt < 10; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 150))
+      const card = document.getElementById(`character-${id}`)
+      if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); return }
+    }
+  }
 
   const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
   const ladder = useQuery({ queryKey: ['ladder', storyId], queryFn: () => api.getLadder(storyId) })
@@ -490,7 +501,7 @@ function Workspace() {
       </div>
       {refPanel && <aside className="workspace-ref-panel" aria-label={REF_PANELS.find(([key]) => key === refPanel)?.[1]}>
         <div className="workspace-ref-head"><h2>{REF_PANELS.find(([key]) => key === refPanel)?.[1]}</h2><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div>
-        {refPanel === 'timeline' && <StoryTimeline storyId={storyId} compact onOpenScene={openScene} />}
+        {refPanel === 'timeline' && <StoryTimeline storyId={storyId} compact onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
         {refPanel === 'places' && <PlacesPanel storyId={storyId} />}
         {refPanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
         {refPanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
