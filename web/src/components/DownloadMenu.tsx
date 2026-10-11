@@ -20,7 +20,7 @@ export function DownloadMenu({ storyId }: { storyId: string }) {
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', close) }
   }, [])
   return <details ref={menu} className="download-menu">
-    <summary className="share-story-button">Download ▾</summary>
+    <summary className="share-story-button">Export ▾</summary>
     <div className="download-menu-panel" role="menu">
       {ITEMS.map(item => <a key={item.label} role="menuitem" href={item.href(storyId)} onClick={() => { if (menu.current) menu.current.open = false }}><strong>{item.label}</strong><span>{item.help}</span></a>)}
     </div>
