@@ -82,6 +82,14 @@ Header goes from 9 controls to 4; the sidebar from three unlabelled lists to fou
 | C5 | Dead code is small | unused `api.listAIObservations`; ~30 unused exported types in `api/client.ts` | Trivial cleanup. |
 | C6 | In-app assistant unused in prod | `AuthoringAssistant.tsx` (20 KB); prod: nearly all edits via MCP | Product decision: keep or remove. |
 
+## 6. Tester feedback (2026-10-11)
+
+| Feedback | Finding | Maps to |
+|---|---|---|
+| "A button after Design saying *Generate 3 stories with this* would be cool for non-creatives." Also generate Chapters / Scenes. | New: generation entry points for non-writers. Needs an AI: either a **copy-prompt for your connected AI** (like Catch up outline, no billing) or the in-app assistant (billing). | New item; tied to C6 |
+| "Only 1 turning point(s) marked; an arc skeleton wants at least 3" seen in Characters, nothing to fill in. | Confirmed: warning is a level 2 Arc Skeleton finding (`api/src/storytool/domain/health.py:86`); turning points are timeline events with *Turning point* = Yes (`StructurePanels.tsx:60`). Health shows it on every level with no link. Fix: per-finding "Fix in Arc Skeleton →" link + plain wording explaining a turning point. | §3 Health noise (raise to Tranche 1) |
+| "Dark mode is green; I'd expect bluish or greyish dark." | Green comes from `index.css` tokens (`:root[data-theme=dark]`). Neutral/blue-grey dark is a token change once C1 is done. | C1 |
+
 ---
 
 ## Proposed order
@@ -94,5 +102,5 @@ Header goes from 9 controls to 4; the sidebar from three unlabelled lists to fou
 3. **Tranche 3 — finish**: full token migration (C1); landing reorder (§4); dead code (C5);
    assistant decision (C6); mobile.
 
-**Open decisions:** keep or remove the in-app assistant · approve the grouping above ·
+**Open decisions:** keep or remove the in-app assistant · generation via copy-prompt vs in-app assistant · dark palette (grey vs blue-grey) · approve the grouping above ·
 pick the starting tranche.
