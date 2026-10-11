@@ -14,7 +14,7 @@ import { InlineText } from './fields'
 import { useTheme } from './theme-context'
 import { flushWriter, writerDraft, writerHasUnsaved } from './writerDraft'
 
-export function StoryWriter({ storyId, registerFlush }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void }) {
+export function StoryWriter({ storyId, registerFlush, openScene }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number } | null }) {
   const qc = useQueryClient()
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser })
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
@@ -61,9 +61,17 @@ export function StoryWriter({ storyId, registerFlush }: { storyId: string; regis
     setSelectedId(id); setActiveScene(null); setShowNavigation(false)
     try { localStorage.setItem(positionKey, id) } catch { /* Device preferences are optional. */ }
   }
+  // A scene picked in the Timeline panel: open its chapter and put the cursor in it.
+  useEffect(() => {
+    const scene = openScene && scenes.data?.find(item => item.id === openScene.id)
+    if (!scene) return
+    void chooseChapter(scene.chapter_id ?? 'unfiled').then(ok => { if (ok) { setActiveScene(scene.id); setFocusTarget(scene.id) } })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openScene])
   const chooseChapter = async (id: string) => {
-    if (!await flushWriter(prefix)) { setError('Your draft is still here. Resolve the save error before switching chapters.'); return }
+    if (!await flushWriter(prefix)) { setError('Your draft is still here. Resolve the save error before switching chapters.'); return false }
     setError(null); remember(id)
+    return true
   }
   const ensureChapter = async () => {
     if (chapter) return chapter

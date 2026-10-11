@@ -34,14 +34,15 @@ const MODES: AuthoringMode[] = ['plotter', 'hybrid', 'pantser']
 
 // Places are reference data, not a rung. The sentinel keeps them out of the ladder's
 // readiness logic entirely.
-const PLACES_VIEW = 100
-const TIMELINE_VIEW = 101
-const ASSISTANT_VIEW = 102
-const GLOSSARY_VIEW = 103
+// Full-width Design pages; Plan levels are 1-8. Timeline, Places, Glossary and the
+// assistant are reference panels beside Write, Read or Design instead.
 const INBOX_VIEW = 104
 const GRID_VIEW = 105
 const CATCHUP_VIEW = 106
 const HISTORY_VIEW = 107
+
+type RefPanel = 'timeline' | 'places' | 'glossary' | 'assistant'
+const REF_PANELS: [RefPanel, string][] = [['timeline', 'Timeline'], ['places', 'Places'], ['glossary', 'Glossary'], ['assistant', 'Assistant']]
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
@@ -53,8 +54,8 @@ function Workspace() {
   const qc = useQueryClient()
   const live = useStoryLiveUpdates(storyId)
   const [level, setLevel] = useState(1)
-  // Levels 1-8 are the Plan; ids from 100 up are full-width views (Timeline, Grid, …).
-  const isView = level >= PLACES_VIEW
+  // Levels 1-8 are the Plan; ids from 104 up are full-width Design pages (Grid, History, …).
+  const isView = level >= INBOX_VIEW
   const planLevel = useRef(1)
   if (!isView) planLevel.current = level
   const [historyTab, setHistoryTab] = useState<'versions' | 'authorship'>('versions')
@@ -77,9 +78,18 @@ function Workspace() {
     try { localStorage.setItem(`storytool-workspace:${storyId}`, next) } catch { /* Preference storage is optional. */ }
     return true
   }
-  // Views live in the Design panel but open from any tab via the second nav row.
+  // Design pages (Grid, History, …) need the full width; the header's Agent changes badge opens one from any tab.
   const openView = async (view: number) => { if (await changeTab('design')) setLevel(view) }
-  const viewItem = (view: number, label: ReactNode) => <button type="button" aria-current={tab === 'design' && level === view ? 'page' : undefined} onClick={() => { void openView(view) }}>{label}</button>
+  const viewItem = (view: number, label: ReactNode) => <button type="button" aria-current={level === view ? 'page' : undefined} onClick={() => setLevel(view)}>{label}</button>
+  // Reference panels sit beside the text in every tab, so looking something up never leaves the page.
+  const [refPanel, setRefPanel] = useState<RefPanel | null>(null)
+  const [writerScene, setWriterScene] = useState<{ id: string; at: number } | null>(null)
+  const openScene = (id: string) => {
+    if (!id) return
+    if (tab === 'write') setWriterScene({ id, at: Date.now() })
+    else if (tab === 'read') document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    else { const scene = scenes.data?.find(item => item.id === id); setChapterId(scene?.chapter_id ?? null); setSceneId(id); setLevel(8) }
+  }
 
   const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
   const ladder = useQuery({ queryKey: ['ladder', storyId], queryFn: () => api.getLadder(storyId) })
@@ -258,6 +268,7 @@ function Workspace() {
         </div>
       </header>
 
+      <div className="workspace-bar">
       <div className="story-workspace-tabs" role="tablist" aria-label="Story workspace" onKeyDown={event => {
         if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
           event.preventDefault()
@@ -269,29 +280,33 @@ function Workspace() {
       }}>
         {(['write', 'read', 'design'] as const).map(item => <button key={item} id={`workspace-tab-${item}`} type="button" role="tab" aria-selected={tab === item} aria-controls={`workspace-panel-${item}`} tabIndex={tab === item ? 0 : -1} onClick={() => { void changeTab(item) }}>{item === 'write' ? 'Write' : item === 'read' ? 'Read' : 'Design'}</button>)}
       </div>
-      <nav aria-label="Story views" className="workspace-views">
-        <div><button type="button" aria-current={tab === 'design' && !isView ? 'page' : undefined} onClick={() => { void openView(planLevel.current) }}>Plan</button></div>
-        <div>{viewItem(TIMELINE_VIEW, 'Timeline')}{viewItem(GRID_VIEW, 'Grid')}</div>
-        <div>{viewItem(PLACES_VIEW, 'Places')}{viewItem(GLOSSARY_VIEW, 'Glossary')}</div>
-        <div>
-          {viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
-          {viewItem(HISTORY_VIEW, 'History')}
-          {viewItem(CATCHUP_VIEW, 'Catch up')}
+        <div className="workspace-ref-toggles" role="group" aria-label="Reference panels">
+          {pendingRuns > 0 && <button type="button" className="workspace-ref-alert" onClick={() => { void openView(INBOX_VIEW) }}>Agent changes<span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span></button>}
+          {REF_PANELS.map(([key, label]) => <button key={key} type="button" aria-pressed={refPanel === key} onClick={() => setRefPanel(refPanel === key ? null : key)}>{label}</button>)}
         </div>
-        <div>{viewItem(ASSISTANT_VIEW, 'Story assistant')}</div>
-      </nav>
+      </div>
       {tabError && <p role="alert" className="writer-error">{tabError}</p>}
       <p className="live-update-status" role="status">{live.isError ? 'Live updates paused.' : 'Live · checks for changes every 5 seconds.'}{live.isError && <button type="button" onClick={() => { void live.refetch() }}>Retry</button>}</p>
+      <div className={`workspace-body${refPanel ? ' has-panel' : ''}`}>
+      <div className="min-w-0">
       <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>
-        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} registerFlush={registerFlush} /></Suspense>}
+        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} registerFlush={registerFlush} openScene={writerScene} /></Suspense>}
       </div>
       <div id="workspace-panel-read" role="tabpanel" aria-labelledby="workspace-tab-read" hidden={tab !== 'read'}>
         {tab === 'read' && <Suspense fallback={<p className="p-6">Loading reader…</p>}><StoryReader storyId={storyId} owned embedded /></Suspense>}
       </div>
       <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design" hidden={tab !== 'design'}>
+      <nav aria-label="Design pages" className="workspace-views">
+        <div><button type="button" aria-current={!isView ? 'page' : undefined} onClick={() => setLevel(planLevel.current)}>Plan</button>{viewItem(GRID_VIEW, 'Grid')}</div>
+        <div>
+          {viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
+          {viewItem(HISTORY_VIEW, 'History')}
+          {viewItem(CATCHUP_VIEW, 'Catch up')}
+        </div>
+      </nav>
 
-      {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setLevel(TIMELINE_VIEW)} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
-      <div className={`mt-6 grid grid-cols-1 gap-5 ${isView ? '' : 'md:grid-cols-[170px_minmax(0,1fr)] xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
+      {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setRefPanel('timeline')} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
+      <div className={`mt-6 grid grid-cols-1 gap-5 ${isView ? '' : refPanel ? 'md:grid-cols-[170px_minmax(0,1fr)]' : 'md:grid-cols-[170px_minmax(0,1fr)] xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
         {!isView && <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
           <nav aria-label="Story design" className="workspace-nav">
             <h2>Plan</h2>
@@ -307,12 +322,9 @@ function Workspace() {
         </aside>}
 
         <section className="min-w-0">
-          {level === TIMELINE_VIEW && <StoryTimeline storyId={storyId} onOpenScene={(id) => { setSceneId(id || null); setLevel(8) }} />}
-          {level === ASSISTANT_VIEW && <AuthoringAssistant storyId={storyId} />}
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
-          {level === GLOSSARY_VIEW && <GlossaryPanel storyId={storyId} />}
           {level === HISTORY_VIEW && <div>
             <div className="history-tabs" role="tablist" aria-label="History">
               <button type="button" role="tab" aria-selected={historyTab === 'versions'} onClick={() => setHistoryTab('versions')}>Versions</button>
@@ -434,7 +446,6 @@ function Workspace() {
             </Panel>
           )}
 
-          {level === PLACES_VIEW && <PlacesPanel storyId={storyId} />}
 
           {level === 8 && (
             <Panel
@@ -482,10 +493,19 @@ function Workspace() {
           )}
         </section>
 
-        {!isView && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
+        {!isView && !refPanel && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
           <InsightsPanel storyId={storyId} health={health.data} />
         </aside>}
       </div>
+      </div>
+      </div>
+      {refPanel && <aside className="workspace-ref-panel" aria-label={REF_PANELS.find(([key]) => key === refPanel)?.[1]}>
+        <div className="workspace-ref-head"><h2>{REF_PANELS.find(([key]) => key === refPanel)?.[1]}</h2><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div>
+        {refPanel === 'timeline' && <StoryTimeline storyId={storyId} compact onOpenScene={openScene} />}
+        {refPanel === 'places' && <PlacesPanel storyId={storyId} />}
+        {refPanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
+        {refPanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
+      </aside>}
       </div>
     </main>
   )

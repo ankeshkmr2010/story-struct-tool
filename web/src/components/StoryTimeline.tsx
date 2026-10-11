@@ -7,9 +7,10 @@ import { AddForm, InlineNumber, InlineSelect, InlineText } from './fields'
 const entryKey = (entry: TimelineEntry) => `${entry.kind}:${entry.id}`
 const isSuggested = (source: string, isPov: boolean) => source === 'inferred' && !isPov
 
-export function StoryTimeline({ storyId, onOpenScene }: {
+export function StoryTimeline({ storyId, onOpenScene, compact = false }: {
   storyId: string
   onOpenScene: (id: string) => void
+  compact?: boolean
 }) {
   const qc = useQueryClient()
   const timeline = useQuery({ queryKey: ['timeline', storyId], queryFn: () => api.getTimeline(storyId) })
@@ -70,7 +71,7 @@ export function StoryTimeline({ storyId, onOpenScene }: {
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <div><p className="text-[10px] font-semibold uppercase tracking-widest text-sky-700 dark:text-sky-300">The whole story, one timeline</p><h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Story timeline</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Follow the important events with their people and places. Switch between when they happen in the world and when the reader encounters them.</p></div>
+        {!compact && <div><p className="text-[10px] font-semibold uppercase tracking-widest text-sky-700 dark:text-sky-300">The whole story, one timeline</p><h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Story timeline</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Follow the important events with their people and places. Switch between when they happen in the world and when the reader encounters them.</p></div>}
         <button type="button" onClick={() => setShowAdd(!showAdd)} className="rounded-md bg-slate-900 dark:bg-slate-200 px-4 py-2 text-sm text-white dark:text-slate-950 hover:bg-slate-700 dark:hover:bg-slate-300">{showAdd ? 'Cancel' : '+ Add event'}</button>
       </header>
       {showAdd && <section className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-4"><AddForm placeholder="What happens in this event?" onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} /><p className="mt-2 text-xs text-slate-500 dark:text-slate-400">The new event starts at the end of the timeline. Select it to set its time, people, and place.</p></section>}
@@ -86,20 +87,20 @@ export function StoryTimeline({ storyId, onOpenScene }: {
       {moments.length > 0 ? (
         <section className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900" aria-label="Visual story timeline">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-4 py-3 text-xs text-slate-500 dark:text-slate-400"><span>{order === 'world' ? 'Earlier ← when it happened → Later' : 'Opening ← when it is told → Ending'}</span><span>◆ Turning point</span></div>
-          <div className="overflow-x-auto px-6 py-5" tabIndex={0} aria-label="Scroll horizontally through story events">
-            <div className="relative flex w-max min-w-full gap-7 pb-4">
-              <div aria-hidden="true" className="absolute left-0 right-0 top-[60px] h-0.5 bg-sky-200 dark:bg-sky-900" />
+          <div className={compact ? "px-4 py-4" : "overflow-x-auto px-6 py-5"} tabIndex={0} aria-label="Scroll horizontally through story events">
+            <div className={compact ? "relative flex flex-col gap-5" : "relative flex w-max min-w-full gap-7 pb-4"}>
+              {!compact && <div aria-hidden="true" className="absolute left-0 right-0 top-[60px] h-0.5 bg-sky-200 dark:bg-sky-900" />}
               {moments.map((moment, index) => (
-                <section key={moment.position} className="relative w-72 shrink-0">
+                <section key={moment.position} className={compact ? "relative" : "relative w-72 shrink-0"}>
                   <div className="h-20">
                     <p className="line-clamp-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{order === 'world' ? [...new Set(moment.entries.map((entry) => entry.time_label).filter(Boolean))].join(' · ') || `Story time ${moment.position}` : moment.entries[0].reading_label || `Scene ${moment.position}`}</p>
                     <p className="mt-1 text-[10px] text-slate-400">{order === 'world' ? `World position ${moment.position}` : `Reading position ${moment.position}`}</p>
                     <button type="button" aria-label={`Select ${order === 'world' ? 'story time' : 'reading position'} ${moment.position}`} onClick={() => select(moment.entries[0])} className={`absolute left-0 top-[52px] z-10 size-4 border-2 border-white shadow-sm ${moment.entries.some((entry) => entry.is_turning_point) ? 'rotate-45 rounded-sm bg-amber-500' : 'rounded-full bg-sky-500'} ${selected && positionOf(selected) === moment.position ? 'ring-2 ring-sky-400 ring-offset-2' : ''}`} />
                   </div>
-                  <div className={`relative space-y-3 border-l border-sky-200 dark:border-sky-800 pl-4 ${index % 2 ? 'pt-8' : ''}`}>{moment.entries.map((entry) => <EventCard key={entryKey(entry)} entry={entry} active={Boolean(selected && entryKey(selected) === entryKey(entry))} onSelect={() => select(entry)} />)}</div>
+                  <div className={`relative space-y-3 border-l border-sky-200 dark:border-sky-800 pl-4 ${index % 2 && !compact ? 'pt-8' : ''}`}>{moment.entries.map((entry) => <EventCard key={entryKey(entry)} entry={entry} active={Boolean(selected && entryKey(selected) === entryKey(entry))} onSelect={() => select(entry)} />)}</div>
                 </section>
               ))}
-              <span aria-hidden="true" className="absolute right-0 top-[53px] text-sky-300">→</span>
+              {!compact && <span aria-hidden="true" className="absolute right-0 top-[53px] text-sky-300">→</span>}
             </div>
           </div>
           <p className="border-t border-slate-100 dark:border-slate-800 px-4 py-3 text-xs leading-5 text-slate-500 dark:text-slate-400">{order === 'world' ? 'World time follows what actually happened. Flashbacks stay at their original times, even when revealed near the ending. Spacing shows sequence rather than elapsed duration.' : 'Reading order follows chapter and scene order. A late confession can reveal early events here without moving them on the world-time timeline.'}</p>
@@ -111,12 +112,12 @@ export function StoryTimeline({ storyId, onOpenScene }: {
         </section>
       )}
 
-      {unplaced.length > 0 && <section className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/40 p-4"><h3 className="text-sm font-medium text-amber-900 dark:text-amber-300">{order === 'world' ? 'Time not assigned' : 'Not placed in reading order'} · {unplaced.length}</h3><p className="mt-1 text-xs text-amber-800 dark:text-amber-300">{order === 'world' ? 'Select a scene and set its story time to place it on the timeline.' : 'Link an event to the scene that depicts it, and assign scenes to chapters to place them in reading order.'}</p><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{unplaced.map((entry) => <EventCard key={entryKey(entry)} entry={entry} active={Boolean(selected && entryKey(selected) === entryKey(entry))} onSelect={() => select(entry)} />)}</div></section>}
+      {unplaced.length > 0 && <section className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/40 p-4"><h3 className="text-sm font-medium text-amber-900 dark:text-amber-300">{order === 'world' ? 'Time not assigned' : 'Not placed in reading order'} · {unplaced.length}</h3><p className="mt-1 text-xs text-amber-800 dark:text-amber-300">{order === 'world' ? 'Select a scene and set its story time to place it on the timeline.' : 'Link an event to the scene that depicts it, and assign scenes to chapters to place them in reading order.'}</p><div className={`mt-3 grid gap-3 ${compact ? "" : "sm:grid-cols-2 lg:grid-cols-3"}`}>{unplaced.map((entry) => <EventCard key={entryKey(entry)} entry={entry} active={Boolean(selected && entryKey(selected) === entryKey(entry))} onSelect={() => select(entry)} />)}</div></section>}
 
       {selected && (
         <section className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 sm:p-6" aria-label="Selected timeline event">
           <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Edit {selected.kind} · {selected.ordinal === null ? 'Time not assigned' : `Position ${selected.ordinal}`}</p><div className="flex gap-2"><button type="button" disabled={selectedIndex <= 0} onClick={() => select(visibleEntries[selectedIndex - 1])} className="rounded border px-2 py-1 text-xs disabled:opacity-30">← Previous</button><button type="button" disabled={selectedIndex >= visibleEntries.length - 1} onClick={() => select(visibleEntries[selectedIndex + 1])} className="rounded border px-2 py-1 text-xs disabled:opacity-30">Next →</button></div></div>
-          <div className="mt-4 grid gap-6 lg:grid-cols-2">
+          <div className={`mt-4 grid gap-6 ${compact ? "" : "lg:grid-cols-2"}`}>
             <div className="space-y-4">
               <label className="block text-xs text-slate-500 dark:text-slate-400">What happens?<InlineText value={selected.title} placeholder="Event title" className="font-semibold" onSave={(value) => value ? save(selected.kind === 'event' ? 'label' : 'title')(value) : Promise.reject(new Error('Enter a title'))} /></label>
               <div className="flex flex-wrap gap-5"><label className="block text-xs text-slate-500 dark:text-slate-400">Story time<InlineNumber value={selected.ordinal} onSave={save(selected.kind === 'scene' ? 'story_time_ordinal' : 'sort_ordinal')} /></label><label className="block min-w-40 flex-1 text-xs text-slate-500 dark:text-slate-400">Time label<InlineText value={selected.time_label} placeholder="e.g. Saturday, midnight" onSave={save(selected.kind === 'scene' ? 'time_label' : 'display_label')} /></label></div>
@@ -131,7 +132,7 @@ export function StoryTimeline({ storyId, onOpenScene }: {
               {edit.isError && <p role="alert" className="text-xs text-red-600 dark:text-red-300">Could not save this change. Please try again.</p>}
             </div>
             <div><h3 className="text-sm font-semibold">{selected.kind === 'event' ? 'People involved' : 'Who is here?'}</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{selected.kind === 'event' ? 'Choose the people involved in this event, including events that happen off-page.' : 'Confirm who is present. An inferred name mention may refer to someone who is elsewhere.'}</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">{timeline.data.characters.map((character) => {
+              <div className={`mt-4 grid gap-3 ${compact ? "" : "sm:grid-cols-2"}`}>{timeline.data.characters.map((character) => {
                 const participant = selected.participants.find((person) => person.character_id === character.id)
                 const suggested = participant && isSuggested(participant.source, participant.is_pov)
                 return <div key={character.id} className="flex items-start gap-2"><label className="flex flex-1 items-start gap-2 text-sm text-slate-700 dark:text-slate-200"><input type="checkbox" className="mt-1" checked={Boolean(participant && !suggested)} disabled={presence.isPending || participant?.is_pov} onChange={(event) => presence.mutate({ entry: selected, characterId: character.id, present: event.target.checked })} /><span>{character.name}{participant?.is_pov && <span className="ml-1 text-xs text-slate-400">POV</span>}{suggested && <span className="block text-xs text-amber-700 dark:text-amber-300">Mentioned · confirm presence</span>}</span></label>{suggested && <button type="button" disabled={presence.isPending} onClick={() => presence.mutate({ entry: selected, characterId: character.id, present: false })} className="text-xs text-slate-400 underline">Dismiss</button>}</div>
