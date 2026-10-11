@@ -220,6 +220,7 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .story-sharing-dialog { width: min(640px, calc(100% - 32px)); max-height: 85dvh; margin: auto; padding: 28px; overflow: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); box-shadow: 0 20px 80px #0003; }
 .story-sharing-dialog::backdrop { background: #081a1470; }
 .sharing-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.story-sharing-dialog .sharing-heading { position: sticky; top: -28px; z-index: 1; margin: -28px -28px 0; padding: 28px 28px 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .sharing-heading h2, .story-sharing-dialog > h2 { font-size: 24px; }
 .sharing-story-title { font-weight: 600; margin: 16px 0 8px; overflow-wrap: anywhere; }
 .sharing-form { display: grid; gap: 14px; margin: 24px 0; }
