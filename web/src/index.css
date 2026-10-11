@@ -537,8 +537,6 @@ ol.showcase-list { list-style: decimal; }
   .workspace-body.has-panel { display: block; }
   .workspace-ref-panel { position: fixed; z-index: 40; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); max-height: none; border-radius: 0; box-shadow: -8px 0 24px rgb(0 0 0 / .18); }
 }
-.workspace-level-select { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-.workspace-level-select select { padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 15px; font-weight: 600; letter-spacing: normal; text-transform: none; }
 /* Phones: full-width tabs, swipeable rows, full-screen reference panel. */
 @media (max-width: 700px) {
   .workspace-bar { flex-direction: column; align-items: stretch; margin: 16px 0 12px; }

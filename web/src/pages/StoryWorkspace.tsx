@@ -308,9 +308,7 @@ function Workspace() {
 
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setRefPanel('timeline')} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
       <div className={`mt-6 grid grid-cols-1 gap-5 ${isView ? '' : refPanel ? 'md:grid-cols-[170px_minmax(0,1fr)]' : 'md:grid-cols-[170px_minmax(0,1fr)] xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
-        {/* Phones: the 8 Plan levels as one dropdown instead of a sidebar. */}
-        {!isView && ladder.data && <label className="workspace-level-select md:hidden">Plan level<select value={level} onChange={event => selectLevel(Number(event.target.value))}>{ladder.data.levels.map(rung => <option key={rung.level} value={rung.level}>{rung.level} · {rung.label}</option>)}</select></label>}
-        {!isView && <aside className="hidden min-w-0 md:block xl:sticky xl:top-6 xl:self-start">
+        {!isView && <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
           <nav aria-label="Story design" className="workspace-nav">
             <h2>Plan</h2>
             {ladder.data && (
