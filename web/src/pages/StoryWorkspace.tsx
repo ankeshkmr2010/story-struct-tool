@@ -366,7 +366,7 @@ function Workspace() {
             {historyTab === 'versions' ? <StoryVersions storyId={storyId} /> : <AuthorshipPanel storyId={storyId} />}
           </div>}
           {level === 1 && (
-            <Panel title="Premise" hint="The story's starting point and settings.">
+            <Panel title="Premise" hint="The story's starting point and settings." help="The premise is the core idea: who wants what, what stands in the way, and why it matters. Every later level builds on it.">
               <div className="space-y-5">
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Title</span><InlineText value={story.data.title} placeholder="Story title" onSave={(title) => updateStory.mutateAsync({ title })} /></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Blurb · shown to readers</span><InlineText value={story.data.blurb} placeholder="A reader-facing pitch for your story" onSave={(blurb) => updateStory.mutateAsync({ blurb })} multiline /></label>
@@ -393,7 +393,7 @@ function Workspace() {
           {level === 6 && <ThreadsPanel storyId={storyId} />}
 
           {level === 7 && (
-            <Panel title="Chapters" hint="Containers that exist to fulfil specific beats.">
+            <Panel title="Chapters" hint="Containers that exist to fulfil specific beats." help="Chapters are the units readers see. Each one belongs to an act, has a point-of-view character, and should deliver at least one beat.">
               <AddForm
                 placeholder="Chapter title…"
                 onAdd={(title) => addChapter.mutateAsync(title)}
@@ -483,6 +483,7 @@ function Workspace() {
           {level === 8 && (
             <Panel
               title="Scenes"
+              help="A scene is one continuous moment in one place, where something changes. Scenes sit in chapters and carry the prose you write."
               hint={
                 selectedChapter
                   ? 'New scenes attach to the chapter selected at level 7.'
@@ -535,15 +536,18 @@ function Workspace() {
 function Panel({
   title,
   hint,
+  help,
   children,
 }: {
   title: string
   hint: string
+  /** Plain explanation of the level, shown in an ⓘ beside the title. */
+  help?: string
   children: React.ReactNode
 }) {
   return (
     <div>
-      <h2 className="level-title">{title}</h2>
+      <h2 className="level-title">{title}{help && <HelpTip label={title.toLowerCase()}>{help}</HelpTip>}</h2>
       <p className="help-text mb-3">{hint}</p>
       {children}
     </div>

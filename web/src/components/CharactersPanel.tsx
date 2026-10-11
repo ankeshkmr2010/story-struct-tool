@@ -3,6 +3,7 @@ import { OriginSummary } from './AuthorshipPanel'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { AddForm, Chip, DeleteButton, InlineSelect, InlineText } from './fields'
+import { HelpTip } from './HelpTip'
 
 const ROLES = ['protagonist', 'antagonist', 'mentor', 'foil', 'supporting', 'minor'] as const
 const ARC_TYPES = ['positive', 'negative', 'flat'] as const
@@ -69,7 +70,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="level-title">Characters</h2>
+      <h2 className="level-title">Characters<HelpTip label="this level">Who the story is about. Each character has a want (what they chase) and a need (what they actually lack); the gap between the two drives their arc.</HelpTip></h2>
       <p className="help-text mb-3">
         Who wants what, and what do they actually need? A name is enough to start.
       </p>

@@ -87,7 +87,7 @@ export function ActsPanel({ storyId, framework }: { storyId: string; framework: 
 
   return (
     <div>
-      <h2 className="level-title">Acts</h2>
+      <h2 className="level-title">Acts<HelpTip label="an act">An act is a large movement of the story, ending on a turning point. Each act should shift the emotional state: something must be different by its end.</HelpTip></h2>
       <p className="help-text mb-3">What changes in each act?</p>
       <div className="flex flex-wrap gap-2">
         <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40">Seed {framework.replaceAll('_', ' ')}</button>
