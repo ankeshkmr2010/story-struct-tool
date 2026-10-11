@@ -143,7 +143,7 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 
 **Tranche 3 — finish**
 - [x] T15 (c8f760a) Full token migration + new dark palette (C1). Needs D4.
-- [ ] T16 Landing: reorder to write → plan → share; sell the public showcase.
+- [~] T16 (836ca39) Landing: reorder to write → plan → share; sell the public showcase.
 - [x] T17 (3a3ce8a) Dead code: `api.listAIObservations`, unused exported types in `web/src/api/client.ts` (C5).
 - [~] T18 (f0ed5bc; tab-bar Assistant button since b8f9907) Make the in-app assistant discoverable: own ASSISTANT sidebar group, obvious "add your API key" step (`AuthoringAssistant.tsx`, `UserSettings.tsx`).
 - [ ] T19 Mobile pass.
