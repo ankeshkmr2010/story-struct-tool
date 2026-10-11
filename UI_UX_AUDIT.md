@@ -114,14 +114,14 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done (add commit hash). Rule: p
 coding anything vague; verify on prod with the user (Render deploy is manual).
 
 **Decisions (blockers)**
-- D1 Approve the grouping in §1 — *open* (blocks T1–T3)
+- D1 Grouping in §1 — **approved as proposed** (2026-10-11), plus an ASSISTANT group (D2); revisit if it feels wrong on screen.
 - D2 In-app assistant — **keep** (2026-10-11): users bring their own API key, so no cost; it serves writers without an MCP client. T18 becomes "make it discoverable".
 - D3 Generation buttons — **later** (2026-10-11); T14 parked. Likely engine: in-app assistant (own key) and/or copy-prompt.
 - D4 Dark palette — **neutral grey** (2026-10-11): charcoal greys, green only as accent.
 
 **Tranche 1 — biggest change in feel**
-- [ ] T1 Header: Title · stats · [Share] · [Download ▾] (Manuscript .docx / .md, Full backup .json, one line each). Versions + Authorship leave the header. `web/src/pages/StoryWorkspace.tsx`. Needs D1.
-- [ ] T2 Design sidebar groups PLAN (levels) · VIEWS (Timeline, Grid) · WORLD (Places, Glossary) · REVIEW (Agent changes + badge, Versions, Who wrote what, Catch up). Mode moves into Premise with POV/Framework. `StoryWorkspace.tsx`. Needs D1.
+- [x] T1 (357ce79) Header: Title · stats · [Share] · [Download ▾] (Manuscript .docx / .md, Full backup .json, one line each). Versions + Authorship leave the header. `web/src/pages/StoryWorkspace.tsx`. Needs D1.
+- [x] T2 (92f2045) Design sidebar groups PLAN (levels) · VIEWS (Timeline, Grid) · WORLD (Places, Glossary) · REVIEW (Agent changes + badge, Versions, Who wrote what, Catch up). Mode moves into Premise with POV/Framework. `StoryWorkspace.tsx`. Needs D1.
 - [ ] T3 Design → Scenes: drop the prose editor; show the scene card + "Open in Write". `web/src/components/SceneEditor.tsx`, `StoryWorkspace.tsx`. Needs D1.
 - [ ] T4 Health panel: plain wording, no rule codes, quiet warning style, per-finding "Fix in <level> →" link, count badge on the tab. Fixes the turning-point confusion (§6). `api/src/storytool/domain/health.py` messages + the health panel component.
 - [ ] T5 Readable option labels with one-line descriptions for POV / Framework / Mode, plus one reusable ⓘ help component; then apply it to jargon (levels, beats, threads, turning points, pantser/plotter). `StoryWorkspace.tsx:354-355`.
