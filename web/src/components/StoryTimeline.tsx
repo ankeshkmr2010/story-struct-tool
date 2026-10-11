@@ -1,4 +1,4 @@
-import { useState, type MouseEvent } from 'react'
+import { Fragment, useState, type MouseEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type TimelineEntry } from '../api/client'
 import { EventDelete } from './EventDelete'
@@ -22,6 +22,7 @@ export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact =
   const [showScenes, setShowScenes] = useState(false)
   const [order, setOrder] = useState<'world' | 'reading'>('world')
   const [showAdd, setShowAdd] = useState(false)
+  const [insertAfter, setInsertAfter] = useState<number | null>(null)
   const refresh = () => {
     for (const key of ['timeline', 'scenes', 'events', 'mentions', 'continuity', 'health', 'brief', 'location-usage', 'ladder']) {
       void qc.invalidateQueries({ queryKey: [key, storyId] })
@@ -48,6 +49,23 @@ export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact =
       is_turning_point: true,
     }),
     onSuccess: (event) => { setSelectedKey(`event:${event.id}`); setShowAdd(false); setCharacterFilter(''); setLocationFilter(''); refresh() },
+  })
+  // "+" between two world-time positions. Positions are whole numbers; when the two are
+  // adjacent there is no room, so everything from `before` on moves 10 later first.
+  const insert = useMutation({
+    mutationFn: async ({ label, after, before }: { label: string; after: number; before: number }) => {
+      let ordinal = after + Math.floor((before - after) / 2)
+      if (before - after < 2) {
+        for (const entry of (timeline.data?.entries ?? []).filter((item) => item.ordinal !== null && item.ordinal >= before)) {
+          if (entry.kind === 'scene') await api.updateScene(storyId, entry.id, { story_time_ordinal: entry.ordinal! + 10 })
+          else await api.updateEvent(storyId, entry.id, { sort_ordinal: entry.ordinal! + 10 })
+        }
+        ordinal = after + 5
+      }
+      return api.createEvent(storyId, { label, sort_ordinal: ordinal, is_turning_point: true })
+    },
+    onSuccess: (event) => { setSelectedKey(`event:${event.id}`); setInsertAfter(null); refresh() },
+    onError: refresh,
   })
 
   if (timeline.isPending) return <p className="text-sm text-slate-500 dark:text-slate-400">Loading the story timeline…</p>
@@ -93,7 +111,14 @@ export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact =
             <div className={compact ? "relative flex flex-col gap-5" : "relative flex w-max min-w-full gap-7 pb-4"}>
               {!compact && <div aria-hidden="true" className="absolute left-0 right-0 top-[60px] h-0.5 bg-sky-200 dark:bg-sky-900" />}
               {moments.map((moment, index) => (
-                <section key={moment.position} className={compact ? "relative" : "relative w-72 shrink-0"}>
+                <Fragment key={moment.position}>
+                {index > 0 && order === 'world' && (
+                  <div className={compact ? 'flex flex-col items-center gap-2' : 'relative z-10 flex w-8 shrink-0 flex-col items-center pt-[46px]'}>
+                    <button type="button" aria-label={`Add an event between world positions ${moments[index - 1].position} and ${moment.position}`} title="Add an event here" onClick={() => setInsertAfter(insertAfter === index - 1 ? null : index - 1)} className="flex size-7 items-center justify-center rounded-full border border-slate-300 bg-white text-base leading-none text-slate-600 hover:border-sky-400 hover:text-sky-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300">+</button>
+                    {insertAfter === index - 1 && <div className={compact ? 'w-full' : 'w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-md dark:border-slate-700 dark:bg-slate-900'}><AddForm placeholder="What happens here?" onAdd={(title) => insert.mutateAsync({ label: title, after: moments[index - 1].position, before: moment.position })} pending={insert.isPending} /></div>}
+                  </div>
+                )}
+                <section className={compact ? "relative" : "relative w-72 shrink-0"}>
                   <div className="h-20">
                     <p className="line-clamp-1 text-xs font-semibold text-slate-800 dark:text-slate-100">{order === 'world' ? [...new Set(moment.entries.map((entry) => entry.time_label).filter(Boolean))].join(' · ') || `Story time ${moment.position}` : moment.entries[0].reading_label || `Scene ${moment.position}`}</p>
                     <p className="mt-1 text-[10px] text-slate-400">{order === 'world' ? `World position ${moment.position}` : `Reading position ${moment.position}`}</p>
@@ -101,6 +126,7 @@ export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact =
                   </div>
                   <div className={`relative space-y-3 border-l border-sky-200 dark:border-sky-800 pl-4 ${index % 2 && !compact ? 'pt-8' : ''}`}>{moment.entries.map((entry) => <EventCard key={entryKey(entry)} entry={entry} active={Boolean(selected && entryKey(selected) === entryKey(entry))} onSelect={() => select(entry)} sceneTitle={sceneTitleOf(entry)} onOpenScene={onOpenScene} onOpenCharacter={onOpenCharacter} />)}</div>
                 </section>
+                </Fragment>
               ))}
               {!compact && <span aria-hidden="true" className="absolute right-0 top-[53px] text-sky-300">→</span>}
             </div>
