@@ -449,9 +449,9 @@ ol.showcase-list { list-style: decimal; }
 .writer-current-chapter { font-size: 12px; color: var(--muted); }
 .writer-toolbar-spacer { flex: 1; }
 .writer-layout { display: grid; grid-template-columns: 190px minmax(0, 1fr); min-width: 0; }
-.writer-layout.writer-with-context { grid-template-columns: 190px minmax(0, 1fr) 300px; }
+.writer-layout.writer-with-context { grid-template-columns: 190px minmax(0, 1fr) 340px; }
 .writer-layout.writer-no-navigation { grid-template-columns: minmax(0, 1fr); }
-.writer-layout.writer-no-navigation.writer-with-context { grid-template-columns: minmax(0, 1fr) 300px; }
+.writer-layout.writer-no-navigation.writer-with-context { grid-template-columns: minmax(0, 1fr) 340px; }
 .writer-no-navigation .writer-navigation { display: none; }
 .writer-navigation { padding: 24px 12px; border-right: 1px solid var(--line); }
 .writer-navigation .eyebrow { padding: 0 10px; }
@@ -477,6 +477,8 @@ ol.showcase-list { list-style: decimal; }
 .writer-context-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
 .writer-context-heading h2 { font-size: 18px; }
 .writer-context-heading button { font-size: 24px; padding: 4px 10px; }
+/* The brief card is built for wide pages; in the narrow Context column, stack label over value. */
+.writer-context .brief-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .writer-error { margin: 12px 0; padding: 16px; border: 1px solid #b54747; border-radius: 8px; font-size: 13px; line-height: 1.7; color: var(--ink); overflow-wrap: anywhere; }
 .writer-error button { margin-top: 8px; }
 .writer-latest { white-space: pre-wrap; max-height: 240px; overflow: auto; font: 15px/1.8 Georgia, serif; margin: 12px 0; padding: 12px; background: var(--accent-soft); }

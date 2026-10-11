@@ -17,7 +17,7 @@ import type { ChapterBrief } from '../api/client'
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[150px_1fr] gap-3 py-1.5">
+    <div className="brief-row grid grid-cols-[150px_1fr] gap-3 py-1.5">
       <dt className="text-xs text-slate-400">{label}</dt>
       <dd className="text-sm text-slate-800 dark:text-slate-100">{children}</dd>
     </div>
