@@ -187,7 +187,7 @@ function EventCard({ entry, active, onSelect, sceneTitle, onOpenScene, onOpenCha
       {entry.kind === 'scene'
         ? <button type="button" onClick={(event) => go(event, () => onOpenScene(entry.id))} className="mt-2 block text-left text-sm font-semibold leading-5 text-slate-900 hover:underline dark:text-slate-100">{entry.title} →</button>
         : <span className="mt-2 block text-sm font-semibold leading-5 text-slate-900 dark:text-slate-100">{entry.title}</span>}
-      {entry.kind === 'event' && entry.scene_id && <button type="button" onClick={(event) => go(event, () => onOpenScene(entry.scene_id!))} className="mt-1 block text-left text-xs font-medium text-[var(--accent)] hover:underline">Scene: {sceneTitle ?? 'linked scene'} →</button>}
+      {entry.kind === 'event' && entry.scene_id && <button type="button" onClick={(event) => go(event, () => onOpenScene(entry.scene_id!))} className="mt-1 block text-left text-xs font-medium text-[var(--accent)] hover:underline">{sceneTitle ?? 'Linked scene'} →</button>}
       {entry.summary && <span className="mt-2 line-clamp-3 text-xs leading-5 text-slate-500 dark:text-slate-400">{entry.summary}</span>}
       <span className="mt-2 block text-[10px] text-slate-400">Happens: {entry.time_label ?? (entry.ordinal === null ? 'Time unknown' : `world position ${entry.ordinal}`)}</span>
       {entry.reading_label && <span className="mt-1 block text-[10px] text-violet-600 dark:text-violet-300">{entry.is_flashback ? 'Revealed later' : 'Told'}: {entry.reading_label}</span>}
