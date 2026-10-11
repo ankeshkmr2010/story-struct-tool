@@ -4,7 +4,7 @@ import type { Ladder as LadderData, Readiness } from '../api/client'
  * The same `readiness` signal rendered under three different policies. This is the whole
  * "one engine, three products" claim made visible:
  *
- *   plotter -- levels past the first closed gate are locked outright
+ *   plotter -- levels past the first closed gate are dimmed, still open, blockers shown
  *   hybrid  -- everything reachable, blockers shown as nudges
  *   pantser -- blockers hidden entirely; work wherever you like
  */
@@ -43,19 +43,20 @@ export function Ladder({
       {ladder.levels.map((rung) => {
         const status = statusFor(rung, mode, ladder.furthest_ready_level)
         const isActive = rung.level === activeLevel
-        const clickable = status !== 'locked'
+        // Flagged, never blocked: a gated level is dimmed but stays open, because it may
+        // already hold work (an agent can fill any level).
+        const gated = status === 'locked'
 
         return (
           <li key={rung.level}>
             <button
-              disabled={!clickable}
               onClick={() => onSelect(rung.level)}
               title={rung.blocked_by.join(' ') || undefined}
               aria-current={isActive ? 'step' : undefined}
               className={[
                 'w-full rounded-md px-2.5 py-1.5 text-left transition',
                 isActive ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'hover:bg-slate-100 dark:hover:bg-slate-800',
-                clickable ? '' : 'cursor-not-allowed opacity-45',
+                gated && !isActive ? 'opacity-60' : '',
               ].join(' ')}
             >
               <span className="flex items-center gap-2.5">
@@ -64,7 +65,7 @@ export function Ladder({
                 <span className="text-sm font-medium">{rung.label}</span>
               </span>
 
-              {isActive && status === 'nudge' && rung.blocked_by.length > 0 && (
+              {isActive && status !== 'ready' && rung.blocked_by.length > 0 && (
                 <ul className="mt-1.5 space-y-0.5">
                   {rung.blocked_by.map((reason) => (
                     <li

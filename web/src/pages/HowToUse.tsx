@@ -45,7 +45,7 @@ const MODES = [
     name: 'Plotter',
     status: 'locked' as Status,
     tagline: 'Top down, in order',
-    description: 'Levels stay locked until the structure above them is ready.',
+    description: 'Levels past the first unready one are dimmed until the structure above them is ready; you can still open them.',
     start: 'Start with a premise and work down the ladder.',
   },
   {
@@ -207,7 +207,7 @@ export default function HowToUse() {
                 <Legend dot={DOT.nudge}>
                   not ready — select it to see exactly what is missing
                 </Legend>
-                <Legend dot={DOT.locked}>locked — Plotter mode only</Legend>
+                <Legend dot={DOT.locked}>dimmed — Plotter mode, past the first unready level; still opens</Legend>
               </ul>
 
               <ol className="mt-5 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
