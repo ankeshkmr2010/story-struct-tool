@@ -151,10 +151,10 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
           {!unfiled && (chapter ? <InlineText value={chapter.title} placeholder="Chapter title (optional)" className="writer-title-input" onSave={async title => { await api.updateChapter(storyId, chapter.id, { title }); refresh() }} /> : <input aria-label="Chapter title" placeholder="Chapter title (optional)" className="writer-title-input" onChange={event => { titleRef.current = event.target.value }} />)}
           <p className="writer-help">Write freely. Scene names and structure can come later.</p>
         </header>
-        {!unfiled && chapter && <div className="writer-chapter-extras"><label className="writer-help">Epigraph<InlineText value={chapter.epigraph} placeholder="Opening quote (optional)" multiline onSave={async epigraph => { await api.updateChapter(storyId, chapter.id, { epigraph }); refresh() }} /></label><label className="writer-help">Opening note<InlineText value={chapter.opening_note} placeholder="Opening flavour text (optional)" multiline onSave={async opening_note => { await api.updateChapter(storyId, chapter.id, { opening_note }); refresh() }} /></label></div>}
+        {!unfiled && chapter && <div className="writer-chapter-extras" key={`top-${chapter.id}`}><ChapterExtra label="Epigraph" add="Add epigraph" value={chapter.epigraph} placeholder="Opening quote" onSave={async epigraph => { await api.updateChapter(storyId, chapter.id, { epigraph }); refresh() }} /><ChapterExtra label="Opening note" add="Add opening note" value={chapter.opening_note} placeholder="Opening flavour text" onSave={async opening_note => { await api.updateChapter(storyId, chapter.id, { opening_note }); refresh() }} /></div>}
         {chapterScenes.map((scene, index) => <Passage key={scene.id} {...{ storyId, prefix, scene }} separator={index > 0} focus={focusTarget === scene.id} onFocus={() => setActiveScene(scene.id)} refresh={refresh} />)}
         {chapterScenes.length === 0 && <Passage key={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} {...{ storyId, prefix }} draftKey={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} focus={focusTarget === 'blank'} createScene={createScene} onCreated={onCreated} onFocus={() => {}} refresh={refresh} />}
-        {!unfiled && chapter && <div className="writer-chapter-extras"><label className="writer-help">Closing note<InlineText value={chapter.closing_note} placeholder="Closing flavour text (optional)" multiline onSave={async closing_note => { await api.updateChapter(storyId, chapter.id, { closing_note }); refresh() }} /></label></div>}
+        {!unfiled && chapter && <div className="writer-chapter-extras" key={`end-${chapter.id}`}><ChapterExtra label="Closing note" add="Add closing note" value={chapter.closing_note} placeholder="Closing flavour text" onSave={async closing_note => { await api.updateChapter(storyId, chapter.id, { closing_note }); refresh() }} /></div>}
         <div className="writer-continuation">
           {chapterScenes.length > 0 && <button type="button" disabled={adding} onClick={() => { void addScene() }}>+ Scene break at end</button>}
           <button type="button" disabled={adding} onClick={() => { void addChapter() }}>+ Next chapter</button>
@@ -241,4 +241,11 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       EditorView.theme({ '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' }, '.cm-scroller': { fontFamily: 'Georgia, serif', fontSize: '18px', overflow: 'visible' }, '.cm-content': { padding: '12px 0 24px', lineHeight: '1.9' }, '.cm-focused': { outline: 'none' }, '.cm-cursor': { borderLeftColor: 'var(--accent)' } }),
     ]} basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, bracketMatching: false, closeBrackets: false, autocompletion: false }} />
   </section>
+}
+
+/** An optional chapter field (epigraph, notes): a quiet "+ Add …" until it has text or the author opens it. */
+function ChapterExtra({ label, add, value, placeholder, onSave }: { label: string; add: string; value: string | null; placeholder: string; onSave: (value: string | null) => Promise<void> }) {
+  const [open, setOpen] = useState(false)
+  if (!value && !open) return <button type="button" className="writer-extra-add" onClick={() => setOpen(true)}>+ {add}</button>
+  return <label className="writer-help">{label}<InlineText value={value} placeholder={placeholder} multiline onSave={onSave} /></label>
 }
