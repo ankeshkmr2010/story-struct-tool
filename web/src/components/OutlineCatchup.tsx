@@ -82,6 +82,54 @@ export function OutlineCatchup({ storyId, onOpenInbox }: { storyId: string; onOp
         </details>
       )}
     </section>}
+      <OutlineView storyId={storyId} behind={new Map((data?.scenes ?? []).map((scene) => [scene.id, scene.reasons]))} />
     </div>
+  )
+}
+
+/** The outline the catch-up keeps in step with the prose: per chapter, each scene's summary, people, place and events. */
+function OutlineView({ storyId, behind }: { storyId: string; behind: Map<string, string[]> }) {
+  const timeline = useQuery({ queryKey: ['timeline', storyId], queryFn: () => api.getTimeline(storyId) })
+  const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
+  if (timeline.isPending || scenes.isPending) return <p className="text-sm text-slate-500 dark:text-slate-400">Loading the outline…</p>
+  if (timeline.isError) return <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(timeline.error)}</p>
+  const words = new Map((scenes.data ?? []).map((scene) => [scene.id, scene.word_count]))
+  const entries = timeline.data.entries
+  const sceneEntries = entries.filter((entry) => entry.kind === 'scene').sort((a, b) => (a.reading_order ?? Infinity) - (b.reading_order ?? Infinity))
+  if (sceneEntries.length === 0) return <p className="text-sm text-slate-500 dark:text-slate-400">No scenes yet.</p>
+  const chapters: { title: string; scenes: typeof sceneEntries }[] = []
+  for (const scene of sceneEntries) {
+    const title = scene.chapter_title ?? 'Not in a chapter'
+    const group = chapters.find((item) => item.title === title) ?? chapters[chapters.push({ title, scenes: [] }) - 1]
+    group.scenes.push(scene)
+  }
+  return (
+    <section className="space-y-5" aria-label="Outline">
+      <h3 className="text-lg font-semibold">Outline</h3>
+      {chapters.map((chapter) => (
+        <div key={chapter.title} className="space-y-2">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{chapter.title}</h4>
+          <ul className="space-y-2">{chapter.scenes.map((scene) => {
+            const reasons = behind.get(scene.id)
+            const drafted = (words.get(scene.id) ?? 0) > 0
+            const events = entries.filter((entry) => entry.kind === 'event' && entry.scene_id === scene.id)
+            return (
+              <li key={scene.id} className={`rounded-lg border p-3 ${reasons ? 'border-amber-300 bg-amber-50/40 dark:border-amber-800 dark:bg-amber-950/40' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="text-sm font-semibold">{scene.title || 'Untitled scene'}</p>
+                  <span className={`text-[11px] ${reasons ? 'font-medium text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'}`}>{reasons ? `Outline behind: ${reasons.map((reason) => reasonLabels[reason] ?? reason).join(', ')}` : drafted ? 'Matches the prose' : 'No prose yet'}</span>
+                </div>
+                <p className={`mt-1 text-sm leading-6 ${scene.summary ? 'text-slate-700 dark:text-slate-200' : 'italic text-slate-400'}`}>{scene.summary || 'No summary'}</p>
+                <dl className="mt-2 grid gap-1 text-xs text-slate-600 sm:grid-cols-[5rem_1fr] dark:text-slate-300">
+                  <dt className="text-slate-400">People</dt><dd>{scene.participants.map((person) => person.name).join(', ') || '—'}</dd>
+                  <dt className="text-slate-400">Place</dt><dd>{scene.location_name || '—'}</dd>
+                  <dt className="text-slate-400">Events</dt><dd>{events.map((event) => event.title).join(' · ') || '—'}</dd>
+                </dl>
+              </li>
+            )
+          })}</ul>
+        </div>
+      ))}
+    </section>
   )
 }
