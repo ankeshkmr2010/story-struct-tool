@@ -60,7 +60,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
     for (const key of ['chapters', 'scenes', 'progress', 'brief', 'ladder', 'health']) void qc.invalidateQueries({ queryKey: [key, storyId] })
   }
   const remember = (id: string) => {
-    setSelectedId(id); setActiveScene(null); setShowNavigation(false)
+    setSelectedId(id); setActiveScene(null)
     try { localStorage.setItem(positionKey, id) } catch { /* Device preferences are optional. */ }
   }
   // A scene picked in the Timeline panel: open its chapter and put the cursor in it.
