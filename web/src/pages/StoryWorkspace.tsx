@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useRef, useState, type ReactNode } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
@@ -69,6 +69,14 @@ function Workspace() {
   const { storyId = '' } = useParams()
   const qc = useQueryClient()
   const live = useStoryLiveUpdates(storyId)
+  // The live line stays a quiet dot and only speaks for a few seconds after the story changes.
+  const [justUpdated, setJustUpdated] = useState(false)
+  useEffect(() => {
+    if (!live.changedAt) return
+    setJustUpdated(true)
+    const timer = setTimeout(() => setJustUpdated(false), 4000)
+    return () => clearTimeout(timer)
+  }, [live.changedAt])
   const [level, setLevel] = useState(1)
   // Levels 1-8 are the Plan; ids from 104 up are full-width Design pages (Grid, History, …).
   const isView = level >= INBOX_VIEW
@@ -319,7 +327,7 @@ function Workspace() {
         </div>
       </div>
       {tabError && <p role="alert" className="writer-error">{tabError}</p>}
-      <p className={`live-update-status${live.isError ? ' is-paused' : ''}`} role="status">{live.isError ? 'Live updates paused.' : 'Live · checks for changes every 5 seconds.'}{live.isError && <button type="button" onClick={() => { void live.refetch() }}>Retry</button>}</p>
+      <p className={`live-update-status${live.activity.isError ? ' is-paused' : ''}`} role="status">{live.activity.isError ? <>Live updates paused.<button type="button" onClick={() => { void live.activity.refetch() }}>Retry</button></> : <><span className="live-dot" title="Live: changes from agents and other tabs appear on their own" />{justUpdated && <span className="live-updated">Updated just now</span>}</>}</p>
       <div className={`workspace-body${refPanel ? ' has-panel' : ''}`}>
       <div className="min-w-0">
       <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>

@@ -592,3 +592,7 @@ ol.showcase-list { list-style: decimal; }
 .section-title { font-size: 16px; line-height: 1.35; font-weight: 600; color: var(--ink); }
 .field-label { display: inline-block; margin-bottom: 4px; font-size: 14px; font-weight: 600; color: var(--ink); }
 .help-text { font-size: 12px; line-height: 1.5; font-weight: 400; color: var(--muted); }
+/* Live status: a quiet dot; text only for a few seconds after a change. */
+.live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); opacity: .7; vertical-align: middle; }
+.live-updated { margin-left: 8px; animation: live-fade 4s ease-out forwards; }
+@keyframes live-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
