@@ -586,5 +586,9 @@ ol.showcase-list { list-style: decimal; }
   .live-update-status:not(.is-paused) { display: none; }
   .workspace-page header .share-story-button, .workspace-page header summary { padding: 6px 10px; font-size: 12px; }
 }
-/* Form field names: readable at a glance, values stay regular weight. */
+/* Text hierarchy for the Plan levels: change a level here, not in components.
+   level-title > section-title > field-label > help-text. Field values stay regular weight. */
+.level-title { font-size: 20px; line-height: 1.3; font-weight: 700; color: var(--ink); }
+.section-title { font-size: 16px; line-height: 1.35; font-weight: 600; color: var(--ink); }
 .field-label { display: inline-block; margin-bottom: 4px; font-size: 14px; font-weight: 600; color: var(--ink); }
+.help-text { font-size: 12px; line-height: 1.5; font-weight: 400; color: var(--muted); }

@@ -34,15 +34,15 @@ export function EventsPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="text-sm font-semibold">Arc skeleton<HelpTip label="a turning point">A turning point is a timeline event that changes the story's direction, such as the inciting incident, the midpoint or the climax. Mark three to five of them; they become the skeleton the rest of the plan hangs on.</HelpTip></h2>
-      <p className="mb-3 text-xs text-slate-400">Map three to five major turning points, then refine their order and place on the page.</p>
+      <h2 className="level-title">Arc skeleton<HelpTip label="a turning point">A turning point is a timeline event that changes the story's direction, such as the inciting incident, the midpoint or the climax. Mark three to five of them; they become the skeleton the rest of the plan hangs on.</HelpTip></h2>
+      <p className="help-text mb-3">Map three to five major turning points, then refine their order and place on the page.</p>
       <AddForm placeholder="Turning point…" onAdd={(label) => create.mutateAsync(label)} pending={create.isPending} />
       <ul className="mt-4 space-y-3">
         {events.data?.map((event) => (
           <li key={event.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1">
-                <InlineText value={event.label} placeholder="event label" onSave={(v) => save(event.id, 'label', v)} className="font-medium" />
+                <InlineText value={event.label} placeholder="event label" onSave={(v) => save(event.id, 'label', v)} className="section-title" />
               </div>
               <Chip complete={event.completeness.is_complete} missing={event.completeness.missing} />
               <DeleteButton onConfirm={() => remove.mutate(event.id)} what="event" />
@@ -87,8 +87,8 @@ export function ActsPanel({ storyId, framework }: { storyId: string; framework: 
 
   return (
     <div>
-      <h2 className="text-sm font-semibold">Acts</h2>
-      <p className="mb-3 text-xs text-slate-400">What changes in each act?</p>
+      <h2 className="level-title">Acts</h2>
+      <p className="help-text mb-3">What changes in each act?</p>
       <div className="flex flex-wrap gap-2">
         <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40">Seed {framework.replaceAll('_', ' ')}</button>
         {scaffold.data && <span className="self-center text-xs text-slate-500 dark:text-slate-400">{scaffold.data.changed ? `Added ${scaffold.data.acts_created} acts and ${scaffold.data.beats_created} beats.` : 'Already seeded.'}</span>}
@@ -99,7 +99,7 @@ export function ActsPanel({ storyId, framework }: { storyId: string; framework: 
           <li key={act.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <InlineNumber value={act.number} min={1} onSave={(v) => save(act.id, 'number', v)} />
-              <div className="min-w-0 flex-1"><InlineText value={act.title} placeholder="act title" onSave={(v) => save(act.id, 'title', v)} className="font-medium" /></div>
+              <div className="min-w-0 flex-1"><InlineText value={act.title} placeholder="act title" onSave={(v) => save(act.id, 'title', v)} className="section-title" /></div>
               <Chip complete={act.completeness.is_complete} missing={act.completeness.missing} />
               <DeleteButton onConfirm={() => remove.mutate(act.id)} what="act" />
             </div>
@@ -137,8 +137,8 @@ export function BeatsPanel({ storyId, framework }: { storyId: string; framework:
 
   return (
     <div>
-      <h2 className="text-sm font-semibold">Beats<HelpTip label="a beat">A beat is a moment the story must reach, such as "the hero refuses the call". Beats sit inside acts; chapters and scenes then fulfil them.</HelpTip></h2>
-      <p className="mb-3 text-xs text-slate-400">What must happen to fulfil each act? Seeded beats are ordinary editable rows.</p>
+      <h2 className="level-title">Beats<HelpTip label="a beat">A beat is a moment the story must reach, such as "the hero refuses the call". Beats sit inside acts; chapters and scenes then fulfil them.</HelpTip></h2>
+      <p className="help-text mb-3">What must happen to fulfil each act? Seeded beats are ordinary editable rows.</p>
       <div className="flex flex-wrap gap-2">
         <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40">Seed {framework.replaceAll('_', ' ')}</button>
         {scaffold.data && <span className="self-center text-xs text-slate-500 dark:text-slate-400">{scaffold.data.changed ? `Added ${scaffold.data.acts_created} acts and ${scaffold.data.beats_created} beats.` : 'Already seeded.'}</span>}
@@ -148,7 +148,7 @@ export function BeatsPanel({ storyId, framework }: { storyId: string; framework:
         {beats.data?.map((beat) => (
           <li key={beat.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1"><InlineText value={beat.label} placeholder="beat label" onSave={(v) => save(beat.id, 'label', v)} className="font-medium" /></div>
+              <div className="min-w-0 flex-1"><InlineText value={beat.label} placeholder="beat label" onSave={(v) => save(beat.id, 'label', v)} className="section-title" /></div>
               <Chip complete={beat.completeness.is_complete} missing={beat.completeness.missing} />
               <DeleteButton onConfirm={() => remove.mutate(beat.id)} what="beat" />
             </div>
@@ -176,14 +176,14 @@ export function ThreadsPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="text-sm font-semibold">Threads<HelpTip label="a thread">A thread is one storyline running through the book. The A-story is the main plot; B and C stories are subplots. Scenes move threads forward.</HelpTip></h2>
-      <p className="mb-3 text-xs text-slate-400">Which storylines carry the scenes?</p>
+      <h2 className="level-title">Threads<HelpTip label="a thread">A thread is one storyline running through the book. The A-story is the main plot; B and C stories are subplots. Scenes move threads forward.</HelpTip></h2>
+      <p className="help-text mb-3">Which storylines carry the scenes?</p>
       <AddForm placeholder="Thread title…" onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} />
       <ul className="mt-4 space-y-3">
         {threads.data?.map((thread) => (
           <li key={thread.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1"><InlineText value={thread.title} placeholder="thread title" onSave={(v) => save(thread.id, 'title', v)} className="font-medium" /></div>
+              <div className="min-w-0 flex-1"><InlineText value={thread.title} placeholder="thread title" onSave={(v) => save(thread.id, 'title', v)} className="section-title" /></div>
               <Chip complete={thread.completeness.is_complete} missing={thread.completeness.missing} />
               <DeleteButton onConfirm={() => remove.mutate(thread.id)} what="thread" />
             </div>

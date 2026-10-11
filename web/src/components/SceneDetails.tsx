@@ -49,7 +49,7 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
       </summary>
       <div className="border-t border-slate-100 dark:border-slate-800 p-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Structure</h3>
+        <h3 className="section-title">Structure</h3>
         <div className="flex items-center gap-2"><Chip complete={scene.completeness.is_complete} missing={scene.completeness.missing} /></div>
       </div>
       <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -77,9 +77,9 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
         <Field label="Emotional value to"><InlineText value={scene.emotional_value_to} placeholder="to" onSave={save('emotional_value_to')} /></Field>
       </div>
       <div className="mt-4 space-y-3 border-t border-slate-100 dark:border-slate-800 pt-3">
-        <div><h4 className="text-xs font-semibold">Beats this scene fulfils</h4><div className="mt-1 flex flex-wrap gap-2">{beats.data?.map((beat) => <label key={beat.id} className="text-xs"><input type="checkbox" checked={links.data?.beat_ids.includes(beat.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'beat', id: beat.id, checked: event.target.checked })} /> {beat.label}</label>)}</div></div>
-        <div><h4 className="text-xs font-semibold">Threads advanced</h4><div className="mt-1 flex flex-wrap gap-2">{threads.data?.map((thread) => <label key={thread.id} className="text-xs"><input type="checkbox" checked={links.data?.thread_ids.includes(thread.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'thread', id: thread.id, checked: event.target.checked })} /> {thread.title ?? thread.type}</label>)}</div></div>
-        {stages.length > 0 && <div><h4 className="text-xs font-semibold">Arc stages advanced</h4><div className="mt-1 flex flex-wrap gap-2">{stages.map((stage) => <label key={stage.id} className="text-xs"><input type="checkbox" checked={links.data?.arc_stage_ids.includes(stage.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'stage', id: stage.id, checked: event.target.checked })} /> {stage.owner}: {stage.label}</label>)}</div></div>}
+        <div><h4 className="field-label">Beats this scene fulfils</h4><div className="mt-1 flex flex-wrap gap-2">{beats.data?.map((beat) => <label key={beat.id} className="text-xs"><input type="checkbox" checked={links.data?.beat_ids.includes(beat.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'beat', id: beat.id, checked: event.target.checked })} /> {beat.label}</label>)}</div></div>
+        <div><h4 className="field-label">Threads advanced</h4><div className="mt-1 flex flex-wrap gap-2">{threads.data?.map((thread) => <label key={thread.id} className="text-xs"><input type="checkbox" checked={links.data?.thread_ids.includes(thread.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'thread', id: thread.id, checked: event.target.checked })} /> {thread.title ?? thread.type}</label>)}</div></div>
+        {stages.length > 0 && <div><h4 className="field-label">Arc stages advanced</h4><div className="mt-1 flex flex-wrap gap-2">{stages.map((stage) => <label key={stage.id} className="text-xs"><input type="checkbox" checked={links.data?.arc_stage_ids.includes(stage.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'stage', id: stage.id, checked: event.target.checked })} /> {stage.owner}: {stage.label}</label>)}</div></div>}
       </div>
       </div>
     </details></div>

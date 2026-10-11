@@ -418,7 +418,7 @@ function Workspace() {
                   </summary>
                   <div className="border-t border-slate-100 dark:border-slate-800 p-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Structure</h3>
+                    <h3 className="section-title">Structure</h3>
                     <div className="flex items-center gap-2"><Chip complete={chapter.completeness.is_complete} missing={chapter.completeness.missing} /><DeleteButton onConfirm={() => deleteChapter.mutate()} what="chapter" /></div>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-2">
@@ -543,8 +543,8 @@ function Panel({
 }) {
   return (
     <div>
-      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-      <p className="mb-3 text-xs text-slate-400">{hint}</p>
+      <h2 className="level-title">{title}</h2>
+      <p className="help-text mb-3">{hint}</p>
       {children}
     </div>
   )

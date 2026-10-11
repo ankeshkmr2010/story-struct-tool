@@ -69,8 +69,8 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Characters</h2>
-      <p className="mb-3 text-xs text-slate-400">
+      <h2 className="level-title">Characters</h2>
+      <p className="help-text mb-3">
         Who wants what, and what do they actually need? A name is enough to start.
       </p>
 
@@ -118,7 +118,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                     value={character.name}
                     placeholder="name"
                     onSave={set('name')}
-                    className="font-medium"
+                    className="section-title"
                   />
                 </div>
                 <InlineSelect
@@ -248,7 +248,7 @@ function RelationshipsSection({ storyId, characters }: { storyId: string; charac
 
   return (
     <section className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
-      <h2 className="text-sm font-semibold">Relationships</h2>
+      <h2 className="section-title">Relationships</h2>
       <p className="mt-1 text-xs text-slate-400">Define how two characters relate, and how that changes.</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <InlineSelect value={first} options={options} onSave={setFirst} placeholder="First character" />
@@ -313,7 +313,7 @@ function CharacterArc({
   return (
     <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-200">Character arc</h3>
+        <h3 className="section-title">Character arc</h3>
         <DeleteButton onConfirm={() => remove.mutate()} what="arc" />
       </div>
       <label className="mt-1 block text-xs"><span className="field-label">Resolution</span>
