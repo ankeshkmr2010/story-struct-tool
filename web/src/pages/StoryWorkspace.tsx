@@ -53,6 +53,10 @@ function Workspace() {
   const qc = useQueryClient()
   const live = useStoryLiveUpdates(storyId)
   const [level, setLevel] = useState(1)
+  // Levels 1-8 are the Plan; ids from 100 up are full-width views (Timeline, Grid, …).
+  const isView = level >= PLACES_VIEW
+  const planLevel = useRef(1)
+  if (!isView) planLevel.current = level
   const [historyTab, setHistoryTab] = useState<'versions' | 'authorship'>('versions')
   const [tab, setTab] = useState<'write' | 'read' | 'design'>(() => {
     try { const saved = localStorage.getItem(`storytool-workspace:${storyId}`); return saved === 'write' || saved === 'read' ? saved : 'design' } catch { return 'design' }
@@ -266,6 +270,7 @@ function Workspace() {
         {(['write', 'read', 'design'] as const).map(item => <button key={item} id={`workspace-tab-${item}`} type="button" role="tab" aria-selected={tab === item} aria-controls={`workspace-panel-${item}`} tabIndex={tab === item ? 0 : -1} onClick={() => { void changeTab(item) }}>{item === 'write' ? 'Write' : item === 'read' ? 'Read' : 'Design'}</button>)}
       </div>
       <nav aria-label="Story views" className="workspace-views">
+        <div><button type="button" aria-current={tab === 'design' && !isView ? 'page' : undefined} onClick={() => { void openView(planLevel.current) }}>Plan</button></div>
         <div>{viewItem(TIMELINE_VIEW, 'Timeline')}{viewItem(GRID_VIEW, 'Grid')}</div>
         <div>{viewItem(PLACES_VIEW, 'Places')}{viewItem(GLOSSARY_VIEW, 'Glossary')}</div>
         <div>
@@ -286,8 +291,8 @@ function Workspace() {
       <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design" hidden={tab !== 'design'}>
 
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setLevel(TIMELINE_VIEW)} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
-      <div className={`mt-6 grid grid-cols-1 gap-5 md:grid-cols-[170px_minmax(0,1fr)] ${level === TIMELINE_VIEW || level === ASSISTANT_VIEW || level === INBOX_VIEW || level === GRID_VIEW || level === CATCHUP_VIEW || level === HISTORY_VIEW ? 'xl:grid-cols-[180px_minmax(0,1fr)]' : 'xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
-        <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
+      <div className={`mt-6 grid grid-cols-1 gap-5 ${isView ? '' : 'md:grid-cols-[170px_minmax(0,1fr)] xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
+        {!isView && <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
           <nav aria-label="Story design" className="workspace-nav">
             <h2>Plan</h2>
             {ladder.data && (
@@ -299,7 +304,7 @@ function Workspace() {
               />
             )}
           </nav>
-        </aside>
+        </aside>}
 
         <section className="min-w-0">
           {level === TIMELINE_VIEW && <StoryTimeline storyId={storyId} onOpenScene={(id) => { setSceneId(id || null); setLevel(8) }} />}
@@ -477,7 +482,7 @@ function Workspace() {
           )}
         </section>
 
-        {level !== TIMELINE_VIEW && level !== ASSISTANT_VIEW && level !== INBOX_VIEW && level !== GRID_VIEW && level !== CATCHUP_VIEW && level !== HISTORY_VIEW && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
+        {!isView && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
           <InsightsPanel storyId={storyId} health={health.data} />
         </aside>}
       </div>
