@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom'
 import { MCPSetup } from '../components/MCPSetup'
 
-const features = [
-  ['01', 'Give your idea a shape', 'Connect your premise, characters, acts, and beats. Plan from the top down or discover your structure as you write.'],
-  ['02', 'See the whole story', 'Track events, people, and places on one timeline. Keep what happened separate from when your reader learns about it.'],
-  ['03', 'Find your writing flow', 'Write a chapter on one scrolling manuscript. Add scene breaks when useful, open Context for structure, or enter Focus to make room for the words.'],
+// A complete public story, linked so visitors can see the result before signing in.
+// The token belongs to the Red-Headed League demo's showcase; rotating that link breaks this one.
+const SHOWCASE = '/showcase/lkw4Mh-vzZpNfsVV0KDkyPxJ9KZo9H0E'
+
+const plan = [
+  ['01', 'Eight levels, at your pace', 'Premise, arc, characters, acts, beats, threads, chapters, scenes. Plan top-down as a plotter, discover as a pantser, or mix both. The plan guides; it never locks.'],
+  ['02', 'One timeline, two orders', 'See events in the order they happen and in the order your reader meets them, so flashbacks stay straight. Add an event exactly where it belongs.'],
+  ['03', 'Gaps flagged, never blocked', 'Each level shows what it still needs, in plain words, with a link to fix it. You decide when, or whether, to act.'],
 ] as const
 
 export default function Landing() {
@@ -12,10 +16,10 @@ export default function Landing() {
     <section className="landing-hero" aria-labelledby="landing-title">
       <div className="hero-copy">
         <p className="eyebrow"><span /> A workspace for fiction writers</p>
-        <h1 id="landing-title">A spark of an idea.<br /><em>A story that holds together.</em></h1>
-        <p className="hero-description">Bring your characters, plot, timeline, and prose into one place. Shape the bigger picture in Design, write your chapters, and share your story with readers you choose.</p>
-        <div className="hero-actions"><Link to="/library" className="landing-primary">Start your story <span aria-hidden="true">↗</span></Link><Link to="/how-to-use" className="landing-secondary">See how it works <span aria-hidden="true">→</span></Link><a href="#mcp" className="landing-secondary">Connect your AI ↗</a></div>
-        <p className="hero-footnote">For first drafts, ambitious rewrites, and your first readers. <a href="#sharing">Explore story sharing →</a></p>
+        <h1 id="landing-title">Write your story.<br /><em>Keep it whole.</em></h1>
+        <p className="hero-description">Your manuscript, its structure and its timeline in one place. Write solo, or with the AI you already use; either way, every change is yours to keep or undo.</p>
+        <div className="hero-actions"><Link to="/library" className="landing-primary">Start your story <span aria-hidden="true">↗</span></Link><Link to={SHOWCASE} className="landing-secondary">See a finished story <span aria-hidden="true">→</span></Link></div>
+        <p className="hero-footnote">New here? <Link to="/how-to-use">See how it works →</Link></p>
       </div>
       <div className="story-preview" aria-label="Illustrative story outline showing linked beats, timeline events, and a character arc">
         <div className="preview-top"><img src="/branding/storytool.svg" width="32" height="32" alt="" /><span>The Last Lantern <small>A glimpse of your workspace</small></span><span className="preview-draft">Draft</span></div>
@@ -32,33 +36,45 @@ export default function Landing() {
         <div className="preview-bottom"><span className="saved-dot" /> Structure and scenes, connected.</div>
       </div>
     </section>
-    <section className="landing-features" aria-labelledby="features-title"><div className="section-intro"><p className="eyebrow">FROM FIRST IDEA TO FINAL SCENE</p><h2 id="features-title">Keep the threads in your hands.</h2></div><div className="feature-grid">{features.map(([number, title, description]) => <article key={number}><span className="feature-number">{number}</span><h3>{title}</h3><p>{description}</p></article>)}</div></section>
+
+    <section className="landing-writing" aria-labelledby="write-title">
+      <div className="section-intro"><p className="eyebrow">WRITE</p><h2 id="write-title">Start with the words.</h2><p>Open a story and type. Chapters, scenes and structure can come later, or never.</p></div>
+      <div className="writing-workspaces">
+        <article><span className="writing-tab-label">Write</span><h3>One page per chapter.</h3><p>A single scrolling manuscript for each chapter. Name scenes if it helps, or just keep typing into the next one.</p></article>
+        <article><span className="writing-tab-label">Read</span><h3>Read it like a book.</h3><p>Read across chapters by page or by scroll, set your own type, and pick up where you left off.</p></article>
+        <article><span className="writing-tab-label">Focus</span><h3>Nothing but the words.</h3><p>Hide everything around the manuscript. Autosave shows when your words are safe, and a failed save keeps your draft for a retry.</p></article>
+      </div>
+    </section>
+
+    <section className="landing-features" aria-labelledby="plan-title"><div className="section-intro"><p className="eyebrow">PLAN</p><h2 id="plan-title">Structure when you want it.<br />Never in the way.</h2></div><div className="feature-grid">{plan.map(([number, title, description]) => <article key={number}><span className="feature-number">{number}</span><h3>{title}</h3><p>{description}</p></article>)}</div></section>
+
+    <section className="landing-writing" aria-labelledby="ai-title">
+      <div className="section-intro"><p className="eyebrow">SOLO OR WITH AI</p><h2 id="ai-title">Your AI writes with you.<br />You decide.</h2><p>Everything above works on your own. If you write with Claude or ChatGPT, connect it and it works on the same story you do. Already have prose? It can draft the outline from what you've written.</p></div>
+      <div className="writing-workspaces">
+        <article><span className="writing-tab-label">Context</span><h3>It knows the whole story.</h3><p>Characters, arcs, timeline, places and glossary, not just the page in front of it.</p></article>
+        <article><span className="writing-tab-label">Agent changes</span><h3>It proposes. You choose.</h3><p>Every edit arrives as a proposal. Keep all of it, some of it or none, and undo what you applied.</p></article>
+        <article><span className="writing-tab-label">History</span><h3>Every change on record.</h3><p>Restore any saved version, and see who wrote what: you, the assistant or a connected AI.</p></article>
+      </div>
+    </section>
+    <MCPSetup />
+
     <section id="sharing" className="landing-sharing" aria-labelledby="sharing-title">
       <div className="section-intro sharing-intro">
-        <p className="eyebrow">BRING YOUR READERS INTO THE STORY</p>
-        <h2 id="sharing-title">Your story, ready to share.</h2>
-        <p>Invite another StoryTool user to read your latest saved draft. They get a dedicated reader, with your characters, arcs, beats, and timeline close at hand when they want the bigger picture.</p>
-        <div className="sharing-actions"><Link to="/library" className="landing-primary">Choose a story to share <span aria-hidden="true">→</span></Link><Link to="/how-to-use#sharing" className="landing-secondary">How sharing works →</Link></div>
+        <p className="eyebrow">SHARE</p>
+        <h2 id="sharing-title">Ready for readers.</h2>
+        <p>Invite the readers you choose, or give your story a public page anyone can open.</p>
+        <div className="sharing-actions"><Link to={SHOWCASE} className="landing-primary">See a showcase <span aria-hidden="true">→</span></Link><Link to="/how-to-use#sharing" className="landing-secondary">How sharing works →</Link></div>
       </div>
       <div className="sharing-permissions">
-        <article><span className="writing-tab-label">Read only</span><h3>Let them experience your draft.</h3><p>Readers can turn pages or scroll, adjust the type, and enter Focus. Your manuscript and structure stay protected from edits.</p></article>
-        <article><span className="writing-tab-label">Read and import a copy</span><h3>Give an idea room to branch.</h3><p>If you allow it, a reader can import an independent copy into their own stories. Their changes belong to their copy; your original stays yours.</p></article>
+        <article><span className="writing-tab-label">Reader link</span><h3>For the readers you pick.</h3><p>Invite someone by their sign-in email. They read your latest draft with characters and timeline close at hand, and can import their own copy if you allow it.</p></article>
+        <article><span className="writing-tab-label">Public showcase</span><h3>For anyone with the link.</h3><p>Turn on a page with your premise, cast and timeline. Visitors need no account, and you can change or switch off the link at any time.</p></article>
       </div>
-      <ol className="sharing-steps"><li><span>01</span><p>Open <strong>Share</strong> on your story.</p></li><li><span>02</span><p>Add their sign-in email and choose access.</p></li><li><span>03</span><p>Send the reader link, or let them find it in <strong>Shared with you</strong>.</p></li></ol>
-      <p className="sharing-footnote">Your private notes, version history, and AI conversations stay private. You can revoke access later; copies already imported remain independent.</p>
+      <ol className="sharing-steps"><li><span>01</span><p>Open <strong>Share</strong> on your story.</p></li><li><span>02</span><p>Add a reader's email, or turn on the showcase.</p></li><li><span>03</span><p>Send the link.</p></li></ol>
+      <p className="sharing-footnote">Your private notes, version history and AI conversations stay private. You can revoke access later; copies already imported remain independent.</p>
     </section>
-    <section className="landing-writing" aria-labelledby="writing-title">
-      <div className="section-intro"><p className="eyebrow">WRITE, READ, AND DESIGN</p><h2 id="writing-title">Plan when you need to.<br />Write when you’re ready.</h2><p>Write, Read, and Design are tabs inside every story. All three work with the same chapters, scenes, and structure.</p></div>
-      <div className="writing-workspaces">
-        <article><span className="writing-tab-label">Write</span><h3>Stay with the manuscript.</h3><p>Name a chapter if you like, then start typing. Its scenes appear together on one scrolling page. Scene names are optional; add a scene break at the end or continue straight into the next chapter.</p></article>
-        <article><span className="writing-tab-label">Read</span><h3>Experience the whole story.</h3><p>Read continuously across chapters without editing. Adjust the font and spacing, choose scrolling or pages, and enter Focus. Your reading place is remembered on this device.</p></article>
-        <article><span className="writing-tab-label">Design</span><h3>Keep the bigger picture close.</h3><p>Develop your premise, characters, arcs, acts, beats, and threads. Explore the timeline and work with your assistant. Everything stays connected to the words in Write.</p></article>
-      </div>
-      <div className="writing-controls"><p><strong>Focus</strong><span>A full-screen manuscript with the surrounding panels hidden. Escape brings you back.</span></p><p><strong>Context</strong><span>Open the current scene’s details and chapter brief when you need them.</span></p><p><strong>Autosave</strong><span>See when your text has saved. If a save fails, your draft stays available for retry and recovery in that browser tab.</span></p></div>
-      <Link to="/how-to-use#writing" className="landing-secondary">Explore the writing workspace →</Link>
-    </section>
-    <section className="landing-modes" aria-labelledby="modes-title"><div><p className="eyebrow">YOUR PROCESS, YOUR PACE</p><h2 id="modes-title">There’s more than one way<br />to find your story.</h2><Link to="/how-to-use#modes" className="landing-secondary">Explore the writing modes →</Link></div><div className="mode-list"><p><strong>Plotter</strong><span>Build your structure step by step.</span></p><p><strong>Pantser</strong><span>Start with scenes. Discover as you go.</span></p><p><strong>Hybrid</strong><span>A little planning. A little possibility.</span></p></div></section>
-    <MCPSetup />
-    <footer className="landing-footer"><span>StoryTool · Make room for your story.</span><Link to="/library">Open your writing workspace →</Link></footer>
+
+    <section className="landing-modes" aria-labelledby="keep-title"><div><p className="eyebrow">YOURS TO KEEP</p><h2 id="keep-title">Your words can<br />always leave.</h2></div><div className="mode-list"><p><strong>Manuscript</strong><span>Export to Word or Markdown.</span></p><p><strong>Full backup</strong><span>Everything in one file, restorable as a new story.</span></p><p><strong>Versions</strong><span>Restore any saved version; your current draft is kept as a recovery copy.</span></p></div></section>
+
+    <footer className="landing-footer"><span>StoryTool · Make room for your story.</span><Link to="/library">Start your story →</Link></footer>
   </main>
 }
