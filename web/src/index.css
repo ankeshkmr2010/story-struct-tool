@@ -586,3 +586,5 @@ ol.showcase-list { list-style: decimal; }
   .live-update-status:not(.is-paused) { display: none; }
   .workspace-page header .share-story-button, .workspace-page header summary { padding: 6px 10px; font-size: 12px; }
 }
+/* Form field names: readable at a glance, values stay regular weight. */
+.field-label { display: inline-block; margin-bottom: 4px; font-size: 14px; font-weight: 600; color: var(--ink); }
