@@ -17,14 +17,12 @@ export type Showcase = S['ShowcaseOut']
 export type ShowcaseDocument = S['ShowcaseDocumentOut']
 export type Authorship = S['AuthorshipOut']
 export type StoryActivity = S['StoryActivityOut']
-export type Completeness = S['CompletenessOut']
 export type AuthUser = S['UserOut']
 export type AuthConfig = S['AuthConfigOut']
 
 export type Ladder = S['LadderOut']
 export type Readiness = S['ReadinessOut']
 export type Health = S['HealthOut']
-export type Finding = S['FindingOut']
 export type Scaffold = S['ScaffoldOut']
 
 export type StoryEvent = S['EventOut']
@@ -55,7 +53,6 @@ export type NoticerInfo = S['NoticerInfoOut']
 export type Location = S['LocationOut']
 export type LocationUsage = S['LocationUsageOut']
 export type Continuity = S['ContinuityOut']
-export type Anomaly = S['AnomalyOut']
 export type StoryTimeline = S['TimelineOut']
 export type TimelineEntry = S['TimelineEntryOut']
 export type AIConnection = S['ConnectionOut']
@@ -64,7 +61,6 @@ export type CatchupScene = { id: string; title: string | null; chapter: { id: st
 export type OutlineCatchup = { drafted_scenes: number; pending_scenes: number; scenes: CatchupScene[] }
 export type StoryVersion = S['VersionOut']
 export type StoryVersionPreview = S['VersionPreview']
-export type AIProposal = S['Proposal']
 export type AIObservation = S['ObservationOut']
 export type AgentToken = { id: string; story_id: string; label: string; expires_at: string }
 export type OAuthGrant = { id: string; client_name: string; story_title: string; scopes: string[]; expires_at: string; revoked_at: string | null }
@@ -116,7 +112,6 @@ export const api = {
   deleteAIConnection: (id: string) => request<void>(`/api/ai/connections/${id}`, { method: 'DELETE' }),
   listAIRuns: (id: string, status?: string, limit = 30) =>
     request<AIRun[]>(`/api/stories/${id}/ai/runs?limit=${limit}${status ? `&status=${status}` : ''}`),
-  listAIObservations: (id: string) => request<AIObservation[]>(`/api/stories/${id}/ai/observations`),
   getOutlineCatchup: (id: string) => request<OutlineCatchup>(`/api/stories/${id}/ai/catchup?limit=20`),
   getAIContext: (id: string) => request<{ entities: Record<string, Record<string, unknown>[]> }>(`/api/stories/${id}/ai/context`),
   proposeAIChanges: (id: string, body: S['PromptRequest']) => post<AIRun>(`/api/stories/${id}/ai/propose`, body),
