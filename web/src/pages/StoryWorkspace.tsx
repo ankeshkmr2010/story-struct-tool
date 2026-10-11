@@ -200,8 +200,8 @@ function Workspace() {
       api.createChapter(storyId, {
         number: Math.max(0, ...(chapters.data ?? []).map((chapter) => chapter.number)) + 1,
         title,
-        // Continue in the selected chapter's act, or use the last act for a new story.
-        act_id: chapter?.act_id ?? acts.data?.at(-1)?.id,
+        // A story's first chapter opens Act 1; later ones continue in the selected chapter's act, else the last act.
+        act_id: (chapters.data?.length ?? 0) === 0 ? acts.data?.[0]?.id : chapter?.act_id ?? acts.data?.at(-1)?.id,
         sort_key: Math.max(0, ...(chapters.data ?? []).map((chapter) => chapter.sort_key)) + 100,
       }),
     onSuccess: (created) => {
