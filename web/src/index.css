@@ -596,3 +596,5 @@ ol.showcase-list { list-style: decimal; }
 .live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); opacity: .7; vertical-align: middle; }
 .live-updated { margin-left: 8px; animation: live-fade 4s ease-out forwards; }
 @keyframes live-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+/* In the tab bar the live dot sits right after Write/Read/Design and pushes the panel toggles right. */
+.live-update-status.in-bar { margin: 0 auto 0 4px; }
