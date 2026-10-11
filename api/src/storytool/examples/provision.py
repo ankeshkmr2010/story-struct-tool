@@ -7,10 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.auth.models import User
 from storytool.examples.catalog import STARTER_OUTLINES
+from storytool.examples.demo import retire_old_examples, seed_demo
 from storytool.examples.outline import seed_outline
 from storytool.examples.tutorial import seed_tutorial
 
-EXAMPLES_VERSION = 2
+EXAMPLES_VERSION = 3
 
 
 async def ensure_starter_examples(session: AsyncSession, user_id: UUID) -> None:
@@ -29,5 +30,8 @@ async def ensure_starter_examples(session: AsyncSession, user_id: UUID) -> None:
             await seed_outline(session, user_id, outline)
     if user.examples_seed_version < 2:
         await seed_tutorial(session, user_id)
+    if user.examples_seed_version < 3:
+        await retire_old_examples(session, user_id)
+        await seed_demo(session, user_id)
     user.examples_seed_version = EXAMPLES_VERSION
     await session.flush()
