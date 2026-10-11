@@ -42,9 +42,9 @@ export default function StoryList() {
     else purgeDialog.current?.close()
   }, [pendingPurge])
 
-  const stories = useQuery({ queryKey: ['stories'], queryFn: api.listStories, refetchInterval: 5000, refetchOnWindowFocus: true })
+  const stories = useQuery({ queryKey: ['stories'], queryFn: api.listStories, refetchInterval: 30_000, refetchOnWindowFocus: true })
   const trash = useQuery({ queryKey: ['trashed-stories'], queryFn: api.listTrashedStories })
-  const shared = useQuery({ queryKey: ['shared-stories'], queryFn: api.listSharedStories, refetchInterval: 5000, refetchOnWindowFocus: true })
+  const shared = useQuery({ queryKey: ['shared-stories'], queryFn: api.listSharedStories, refetchInterval: 30_000, refetchOnWindowFocus: true })
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ['stories'] })
     void qc.invalidateQueries({ queryKey: ['trashed-stories'] })
