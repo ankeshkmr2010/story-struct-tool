@@ -134,17 +134,17 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 
 **Tranche 2 — friction**
 - [x] T8 (c48a0d2, 7dc48a9) Read: no repeated blurb; context panel closed by default. `SharedStoryReader.tsx` (`StoryReader`).
-- [ ] T9 Write: collapse empty Epigraph / Opening / Closing note into "+ Add epigraph / note". `StoryWriter.tsx`.
+- [x] T9 (cc2af78) Write: collapse empty Epigraph / Opening / Closing note into "+ Add epigraph / note". `StoryWriter.tsx`.
 - [ ] T10 Library cards: Delete into a ⋯ menu; last edited + word count instead of the "complete" bar; mark examples/tutorial; New story ▾ (Blank / From backup); on-palette tutorial CTA. `web/src/pages/StoryList.tsx`.
 - [ ] T11 First run: "Start with the demo" card; empty state per tab saying what it is for.
 - [ ] T12 One shared read-only timeline component for app / shared reader / showcase (C2).
-- [ ] T13 Polling: library 5 s → refetch on focus or 30 s (`StoryList.tsx:45,47`); same for workspace activity (C4).
+- [~] T13 (ca3ce1e: library done; workspace activity still 5 s) Polling: library 5 s → refetch on focus or 30 s (`StoryList.tsx:45,47`); same for workspace activity (C4).
 - [ ] T14 (parked, D3 = later) "Generate" entry points after Design and in Chapters/Scenes (§6).
 
 **Tranche 3 — finish**
 - [x] T15 (c8f760a) Full token migration + new dark palette (C1). Needs D4.
 - [ ] T16 Landing: reorder to write → plan → share; sell the public showcase.
-- [ ] T17 Dead code: `api.listAIObservations`, unused exported types in `web/src/api/client.ts` (C5).
+- [x] T17 (3a3ce8a) Dead code: `api.listAIObservations`, unused exported types in `web/src/api/client.ts` (C5).
 - [ ] T18 Make the in-app assistant discoverable: own ASSISTANT sidebar group, obvious "add your API key" step (`AuthoringAssistant.tsx`, `UserSettings.tsx`).
 - [ ] T19 Mobile pass.
 - [ ] T20 Audit the parts not yet walked: Story timeline in depth, Settings, MCP setup.
