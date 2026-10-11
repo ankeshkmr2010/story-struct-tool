@@ -1,21 +1,56 @@
 @import "tailwindcss";
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
-@theme {
-  --color-slate-50: #faf8f4;
-  --color-slate-100: #f0eee7;
-  --color-slate-200: #dedfd6;
-  --color-slate-300: #c1c9be;
-  --color-slate-400: #8f9b90;
-  --color-slate-500: #6a786d;
-  --color-slate-600: #526456;
-  --color-slate-700: #3b5143;
-  --color-slate-800: #283a2e;
-  --color-slate-900: #1a2920;
-  --color-slate-950: #101c15;
+/* One colour system (T15). Tailwind's scales resolve to theme variables, so the ~1,400
+   palette classes follow the theme: light keeps warm greys, dark is neutral charcoal (D4).
+   Violet, indigo, sky and emerald resolve to the app's green; amber (warnings) and red (errors) stay. */
+@theme inline {
+  --color-slate-50: var(--slate-50);
+  --color-slate-100: var(--slate-100);
+  --color-slate-200: var(--slate-200);
+  --color-slate-300: var(--slate-300);
+  --color-slate-400: var(--slate-400);
+  --color-slate-500: var(--slate-500);
+  --color-slate-600: var(--slate-600);
+  --color-slate-700: var(--slate-700);
+  --color-slate-800: var(--slate-800);
+  --color-slate-900: var(--slate-900);
+  --color-slate-950: var(--slate-950);
+  --color-sky-50: var(--green-50); --color-violet-50: var(--green-50); --color-indigo-50: var(--green-50);
+  --color-emerald-50: var(--green-50);
+  --color-sky-100: var(--green-100); --color-violet-100: var(--green-100); --color-indigo-100: var(--green-100);
+  --color-emerald-100: var(--green-100);
+  --color-sky-200: var(--green-200); --color-violet-200: var(--green-200); --color-indigo-200: var(--green-200);
+  --color-emerald-200: var(--green-200);
+  --color-sky-300: var(--green-300); --color-violet-300: var(--green-300); --color-indigo-300: var(--green-300);
+  --color-emerald-300: var(--green-300);
+  --color-sky-400: var(--green-400); --color-violet-400: var(--green-400); --color-indigo-400: var(--green-400);
+  --color-emerald-400: var(--green-400);
+  --color-sky-500: var(--green-500); --color-violet-500: var(--green-500); --color-indigo-500: var(--green-500);
+  --color-emerald-500: var(--green-500);
+  --color-sky-600: var(--green-600); --color-violet-600: var(--green-600); --color-indigo-600: var(--green-600);
+  --color-emerald-600: var(--green-600);
+  --color-sky-700: var(--green-700); --color-violet-700: var(--green-700); --color-indigo-700: var(--green-700);
+  --color-emerald-700: var(--green-700);
+  --color-sky-800: var(--green-800); --color-violet-800: var(--green-800); --color-indigo-800: var(--green-800);
+  --color-emerald-800: var(--green-800);
+  --color-sky-900: var(--green-900); --color-violet-900: var(--green-900); --color-indigo-900: var(--green-900);
+  --color-emerald-900: var(--green-900);
+  --color-sky-950: var(--green-950); --color-violet-950: var(--green-950); --color-indigo-950: var(--green-950);
+  --color-emerald-950: var(--green-950);
 }
 
-:root { --page: #faf8f4; --surface: #fffefa; --ink: #242a29; --muted: #636d67; --line: #dedfd6; --accent: #315c4b; --accent-soft: #edf1e9; --button-ink: #ffffff; }
-:root[data-theme=dark] { --page: #111916; --surface: #1a2520; --ink: #edf1e9; --muted: #a7b6ac; --line: #35473b; --accent: #b5d1a5; --accent-soft: #263a2c; --button-ink: #18251d; }
+:root {
+  --page: #faf8f4; --surface: #fffefa; --ink: #242a29; --muted: #636d67; --line: #dedfd6; --accent: #315c4b; --accent-soft: #edf1e9; --button-ink: #ffffff;
+  --slate-50: #faf8f4; --slate-100: #f0eee7; --slate-200: #dedfd6; --slate-300: #c1c9be; --slate-400: #8f9b90; --slate-500: #6a786d;
+  --slate-600: #526456; --slate-700: #3b5143; --slate-800: #283a2e; --slate-900: #1a2920; --slate-950: #101c15;
+  --green-50: #eef4ec; --green-100: #dde9d8; --green-200: #c3d9b8; --green-300: #a7c79a; --green-400: #84ad78; --green-500: #5f8f5c;
+  --green-600: #46774c; --green-700: #315c4b; --green-800: #284a3d; --green-900: #1f3a30; --green-950: #152820;
+}
+:root[data-theme=dark] {
+  --page: #121314; --surface: #1b1c1e; --ink: #ececec; --muted: #a4a7ab; --line: #34363a; --accent: #a8cf98; --accent-soft: #223026; --button-ink: #15201a;
+  --slate-50: #f5f5f5; --slate-100: #ebebec; --slate-200: #d6d7d9; --slate-300: #b9bbbe; --slate-400: #8e9196; --slate-500: #6c6f74;
+  --slate-600: #4f5257; --slate-700: #3a3c40; --slate-800: #2a2c2f; --slate-900: #1e1f22; --slate-950: #151618;
+}
 body { margin: 0; background: var(--page); color: var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button:not(:disabled), summary { cursor: pointer; }
