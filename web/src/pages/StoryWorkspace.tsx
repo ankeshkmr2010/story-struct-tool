@@ -531,7 +531,7 @@ function Workspace() {
       </div>
       {refPanel && <aside className="workspace-ref-panel" aria-label={REF_PANELS.find(([key]) => key === refPanel)?.[1]}>
         <div className="workspace-ref-head"><h2>{REF_PANELS.find(([key]) => key === refPanel)?.[1]}</h2><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div>
-        {refPanel === 'timeline' && <StoryTimeline storyId={storyId} compact onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
+        {refPanel === 'timeline' && <StoryTimeline storyId={storyId} compact allowInsert={tab !== 'read'} onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
         {refPanel === 'places' && <PlacesPanel storyId={storyId} />}
         {refPanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
         {refPanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}

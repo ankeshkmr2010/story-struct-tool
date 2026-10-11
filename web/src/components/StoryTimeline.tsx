@@ -7,11 +7,13 @@ import { AddForm, InlineNumber, InlineSelect, InlineText } from './fields'
 const entryKey = (entry: TimelineEntry) => `${entry.kind}:${entry.id}`
 const isSuggested = (source: string, isPov: boolean) => source === 'inferred' && !isPov
 
-export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact = false }: {
+export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact = false, allowInsert = true }: {
   storyId: string
   onOpenScene: (id: string) => void
   onOpenCharacter?: (id: string) => void
   compact?: boolean
+  /** Show the "+" between world-time positions; off while reading. */
+  allowInsert?: boolean
 }) {
   const qc = useQueryClient()
   const timeline = useQuery({ queryKey: ['timeline', storyId], queryFn: () => api.getTimeline(storyId) })
@@ -112,7 +114,7 @@ export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact =
               {!compact && <div aria-hidden="true" className="absolute left-0 right-0 top-[60px] h-0.5 bg-sky-200 dark:bg-sky-900" />}
               {moments.map((moment, index) => (
                 <Fragment key={moment.position}>
-                {index > 0 && order === 'world' && (
+                {allowInsert && index > 0 && order === 'world' && (
                   <div className={compact ? 'flex flex-col items-center gap-2' : 'relative z-10 flex w-8 shrink-0 flex-col items-center pt-[46px]'}>
                     <button type="button" aria-label={`Add an event between world positions ${moments[index - 1].position} and ${moment.position}`} title="Add an event here" onClick={() => setInsertAfter(insertAfter === index - 1 ? null : index - 1)} className="flex size-7 items-center justify-center rounded-full border border-slate-300 bg-white text-base leading-none text-slate-600 hover:border-sky-400 hover:text-sky-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300">+</button>
                     {insertAfter === index - 1 && <div className={compact ? 'w-full' : 'w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-md dark:border-slate-700 dark:bg-slate-900'}><AddForm placeholder="What happens here?" onAdd={(title) => insert.mutateAsync({ label: title, after: moments[index - 1].position, before: moment.position })} pending={insert.isPending} /></div>}
