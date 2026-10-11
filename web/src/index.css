@@ -283,6 +283,40 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .showcase-page .reading-scrollport { height: calc(100dvh - 200px); }
 .showcase-page .reading-scene-context { display: none; }
 .showcase-body { margin-top: 24px; }
+.showcase-jump { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+.showcase-jump a { display: inline-flex; gap: 6px; align-items: center; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; color: var(--ink); }
+.showcase-jump a:hover { border-color: var(--accent); color: var(--accent); }
+.showcase-jump small { color: var(--muted); font-size: 11px; }
+.showcase-section, .showcase-bible { scroll-margin-top: 72px; }
+.showcase-bible { margin-bottom: 40px; }
+.showcase-chips, .showcase-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.showcase-chips span { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.showcase-premise { font-family: Georgia, 'Times New Roman', serif; font-size: 22px; line-height: 1.5; margin: 16px 0 20px; max-width: 760px; }
+.showcase-theme { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; margin: 0 0 24px; font-family: Georgia, serif; font-style: italic; font-size: 17px; color: var(--ink); max-width: 760px; }
+.showcase-theme small { display: block; font-family: inherit; font-style: normal; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 4px; }
+.showcase-canon { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.showcase-canon .showcase-card { margin: 0; }
+.showcase-canon ul { margin: 8px 0 0; padding-left: 18px; list-style: disc; font-size: 14px; }
+.showcase-canon li { margin-bottom: 6px; }
+.showcase-tags { margin-top: 10px; }
+.showcase-tags span { font-size: 13px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--line); }
+.showcase-card > p { font-size: 14px; line-height: 1.55; margin: 6px 0; }
+.showcase-person header { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+.showcase-person header h3 { margin: 0 0 2px; }
+.showcase-avatar { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-family: Georgia, serif; font-size: 18px; font-weight: 600; }
+.showcase-pill { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.showcase-wantneed { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; font-size: 13px; line-height: 1.45; }
+.showcase-wantneed div { background: var(--page); border-radius: 6px; padding: 8px 10px; }
+.showcase-wantneed small, .showcase-glossary strong { display: block; }
+.showcase-wantneed small { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin-bottom: 2px; }
+.showcase-person details { margin-top: 10px; font-size: 13px; }
+.showcase-person summary { cursor: pointer; color: var(--muted); }
+.showcase-rel h3 span { color: var(--accent); margin: 0 4px; }
+.showcase-tension, .showcase-atmosphere { color: var(--muted); font-style: italic; }
+.showcase-glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px 24px; }
+.showcase-glossary div { border-top: 1px solid var(--line); padding-top: 10px; }
+.showcase-glossary p { color: var(--muted); font-size: 14px; margin: 4px 0 0; }
+@media (max-width: 700px) { .showcase-premise { font-size: 18px; } .showcase-wantneed { grid-template-columns: 1fr; } }
 .showcase-shift { color: var(--accent); font-size: 13px; margin: 6px 0; }
 .showcase-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 32px; }
 .showcase-stats div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }

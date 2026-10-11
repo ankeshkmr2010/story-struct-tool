@@ -26,9 +26,9 @@ function Fields({ row, fields }: { row: Row; fields: [string, string][] }) {
   return <dl className="reader-context-fields">{shown.map(([field, label]) => <div key={field}><dt>{label}</dt><dd>{value(row, field)}</dd></div>)}</dl>
 }
 
-function Section({ title, count, children }: { title: string; count?: number; children: ReactNode }) {
+function Section({ id, title, count, children }: { id?: string; title: string; count?: number; children: ReactNode }) {
   if (count === 0) return null
-  return <section className="showcase-section"><h2>{title}{count != null && <small> · {count}</small>}</h2>{children}</section>
+  return <section id={id} className="showcase-section"><h2>{title}{count != null && <small> · {count}</small>}</h2>{children}</section>
 }
 
 export default function StoryShowcase() {
@@ -62,7 +62,6 @@ export default function StoryShowcase() {
   const words = data.versions[0]?.word_count
   const agentEdits = (data.authorship.mcp ?? 0) + (data.authorship.assistant ?? 0)
   const shownVersions = allVersions ? data.versions : data.versions.slice(0, 6)
-  const storyFacts: Row = { ...story, pov_style: story.pov_style ? `${human(value(story, 'pov_style'))} person` : null, structure_framework: value(story, 'structure_framework') === 'custom' ? null : human(value(story, 'structure_framework')) }
 
   return <main className="shared-reader-page showcase-page">
     <header className="shared-reader-header"><div>
@@ -75,15 +74,7 @@ export default function StoryShowcase() {
 
     {tab === 'read' && <ManuscriptReading structure={structure} storyId={token} accountId="showcase" onPassage={() => undefined} onContext={() => undefined} />}
 
-    {tab === 'context' && <div className="showcase-body">
-      <Section title="Story"><Fields row={storyFacts} fields={[['premise', 'Premise'], ['thematic_statement', 'Theme'], ['pov_style', 'Point of view'], ['structure_framework', 'Structure']]} />
-        {[['world_rules', 'World rules'], ['style_rules', 'Style rules'], ['motifs', 'Motifs']].map(([field, label]) => list(story, field).length > 0 && <div key={field}><h3>{label}</h3><ul className="showcase-list">{list(story, field).map((item, i) => <li key={i}>{item}</li>)}</ul></div>)}
-      </Section>
-      <Section title="Characters" count={rows('character').length}><div className="showcase-grid">{rows('character').map(person => <article key={value(person, 'id')} className="showcase-card"><h3>{value(person, 'name')}</h3>{value(person, 'role') && <p className="eyebrow">{value(person, 'role')}</p>}<Fields row={person} fields={[['description', 'Description'], ['want', 'Wants'], ['need', 'Needs'], ['wound', 'Wound'], ['misbelief', 'Misbelief'], ['voice_notes', 'Voice']]} /></article>)}</div></Section>
-      <Section title="Relationships" count={rows('relationship').length}><div className="showcase-grid">{rows('relationship').map(rel => <article key={value(rel, 'id')} className="showcase-card"><h3>{name('character', rel.character_a_id)} & {name('character', rel.character_b_id)}</h3><Fields row={rel} fields={[['current_dynamic', 'Dynamic'], ['history', 'History'], ['tension_notes', 'Tension']]} /></article>)}</div></Section>
-      <Section title="Locations" count={rows('location').length}><div className="showcase-grid">{rows('location').map(place => <article key={value(place, 'id')} className="showcase-card"><h3>{value(place, 'name')}</h3><Fields row={place} fields={[['description', 'Description'], ['atmosphere_notes', 'Atmosphere']]} /></article>)}</div></Section>
-      <Section title="Glossary" count={rows('glossary_entry').length}><dl className="reader-context-fields">{rows('glossary_entry').map(entry => <div key={value(entry, 'id')}><dt>{value(entry, 'term')}</dt><dd>{value(entry, 'definition')}</dd></div>)}</dl></Section>
-    </div>}
+    {tab === 'context' && <ShowcaseContext story={story} rows={rows} name={name} />}
 
     {tab === 'timeline' && <div className="showcase-body"><p className="writer-help">Events in world order. The manuscript keeps the author’s reading order, including flashbacks.</p>
       <ol className="reader-timeline">{events.map(event => <li key={value(event, 'id')}><small>{[value(event, 'display_label'), event.is_turning_point ? 'Turning point' : ''].filter(Boolean).join(' · ') || `Event ${events.indexOf(event) + 1}`}</small><h3>{value(event, 'label')}</h3>{value(event, 'description') && <p>{value(event, 'description')}</p>}<p>{[name('location', event.location_id), ...rows('event_character').filter(link => link.event_id === event.id).map(link => name('character', link.character_id))].filter(Boolean).join(' · ')}</p></li>)}</ol>
@@ -105,4 +96,53 @@ export default function StoryShowcase() {
 
     <footer className="showcase-footer"><p className="writer-help">Made with <Link to="/">StoryTool</Link>, a story graph and writing workspace that AI agents edit through MCP while the author stays in control.</p></footer>
   </main>
+}
+
+const ROLE_ORDER = ['protagonist', 'deuteragonist', 'antagonist', 'love_interest', 'mentor', 'supporting', 'minor']
+
+function ShowcaseContext({ story, rows, name }: { story: Row; rows: (kind: string) => Row[]; name: (kind: string, id: unknown) => string }) {
+  const people = [...rows('character')].sort((a, b) => {
+    const rank = (row: Row) => { const i = ROLE_ORDER.indexOf(value(row, 'role').toLowerCase()); return i < 0 ? ROLE_ORDER.length : i }
+    return rank(a) - rank(b)
+  })
+  const canon = ([['world_rules', 'World rules'], ['style_rules', 'Style rules']] as const).filter(([field]) => list(story, field).length)
+  const motifs = list(story, 'motifs')
+  const framework = value(story, 'structure_framework')
+  const chips = [value(story, 'genre'), value(story, 'pov_style') && `${human(value(story, 'pov_style'))} person`, framework && framework !== 'custom' && human(framework)].filter(Boolean)
+  const sections = ([['story', 'Story', 1], ['characters', 'Characters', people.length], ['relationships', 'Relationships', rows('relationship').length], ['places', 'Places', rows('location').length], ['glossary', 'Glossary', rows('glossary_entry').length]] as const).filter(([, , count]) => count)
+  return <div className="showcase-body showcase-context">
+    <nav className="showcase-jump" aria-label="Context sections">{sections.map(([id, label, count]) => <a key={id} href={`#ctx-${id}`} onClick={event => { event.preventDefault(); document.getElementById(`ctx-${id}`)?.scrollIntoView({ behavior: 'smooth' }) }}>{label}{id !== 'story' && <small>{count}</small>}</a>)}</nav>
+
+    <section id="ctx-story" className="showcase-bible">
+      {chips.length > 0 && <div className="showcase-chips">{chips.map(chip => <span key={String(chip)}>{chip}</span>)}</div>}
+      {value(story, 'premise') && <p className="showcase-premise">{value(story, 'premise')}</p>}
+      {value(story, 'thematic_statement') && <blockquote className="showcase-theme"><small>Theme</small>{value(story, 'thematic_statement')}</blockquote>}
+      {(canon.length > 0 || motifs.length > 0) && <div className="showcase-canon">
+        {canon.map(([field, label]) => <div key={field} className="showcase-card"><p className="eyebrow">{label}</p><ul>{list(story, field).map((rule, i) => <li key={i}>{rule}</li>)}</ul></div>)}
+        {motifs.length > 0 && <div className="showcase-card"><p className="eyebrow">Motifs</p><div className="showcase-tags">{motifs.map((motif, i) => <span key={i}>{motif}</span>)}</div></div>}
+      </div>}
+    </section>
+
+    <Section id="ctx-characters" title="Characters" count={people.length}><div className="showcase-grid">{people.map(person => {
+      const inner = [['wound', 'Wound'], ['misbelief', 'Misbelief'], ['voice_notes', 'Voice']].filter(([field]) => value(person, field))
+      return <article key={value(person, 'id')} className="showcase-card showcase-person">
+        <header><span className="showcase-avatar" aria-hidden="true">{value(person, 'name').charAt(0)}</span><div><h3>{value(person, 'name')}</h3>{value(person, 'role') && <span className="showcase-pill">{human(value(person, 'role'))}</span>}</div></header>
+        {value(person, 'description') && <p>{value(person, 'description')}</p>}
+        {(value(person, 'want') || value(person, 'need')) && <div className="showcase-wantneed">{value(person, 'want') && <div><small>Wants</small>{value(person, 'want')}</div>}{value(person, 'need') && <div><small>Needs</small>{value(person, 'need')}</div>}</div>}
+        {inner.length > 0 && <details><summary>More</summary><dl className="reader-context-fields">{inner.map(([field, label]) => <div key={field}><dt>{label}</dt><dd>{value(person, field)}</dd></div>)}</dl></details>}
+      </article>
+    })}</div></Section>
+
+    <Section id="ctx-relationships" title="Relationships" count={rows('relationship').length}><div className="showcase-grid">{rows('relationship').map(rel => <article key={value(rel, 'id')} className="showcase-card showcase-rel">
+      <h3>{name('character', rel.character_a_id)} <span aria-label="and">⇄</span> {name('character', rel.character_b_id)}</h3>
+      {value(rel, 'current_dynamic') && <p>{value(rel, 'current_dynamic')}</p>}
+      {value(rel, 'tension_notes') && <p className="showcase-tension">{value(rel, 'tension_notes')}</p>}
+    </article>)}</div></Section>
+
+    <Section id="ctx-places" title="Places" count={rows('location').length}><div className="showcase-grid">{rows('location').map(place => <article key={value(place, 'id')} className="showcase-card">
+      <h3>{value(place, 'name')}</h3>{value(place, 'description') && <p>{value(place, 'description')}</p>}{value(place, 'atmosphere_notes') && <p className="showcase-atmosphere">{value(place, 'atmosphere_notes')}</p>}
+    </article>)}</div></Section>
+
+    <Section id="ctx-glossary" title="Glossary" count={rows('glossary_entry').length}><div className="showcase-glossary">{rows('glossary_entry').map(entry => <div key={value(entry, 'id')}><strong>{value(entry, 'term')}</strong><p>{value(entry, 'definition')}</p></div>)}</div></Section>
+  </div>
 }
