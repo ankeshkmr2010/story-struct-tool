@@ -238,7 +238,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
     <div className="min-w-0">
       <p className="eyebrow">STORY GRID</p>
       <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Every scene at a glance</h2>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Click a row to edit · ↑ ↓ Enter Esc · drag rows to reorder · click a title for details.</p>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Click a row to edit<span className="hidden sm:inline"> · ↑ ↓ Enter Esc · drag rows to reorder</span> · click a title for details.</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <select aria-label="Filter by status" value={prefs.status} onChange={(event) => setPrefs({ status: event.target.value })} className={filter}>
           <option value="">All statuses</option>
@@ -371,7 +371,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
             <button type="button" onClick={() => setDrawer(null)} aria-label="Close details" className="workspace-shortcut rounded px-2">✕</button>
           </div>
           {drawerScene.summary && <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{drawerScene.summary}</p>}
-          <button type="button" onClick={() => onOpenScene(drawerScene)} className="workspace-shortcut mt-3 rounded-md px-3 py-1 text-sm">Open in scene editor →</button>
+          <button type="button" onClick={() => onOpenScene(drawerScene)} className="workspace-shortcut mt-3 rounded-md px-3 py-1 text-sm">Open scene →</button>
           <SceneDetails key={drawerScene.id} storyId={storyId} scene={drawerScene} onDeleted={() => setDrawer(null)} />
         </aside>
       )}

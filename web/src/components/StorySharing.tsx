@@ -28,7 +28,7 @@ export function StorySharing({ storyId, title, blurb, beforeOpen }: { storyId: s
       <div className="sharing-heading"><h2 id={`share-title-${storyId}`}>Share story</h2><button type="button" className="share-story-button" onClick={() => setOpen(false)}>Close</button></div>
       <p className="sharing-story-title">{title}</p>
       {blurb && <p className="shared-reader-blurb">{blurb}</p>}
-      <p className="writer-help">Share the current saved manuscript and story structure with a StoryTool account. Recipients can read beats, arcs, characters, and timeline context. Private annotations, past versions, and AI conversations stay private.</p>
+      <p className="writer-help">Share the current saved manuscript and story structure with a StoryTool account. Recipients can read beats, arcs, characters, and timeline context. Past versions and AI conversations stay private.</p>
       <form className="sharing-form" onSubmit={event => { event.preventDefault(); if (email.trim() && !pending) save.mutate({ email, allow: allowImport }) }}>
         <label>Recipient’s sign-in email<input type="email" required maxLength={320} autoFocus value={email} onChange={event => setEmail(event.target.value)} placeholder="writer@gmail.com" /></label>
         <label>Permission<select aria-label="Sharing permission" value={allowImport ? 'import' : 'read'} onChange={event => setAllowImport(event.target.value === 'import')}><option value="read">Read only</option><option value="import">Read and import a copy</option></select></label>

@@ -128,7 +128,7 @@ export function StoryTimeline({ storyId, onOpenScene, compact = false }: {
               {selected.arc_stages?.length > 0 && <p className="text-xs text-violet-700 dark:text-violet-300">Arc advancing: {selected.arc_stages.join(' · ')}</p>}
               {selected.reading_label && <p className="text-xs text-violet-700 dark:text-violet-300">{selected.is_flashback ? 'Revealed in a flashback' : 'Told'}: {selected.reading_label}</p>}
               {selected.kind === 'event' && <EventDelete storyId={storyId} eventId={selected.id} title={selected.title} onDeleted={() => { setSelectedKey(null); refresh() }} />}
-              {selected.scene_id && <button type="button" onClick={() => onOpenScene(selected.scene_id!)} className="text-sm text-sky-700 dark:text-sky-300 underline">{selected.kind === 'scene' ? 'Open scene editor' : 'Open linked scene'} →</button>}
+              {selected.scene_id && <button type="button" onClick={() => onOpenScene(selected.scene_id!)} className="text-sm text-sky-700 dark:text-sky-300 underline">{selected.kind === 'scene' ? 'Open scene' : 'Open linked scene'} →</button>}
               {edit.isError && <p role="alert" className="text-xs text-red-600 dark:text-red-300">Could not save this change. Please try again.</p>}
             </div>
             <div><h3 className="text-sm font-semibold">{selected.kind === 'event' ? 'People involved' : 'Who is here?'}</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{selected.kind === 'event' ? 'Choose the people involved in this event, including events that happen off-page.' : 'Confirm who is present. An inferred name mention may refer to someone who is elsewhere.'}</p>

@@ -161,7 +161,6 @@ export function BeatsPanel({ storyId, framework }: { storyId: string; framework:
             </div>
             <div className="mt-2"><Field label="Act"><InlineSelect value={beat.act_id} options={(acts.data ?? []).map((act) => ({ value: act.id, label: `${act.number}. ${act.title ?? 'Untitled'}` }))} onSave={(v) => save(beat.id, 'act_id', v)} /></Field></div>
             <div className="mt-2"><Field label="Description"><InlineText value={beat.description} placeholder="What must happen?" onSave={(v) => save(beat.id, 'description', v)} multiline /></Field></div>
-            {beat.framework_position && <p className="mt-1 text-[10px] text-slate-400">Framework: {beat.framework_position}</p>}
           </li>
         ))}
       </ul>

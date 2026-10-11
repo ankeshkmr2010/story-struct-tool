@@ -113,7 +113,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
           return (
             <li key={character.id} className="rounded-md border border-slate-200 dark:border-slate-700 p-2.5">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="min-w-0 flex-1">
+                <div className="min-w-[9rem] flex-1">
                   <InlineText
                     value={character.name}
                     placeholder="name"

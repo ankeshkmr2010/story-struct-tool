@@ -1,4 +1,8 @@
+import { useState } from 'react'
 import type { Health } from '../api/client'
+
+// Long lists bury the page on phones; the rest stays one tap away.
+const SHOWN = 5
 
 /**
  * Tier-2 findings. Warnings are structural gaps; info is a nudge the author may well
@@ -11,6 +15,7 @@ export function HealthPanel({ health, level, levelNames, onOpenLevel }: {
   levelNames?: Record<number, string>
   onOpenLevel?: (level: number) => void
 }) {
+  const [all, setAll] = useState(false)
   if (health.findings.length === 0) {
     return <p className="text-sm text-slate-500 dark:text-slate-400">Nothing to fix at this level.</p>
   }
@@ -21,7 +26,7 @@ export function HealthPanel({ health, level, levelNames, onOpenLevel }: {
         {health.warning_count} to fix · {health.info_count} suggestion{health.info_count === 1 ? '' : 's'}
       </p>
       <ul className="space-y-1.5">
-        {health.findings.map((finding, index) => (
+        {(all ? health.findings : health.findings.slice(0, SHOWN)).map((finding, index) => (
           <li
             key={`${finding.code}-${finding.entity_id ?? index}`}
             className={[
@@ -38,6 +43,7 @@ export function HealthPanel({ health, level, levelNames, onOpenLevel }: {
           </li>
         ))}
       </ul>
+      {health.findings.length > SHOWN && <button type="button" onClick={() => setAll(!all)} className="text-xs font-medium text-[var(--accent)] hover:underline">{all ? 'Show fewer' : `Show all ${health.findings.length}`}</button>}
     </div>
   )
 }

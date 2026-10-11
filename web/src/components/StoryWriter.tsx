@@ -166,7 +166,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
         {brief.data && <ChapterBriefCard brief={brief.data} />}
         {contextScene ? <SceneDetails key={contextScene.id} storyId={storyId} scene={contextScene} onDeleted={() => { setActiveScene(null); refresh() }} /> : <p>Start writing to add scene details. Beats, characters, and locations are optional.</p>}
         {contextScene && <SceneRevisions key={`rev-${contextScene.id}`} storyId={storyId} sceneId={contextScene.id} flush={() => flushWriter(prefix)} onRestored={text => writerDraft(prefix + contextScene.id, text).useLatest(text)} />}
-        <p className="writer-help">Use Design for the full outline, timeline, arcs, and story assistant.</p>
+        <p className="writer-help">Timeline, places, glossary and the assistant open from the buttons above; Design holds the full outline.</p>
       </aside>}
     </div>
   </div>
@@ -206,7 +206,8 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   }) }, [draft, storyId, prefix, createScene, qc, onCreated, refresh])
   useEffect(() => { draft.observe(initial) }, [draft, initial])
   useEffect(() => () => { if (draft.state.status !== 'error') void draft.flush() }, [draft])
-  useEffect(() => { if (focus) view.current?.focus() }, [focus])
+  // Focus alone keeps the page where it is; bring the scene into view too (Open in Write, Timeline jumps).
+  useEffect(() => { if (focus) { view.current?.focus(); view.current?.dom.scrollIntoView({ behavior: 'smooth', block: 'center' }) } }, [focus])
   const review = async () => {
     try { setReviewError(null); setLatest(realScene.current ? (await api.getContent(storyId, realScene.current.id)).content ?? '' : '') }
     catch (error) { setReviewError(errorText(error)) }
@@ -220,7 +221,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       {scene && <SceneDelete storyId={storyId} scene={scene} onDeleted={refresh} />}
     </div>
     {state.status === 'error' && <div role="alert" className="writer-error"><p>{state.error}</p><p>Your draft is preserved in this browser tab.</p><button type="button" onClick={() => { void draft.flush() }}>Retry save</button> <button type="button" onClick={() => { void review() }}>Review latest text</button>{reviewError && <p>{reviewError}</p>}{latest !== null && <div><h3>Latest saved text</h3><pre className="writer-latest">{latest || '(Empty passage)'}</pre><button type="button" onClick={() => { if (window.confirm('Replace your local draft with the latest saved text?')) { draft.useLatest(latest); setLatest(null) } }}>Use latest text</button> <button type="button" onClick={() => { if (window.confirm('Save your draft over the latest text? A prose revision will preserve the previous text.')) { lastCheckpoint.current = 0; draft.rebase(latest); setLatest(null); void draft.flush() } }}>Keep my draft</button></div>}</div>}
-    <CodeMirror value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder="Start writing your story…" onChange={draft.change} onCreateEditor={editor => { view.current = editor; if (focus) editor.focus() }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[
+    <CodeMirror value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder="Start writing your story…" onChange={draft.change} onCreateEditor={editor => { view.current = editor; if (focus) { editor.focus(); editor.dom.scrollIntoView({ block: 'center' }) } }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[
       markdown(), EditorView.lineWrapping,
       EditorView.contentAttributes.of({ 'aria-label': scene?.title ? `Prose: ${scene.title}` : 'Story prose', spellcheck: 'true', autocapitalize: 'sentences' }),
       keymap.of([{ key: 'Mod-s', run: () => { void draft.flush(); return true } }]),

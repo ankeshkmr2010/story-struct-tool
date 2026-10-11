@@ -52,6 +52,15 @@ function Workspace() {
   // Levels 1-8 are the Plan; ids from 104 up are full-width Design pages (Grid, History, …).
   const isView = level >= INBOX_VIEW
   const planLevel = useRef(1)
+  // Picking a level shows its section; on phones that section sits below the list, so bring it into view.
+  const levelSection = useRef<HTMLElement>(null)
+  const selectLevel = (next: number) => {
+    setLevel(next)
+    requestAnimationFrame(() => {
+      const top = levelSection.current?.getBoundingClientRect().top
+      if (top !== undefined && (top < 0 || top > window.innerHeight * 0.4)) levelSection.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
   if (!isView) planLevel.current = level
   const [historyTab, setHistoryTab] = useState<'versions' | 'authorship'>('versions')
   const [tab, setTab] = useState<'write' | 'read' | 'design'>(() => {
@@ -81,6 +90,8 @@ function Workspace() {
   const [writerScene, setWriterScene] = useState<{ id: string; at: number } | null>(null)
   const openScene = (id: string) => {
     if (!id) return
+    // Below 1100px the panel covers the text, so close it to show where the jump landed.
+    if (window.matchMedia('(max-width: 1100px)').matches) setRefPanel(null)
     if (tab === 'write') setWriterScene({ id, at: Date.now() })
     else if (tab === 'read') document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     else { const scene = scenes.data?.find(item => item.id === id); setChapterId(scene?.chapter_id ?? null); setSceneId(id); setLevel(8) }
@@ -235,18 +246,18 @@ function Workspace() {
   }
 
   return (
-    <main className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8">
+    <main className="workspace-page mx-auto max-w-[1600px] overflow-x-clip p-4 sm:p-6 lg:p-8">
       <Link to="/library" className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
         ← all stories
       </Link>
 
       <header className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{story.data.title}</h1>
+          <h1 className="text-xl font-semibold text-slate-900 sm:text-2xl dark:text-slate-100">{story.data.title}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {progress.data && (
-            <span className="text-xs text-slate-500 dark:text-slate-400">
+            <span className="hidden text-xs text-slate-500 sm:inline dark:text-slate-400">
               {progress.data.word_count.toLocaleString()} words ·{' '}
               {progress.data.drafted_scene_count}/{progress.data.scene_count} scenes drafted
             </span>
@@ -276,7 +287,7 @@ function Workspace() {
         </div>
       </div>
       {tabError && <p role="alert" className="writer-error">{tabError}</p>}
-      <p className="live-update-status" role="status">{live.isError ? 'Live updates paused.' : 'Live · checks for changes every 5 seconds.'}{live.isError && <button type="button" onClick={() => { void live.refetch() }}>Retry</button>}</p>
+      <p className={`live-update-status${live.isError ? ' is-paused' : ''}`} role="status">{live.isError ? 'Live updates paused.' : 'Live · checks for changes every 5 seconds.'}{live.isError && <button type="button" onClick={() => { void live.refetch() }}>Retry</button>}</p>
       <div className={`workspace-body${refPanel ? ' has-panel' : ''}`}>
       <div className="min-w-0">
       <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>
@@ -297,7 +308,9 @@ function Workspace() {
 
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setRefPanel('timeline')} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
       <div className={`mt-6 grid grid-cols-1 gap-5 ${isView ? '' : refPanel ? 'md:grid-cols-[170px_minmax(0,1fr)]' : 'md:grid-cols-[170px_minmax(0,1fr)] xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
-        {!isView && <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
+        {/* Phones: the 8 Plan levels as one dropdown instead of a sidebar. */}
+        {!isView && ladder.data && <label className="workspace-level-select md:hidden">Plan level<select value={level} onChange={event => selectLevel(Number(event.target.value))}>{ladder.data.levels.map(rung => <option key={rung.level} value={rung.level}>{rung.level} · {rung.label}</option>)}</select></label>}
+        {!isView && <aside className="hidden min-w-0 md:block xl:sticky xl:top-6 xl:self-start">
           <nav aria-label="Story design" className="workspace-nav">
             <h2>Plan</h2>
             {ladder.data && (
@@ -305,13 +318,13 @@ function Workspace() {
                 ladder={ladder.data}
                 mode={story.data.authoring_mode as AuthoringMode}
                 activeLevel={level}
-                onSelect={setLevel}
+                onSelect={selectLevel}
               />
             )}
           </nav>
         </aside>}
 
-        <section className="min-w-0">
+        <section ref={levelSection} className="min-w-0 scroll-mt-4">
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
@@ -472,7 +485,7 @@ function Workspace() {
         </section>
 
         {!isView && !refPanel && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
-          <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, rung.label]))} onOpenLevel={setLevel} />
+          <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, rung.label]))} onOpenLevel={selectLevel} />
         </aside>}
       </div>
       </div>
