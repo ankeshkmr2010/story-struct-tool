@@ -8,7 +8,7 @@ function counts(version: StoryVersion) {
   return `${Number(version.statistics.word_count ?? 0).toLocaleString()} words · ${items.scene ?? 0} scenes · ${items.beat ?? 0} beats · ${items.event ?? 0} events`
 }
 
-export function StoryVersions({ storyId }: { storyId: string }) {
+export function StoryVersions({ storyId, triggerLabel = 'Versions', className }: { storyId: string; triggerLabel?: string; className?: string }) {
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
   const [label, setLabel] = useState('')
@@ -40,7 +40,7 @@ export function StoryVersions({ storyId }: { storyId: string }) {
   }, [open, restore.isPending])
   const close = () => { setOpen(false); trigger.current?.focus() }
   return <>
-    <button ref={trigger} type="button" onClick={() => { setOpen(true); restore.reset() }} className="rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950">Versions</button>
+    <button ref={trigger} type="button" onClick={() => { setOpen(true); restore.reset() }} className={className ?? "rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950"}>{triggerLabel}</button>
     {message && !open && <p role="status" className="max-w-sm text-xs text-emerald-700 dark:text-emerald-300">{message}</p>}
     {open && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 dark:bg-black/60 p-3 sm:p-6">
       <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="story-versions-title" tabIndex={-1} className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-xl bg-white dark:bg-slate-900 p-4 shadow-xl outline-none sm:p-6">

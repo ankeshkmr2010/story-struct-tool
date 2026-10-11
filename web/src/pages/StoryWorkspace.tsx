@@ -241,23 +241,10 @@ function Workspace() {
               {progress.data.drafted_scene_count}/{progress.data.scene_count} scenes drafted
             </span>
           )}
-          <StoryVersions storyId={storyId} />
-          <AuthorshipPanel storyId={storyId} />
           <StorySharing storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} />
           {/* Export is first-class: this tool augments a writer's process, so the words
               must always be able to leave. */}
           <DownloadMenu storyId={storyId} />
-          <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            Mode
-            <select
-              aria-label="Authoring mode"
-              value={story.data.authoring_mode}
-              onChange={(event) => updateStory.mutate({ authoring_mode: event.target.value })}
-              className="rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 text-xs capitalize text-slate-700 dark:text-slate-200"
-            >
-              {MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
-            </select>
-          </label>
         </div>
       </header>
 
@@ -285,36 +272,30 @@ function Workspace() {
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setLevel(TIMELINE_VIEW)} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
       <div className={`mt-6 grid grid-cols-1 gap-5 md:grid-cols-[170px_minmax(0,1fr)] ${level === TIMELINE_VIEW || level === ASSISTANT_VIEW || level === INBOX_VIEW || level === GRID_VIEW || level === CATCHUP_VIEW ? 'xl:grid-cols-[180px_minmax(0,1fr)]' : 'xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
         <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
-          <button type="button" onClick={() => setLevel(TIMELINE_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === TIMELINE_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Story timeline →</button>
-          <button type="button" onClick={() => setLevel(GRID_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === GRID_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Story grid →</button>
-          <button type="button" onClick={() => setLevel(CATCHUP_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === CATCHUP_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Catch up outline →</button>
-          <button type="button" onClick={() => setLevel(INBOX_VIEW)} className={`mb-4 flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-medium ${level === INBOX_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Agent changes →{pendingRuns > 0 && <span aria-label={`${pendingRuns} pending`} className="rounded-full bg-amber-500 px-2 text-xs font-semibold text-white">{pendingRuns}</span>}</button>
-          <button type="button" onClick={() => setLevel(ASSISTANT_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === ASSISTANT_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Story assistant →</button>
-          <button type="button" onClick={() => setLevel(GLOSSARY_VIEW)} className={`mb-4 w-full rounded-md px-3 py-2 text-left text-sm font-medium ${level === GLOSSARY_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'workspace-shortcut'}`}>Glossary →</button>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Levels
-          </h2>
-          {ladder.data && (
-            <Ladder
-              ladder={ladder.data}
-              mode={story.data.authoring_mode as AuthoringMode}
-              activeLevel={level}
-              onSelect={setLevel}
-            />
-          )}
-
-          <h2 className="mt-5 mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Reference
-          </h2>
-          <button
-            onClick={() => setLevel(PLACES_VIEW)}
-            className={[
-              'w-full rounded-md px-3 py-2 text-left text-sm transition',
-              level === PLACES_VIEW ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'hover:bg-slate-100 dark:hover:bg-slate-800',
-            ].join(' ')}
-          >
-            Places
-          </button>
+          <nav aria-label="Story design" className="workspace-nav">
+            <h2>Plan</h2>
+            {ladder.data && (
+              <Ladder
+                ladder={ladder.data}
+                mode={story.data.authoring_mode as AuthoringMode}
+                activeLevel={level}
+                onSelect={setLevel}
+              />
+            )}
+            <h2>Views</h2>
+            <button type="button" aria-current={level === TIMELINE_VIEW ? 'page' : undefined} onClick={() => setLevel(TIMELINE_VIEW)}>Timeline</button>
+            <button type="button" aria-current={level === GRID_VIEW ? 'page' : undefined} onClick={() => setLevel(GRID_VIEW)}>Grid</button>
+            <h2>World</h2>
+            <button type="button" aria-current={level === PLACES_VIEW ? 'page' : undefined} onClick={() => setLevel(PLACES_VIEW)}>Places</button>
+            <button type="button" aria-current={level === GLOSSARY_VIEW ? 'page' : undefined} onClick={() => setLevel(GLOSSARY_VIEW)}>Glossary</button>
+            <h2>Review</h2>
+            <button type="button" aria-current={level === INBOX_VIEW ? 'page' : undefined} onClick={() => setLevel(INBOX_VIEW)}>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</button>
+            <StoryVersions storyId={storyId} triggerLabel="Versions" className="workspace-nav-item" />
+            <AuthorshipPanel storyId={storyId} label="Who wrote what" className="workspace-nav-item" />
+            <button type="button" aria-current={level === CATCHUP_VIEW ? 'page' : undefined} onClick={() => setLevel(CATCHUP_VIEW)}>Catch up outline</button>
+            <h2>Assistant</h2>
+            <button type="button" aria-current={level === ASSISTANT_VIEW ? 'page' : undefined} onClick={() => setLevel(ASSISTANT_VIEW)}>Story assistant</button>
+          </nav>
         </aside>
 
         <section className="min-w-0">
@@ -333,6 +314,7 @@ function Workspace() {
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Genre<InlineText value={story.data.genre} placeholder="Genre" onSave={(genre) => updateStory.mutateAsync({ genre })} /></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Point of view<InlineSelect value={story.data.pov_style} options={['first', 'third_limited', 'third_omniscient', 'second', 'mixed']} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400">Framework<InlineSelect value={story.data.structure_framework} options={['three_act', 'save_the_cat', 'custom']} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400">Mode<InlineSelect value={story.data.authoring_mode} options={MODES} onSave={(authoring_mode) => updateStory.mutateAsync({ authoring_mode })} /></label>
               </div>
               <details className="mt-5 rounded border border-slate-200 p-3 dark:border-slate-700"><summary className="cursor-pointer text-sm font-medium">World, style, theme, and notes</summary><div className="mt-3 space-y-3">
                 <label className="block text-xs">World rules (one per line)<InlineText value={story.data.world_rules?.join('\n') ?? null} placeholder="What is possible in this world?" onSave={value => updateStory.mutateAsync({ world_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
