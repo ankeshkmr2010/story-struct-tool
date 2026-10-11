@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { api, type ShowcaseDocument } from '../api/client'
+import { api } from '../api/client'
 import { errorText } from '../api/errors'
 import { orderChapters, orderScenes } from '../api/ordering'
 import { ManuscriptReading } from '../components/ManuscriptReading'
+import { ReadOnlyTimeline } from '../components/ReadOnlyTimeline'
 
 type Row = Record<string, unknown>
 const value = (row: Row | undefined, field: string) => row?.[field] == null ? '' : String(row[field])
@@ -75,7 +76,7 @@ export default function StoryShowcase() {
 
     {tab === 'context' && <ShowcaseContext story={story} rows={rows} name={name} />}
 
-    {tab === 'timeline' && <ShowcaseTimeline entries={data.timeline.entries} />}
+    {tab === 'timeline' && <ReadOnlyTimeline entries={data.timeline.entries} />}
 
     {tab === 'design' && <div className="showcase-body">
       <Section title="Acts & beats" count={acts.length + rows('beat').length}>{[...acts, undefined].map(act => { const beats = rows('beat').filter(beat => (beat.act_id ?? undefined) === act?.id); if (!act && !beats.length) return null; return <div key={value(act, 'id') || 'none'} className="showcase-card"><h3>{act ? titled('Act', act) : 'Beats without an act'}</h3>{act && value(act, 'summary') && <p>{value(act, 'summary')}</p>}{act && (value(act, 'emotional_shift_from') || value(act, 'emotional_shift_to')) && <p className="showcase-shift">{value(act, 'emotional_shift_from') || '…'} → {value(act, 'emotional_shift_to') || '…'}</p>}<ol className="showcase-list">{orderScenes(beats).map(beat => <li key={value(beat, 'id')}><strong>{value(beat, 'label')}</strong>{value(beat, 'description') && ` — ${value(beat, 'description')}`}</li>)}</ol></div> })}</Section>
@@ -144,34 +145,3 @@ function ShowcaseContext({ story, rows, name }: { story: Row; rows: (kind: strin
   </div>
 }
 
-type Entry = ShowcaseDocument['timeline']['entries'][number]
-
-function EntryCard({ entry, order, nested = [] }: { entry: Entry; order: 'world' | 'reading'; nested?: Entry[] }) {
-  const people = entry.participants.map(person => person.name)
-  const when = order === 'world' ? entry.reading_label && `Told in ${entry.reading_label}` : entry.time_label && `Happens: ${entry.time_label}`
-  return <li className={`showcase-entry showcase-entry-${entry.kind}`}>
-    <div className="showcase-entry-tags"><span className="showcase-pill">{entry.kind === 'scene' ? 'Scene' : 'Event'}</span>{entry.is_turning_point && <span className="showcase-pill showcase-pill-accent">Turning point</span>}{entry.is_flashback && <span className="showcase-pill showcase-pill-accent">↺ Flashback</span>}{order === 'world' && entry.time_label && <small>{entry.time_label}</small>}{order === 'reading' && entry.chapter_title && <small>{entry.chapter_title}</small>}</div>
-    <h3>{entry.title}</h3>
-    {entry.summary && <p>{entry.summary}</p>}
-    <p className="showcase-entry-meta">{[entry.location_name, people.join(', '), when].filter(Boolean).join(' · ')}</p>
-    {nested.length > 0 && <ul className="showcase-entry-events">{nested.map(event => <li key={event.id}><strong>{event.title}</strong>{event.time_label && <small> · {event.time_label}</small>}</li>)}</ul>}
-  </li>
-}
-
-function ShowcaseTimeline({ entries }: { entries: Entry[] }) {
-  const [order, setOrder] = useState<'world' | 'reading'>('world')
-  const world = entries.filter(entry => entry.ordinal != null).sort((a, b) => (a.ordinal ?? 0) - (b.ordinal ?? 0))
-  const unplaced = entries.filter(entry => entry.ordinal == null)
-  const scenes = entries.filter(entry => entry.kind === 'scene' && entry.reading_order != null).sort((a, b) => (a.reading_order ?? 0) - (b.reading_order ?? 0))
-  const depicted = (scene: Entry) => entries.filter(entry => entry.kind === 'event' && entry.scene_id === scene.id)
-  const flashbacks = scenes.filter(scene => scene.is_flashback).length
-  return <div className="showcase-body">
-    <div className="showcase-timeline-head">
-      <div role="group" aria-label="Timeline order" className="showcase-segment">{(['world', 'reading'] as const).map(id => <button key={id} type="button" aria-pressed={order === id} onClick={() => setOrder(id)}>{id === 'world' ? 'World order' : 'Reading order'}</button>)}</div>
-      <p className="writer-help">{order === 'world' ? 'When things happen in the story world, including events that never appear on the page.' : `The order a reader meets the scenes${flashbacks ? `, including ${flashbacks} flashback${flashbacks > 1 ? 's' : ''}` : ''}. Events each scene depicts are listed under it.`}</p>
-    </div>
-    {order === 'world'
-      ? <><ol className="reader-timeline showcase-timeline">{world.map(entry => <EntryCard key={entry.id} entry={entry} order="world" />)}</ol>{world.length === 0 && <p className="writer-help">No timed scenes or events yet.</p>}{unplaced.length > 0 && <p className="writer-help">{unplaced.length} more {unplaced.length > 1 ? 'items have' : 'item has'} no world time yet.</p>}</>
-      : <><ol className="reader-timeline showcase-timeline">{scenes.map(scene => <EntryCard key={scene.id} entry={scene} order="reading" nested={depicted(scene)} />)}</ol>{scenes.length === 0 && <p className="writer-help">No scenes placed in chapters yet.</p>}</>}
-  </div>
-}

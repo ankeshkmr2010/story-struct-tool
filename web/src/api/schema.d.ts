@@ -2764,6 +2764,7 @@ export interface components {
                 }[];
             };
             base_fingerprint: string;
+            timeline?: components["schemas"]["TimelineOut"] | null;
         };
         /** SharedImportInput */
         SharedImportInput: {

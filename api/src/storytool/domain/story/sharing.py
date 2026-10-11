@@ -21,6 +21,8 @@ from storytool.domain.narrative.prose import compile_manuscript
 from storytool.domain.story.backup import rehome
 from storytool.domain.story.models import Story
 from storytool.domain.story.schemas import StoryOut
+from storytool.domain.story.timeline_controller import story_timeline
+from storytool.domain.timeline import TimelineOut
 from storytool.domain.versioning.service import (
     EXTRAS,
     checkpoint,
@@ -71,6 +73,8 @@ class SharedDocumentOut(BaseModel):
     manuscript: str
     structure: dict[str, list[dict[str, Any]]]
     base_fingerprint: str
+    # Shared links show the read-only timeline; the owner's embedded reader leaves it out.
+    timeline: TimelineOut | None = None
 
 
 class SharedImportInput(BaseModel):
@@ -247,6 +251,7 @@ class SharedStoriesController(Controller):
             manuscript=compile_manuscript(graph),
             structure=visible_state(state),
             base_fingerprint=fingerprint(visible_state(state)),
+            timeline=await story_timeline(db_session, story_id),
         )
 
     @get("/{story_id:uuid}/activity")
