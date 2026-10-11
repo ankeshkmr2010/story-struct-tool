@@ -606,3 +606,6 @@ ol.showcase-list { list-style: decimal; }
 .story-card-menu > summary:hover, .story-card-menu[open] > summary { background: var(--accent-soft); color: var(--ink); }
 .story-card-menu > div { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 140px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 8px 24px rgb(0 0 0 / .15); }
 .story-card-menu .story-delete-button { width: 100%; text-align: left; }
+.writer-extra-add { margin-right: 14px; padding: 2px 0; color: var(--muted); font-size: 12px; }
+.writer-extra-add:hover { color: var(--accent); text-decoration: underline; }
+.library-create-more > summary { display: flex; height: 100%; align-items: center; padding: 0 12px; border: 1px solid var(--line); border-radius: 4px; font-size: 14px; }
