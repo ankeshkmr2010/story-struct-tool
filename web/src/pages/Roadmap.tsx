@@ -49,21 +49,6 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
   },
 ]
 
-const SHOUTOUTS: readonly { name: string; thanks: string }[] = [
-  {
-    name: 'Madam Stuti Dutta',
-    thanks: 'my wife, first on this list for health and legal reasons. Great feedback and endless encouragement.',
-  },
-  { name: 'Nikhil Doshi', thanks: 'the first reviewer, and the first to actually write something in it.' },
-  { name: 'Saransh Sharma', thanks: 'the most “author” review of them all.' },
-  { name: 'Hena Varma', thanks: 'for feedback that was as comprehensive as it was encouraging.' },
-  { name: 'Ananya', thanks: 'for the positive vibes.' },
-  {
-    name: 'Aditya Bhatia',
-    thanks:
-      'the first person I bounced this idea off. (Last on the list: he has the most time and still hasn’t reviewed it.)',
-  },
-]
 
 export default function Roadmap() {
   return (
@@ -97,23 +82,6 @@ export default function Roadmap() {
             </li>
           ))}
         </ul>
-
-        <section className="mt-10" aria-labelledby="shoutouts-heading">
-          <h2 id="shoutouts-heading" className="text-xl font-semibold tracking-tight">
-            Shoutouts
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-            Thank you to the people who read early, told the truth and kept this going.
-          </p>
-          <ul className="mt-4 space-y-3">
-            {SHOUTOUTS.map((person) => (
-              <li key={person.name} className="text-sm leading-6">
-                <span className="font-semibold">{person.name}</span>
-                <span className="text-slate-600 dark:text-slate-300"> — {person.thanks}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
 
         <p className="mt-8 text-sm text-slate-500 dark:text-slate-400">
           <Link to="/" className="underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-100">
