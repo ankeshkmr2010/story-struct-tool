@@ -20,7 +20,6 @@ export default function Landing() {
         <p className="hero-description">Your manuscript, its structure and its timeline in one place. Write solo, or with the AI you already use; either way, every change is yours to keep or undo.</p>
         <div className="hero-actions"><Link to="/library" className="landing-primary">Start your story <span aria-hidden="true">↗</span></Link><Link to={SHOWCASE} className="landing-secondary">See a finished story <span aria-hidden="true">→</span></Link></div>
         <p className="hero-footnote">New here? <Link to="/how-to-use">See how it works →</Link> · <Link to="/roadmap">On the horizon →</Link></p>
-        <Link to="/thanks" className="hero-shoutout"><span aria-hidden="true">🎉</span> Shoutouts to the people who made this happen <span aria-hidden="true">→</span></Link>
       </div>
       <div className="story-preview" aria-label="Illustrative story outline showing linked beats, timeline events, and a character arc">
         <div className="preview-top"><img src="/branding/storytool.svg" width="32" height="32" alt="" /><span>The Last Lantern <small>A glimpse of your workspace</small></span><span className="preview-draft">Draft</span></div>
@@ -37,6 +36,8 @@ export default function Landing() {
         <div className="preview-bottom"><span className="saved-dot" /> Structure and scenes, connected.</div>
       </div>
     </section>
+
+    <Link to="/thanks" className="shoutout-banner"><span aria-hidden="true">🎉</span><span>Shoutouts to the people who made this happen</span><span aria-hidden="true">→</span></Link>
 
     <section className="landing-writing" aria-labelledby="write-title">
       <div className="section-intro"><p className="eyebrow">WRITE</p><h2 id="write-title">Start with the words.</h2><p>Open a story and type. Chapters, scenes and structure can come later, or never.</p></div>
