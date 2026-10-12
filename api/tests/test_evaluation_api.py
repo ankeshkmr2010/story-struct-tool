@@ -141,3 +141,78 @@ async def test_mice_nested_threads_have_no_crossing(client: AsyncTestClient) -> 
 
     result = (await client.get(f"{STORIES}/{story_id}/evaluations/mice_nesting")).json()
     assert result["findings"] == []
+
+
+async def crossed_story(client: AsyncTestClient) -> tuple[str, dict, dict, list[dict]]:
+    story_id = await make_story_with_scenes(client, ["scene"] * 8)
+    scenes = sorted(
+        (await client.get(f"{STORIES}/{story_id}/scenes")).json(), key=lambda s: s["sort_key"]
+    )
+    murder = (
+        await client.post(
+            f"{STORIES}/{story_id}/threads",
+            json={"type": "a_story", "title": "Murder", "mice": "idea"},
+        )
+    ).json()
+    island = (
+        await client.post(
+            f"{STORIES}/{story_id}/threads", json={"type": "b_story", "title": "Island"}
+        )
+    ).json()
+    for index in (0, 5):
+        await link(client, story_id, scenes[index]["id"], murder["id"])
+    for index in (2, 7):
+        await link(client, story_id, scenes[index]["id"], island["id"])
+    return story_id, murder, island, scenes
+
+
+async def test_review_package_submit_and_history(client: AsyncTestClient) -> None:
+    story_id, murder, island, scenes = await crossed_story(client)
+    base = f"{STORIES}/{story_id}/evaluations/mice_nesting"
+    package = (await client.get(f"{base}/package")).json()
+    assert package["subject"] == "thread"
+    assert {t["title"] for t in package["inputs"]["threads"]} == {"Murder", "Island"}
+    assert package["inputs"]["crossings"]
+
+    report = {
+        "base_fingerprint": package["base_fingerprint"],
+        "summary": "One thread lingers.",
+        "verdicts": [
+            {"entity_id": murder["id"], "verdict": "works", "evidence": "Answered."},
+            {
+                "entity_id": island["id"],
+                "verdict": "needs_change",
+                "evidence": "They never leave.",
+                "scene_ids": [scenes[7]["id"]],
+                "fixes": ["Leave the island in the last scene."],
+            },
+        ],
+    }
+    saved = await client.post(f"{base}/reports", json=report)
+    assert saved.status_code == 201, saved.text
+    assert saved.json()["stale"] is False
+
+    listed = (await client.get(f"{base}/reports")).json()
+    assert [r["summary"] for r in listed] == ["One thread lingers."]
+
+    await client.patch(f"{STORIES}/{story_id}/threads/{island['id']}", json={"mice": "milieu"})
+    assert (await client.get(f"{base}/reports")).json()[0]["stale"] is True
+    again = await client.post(f"{base}/reports", json=report)
+    assert again.status_code == 409, "a report on an old draft is refused"
+
+
+async def test_review_rejects_bad_reports(client: AsyncTestClient) -> None:
+    story_id, murder, _, _ = await crossed_story(client)
+    base = f"{STORIES}/{story_id}/evaluations/mice_nesting"
+    fingerprint = (await client.get(f"{base}/package")).json()["base_fingerprint"]
+
+    def body(verdict: dict) -> dict:
+        return {"base_fingerprint": fingerprint, "summary": "s", "verdicts": [verdict]}
+
+    no_fix = body({"entity_id": murder["id"], "verdict": "needs_change", "evidence": "e"})
+    assert (await client.post(f"{base}/reports", json=no_fix)).status_code == 400
+    stranger = body({"entity_id": story_id, "verdict": "works", "evidence": "e"})
+    assert (await client.post(f"{base}/reports", json=stranger)).status_code == 400
+    assert (
+        await client.get(f"{STORIES}/{story_id}/evaluations/scene_rhythm/package")
+    ).status_code == 404

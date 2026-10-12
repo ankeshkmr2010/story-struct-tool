@@ -23,6 +23,7 @@ __all__ = (
     "EvaluationFinding",
     "EvaluationResult",
     "Evaluator",
+    "Review",
     "all_evaluators",
     "get_evaluator",
     "register",
@@ -45,6 +46,17 @@ class EvaluationResult:
 
 
 @dataclass(frozen=True, slots=True)
+class Review:
+    """An AI judgement pass. StoryTool packages the inputs; an AI (an MCP agent or the
+    author's connected key) returns one verdict per subject; StoryTool validates and keeps it."""
+
+    subject: str
+    """The entity kind each verdict is about, e.g. "thread"."""
+    instructions: str
+    inputs: Callable[[StoryGraph], dict[str, Any]]
+
+
+@dataclass(frozen=True, slots=True)
 class Evaluator:
     id: str
     name: str
@@ -55,6 +67,7 @@ class Evaluator:
     """What still has to be filled in before it can run; empty means ready."""
     run: Callable[[StoryGraph], EvaluationResult]
     kind: str = "deterministic"
+    review: Review | None = None
 
 
 _REGISTRY: dict[str, Evaluator] = {}

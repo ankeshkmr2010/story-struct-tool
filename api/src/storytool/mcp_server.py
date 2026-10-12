@@ -807,6 +807,35 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         instructions and stage one proposal; the author accepts all, some or none."""
         return await call(ctx, f"/ai/catchup?limit={limit}", story_id=story_id)
 
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_evaluation_package(
+        ctx: Context,
+        evaluator_id: Literal["mice_nesting"] = "mice_nesting",
+        story_id: UUID | None = None,
+    ) -> dict[str, Any]:
+        """Instructions, inputs, base_fingerprint and result_schema for one AI craft review
+        (mice_nesting: judge each thread as a MICE thread). Judge only from the inputs, then
+        call submit_evaluation_report with one verdict per subject. It never edits the story."""
+        return await call(ctx, f"/evaluations/{evaluator_id}/package", story_id=story_id)
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def submit_evaluation_report(
+        ctx: Context,
+        base_fingerprint: str,
+        summary: str,
+        verdicts: list[dict[str, Any]],
+        evaluator_id: Literal["mice_nesting"] = "mice_nesting",
+        story_id: UUID | None = None,
+    ) -> dict[str, Any]:
+        """Save your review from get_evaluation_package; the author sees it in Design > Evaluate.
+        verdicts: [{entity_id, verdict: works|consider|needs_change, evidence, scene_ids,
+        fixes}], one per subject; needs_change needs 1-2 fixes. Use the package's
+        base_fingerprint; if the story changed (409), fetch the package again."""
+        body = {"base_fingerprint": base_fingerprint, "summary": summary, "verdicts": verdicts}
+        return await call(
+            ctx, f"/evaluations/{evaluator_id}/reports", "POST", body, story_id=story_id
+        )
+
     @server.tool()
     async def apply_story_changes(
         ctx: Context,

@@ -184,6 +184,12 @@ class StoryAccessMiddleware:
                             )
                             or suffix == "/versions"
                             or (suffix.startswith("/versions/") and suffix.endswith("/restore"))
+                            # An AI review report: stored beside the story, never edits it.
+                            or (
+                                suffix.startswith("/evaluations/")
+                                and suffix.endswith("/reports")
+                                and suffix.count("/") == 3
+                            )
                         )
                     )
                 )
@@ -373,7 +379,7 @@ class StoryAccessMiddleware:
                                     await _reject(send, 404, "Referenced item not found")
                                     return
                 if http_scope["method"] in {"POST", "PATCH", "PUT", "DELETE"} and not path.endswith(
-                    ("/ai/propose", "/notice")
+                    ("/ai/propose", "/notice", "/ai-review")
                 ):
                     lock_story_id = story_id
             elif arc_match:
