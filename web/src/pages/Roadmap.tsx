@@ -59,6 +59,22 @@ const DELIVERED: readonly { title: string; description: string }[] = [
     title: 'EPUB, HTML and plain-text export',
     description: 'Take your manuscript out as an e-book, a web page or plain text, alongside Word and Markdown.',
   },
+  {
+    title: 'Scene snapshots and status',
+    description: 'Restore an earlier draft of any scene, and mark each scene placeholder, outlined, drafted or revised.',
+  },
+  {
+    title: 'Story grid',
+    description: 'Every scene at a glance in one grid: status, POV, place, time, goal, conflict, outcome, value shift and word count.',
+  },
+  {
+    title: 'Import and backup',
+    description: 'Download a full backup of a story and restore it into your library at any time.',
+  },
+  {
+    title: 'Catch-up outline',
+    description: 'Builds the outline from prose you have already written: an AI agent proposes summaries, cast, places and events, and you keep all, some or none.',
+  },
 ]
 
 export default function Roadmap() {
