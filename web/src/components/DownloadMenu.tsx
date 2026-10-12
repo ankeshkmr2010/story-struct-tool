@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
 
 const ITEMS = [
   { label: 'Manuscript (.docx)', help: 'For Word or Google Docs', href: api.manuscriptDocxUrl },
+  { label: 'Submission manuscript (.pdf)', help: 'Double-spaced; optional appendices below', href: api.manuscriptPdfUrl },
   { label: 'E-book (.epub)', help: 'For Apple Books, Kobo and Kindle (via Send to Kindle)', href: api.manuscriptEpubUrl },
   { label: 'Web page (.html)', help: 'Opens in any browser', href: api.manuscriptHtmlUrl },
   { label: 'Manuscript (.md)', help: 'Plain text with Markdown headings', href: api.manuscriptUrl },
@@ -12,6 +13,7 @@ const ITEMS = [
 
 export function DownloadMenu({ storyId }: { storyId: string }) {
   const menu = useRef<HTMLDetailsElement>(null)
+  const [appendices, setAppendices] = useState({ glossary: false, timeline: false, places: false })
   useEffect(() => {
     const close = (event: MouseEvent | KeyboardEvent) => {
       const details = menu.current
@@ -25,7 +27,10 @@ export function DownloadMenu({ storyId }: { storyId: string }) {
   return <details ref={menu} className="download-menu">
     <summary className="share-story-button">Export ▾</summary>
     <div className="download-menu-panel" role="menu">
-      {ITEMS.map(item => <a key={item.label} role="menuitem" href={item.href(storyId)} onClick={() => { if (menu.current) menu.current.open = false }}><strong>{item.label}</strong><span>{item.help}</span></a>)}
+      {ITEMS.map(item => <a key={item.label} role="menuitem" href={item.href === api.manuscriptPdfUrl ? api.manuscriptPdfUrl(storyId, appendices) : item.href(storyId)} onClick={() => { if (menu.current) menu.current.open = false }}><strong>{item.label}</strong><span>{item.help}</span></a>)}
+      <fieldset className="border-t border-[var(--line)] p-3 text-xs"><legend className="px-1">PDF appendices (optional)</legend>
+        {(['glossary', 'timeline', 'places'] as const).map((key) => <label key={key} className="mr-3 inline-flex items-center gap-1.5"><input type="checkbox" checked={appendices[key]} onChange={(event) => setAppendices({ ...appendices, [key]: event.target.checked })} />{key[0].toUpperCase() + key.slice(1)}</label>)}
+      </fieldset>
     </div>
   </details>
 }

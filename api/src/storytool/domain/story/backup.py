@@ -10,20 +10,26 @@ from uuid import UUID
 from docx import Document
 from litestar import Controller, Request, Response, get, post
 from litestar.exceptions import ClientException, NotFoundException
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid_utils import uuid7
 
 from storytool.domain.ai.commands import ENTITIES, LINKS
 from storytool.domain.analysis import load_graph_by_id
+from storytool.domain.auth.models import User
+from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.narrative.prose import compile_manuscript
 from storytool.domain.story.manuscript_formats import (
+    Block,
     manuscript_epub,
     manuscript_html,
     manuscript_text,
 )
+from storytool.domain.story.manuscript_pdf import manuscript_pdf
 from storytool.domain.story.models import Story
 from storytool.domain.story.schemas import StoryOut
+from storytool.domain.story.timeline_controller import story_timeline
 from storytool.domain.versioning.service import ADMIN, EXTRAS, checkpoint, full_state, restore_state
 
 BACKUP_FORMAT = "storytool-backup"
@@ -112,9 +118,10 @@ def add_runs(paragraph: Any, text: str) -> None:
             paragraph.add_run(part)
 
 
-def manuscript_docx(markdown: str) -> bytes:
+def manuscript_docx(markdown: str, author_name: str | None = None) -> bytes:
     """Lay out the compiled Markdown manuscript as a plain Word document."""
     document = Document()
+    document.core_properties.author = author_name or ""
     for block in re.split(r"\n\s*\n", markdown):
         lines = [line.rstrip() for line in block.strip().splitlines()]
         if not lines:
@@ -169,8 +176,14 @@ class StoryBackupController(Controller):
         graph = await load_graph_by_id(db_session, story_id)
         if graph is None:
             raise NotFoundException(detail=f"No story with id {story_id}")
+        author_name = await db_session.scalar(
+            select(User.author_name).where(User.id == graph.story.user_id)
+        )
         return Response(
-            content=manuscript_docx(compile_manuscript(graph, include_unplaced=include_unplaced)),
+            content=manuscript_docx(
+                compile_manuscript(graph, include_unplaced=include_unplaced, author_name=author_name),
+                author_name,
+            ),
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             headers={
                 "content-disposition": f'attachment; filename="{slug(graph.story.title)}.docx"'
@@ -178,21 +191,28 @@ class StoryBackupController(Controller):
         )
 
     async def _manuscript(
-        self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool
-    ) -> tuple[str, str, UUID]:
+        self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool,
+        *, include_planning: bool = True,
+    ) -> tuple[str, str, UUID, str | None]:
         graph = await load_graph_by_id(db_session, story_id)
         if graph is None:
             raise NotFoundException(detail=f"No story with id {story_id}")
-        markdown = compile_manuscript(graph, include_unplaced=include_unplaced)
-        return markdown, graph.story.title or "Untitled", graph.story.id
+        author_name = await db_session.scalar(
+            select(User.author_name).where(User.id == graph.story.user_id)
+        )
+        markdown = compile_manuscript(
+            graph, include_unplaced=include_unplaced, author_name=author_name,
+            include_planning=include_planning,
+        )
+        return markdown, graph.story.title or "Untitled", graph.story.id, author_name
 
     @get("/manuscript.html", summary="Compile the manuscript as a standalone HTML page")
     async def export_html(
         self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True
     ) -> Response[str]:
-        markdown, title, _ = await self._manuscript(db_session, story_id, include_unplaced)
+        markdown, title, _, author = await self._manuscript(db_session, story_id, include_unplaced)
         return Response(
-            content=manuscript_html(markdown, title),
+            content=manuscript_html(markdown, title, author),
             media_type="text/html; charset=utf-8",
             headers={"content-disposition": f'attachment; filename="{slug(title)}.html"'},
         )
@@ -201,7 +221,7 @@ class StoryBackupController(Controller):
     async def export_text(
         self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True
     ) -> Response[str]:
-        markdown, title, _ = await self._manuscript(db_session, story_id, include_unplaced)
+        markdown, title, _, _ = await self._manuscript(db_session, story_id, include_unplaced)
         return Response(
             content=manuscript_text(markdown),
             media_type="text/plain; charset=utf-8",
@@ -212,11 +232,87 @@ class StoryBackupController(Controller):
     async def export_epub(
         self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True
     ) -> Response[bytes]:
-        markdown, title, identifier = await self._manuscript(db_session, story_id, include_unplaced)
+        markdown, title, identifier, author = await self._manuscript(db_session, story_id, include_unplaced)
         return Response(
-            content=manuscript_epub(markdown, title, identifier),
+            content=manuscript_epub(markdown, title, identifier, author),
             media_type="application/epub+zip",
             headers={"content-disposition": f'attachment; filename="{slug(title)}.epub"'},
+        )
+
+
+    @get("/manuscript.pdf", summary="Submission manuscript PDF with optional reference appendices")
+    async def export_pdf(
+        self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True,
+        glossary: bool = False, timeline: bool = False, places: bool = False,
+    ) -> Response[bytes]:
+        markdown, title, _, author = await self._manuscript(
+            db_session, story_id, include_unplaced, include_planning=False
+        )
+        graph = await load_graph_by_id(db_session, story_id)
+        if graph is None:
+            raise NotFoundException(detail="Story not found")
+        appendices: list[tuple[str, list[Block]]] = []
+        if glossary:
+            entries = await db_session.scalars(
+                select(GlossaryEntry).where(GlossaryEntry.story_id == story_id)
+            )
+            section = []
+            for entry in sorted(entries, key=lambda item: (item.term.casefold(), str(item.id))):
+                section.append(Block("heading", entry.term))
+                if entry.aliases:
+                    section.append(Block("para", "Also known as: " + ", ".join(entry.aliases)))
+                if entry.definition:
+                    section.append(Block("para", entry.definition))
+            appendices.append(("Glossary", section or [Block("para", "No glossary entries yet.")]))
+        if timeline:
+            data = await story_timeline(db_session, story_id)
+            section = [Block("para", "World chronology, separate from the order scenes are read.")]
+            for entry in sorted(
+                data.entries,
+                key=lambda item: (
+                    item.ordinal is None, item.ordinal or 0, item.title.casefold(), str(item.id)
+                ),
+            ):
+                time = entry.time_label or (
+                    f"Position {entry.ordinal}" if entry.ordinal is not None else "Time not assigned"
+                )
+                section.append(Block("heading", f"{time}: {entry.title}"))
+                details = [entry.kind.capitalize()]
+                if entry.is_turning_point:
+                    details.append("Turning point")
+                if entry.is_flashback:
+                    details.append("Flashback")
+                if entry.location_name:
+                    details.append(entry.location_name)
+                if entry.participants:
+                    details.append(", ".join(person.name for person in entry.participants))
+                if entry.reading_label:
+                    details.append("Reading order: " + entry.reading_label)
+                section.append(Block("para", " · ".join(details)))
+                if entry.summary:
+                    section.append(Block("para", entry.summary))
+            if not data.entries:
+                section.append(Block("para", "No timeline entries yet."))
+            appendices.append(("Timeline", section))
+        if places:
+            section = []
+            for place in sorted(graph.locations, key=lambda item: (item.name.casefold(), str(item.id))):
+                section.append(Block("heading", place.name))
+                if place.description:
+                    section.append(Block("para", place.description))
+                if place.atmosphere_notes:
+                    section.append(Block("para", "Atmosphere: " + place.atmosphere_notes))
+            appendices.append(("Places", section or [Block("para", "No places yet.")]))
+        scenes = graph.scenes if include_unplaced else graph.scenes_in_reading_order()
+        try:
+            content = manuscript_pdf(
+                markdown, title, author, sum(scene.word_count for scene in scenes), appendices
+            )
+        except ValueError as error:
+            raise ClientException(detail=str(error)) from None
+        return Response(
+            content=content, media_type="application/pdf",
+            headers={"content-disposition": f'attachment; filename="{slug(title)}.pdf"'},
         )
 
 

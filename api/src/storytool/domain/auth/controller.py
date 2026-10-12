@@ -9,7 +9,7 @@ from uuid import UUID
 from google.auth.exceptions import GoogleAuthError
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token
-from litestar import Controller, Request, Response, get, post
+from litestar import Controller, Request, Response, get, patch, post
 from litestar.exceptions import NotAuthorizedException, ServiceUnavailableException
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, select, update
@@ -36,11 +36,19 @@ class UserOut(BaseModel):
     id: UUID
     email: str
     name: str | None
+    author_name: str | None
     picture_url: str | None
 
     @classmethod
     def from_user(cls, user: User) -> "UserOut":
-        return cls(id=user.id, email=user.email, name=user.name, picture_url=user.picture_url)
+        return cls(
+            id=user.id, email=user.email, name=user.name,
+            author_name=user.author_name, picture_url=user.picture_url,
+        )
+
+
+class AuthorNameIn(BaseModel):
+    author_name: str | None = Field(max_length=200)
 
 
 def verify_google_credential(credential: str, client_id: str) -> dict[str, object]:
@@ -133,6 +141,17 @@ class AuthController(Controller):
         user = await db_session.get(User, request.scope["state"]["storytool_user_id"])
         if user is None:
             raise NotAuthorizedException()
+        return UserOut.from_user(user)
+
+    @patch("/profile", summary="Set the author's export byline")
+    async def update_profile(
+        self, request: Request, db_session: AsyncSession, data: AuthorNameIn
+    ) -> UserOut:
+        user = await db_session.get(User, request.scope["state"]["storytool_user_id"])
+        if user is None:
+            raise NotAuthorizedException()
+        user.author_name = " ".join((data.author_name or "").split()) or None
+        await db_session.flush()
         return UserOut.from_user(user)
 
     @post("/logout", summary="Revoke the current browser session")

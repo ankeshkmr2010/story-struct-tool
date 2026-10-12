@@ -87,12 +87,13 @@ _CSS = (
 )
 
 
-def manuscript_html(markdown: str, title: str) -> str:
+def manuscript_html(markdown: str, title: str, author_name: str | None = None) -> str:
     body = "\n".join(_block_html(b) for b in blocks(markdown))
+    author_meta = f'<meta name="author" content="{escape(author_name)}"/>\n' if author_name else ""
     return (
         '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-        f"<title>{escape(title)}</title>\n<style>{_CSS}</style>\n</head>\n"
+        f"<title>{escape(title)}</title>\n{author_meta}<style>{_CSS}</style>\n</head>\n"
         f"<body>\n{body}\n</body>\n</html>\n"
     )
 
@@ -122,7 +123,9 @@ def _xhtml(title: str, body: str) -> str:
     )
 
 
-def manuscript_epub(markdown: str, title: str, identifier: UUID) -> bytes:
+def manuscript_epub(
+    markdown: str, title: str, identifier: UUID, author_name: str | None = None
+) -> bytes:
     """An EPUB 3 book: a title page, then one file per chapter (level-2 heading)."""
     sections: list[tuple[str, list[Block]]] = [(title, [])]
     for block in blocks(markdown):
@@ -141,12 +144,14 @@ def manuscript_epub(markdown: str, title: str, identifier: UUID) -> bytes:
         for i, (name, _, _) in enumerate(files)
     )
     spine = "\n".join(f'<itemref idref="s{i}"/>' for i in range(len(files)))
+    creator = f"<dc:creator>{escape(author_name)}</dc:creator>\n" if author_name else ""
     opf = (
         '<?xml version="1.0" encoding="utf-8"?>\n'
         '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">\n'
         '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
         f'<dc:identifier id="uid">urn:uuid:{identifier}</dc:identifier>\n'
         f"<dc:title>{escape(title)}</dc:title>\n<dc:language>en</dc:language>\n"
+        f"{creator}"
         f'<meta property="dcterms:modified">{modified}</meta>\n</metadata>\n'
         '<manifest>\n<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" '
         'properties="nav"/>\n<item id="css" href="style.css" media-type="text/css"/>\n'

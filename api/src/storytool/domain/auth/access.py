@@ -238,6 +238,7 @@ class StoryAccessMiddleware:
                             "/reader",
                             "/manuscript",
                             "/manuscript.docx",
+                            "/manuscript.pdf",
                             "/manuscript.html",
                             "/manuscript.txt",
                             "/manuscript.epub",

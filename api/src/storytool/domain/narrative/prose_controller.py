@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.analysis import load_graph_by_id
+from storytool.domain.auth.models import User
 from storytool.domain.common import apply_patch, fetch_or_404
 from storytool.domain.narrative.models import Annotation, SceneRevision
 from storytool.domain.narrative.prose import (
@@ -265,7 +266,12 @@ class ManuscriptController(Controller):
         if graph is None:
             raise NotFoundException(detail=f"No story with id {story_id}")
 
-        markdown = compile_manuscript(graph, include_unplaced=include_unplaced)
+        author_name = await db_session.scalar(
+            select(User.author_name).where(User.id == graph.story.user_id)
+        )
+        markdown = compile_manuscript(
+            graph, include_unplaced=include_unplaced, author_name=author_name
+        )
         filename = (graph.story.title or "manuscript").replace(" ", "-").lower()
         return Response(
             content=markdown,

@@ -192,7 +192,10 @@ def story_progress(graph: StoryGraph) -> StoryProgress:
 SCENE_SEPARATOR = "\n\n* * *\n\n"
 
 
-def compile_manuscript(graph: StoryGraph, *, include_unplaced: bool = True) -> str:
+def compile_manuscript(
+    graph: StoryGraph, *, include_unplaced: bool = True,
+    author_name: str | None = None, include_planning: bool = True,
+) -> str:
     """Assemble the manuscript as Markdown, in reading order.
 
     Export is first-class precisely because this tool augments rather than replaces: the
@@ -203,27 +206,38 @@ def compile_manuscript(graph: StoryGraph, *, include_unplaced: bool = True) -> s
 
     title = graph.story.title or "Untitled"
     parts.append(f"# {title}\n")
-    if graph.story.premise:
+    if author_name:
+        parts.append(f"*By {author_name}*\n")
+    if include_planning and graph.story.premise:
         parts.append(f"*{graph.story.premise}*\n")
 
     from storytool.domain.ordering import chapter_order_key, scene_order_key
 
     for chapter in sorted(graph.chapters, key=chapter_order_key):
+        scenes = sorted(by_chapter.get(chapter.id, []), key=scene_order_key)
+        written = [s for s in scenes if (s.content or "").strip()]
+        if not include_planning and not written and not any(
+            (chapter.epigraph, chapter.opening_note, chapter.closing_note)
+        ):
+            continue
         heading = f"## Chapter {chapter.number}"
         if chapter.title:
-            heading += f" — {chapter.title}"
+            # Word imports can already carry a complete "Chapter 1 ..." heading.
+            if re.match(r"^chapter\s+\d+\b", chapter.title, flags=re.IGNORECASE):
+                heading = f"## {chapter.title}"
+            else:
+                heading += f" — {chapter.title}"
         parts.append(heading + "\n")
         if chapter.epigraph:
             parts.append("\n".join("> " + line for line in chapter.epigraph.splitlines()) + "\n")
         if chapter.opening_note:
             parts.append(chapter.opening_note.strip() + "\n")
 
-        scenes = sorted(by_chapter.get(chapter.id, []), key=scene_order_key)
-        written = [s for s in scenes if (s.content or "").strip()]
         if not written:
             # Say so rather than emitting a silent gap, so the export doubles as a
             # to-do list.
-            parts.append(f"*[{len(scenes)} scene(s) not yet drafted]*\n")
+            if include_planning:
+                parts.append(f"*[{len(scenes)} scene(s) not yet drafted]*\n")
         else:
             parts.append(SCENE_SEPARATOR.join((s.content or "").strip() for s in written) + "\n")
         if chapter.closing_note:

@@ -141,6 +141,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set the author's export byline */
+        patch: operations["ApiAuthProfileUpdateProfile"];
+        trace?: never;
+    };
     "/api/stories/{story_id}/ai/runs/{run_id}/apply": {
         parameters: {
             query?: never;
@@ -778,6 +795,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/manuscript.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Submission manuscript PDF with optional reference appendices */
+        get: operations["ApiStoriesStoryIdManuscriptPdfExportPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/manuscript.txt": {
         parameters: {
             query?: never;
@@ -823,6 +857,23 @@ export interface paths {
         put?: never;
         /** Restore a backup file as a new story */
         post: operations["ApiBackupsImportImportBackup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/docx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Word body prose as a new story */
+        post: operations["ApiImportsDocxImportDocx"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2292,6 +2343,10 @@ export interface components {
         AuthConfigOut: {
             google_client_id: string | null;
         };
+        /** AuthorNameIn */
+        AuthorNameIn: {
+            author_name: string | null;
+        };
         /**
          * AuthoringMode
          * @default hybrid
@@ -2541,6 +2596,12 @@ export interface components {
             contradiction_count: number;
             possible_count: number;
             anomalies: components["schemas"]["AnomalyOut"][];
+        };
+        /** DocxImportOut */
+        DocxImportOut: {
+            story: components["schemas"]["StoryOut"];
+            chapter_count: number;
+            word_count: number;
         };
         /**
          * DraftStatus
@@ -3470,6 +3531,7 @@ export interface components {
             id: string;
             email: string;
             name: string | null;
+            author_name: string | null;
             picture_url: string | null;
         };
         /** VerdictIn */
@@ -3798,6 +3860,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
+    ApiAuthProfileUpdateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthorNameIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
                 };
             };
         };
@@ -5476,6 +5577,48 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdManuscriptPdfExportPdf: {
+        parameters: {
+            query?: {
+                include_unplaced?: boolean;
+                glossary?: boolean;
+                timeline?: boolean;
+                places?: boolean;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdManuscriptTxtExportText: {
         parameters: {
             query?: {
@@ -5576,6 +5719,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StoryOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiImportsDocxImportDocx: {
+        parameters: {
+            query: {
+                title: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocxImportOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

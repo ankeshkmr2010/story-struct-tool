@@ -16,6 +16,7 @@ class User(StoryToolBase):
     google_sub: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     email: Mapped[str] = mapped_column(String(320), index=True)
     name: Mapped[str | None] = mapped_column(String(300), default=None)
+    author_name: Mapped[str | None] = mapped_column(String(200), default=None)
     picture_url: Mapped[str | None] = mapped_column(String(1000), default=None)
     examples_seed_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 

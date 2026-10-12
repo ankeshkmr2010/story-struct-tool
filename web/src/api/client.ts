@@ -23,6 +23,7 @@ export type AuthConfig = S['AuthConfigOut']
 export type ProductFeedback = S['ProductFeedbackOut']
 export type ProductFeedbackInput = S['ProductFeedbackIn']
 export type Funnel = S['FunnelOut']
+export type DocxImport = S['DocxImportOut']
 
 export type Ladder = S['LadderOut']
 export type Readiness = S['ReadinessOut']
@@ -77,7 +78,7 @@ export type ShoutoutInput = { name: string; thanks: string; colour: string; mark
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const visitorId = getVisitorId()
   const headers = new Headers(init?.headers)
-  headers.set('Content-Type', 'application/json')
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
   if (visitorId) headers.set('X-StoryTool-Visitor', visitorId)
   const res = await fetch(path, {
     ...init,
@@ -137,6 +138,7 @@ export const api = {
   // Google sign-in and current account
   authConfig: () => request<AuthConfig>('/api/auth/config'),
   currentUser: () => request<AuthUser>('/api/auth/me'),
+  saveAuthorName: (body: S['AuthorNameIn']) => patch<AuthUser>('/api/auth/profile', body),
   listShoutouts: () => request<Shoutout[]>('/api/shoutouts'),
   adminStatus: () => request<{ is_admin: boolean }>('/api/admin/status'),
   sendProductFeedback: (body: ProductFeedbackInput) => post<ProductFeedback>('/api/product-feedback', body),
@@ -331,11 +333,16 @@ export const api = {
   getProgress: (storyId: string) => request<Progress>(`/api/stories/${storyId}/progress`),
   manuscriptUrl: (storyId: string) => `/api/stories/${storyId}/manuscript`,
   manuscriptDocxUrl: (storyId: string) => `/api/stories/${storyId}/manuscript.docx`,
+  manuscriptPdfUrl: (storyId: string, appendices = { glossary: false, timeline: false, places: false }) =>
+    `/api/stories/${storyId}/manuscript.pdf?${new URLSearchParams(Object.entries(appendices).map(([key, value]) => [key, String(value)]))}`,
   manuscriptEpubUrl: (storyId: string) => `/api/stories/${storyId}/manuscript.epub`,
   manuscriptHtmlUrl: (storyId: string) => `/api/stories/${storyId}/manuscript.html`,
   manuscriptTextUrl: (storyId: string) => `/api/stories/${storyId}/manuscript.txt`,
   backupUrl: (storyId: string) => `/api/stories/${storyId}/backup`,
   importBackup: (backup: unknown) => post<Story>('/api/backups/import', backup),
+  importDocx: (file: File, title: string) => request<DocxImport>(`/api/imports/docx?title=${encodeURIComponent(title)}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }, body: file,
+  }),
 
   // Noticing. A pass only ever records observations -- it never alters structure or prose.
   noticerInfo: () => request<NoticerInfo>('/api/noticing'),

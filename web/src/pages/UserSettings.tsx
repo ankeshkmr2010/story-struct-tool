@@ -4,6 +4,27 @@ import { Link } from 'react-router-dom'
 import { api, type AIConnection } from '../api/client'
 import { errorText } from '../api/errors'
 
+function AuthorNameSettings() {
+  const qc = useQueryClient()
+  const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser })
+  const [draft, setDraft] = useState<string | null>(null)
+  const value = draft ?? me.data?.author_name ?? ''
+  const save = useMutation({
+    mutationFn: () => api.saveAuthorName({ author_name: value.trim() || null }),
+    onSuccess: (user) => { qc.setQueryData(['me'], user); setDraft(null) },
+  })
+  return <section className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6">
+    <h2 className="text-lg font-semibold">Author name</h2>
+    <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Your writing name or pen name, used as the byline in manuscript exports. Leave it blank to omit the byline. Your Google profile name stays separate.</p>
+    <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate() }}>
+      <label className="min-w-0 flex-1 text-sm">Name on exports<input maxLength={200} disabled={me.isPending || save.isPending} value={value} onChange={(event) => { setDraft(event.target.value); save.reset() }} className="mt-2 block w-full rounded-md border border-slate-300 bg-white p-2 dark:border-slate-600 dark:bg-slate-900" /></label>
+      <button type="submit" disabled={!me.data || save.isPending || value === (me.data.author_name ?? '')} className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{save.isPending ? 'Saving…' : 'Save author name'}</button>
+    </form>
+    {save.isSuccess && <p role="status" className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">Author name saved.</p>}
+    {(save.error || me.error) && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(save.error ?? me.error)}</p>}
+  </section>
+}
+
 export default function UserSettings() {
   const qc = useQueryClient()
   const connections = useQuery({ queryKey: ['ai-connections'], queryFn: api.listAIConnections })
@@ -43,6 +64,7 @@ export default function UserSettings() {
     <main className="mx-auto max-w-3xl px-5 py-8 sm:px-8">
       <Link to="/library" className="text-sm text-slate-500 dark:text-slate-400 hover:underline">← Your stories</Link>
       <h1 className="mt-5 text-2xl font-semibold">Your settings</h1>
+      <AuthorNameSettings />
       <section className="mt-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 sm:p-6">
         <h2 className="text-lg font-semibold">AI connections</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Connect your own account to plan stories and improve suggestions. Requests use your provider's API billing. Saved keys are encrypted and belong only to your account.</p>
