@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 type Guide = { id: string; name: string; kind: string; title: string; steps: string[]; note?: string; code?: string; source: string }
 const endpoint = 'https://storytool.onrender.com/mcp'
-const guides: Guide[] = [
+const clientGuides: Guide[] = [
   { id: 'gemini', name: 'Gemini', kind: 'Web + phone · OAuth', title: 'Bring StoryTool into Gemini on your phone', steps: ['Open gemini.google.com in your browser and find Connected Apps in Settings or Personal Intelligence.', 'Add a custom app using the server URL above, then continue through Google’s connection flow.', 'Sign in to StoryTool, choose one story or your whole library, and approve the permissions you want.', 'Return to Gemini. Use @ to select StoryTool in a chat; the linked app is also available on mobile.'], note: 'Google currently lists custom apps as English-only, for eligible personal accounts in the US with Keep Activity enabled. If Custom apps is missing, check Google’s availability requirements.', source: 'https://support.google.com/gemini/answer/17209137?hl=en-12' },
   { id: 'claude', name: 'Claude', kind: 'Web + mobile · OAuth', title: 'Connect your writing workspace to Claude', steps: ['In Claude’s web app, open Customize → Connectors and add a custom web connector named StoryTool.', 'Use the server URL above. Choose OAuth sign-in and Register automatically rather than the published-identity option.', 'Complete StoryTool’s consent screen, then enable the connector for your conversation.', 'Ask Claude to read your story, discuss alternatives, and stage focused changes for review.'], note: 'StoryTool supports dynamic registration (DCR), so choose Register automatically if offered. Connector availability and organization permissions depend on your account.', source: 'https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp' },
   { id: 'chatgpt', name: 'ChatGPT', kind: 'Web · OAuth / DCR', title: 'Add StoryTool as a custom ChatGPT plugin', steps: ['In ChatGPT on the web, open Plugins and choose + → Add custom MCP server. Older layouts may show custom apps under Apps or Connectors.', 'Name it StoryTool, paste the server URL, and select OAuth with dynamic client registration (DCR).', 'Finish creation, install the plugin, and authorize your StoryTool account and stories.', 'Enable StoryTool in your conversation. Refresh the plugin’s tools if new capabilities are missing.'], note: 'Custom MCP access depends on your account and workspace policy. StoryTool supports DCR, not published client identity (CIMD). If custom MCP is unavailable, use another client tab.', source: 'https://developers.openai.com/api/docs/guides/custom-mcp-server' },
@@ -13,14 +13,21 @@ const guides: Guide[] = [
   { id: 'cursor', name: 'Cursor', kind: 'Editor · OAuth', title: 'Connect your story workspace in Cursor', steps: ['Merge the JSON below into .cursor/mcp.json in your project, or global ~/.cursor/mcp.json.', 'Open Cursor’s MCP tools settings and authenticate StoryTool.', 'Approve story or library permissions in your browser.', 'Ask Cursor’s agent to use StoryTool tools; the server stores your draft.'], code: JSON.stringify({ mcpServers: { storytool: { url: endpoint } } }, null, 2), source: 'https://cursor.com/docs/mcp' },
   { id: 'other', name: 'Other clients', kind: 'Any compatible MCP host', title: 'Use your preferred MCP-enabled AI client', steps: ['Find your client’s MCP or integration settings. A model API or ordinary chat alone cannot execute MCP tools.', 'Add the server URL and select Streamable HTTP with OAuth and dynamic registration (DCR).', 'Authorize your StoryTool account and desired access. An external client supplies its own model.', 'For a client supporting only bearer tokens, create a story token in StoryTool Settings and configure Authorization: Bearer <token> locally.'], note: 'Manual tokens remain limited to one story. Stdio-only clients can use the local story_mcp_remote.py adapter in the full setup guide.', source: 'https://github.com/ankeshkmr2010/story-struct-tool/blob/main/AI_SETUP.md#hosted-mcp-server' },
 ]
+const guides = [
+  ...clientGuides.filter((guide) => guide.id === 'claude'),
+  ...clientGuides.filter((guide) => guide.id === 'chatgpt'),
+  ...clientGuides.filter((guide) => guide.id !== 'claude' && guide.id !== 'chatgpt'),
+]
 const starterPrompt = "Read my story and tell me what's weakest in Act 2."
 
 export function MCPSetup() {
   const [selected, setSelected] = useState(0)
+  const [showOtherClients, setShowOtherClients] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [copyError, setCopyError] = useState(false)
   const tabs = useRef<(HTMLButtonElement | null)[]>([])
   const current = guides[selected]
+  const visibleGuides = showOtherClients ? guides : guides.slice(0, 2)
   const copy = async (text: string, label: string) => {
     try { await navigator.clipboard.writeText(text); setCopied(label); setCopyError(false) }
     catch { setCopied(null); setCopyError(true) }
@@ -29,15 +36,19 @@ export function MCPSetup() {
     <div className="mcp-intro"><div><p className="eyebrow">YOUR AI, YOUR STORY WORKSPACE</p><h2 id="mcp-title">Write with the assistant you already use.</h2><p>Connect an AI client through MCP. It can read your story, follow its arcs and timeline, spot gaps, and propose connected edits you can review.</p></div><img src="/branding/storytool.svg" width="64" height="64" alt="" /></div>
     <div className="mcp-endpoint"><div><span>StoryTool MCP server · Streamable HTTP + OAuth</span><code>{endpoint}</code></div><button type="button" onClick={() => void copy(endpoint, 'url')}>{copied === 'url' ? 'Copied URL' : 'Copy server URL'}</button></div>
     <div className="mcp-window">
-      <div role="tablist" aria-label="AI client setup" className="mcp-tabs">{guides.map((guide, index) => <button key={guide.id} ref={element => { tabs.current[index] = element }} type="button" role="tab" id={`agent-tab-${guide.id}`} aria-selected={selected === index} aria-controls={`agent-panel-${guide.id}`} tabIndex={selected === index ? 0 : -1} onClick={() => { setSelected(index); setCopied(null); setCopyError(false) }} onKeyDown={event => {
+      <div id="mcp-client-tabs" role="tablist" aria-label="AI client setup" className="mcp-tabs">{visibleGuides.map((guide, index) => <button key={guide.id} ref={element => { tabs.current[index] = element }} type="button" role="tab" id={`agent-tab-${guide.id}`} aria-selected={selected === index} aria-controls={`agent-panel-${guide.id}`} tabIndex={selected === index ? 0 : -1} onClick={() => { setSelected(index); setCopied(null); setCopyError(false) }} onKeyDown={event => {
         let next = index
-        if (event.key === 'ArrowRight') next = (index + 1) % guides.length
-        else if (event.key === 'ArrowLeft') next = (index - 1 + guides.length) % guides.length
+        if (event.key === 'ArrowRight') next = (index + 1) % visibleGuides.length
+        else if (event.key === 'ArrowLeft') next = (index - 1 + visibleGuides.length) % visibleGuides.length
         else if (event.key === 'Home') next = 0
-        else if (event.key === 'End') next = guides.length - 1
+        else if (event.key === 'End') next = visibleGuides.length - 1
         else return
         event.preventDefault(); setSelected(next); setCopied(null); setCopyError(false); tabs.current[next]?.focus()
       }}>{guide.name}</button>)}</div>
+      <div className="px-4 py-3"><button type="button" aria-expanded={showOtherClients} aria-controls="mcp-client-tabs" onClick={() => {
+        if (showOtherClients && selected >= 2) setSelected(0)
+        setShowOtherClients(!showOtherClients); setCopied(null); setCopyError(false)
+      }}>{showOtherClients ? 'Hide other clients' : 'Other clients: Gemini, Codex, Cursor and more'}</button></div>
       <div key={current.id} role="tabpanel" id={`agent-panel-${current.id}`} aria-labelledby={`agent-tab-${current.id}`} tabIndex={0} className="mcp-panel">
         <p className="mcp-kind">{current.kind}</p><h3>{current.title}</h3>
         <ol className="mcp-steps">{current.steps.map((step, index) => <li key={index}><span aria-hidden="true">{index + 1}</span><p>{step}</p></li>)}</ol>
@@ -45,7 +56,7 @@ export function MCPSetup() {
         {current.note && <p className="mcp-note">{current.note}</p>}
         <a href={current.source} target="_blank" rel="noreferrer" className="mcp-source">{current.id === 'other' ? 'Full setup guide' : 'Official client instructions'} ↗</a>
       </div>
-      {guides.filter(guide => guide.id !== current.id).map(guide => <div key={guide.id} hidden role="tabpanel" id={`agent-panel-${guide.id}`} aria-labelledby={`agent-tab-${guide.id}`} />)}
+      {visibleGuides.filter(guide => guide.id !== current.id).map(guide => <div key={guide.id} hidden role="tabpanel" id={`agent-panel-${guide.id}`} aria-labelledby={`agent-tab-${guide.id}`} />)}
     </div>
     <div className="mcp-next"><article><p className="eyebrow">CHOOSE WHAT YOUR CLIENT CAN DO</p><h3>One story, or your whole library.</h3><p>Choose <strong>All my stories, including new stories</strong> during consent to work across your library. Enable <strong>Create new stories</strong> and <strong>Propose and apply edits</strong> for authoring. Prose sharing and version restores have separate controls.</p><p>Existing connections keep their permissions. Reconnect to grant new capabilities. Revoke access anytime in <Link to="/settings">Settings</Link>.</p></article><article><div className="mcp-prompt-heading"><p className="eyebrow">TRY YOUR FIRST REQUEST</p><button type="button" onClick={() => void copy(starterPrompt, 'prompt')}>{copied === 'prompt' ? 'Copied prompt' : 'Copy prompt'}</button></div><blockquote>{starterPrompt}</blockquote></article></div>
     <p role="status" className="mcp-copy-status">{copyError ? 'Clipboard access is unavailable. Select and copy the text manually.' : copied ? 'Copied to clipboard.' : ''}</p>
