@@ -20,6 +20,8 @@ def frontend_router(directory: Path) -> Router:
             "/library",
             "/settings",
             "/how-to-use",
+            "/roadmap",
+            "/thanks",
             "/oauth/consent",
             "/stories/{story_id:uuid}",
             "/shared/{story_id:uuid}",
