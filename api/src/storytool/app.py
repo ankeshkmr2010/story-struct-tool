@@ -19,6 +19,7 @@ from storytool.domain.cast.controller import (
     CharacterController,
     RelationshipController,
 )
+from storytool.domain.evaluation.controller import EvaluationController
 from storytool.domain.glossary import GlossaryController
 from storytool.domain.narrative.controller import ChapterController, SceneController
 from storytool.domain.narrative.prose_controller import (
@@ -87,6 +88,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             StoryReaderController,
             TimelineController,
             StoryAnalysisController,
+            EvaluationController,
             EventController,
             ActController,
             BeatController,
