@@ -160,3 +160,4 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [ ] T24 (new, 2026-10-12) External reviewers and commenters in shared read mode. Today a share (`domain/story/sharing.py:35`) only stores recipient email + `allow_import`; there is no comment role.
 - [ ] T25 (new, mechanics unclear, 2026-10-12) Viewer count on shared/showcase stories. Define what counts as a view (unique signed-in viewer, anonymous, per story or per chapter) before building.
 - [ ] T26 (new, 2026-10-12) Export formats: EPUB, MOBI, PDF, HTML, plain text. Today only `/manuscript` exists, as Markdown (`domain/narrative/prose_controller.py:250`).
+- [ ] T27 (new, 2026-10-12) Public product roadmap page, separate route (like `/how-to-use`, `web/src/App.tsx:32`). Title, content and link placement to agree first.
