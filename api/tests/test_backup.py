@@ -61,3 +61,25 @@ async def test_manuscript_docx_contains_the_prose(client):
     assert response.headers["content-type"].startswith("application/vnd.openxmlformats")
     with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
         assert "Maya waits." in archive.read("word/document.xml").decode()
+
+
+async def test_manuscript_html_txt_and_epub_contain_the_prose(client):
+    sid = await source_story(client)
+    html = await client.get("/api/stories/" + sid + "/manuscript.html")
+    assert html.status_code == 200, html.text
+    assert html.headers["content-type"].startswith("text/html")
+    assert "Maya waits." in html.text
+
+    text = await client.get("/api/stories/" + sid + "/manuscript.txt")
+    assert text.status_code == 200, text.text
+    assert "Maya waits." in text.text
+
+    epub = await client.get("/api/stories/" + sid + "/manuscript.epub")
+    assert epub.status_code == 200, epub.text
+    assert epub.headers["content-type"].startswith("application/epub+zip")
+    with zipfile.ZipFile(io.BytesIO(epub.content)) as book:
+        assert book.namelist()[0] == "mimetype"
+        prose = "".join(
+            book.read(name).decode() for name in book.namelist() if name.endswith(".xhtml")
+        )
+        assert "Maya waits." in prose

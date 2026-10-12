@@ -3,7 +3,10 @@ import { api } from '../api/client'
 
 const ITEMS = [
   { label: 'Manuscript (.docx)', help: 'For Word or Google Docs', href: api.manuscriptDocxUrl },
+  { label: 'E-book (.epub)', help: 'For Apple Books, Kobo and Kindle (via Send to Kindle)', href: api.manuscriptEpubUrl },
+  { label: 'Web page (.html)', help: 'Opens in any browser', href: api.manuscriptHtmlUrl },
   { label: 'Manuscript (.md)', help: 'Plain text with Markdown headings', href: api.manuscriptUrl },
+  { label: 'Plain text (.txt)', help: 'No formatting at all', href: api.manuscriptTextUrl },
   { label: 'Full backup (.json)', help: 'Everything, including notes and revisions. Restore it from your library.', href: api.backupUrl },
 ]
 

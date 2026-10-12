@@ -222,6 +222,9 @@ class StoryAccessMiddleware:
                             "/reader",
                             "/manuscript",
                             "/manuscript.docx",
+                            "/manuscript.html",
+                            "/manuscript.txt",
+                            "/manuscript.epub",
                             "/backup",
                         )
                     )

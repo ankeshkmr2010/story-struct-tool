@@ -17,6 +17,11 @@ from uuid_utils import uuid7
 from storytool.domain.ai.commands import ENTITIES, LINKS
 from storytool.domain.analysis import load_graph_by_id
 from storytool.domain.narrative.prose import compile_manuscript
+from storytool.domain.story.manuscript_formats import (
+    manuscript_epub,
+    manuscript_html,
+    manuscript_text,
+)
 from storytool.domain.story.models import Story
 from storytool.domain.story.schemas import StoryOut
 from storytool.domain.versioning.service import ADMIN, EXTRAS, checkpoint, full_state, restore_state
@@ -170,6 +175,48 @@ class StoryBackupController(Controller):
             headers={
                 "content-disposition": f'attachment; filename="{slug(graph.story.title)}.docx"'
             },
+        )
+
+    async def _manuscript(
+        self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool
+    ) -> tuple[str, str, UUID]:
+        graph = await load_graph_by_id(db_session, story_id)
+        if graph is None:
+            raise NotFoundException(detail=f"No story with id {story_id}")
+        markdown = compile_manuscript(graph, include_unplaced=include_unplaced)
+        return markdown, graph.story.title or "Untitled", graph.story.id
+
+    @get("/manuscript.html", summary="Compile the manuscript as a standalone HTML page")
+    async def export_html(
+        self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True
+    ) -> Response[str]:
+        markdown, title, _ = await self._manuscript(db_session, story_id, include_unplaced)
+        return Response(
+            content=manuscript_html(markdown, title),
+            media_type="text/html; charset=utf-8",
+            headers={"content-disposition": f'attachment; filename="{slug(title)}.html"'},
+        )
+
+    @get("/manuscript.txt", summary="Compile the manuscript as plain text")
+    async def export_text(
+        self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True
+    ) -> Response[str]:
+        markdown, title, _ = await self._manuscript(db_session, story_id, include_unplaced)
+        return Response(
+            content=manuscript_text(markdown),
+            media_type="text/plain; charset=utf-8",
+            headers={"content-disposition": f'attachment; filename="{slug(title)}.txt"'},
+        )
+
+    @get("/manuscript.epub", summary="Compile the manuscript as an EPUB e-book")
+    async def export_epub(
+        self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True
+    ) -> Response[bytes]:
+        markdown, title, identifier = await self._manuscript(db_session, story_id, include_unplaced)
+        return Response(
+            content=manuscript_epub(markdown, title, identifier),
+            media_type="application/epub+zip",
+            headers={"content-disposition": f'attachment; filename="{slug(title)}.epub"'},
         )
 
 

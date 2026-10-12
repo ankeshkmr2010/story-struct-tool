@@ -302,6 +302,9 @@ export const api = {
   getProgress: (storyId: string) => request<Progress>(`/api/stories/${storyId}/progress`),
   manuscriptUrl: (storyId: string) => `/api/stories/${storyId}/manuscript`,
   manuscriptDocxUrl: (storyId: string) => `/api/stories/${storyId}/manuscript.docx`,
+  manuscriptEpubUrl: (storyId: string) => `/api/stories/${storyId}/manuscript.epub`,
+  manuscriptHtmlUrl: (storyId: string) => `/api/stories/${storyId}/manuscript.html`,
+  manuscriptTextUrl: (storyId: string) => `/api/stories/${storyId}/manuscript.txt`,
   backupUrl: (storyId: string) => `/api/stories/${storyId}/backup`,
   importBackup: (backup: unknown) => post<Story>('/api/backups/import', backup),
 
