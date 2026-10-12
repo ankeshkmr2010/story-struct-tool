@@ -206,6 +206,8 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .site-header nav .site-nav-link { display: inline-flex; align-items: center; min-height: 40px; padding: 9px 14px; border-radius: 8px; color: var(--muted); font-size: 13px; font-weight: 500; white-space: nowrap; text-decoration: none; transition: background .15s, color .15s; }
 .site-header nav .site-nav-link:hover { background: var(--accent-soft); color: var(--accent); text-decoration: none; }
 .site-header nav .site-nav-link[aria-current=page], .site-header nav .site-nav-link.is-active { background: var(--accent-soft); color: var(--accent); }
+.site-header nav .site-feedback-link { border: 1px solid var(--line); border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.site-header nav .site-feedback-link:hover, .site-header nav .site-feedback-link[aria-current=page] { border-color: var(--accent); }
 .site-header-actions { display: flex; gap: 12px; align-items: center; }
 .theme-toggle { min-height: 40px; border-radius: 8px; border-color: transparent; background: transparent; color: var(--muted); }
 .theme-toggle:hover { background: var(--accent-soft); color: var(--accent); }

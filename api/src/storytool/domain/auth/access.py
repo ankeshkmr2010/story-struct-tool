@@ -203,6 +203,10 @@ class StoryAccessMiddleware:
                     delegated and path == story_prefix and http_scope["method"] == "GET"
                 )
                 collection = path.rstrip("/") == "/api/stories"
+                product_feedback = (
+                    path == "/api/product-feedback" and http_scope["method"] == "POST"
+                )
+                allowed = allowed or bool(delegated and product_feedback)
                 allowed = allowed or bool(
                     delegated
                     and collection
@@ -248,7 +252,7 @@ class StoryAccessMiddleware:
                     needed.add("prose:read")
                 if collection:
                     needed.add("story:create" if http_scope["method"] == "POST" else "library:read")
-                elif http_scope["method"] != "GET":
+                elif http_scope["method"] != "GET" and not product_feedback:
                     needed.add("story:write")
                 if suffix.startswith("/versions/") and suffix.endswith("/restore"):
                     needed.update({"versions:restore", "prose:read"})

@@ -292,6 +292,10 @@ TOOL_USAGE["error_recovery"].update(
 )
 
 INSTRUCTIONS = """StoryTool is an author's story graph and writing workspace.
+Use product_feedback only to submit feedback about StoryTool when the author asks.
+It writes a private product-feedback message; it does not read feedback or edit stories.
+Keep manuscript critique in the story's review/evaluation flow. Never send credentials or
+manuscript text as product feedback, or submit feedback on the author's behalf unasked.
 Authors can ask ordinary writing questions without naming tools, IDs or fingerprints.
 Handle connection discovery and tool arguments yourself; never ask the author to supply them.
 For a critique, read the relevant outline and, when permitted, prose before judging. If more
@@ -369,9 +373,13 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         if grant is None:
             raise ToolError("Authentication expired or revoked. Reconnect or sign in again.")
         identifier = story_id or grant.story_id
-        if not collection and identifier is None:
+        product_feedback = suffix == "/product-feedback" and method == "POST"
+        if not collection and not product_feedback and identifier is None:
             raise ToolError("Choose a story ID from list_stories and pass story_id to this tool")
-        target = "/api/stories" + suffix if collection else f"/api/stories/{identifier}{suffix}"
+        if product_feedback:
+            target = "/api/product-feedback"
+        else:
+            target = "/api/stories" + suffix if collection else f"/api/stories/{identifier}{suffix}"
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=cast(Any, get_app()), raise_app_exceptions=False),
             base_url="http://storytool.internal",
@@ -397,6 +405,21 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
                 detail = "Request rejected. Read fresh story context and check your permissions."
             raise ToolError(f"StoryTool {response.status_code}: {detail}")
         return response.json() if response.content else {}
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def product_feedback(
+        ctx: Context,
+        message: Annotated[str, Field(min_length=1, max_length=4000)],
+        category: Literal["bug", "suggestion", "other"] = "other",
+    ) -> dict[str, Any]:
+        """Submit private product feedback about StoryTool, only when the author asks.
+        Writes feedback only: no story edits, no reading/listing feedback. Requires a valid
+        connection, but no selected story or story-write permission. Keep credentials and
+        manuscript text out of the message. category is optional: bug, suggestion or other."""
+        saved = await call(
+            ctx, "/product-feedback", "POST", {"message": message, "category": category}
+        )
+        return {"submitted": True, "feedback_id": saved["id"]}
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_connection(ctx: Context) -> dict[str, Any]:
