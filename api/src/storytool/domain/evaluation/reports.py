@@ -110,7 +110,11 @@ def result_schema(subject: str) -> dict[str, Any]:
 
 def checked_verdicts(g: StoryGraph, review: Review, data: ReportIn) -> list[dict[str, Any]]:
     """Every subject and cited scene must belong to this story; one verdict per subject."""
-    subjects = {"thread": {t.id for t in g.threads}}.get(review.subject, set())
+    subjects = {
+        "thread": {t.id for t in g.threads},
+        "scene": {s.id for s in g.scenes},
+        "character": {c.id for c in g.characters},
+    }.get(review.subject, set())
     scenes = {s.id for s in g.scenes}
     seen: set[UUID] = set()
     out = []

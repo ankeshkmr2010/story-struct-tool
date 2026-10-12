@@ -115,6 +115,11 @@ class EvaluationController(Controller):
                 findings=[],
                 visual={},
             )
+        if evaluator.kind == "llm":
+            raise ClientException(
+                detail="This evaluator requires an AI review. Fetch its package for an agent "
+                "or run it with a connected key through ai-review."
+            )
         result = evaluator.run(graph)
         return EvaluationOut(
             story_id=story_id,

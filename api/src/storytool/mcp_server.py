@@ -810,11 +810,12 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_evaluation_package(
         ctx: Context,
-        evaluator_id: Literal["mice_nesting"] = "mice_nesting",
+        evaluator_id: Literal["mice_nesting", "value_shift", "misbelief_midpoint"] = "mice_nesting",
         story_id: UUID | None = None,
     ) -> dict[str, Any]:
         """Instructions, inputs, base_fingerprint and result_schema for one AI craft review
-        (mice_nesting: judge each thread as a MICE thread). Judge only from the inputs, then
+        (MICE threads, scene value shifts, or character misbeliefs at midpoint).
+        Prose-based reviews require prose:read. Judge only from the inputs, then
         call submit_evaluation_report with one verdict per subject. It never edits the story."""
         return await call(ctx, f"/evaluations/{evaluator_id}/package", story_id=story_id)
 
@@ -824,7 +825,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         base_fingerprint: str,
         summary: str,
         verdicts: list[dict[str, Any]],
-        evaluator_id: Literal["mice_nesting"] = "mice_nesting",
+        evaluator_id: Literal["mice_nesting", "value_shift", "misbelief_midpoint"] = "mice_nesting",
         story_id: UUID | None = None,
     ) -> dict[str, Any]:
         """Save your review from get_evaluation_package; the author sees it in Design > Evaluate.

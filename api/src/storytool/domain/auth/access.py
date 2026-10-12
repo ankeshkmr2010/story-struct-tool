@@ -235,6 +235,9 @@ class StoryAccessMiddleware:
                         )
                     )
                     or suffix in {"/ai/runs", "/ai/observations", "/ai/catchup"}
+                    or suffix.startswith(
+                        ("/evaluations/value_shift/", "/evaluations/misbelief_midpoint/")
+                    )
                 ):
                     needed.add("prose:read")
                 if collection:

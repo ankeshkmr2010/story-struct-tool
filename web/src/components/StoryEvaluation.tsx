@@ -131,16 +131,19 @@ const VERDICT: Record<string, { icon: string; label: string; border: string }> =
   needs_change: { icon: '🔴', label: 'Needs change', border: 'border-rose-500' },
 }
 
-function AIReview({ storyId, evaluatorId, evaluatorName, onOpenScene, onOpenThreads }: {
+function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onOpenThreads, onOpenCharacters }: {
   storyId: string
   evaluatorId: string
   evaluatorName: string
+  ready: boolean
   onOpenScene: (scene: { id: string; chapter_id: string | null }) => void
   onOpenThreads: () => void
+  onOpenCharacters: () => void
 }) {
   const qc = useQueryClient()
   const reports = useQuery({ queryKey: ['evaluation-reports', storyId, evaluatorId], queryFn: () => api.listEvaluationReports(storyId, evaluatorId) })
   const threads = useQuery({ queryKey: ['threads', storyId], queryFn: () => api.listThreads(storyId) })
+  const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
   const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
   const connections = useQuery({ queryKey: ['ai-connections'], queryFn: api.listAIConnections })
@@ -154,7 +157,7 @@ function AIReview({ storyId, evaluatorId, evaluatorName, onOpenScene, onOpenThre
   const agentPrompt = [
     `Run the "${evaluatorName}" review for my StoryTool story "${story.data?.title ?? 'Untitled'}" (story_id ${storyId}).`,
     `Call get_evaluation_package with evaluator_id ${evaluatorId} and that story_id, and judge exactly as its instructions say, using only its inputs.`,
-    "Then call submit_evaluation_report with the package's base_fingerprint, a short summary and one verdict per thread. Don't change the story.",
+    `Then call submit_evaluation_report with evaluator_id ${evaluatorId}, the package's base_fingerprint, a short summary and one verdict per subject specified in the package. Don't change the story.`,
   ].join('\n')
   const copy = async () => {
     try { await navigator.clipboard.writeText(agentPrompt); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch { setCopied(false) }
@@ -162,17 +165,25 @@ function AIReview({ storyId, evaluatorId, evaluatorName, onOpenScene, onOpenThre
   const report = reports.data?.find((item) => item.id === shownId) ?? reports.data?.[0]
   const threadName = (id: string) => { const thread = threads.data?.find((item) => item.id === id); return thread ? thread.title || thread.type.replace('_', '-') : 'A thread' }
   const sceneOf = (id: string) => scenes.data?.find((item) => item.id === id)
+  const subjectLink = (type: string, id: string) => {
+    if (type === 'scene') {
+      const scene = sceneOf(id)
+      return scene ? <button type="button" className="underline" onClick={() => onOpenScene({ id: scene.id, chapter_id: scene.chapter_id ?? null })}>{scene.title || 'Untitled scene'}</button> : 'A scene'
+    }
+    if (type === 'character') return <button type="button" className="underline" onClick={onOpenCharacters}>{characters.data?.find((item) => item.id === id)?.name ?? 'A character'}</button>
+    return <button type="button" className="underline" onClick={onOpenThreads}>{threadName(id)}</button>
+  }
   const source = (item: { source: string; model: string | null }) => item.source === 'assistant' ? `Assistant${item.model ? ` (${item.model})` : ''}` : item.source === 'mcp' ? 'Your agent (MCP)' : 'You'
 
   return (
     <section className="space-y-4 rounded-lg border border-slate-200 p-5 dark:border-slate-700" aria-label="AI review">
       <div>
         <h3 className="text-lg font-semibold">AI review</h3>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">An AI reads each thread's scenes and says whether it works, what to consider, and what needs to change. Nothing in your story is edited.</p>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">An AI reviews the supplied story material and says what works, what to consider, and what needs to change. Nothing in your story is edited.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? 'Copied' : 'Copy prompt for your agent'}</button>
-        <button type="button" disabled={!connection || ask.isPending} title={connection ? undefined : 'Connect Claude or OpenAI in the assistant first'} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? 'Reviewing…' : 'Ask the assistant'}</button>
+        <button type="button" disabled={!ready || !connection || ask.isPending} title={!ready ? 'Fill in the missing inputs above first' : connection ? undefined : 'Connect Claude or OpenAI in the assistant first'} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? 'Reviewing…' : 'Ask the assistant'}</button>
         <button type="button" onClick={() => void reports.refetch()} className="rounded-md px-3 py-1.5 text-xs underline">Check for new reports</button>
       </div>
       {ask.error && <p role="alert" className="text-xs text-rose-700 dark:text-rose-300">{errorText(ask.error)}</p>}
@@ -192,7 +203,7 @@ function AIReview({ storyId, evaluatorId, evaluatorName, onOpenScene, onOpenThre
               const sceneIds = (item.scene_ids as string[] | undefined) ?? []
               return (
                 <li key={String(item.entity_id)} className={`rounded-md border-l-4 bg-white p-3 text-sm dark:bg-slate-900 ${verdict.border}`}>
-                  <p className="font-semibold"><span aria-hidden="true">{verdict.icon}</span> {verdict.label}: <button type="button" onClick={onOpenThreads} className="underline">{threadName(String(item.entity_id))}</button></p>
+                  <p className="font-semibold"><span aria-hidden="true">{verdict.icon}</span> {verdict.label}: {subjectLink(String(item.entity_type), String(item.entity_id))}</p>
                   <p className="mt-1 leading-6">{String(item.evidence)}</p>
                   {fixes.length > 0 && <ul className="mt-2 list-disc pl-5">{fixes.map((fix) => <li key={fix}>{fix}</li>)}</ul>}
                   {sceneIds.length > 0 && (
@@ -225,11 +236,12 @@ function AIReview({ storyId, evaluatorId, evaluatorName, onOpenScene, onOpenThre
   )
 }
 
-export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThreads }: {
+export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters }: {
   storyId: string
   onOpenInbox: () => void
   onOpenScene: (scene: { id: string; chapter_id: string | null }) => void
   onOpenThreads: () => void
+  onOpenCharacters: () => void
 }) {
   const evaluators = useQuery({ queryKey: ['evaluators', storyId], queryFn: () => api.listEvaluators(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
@@ -283,14 +295,14 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
             </ul>
           )}
           {selected.id === 'mice_nesting' && <MiceInputs storyId={storyId} onOpenInbox={onOpenInbox} />}
-          <button
+          {selected.kind !== 'llm' && <button
             type="button"
             disabled={!selected.ready || run.isPending}
             onClick={() => run.mutate(selected.id)}
             className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950"
           >
             {run.isPending ? 'Running…' : shown ? 'Run again' : 'Run'}
-          </button>
+          </button>}
           {run.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(run.error)}</p>}
         </section>
 
@@ -316,7 +328,7 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
             )}
           </section>
         )}
-        {selected.has_review && <AIReview key={selected.id} storyId={storyId} evaluatorId={selected.id} evaluatorName={selected.name} onOpenScene={onOpenScene} onOpenThreads={onOpenThreads} />}
+        {selected.has_review && <AIReview key={selected.id} storyId={storyId} evaluatorId={selected.id} evaluatorName={selected.name} ready={selected.ready} onOpenScene={onOpenScene} onOpenThreads={onOpenThreads} onOpenCharacters={onOpenCharacters} />}
       </>}
     </div>
   )
