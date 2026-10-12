@@ -75,6 +75,8 @@ button:not(:disabled), summary { cursor: pointer; }
 .landing-secondary { display: inline-block; font-size: 13px; }
 .hero-footnote { margin-top: 18px; font-size: 11px; color: var(--muted); }
 .hero-footnote a { display: inline-block; color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
+.hero-shoutout { display: inline-flex; align-items: center; gap: 10px; margin-top: 22px; padding: 12px 20px; border-radius: 999px; background: linear-gradient(90deg, #f43f5e, #f59e0b, #10b981, #0ea5e9, #8b5cf6); color: #fff; font-size: 14px; font-weight: 700; box-shadow: 0 10px 30px #f43f5e40; transition: transform .15s ease, box-shadow .15s ease; }
+.hero-shoutout:hover { transform: translateY(-2px); box-shadow: 0 14px 36px #8b5cf655; }
 .story-preview { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 18px 60px #0000000c; }
 .preview-top { display: flex; align-items: center; gap: 11px; padding: 20px 24px; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; }
 .preview-top small { display: block; font-size: 10px; font-weight: 400; color: var(--muted); margin-top: 3px; }
