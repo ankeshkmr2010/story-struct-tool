@@ -187,19 +187,29 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
   - Follow-up built: Feedback is the rightmost navigation link with a subtle theme-colored pill. The existing `/mcp` server has `product_feedback(message, category?)`, which only submits through the same validated/private REST endpoint and returns an acknowledgement/id. Valid connections can submit without selecting a story or requesting manuscript-edit permissions; no feedback-reading/admin APIs are allowed for delegated clients (`web/src/App.tsx`, `web/src/index.css`, `api/src/storytool/{mcp_server.py,domain/auth/access.py}`). Awaiting user's prod check; no local tests.
 - [~] T39 (built, awaiting user's prod check; no local tests) Author name/pen name in Settings, separate from Google profile name. Browser-owned `/api/auth/profile` saves/clears it; all manuscript exports use it as byline, with Word/EPUB/HTML/PDF author metadata. Blank means no byline or automatic real-name fallback. Migration `b6f0d8a2c413` adds nullable `app_user.author_name` after `a4e8c2d6f901`; not applied manually or tested locally (`domain/auth/{models,controller}.py`, `UserSettings.tsx`, manuscript export modules).
 
-**Further feedback — backlog only (2026-10-12)**
-- [ ] T40 Landing touch-ups: add EPUB/HTML/plain text to Yours to keep; ensure Connect AI scrolls to MCP rather than the page top; add Misbelief at midpoint and Value shift versus prose to the craft section. (`Landing.tsx`, `App.tsx`.)
-- [ ] T41 Roadmap: mark Misbelief/Value shift Delivered after production confirmation; order DOCX import → search (Planned) → try before signup → reviewers/commenters → PDF export → images last. Bundle view counts with reviewers/commenters. (`Roadmap.tsx`.)
-- [ ] T42 Evaluate polish (`StoryEvaluation.tsx`):
-  - Explain disabled Ask the assistant with a tooltip.
-  - Stale wording: "Story edited since this review. Re-run?"
-  - Draw thread nesting visually instead of printing <Idea><Event> tags.
-  - One-line MICE and misbelief definitions, crediting Card/Kowal and Cron.
-  - Explicit timestamps, e.g. "12 Oct 2026, 2:09 PM".
-  - Automatically refresh reports; remove the need for Check for new reports.
-  - All-checks summary and Run all button.
-  - Every flag jumps to its thread or scene in Plan.
-- [ ] T43 (later) Shareable authorship summary for AI disclosure to agents, publishers and contests.
-- [ ] T44 (later) Series bible: shared characters, places and glossary across books.
-- [ ] T45 (later) German, then Spanish interface; per-story language passed through MCP so AI stays in that language.
-- [ ] T46 (later) Early-supporter lifetime deal through Gumroad or Paddle once beta feedback settles; decide before publishing pricing promises.
+**User feedback — tasks only (2026-10-12)**
+
+**2. Landing page touch-ups — T40**
+- [ ] Update "Yours to keep." It still lists only Word and Markdown. Add EPUB, HTML and plain text.
+- [ ] Point the Connect AI nav link at the MCP section, not the top of the page.
+- [ ] Add the new checks to the craft section: Misbelief at midpoint and Value shift versus prose.
+
+**3. Roadmap — T41**
+- [ ] Mark the new checks as Delivered: Misbelief and Value shift.
+- [ ] Suggested order: DOCX import → search (move from Exploring to Planned) → try before signup → reviewers and commenters → PDF export → view counts (bundle with commenters) → images last.
+
+**4. Evaluate tab polish — T42**
+- [ ] Explain the greyed-out "Ask the assistant" button with a tooltip.
+- [ ] Flag stale reviews: "Story edited since this review. Re-run?"
+- [ ] Draw thread nesting visually instead of printing <Idea><Event> tags.
+- [ ] Define MICE and misbelief in one line each, with credit (Card and Kowal, Cron).
+- [ ] Use an unambiguous timestamp: "12 Oct 2026, 2:09 PM".
+- [ ] Refresh reports automatically instead of making people click "Check for new reports."
+- [ ] Add an all-checks summary with a Run all button.
+- [ ] Make every flag jump to its thread or scene in Plan.
+
+**5. Bigger bets (later)**
+- [ ] T43 Package the authorship report as a shareable summary for AI disclosure to agents, publishers and contests.
+- [ ] T44 Series bible: shared characters, places and glossary across books.
+- [ ] T45 German, then Spanish: a localized interface, plus a per-story language setting passed through MCP so the AI stays in that language.
+- [ ] T46 Monetisation: an early-supporter lifetime deal through Gumroad or Paddle once beta feedback settles.
