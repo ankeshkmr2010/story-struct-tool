@@ -29,6 +29,8 @@ export type StoryEvent = S['EventOut']
 export type Act = S['ActOut']
 export type Beat = S['BeatOut']
 export type Thread = S['ThreadOut']
+export type Evaluator = S['EvaluatorOut']
+export type Evaluation = S['EvaluationOut']
 export type Character = S['CharacterOut']
 export type Relationship = S['RelationshipOut']
 export type Arc = S['ArcOut']
@@ -217,6 +219,8 @@ export const api = {
     request<void>(`/api/stories/${storyId}/beats/${beatId}`, { method: 'DELETE' }),
 
   listThreads: (id: string) => request<Thread[]>(`/api/stories/${id}/threads`).then(orderScenes),
+  listEvaluators: (id: string) => request<Evaluator[]>(`/api/stories/${id}/evaluations`),
+  runEvaluator: (id: string, evaluatorId: string) => request<Evaluation>(`/api/stories/${id}/evaluations/${evaluatorId}`),
   createThread: (id: string, body: { type: string; title?: string; sort_key?: number }) =>
     post<Thread>(`/api/stories/${id}/threads`, body),
   updateThread: (storyId: string, threadId: string, body: Record<string, unknown>) =>

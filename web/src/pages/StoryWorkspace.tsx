@@ -16,6 +16,7 @@ import { AuthoringAssistant } from '../components/AuthoringAssistant'
 import { StoryGrid } from '../components/StoryGrid'
 import { ProposalInbox } from '../components/ProposalInbox'
 import { OutlineCatchup } from '../components/OutlineCatchup'
+import { StoryEvaluation } from '../components/StoryEvaluation'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
 import { AuthorshipPanel } from '../components/AuthorshipPanel'
@@ -56,6 +57,7 @@ const INBOX_VIEW = 104
 const GRID_VIEW = 105
 const CATCHUP_VIEW = 106
 const HISTORY_VIEW = 107
+const EVALUATE_VIEW = 108
 
 type RefPanel = 'timeline' | 'places' | 'glossary' | 'assistant'
 const REF_PANELS: [RefPanel, string][] = [['timeline', 'Timeline'], ['places', 'Places'], ['glossary', 'Glossary'], ['assistant', 'Assistant']]
@@ -343,6 +345,7 @@ function Workspace() {
           {viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
           {viewItem(HISTORY_VIEW, 'History')}
           {viewItem(CATCHUP_VIEW, 'Catch up')}
+          {viewItem(EVALUATE_VIEW, 'Evaluate')}
         </div>
       </nav>
 
@@ -365,6 +368,7 @@ function Workspace() {
         <section ref={levelSection} className="min-w-0 scroll-mt-4">
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
+          {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8) }} onOpenThreads={() => setLevel(6)} />}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
           {level === HISTORY_VIEW && <div>
             <div className="history-tabs" role="tablist" aria-label="History">

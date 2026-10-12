@@ -153,7 +153,9 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
   - API: list evaluators with readiness (missing inputs); run one. Deterministic results computed on request.
   - LLM evaluators: one package (instructions + relevant inputs + result schema). Run via MCP (`run_evaluation` → agent → `submit_evaluation`) or, with an API key, directly through `domain/ai/runner.py`. Same result format.
   - LLM reports are saved and versioned (dated, tied to the story fingerprint, history kept, flagged stale when the fingerprint changes).
-  - Step 1: engine + API + scene/sequel rhythm (no new fields) + MICE nesting (`Thread.mice`, `scene_thread.role`). Step 2: page (ask placement first). Step 3: LLM evaluators (value shift vs prose, misbelief at midpoint).
+  - Step 1 (built): engine + API + scene/sequel rhythm + MICE nesting. MICE spans are derived from scene links (first to last scene, reading order); only `Thread.mice` is stored, no `scene_thread.role`.
+  - Step 2 (built, awaiting tests + prod check): Evaluate tab in the Design views row (after Catch up), `web/src/components/StoryEvaluation.tsx`. Pick an evaluator, run, findings link back to the scene or Threads. Missing MICE categories: fill them in the tab, or ask an AI (copy MCP prompt / in-app assistant) to propose them into Agent changes. The thread editor stays unchanged (user: "do not clutter thread").
+  - Step 3: LLM evaluators (value shift vs prose, misbelief at midpoint), results shown in the same tab.
   - Out: Save the Cat / Story Grid by name (trademark), genre-driven switching (later).
 - [ ] T22 (research first, 2026-10-12) Search layers: feedback says there are none. Research what's needed before proposing anything.
 - [ ] T23 (new, 2026-10-12) Image insertion support. Scope (prose inline vs entity images, storage) not decided yet.

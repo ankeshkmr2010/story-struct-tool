@@ -744,6 +744,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/manuscript.epub": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Compile the manuscript as an EPUB e-book */
+        get: operations["ApiStoriesStoryIdManuscriptEpubExportEpub"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/manuscript.html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Compile the manuscript as a standalone HTML page */
+        get: operations["ApiStoriesStoryIdManuscriptHtmlExportHtml"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/manuscript.txt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Compile the manuscript as plain text */
+        get: operations["ApiStoriesStoryIdManuscriptTxtExportText"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/manuscript.docx": {
         parameters: {
             query?: never;
@@ -908,6 +959,109 @@ export interface paths {
         put?: never;
         /** Seed acts and beats from the story's framework */
         post: operations["ApiStoriesStoryIdScaffoldScaffold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/evaluations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List evaluators and whether each can run on this story */
+        get: operations["ApiStoriesStoryIdEvaluationsListEvaluators"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/evaluations/{evaluator_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Run one evaluator */
+        get: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdRunEvaluator"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shoutouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The thank-you list, in order */
+        get: operations["ApiShoutoutsListShoutouts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/shoutouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a shoutout at the end of the list */
+        post: operations["ApiAdminShoutoutsCreateShoutout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/shoutouts/{shoutout_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a shoutout */
+        delete: operations["ApiAdminShoutoutsShoutoutIdDeleteShoutout"];
+        options?: never;
+        head?: never;
+        /** Edit or move a shoutout */
+        patch: operations["ApiAdminShoutoutsShoutoutIdUpdateShoutout"];
+        trace?: never;
+    };
+    "/api/admin/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether the signed-in account may edit site content */
+        get: operations["ApiAdminStatusStatus"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1887,6 +2041,10 @@ export interface components {
             closing_turning_point_id?: string | null;
             sort_key?: number | null;
         };
+        /** AdminStatusOut */
+        AdminStatusOut: {
+            is_admin: boolean;
+        };
         /** AnnotationCreate */
         AnnotationCreate: {
             start_offset: number;
@@ -2269,6 +2427,36 @@ export interface components {
          * @enum {string}
          */
         DraftStatus: "placeholder" | "outlined" | "drafted" | "revised";
+        /** EvaluationFindingOut */
+        EvaluationFindingOut: {
+            code: string;
+            severity: string;
+            message: string;
+            entity_type: string | null;
+            entity_id: string | null;
+        };
+        /** EvaluationOut */
+        EvaluationOut: {
+            /** Format: uuid */
+            story_id: string;
+            evaluator_id: string;
+            ready: boolean;
+            missing: string[];
+            findings: components["schemas"]["EvaluationFindingOut"][];
+            visual: {
+                [key: string]: unknown;
+            };
+        };
+        /** EvaluatorOut */
+        EvaluatorOut: {
+            id: string;
+            name: string;
+            description: string;
+            kind: string;
+            inputs: string[];
+            ready: boolean;
+            missing: string[];
+        };
         /** EventCreate */
         EventCreate: {
             label: string;
@@ -2443,6 +2631,12 @@ export interface components {
             source?: string | null;
             is_rejected?: boolean | null;
         };
+        /**
+         * MiceType
+         * @description Card's MICE quotient: what a thread promises, and so what closing it means.
+         * @enum {string}
+         */
+        MiceType: "milieu" | "idea" | "character" | "event";
         /** MoveResultOut */
         MoveResultOut: {
             sort_key: number;
@@ -2780,6 +2974,33 @@ export interface components {
             owner_name: string;
             allow_import: boolean;
         };
+        /** ShoutoutCreate */
+        ShoutoutCreate: {
+            name: string;
+            thanks: string;
+            /** @default rose */
+            colour: string;
+            /** @default  */
+            mark: string;
+        };
+        /** ShoutoutOut */
+        ShoutoutOut: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            thanks: string;
+            colour: string;
+            mark: string;
+            sort_key: number;
+        };
+        /** ShoutoutUpdate */
+        ShoutoutUpdate: {
+            name?: string | null;
+            thanks?: string | null;
+            colour?: string | null;
+            mark?: string | null;
+            sort_key?: number | null;
+        };
         /** ShowcaseChangeOut */
         ShowcaseChangeOut: {
             summary: string;
@@ -2885,10 +3106,7 @@ export interface components {
             authoring_mode: string;
             parent_story_id: string | null;
             deleted_at: string | null;
-            /**
-             * Word Count
-             * @default 0
-             */
+            /** @default 0 */
             word_count: number;
         };
         /** StoryProgressOut */
@@ -2957,6 +3175,7 @@ export interface components {
             type: components["schemas"]["ThreadType"];
             title?: string | null;
             owner_character_id?: string | null;
+            mice?: components["schemas"]["MiceType"] | null;
             /** @default 0 */
             sort_key: number;
         };
@@ -2981,6 +3200,7 @@ export interface components {
             type: string;
             title: string | null;
             owner_character_id: string | null;
+            mice: string | null;
             sort_key: number;
         };
         /**
@@ -2993,6 +3213,7 @@ export interface components {
             type?: components["schemas"]["ThreadType"] | null;
             title?: string | null;
             owner_character_id?: string | null;
+            mice?: components["schemas"]["MiceType"] | null;
             sort_key?: number | null;
         };
         /** TimelineCharacterOut */
@@ -4974,6 +5195,123 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdManuscriptEpubExportEpub: {
+        parameters: {
+            query?: {
+                include_unplaced?: boolean;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdManuscriptHtmlExportHtml: {
+        parameters: {
+            query?: {
+                include_unplaced?: boolean;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdManuscriptTxtExportText: {
+        parameters: {
+            query?: {
+                include_unplaced?: boolean;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdManuscriptDocxManuscript: {
         parameters: {
             query?: {
@@ -5366,6 +5704,236 @@ export interface operations {
                             [key: string]: unknown;
                         } | unknown[];
                     };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdEvaluationsListEvaluators: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluatorOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdEvaluationsEvaluatorIdRunEvaluator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                evaluator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiShoutoutsListShoutouts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoutoutOut"][];
+                };
+            };
+        };
+    };
+    ApiAdminShoutoutsCreateShoutout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShoutoutCreate"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoutoutOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminShoutoutsShoutoutIdDeleteShoutout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shoutout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminShoutoutsShoutoutIdUpdateShoutout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shoutout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShoutoutUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoutoutOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminStatusStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminStatusOut"];
                 };
             };
         };
