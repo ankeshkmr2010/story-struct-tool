@@ -1,0 +1,34 @@
+import { Link } from 'react-router-dom'
+
+export default function Privacy() {
+  return (
+    <main className="mx-auto max-w-3xl px-5 py-12 text-[var(--ink)] sm:px-8">
+      <header>
+        <p className="eyebrow">PRIVACY</p>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight">Your manuscript and AI.</h1>
+        <p className="mt-5 text-lg leading-8 text-[var(--muted)]">StoryTool does not use your manuscript to train AI. Connected AI services have their own data policies.</p>
+      </header>
+      <section className="mt-10 space-y-3" aria-labelledby="stored-data-title">
+        <h2 id="stored-data-title" className="text-xl font-semibold">What StoryTool stores</h2>
+        <p className="leading-7 text-[var(--muted)]">Google sign-in supplies your email and basic profile to identify your account. StoryTool stores your manuscript, story structure, notes, revisions, versions and authorship history so you can write, recover drafts and see what changed.</p>
+        <p className="leading-7 text-[var(--muted)]">AI prompts, replies, proposed changes, review reports and usage details are stored to support conversations, review and history. Operational logs can include AI response summaries and error details. StoryTool is hosted on Render and uses Neon for its database.</p>
+      </section>
+      <section className="mt-10 space-y-3" aria-labelledby="ai-data-title">
+        <h2 id="ai-data-title" className="text-xl font-semibold">When you choose to use AI</h2>
+        <p className="leading-7 text-[var(--muted)]">Writing without AI does not require an AI connection. If you enable AI features, relevant story information is shared with the service you choose. In-app authoring can include prose excerpts when you select that option; prose-based readers and reviews need scene text.</p>
+        <p className="leading-7 text-[var(--muted)]">An external AI client can read the stories and prose you authorize through the connection's permissions. API use and chat-client use can have different retention and training settings. StoryTool's no-training statement does not override your provider's or client's policies.</p>
+        <p className="leading-7 text-[var(--muted)]">Saved provider API keys are encrypted. You can disconnect a provider or revoke an external client's access in <Link to="/settings" className="underline underline-offset-4">Settings</Link>. Revoking access prevents future requests; it does not erase data already sent to another service.</p>
+      </section>
+      <section className="mt-10 space-y-3" aria-labelledby="sharing-data-title">
+        <h2 id="sharing-data-title" className="text-xl font-semibold">Sharing is your choice</h2>
+        <p className="leading-7 text-[var(--muted)]">Stories are private to your account unless you share them or authorize an AI connection. Private reader access is tied to the email you invite. A public showcase can be read by anyone with its link. If you allow a reader to import a copy, that copy is independent and remains after you revoke sharing.</p>
+      </section>
+      <section className="mt-10 space-y-3" aria-labelledby="deleting-data-title">
+        <h2 id="deleting-data-title" className="text-xl font-semibold">Keeping and deleting drafts</h2>
+        <p className="leading-7 text-[var(--muted)]">Moving a story to Trash keeps it recoverable, with its versions. Permanently deleting it removes it from the application database. This does not recall shared imports, data sent to AI services or copies retained in hosting backups and operational logs.</p>
+        <p className="leading-7 text-[var(--muted)]">Download a manuscript or full story backup from your workspace whenever you want your own copy.</p>
+      </section>
+      <p className="mt-12 text-sm text-[var(--muted)]"><Link to="/" className="underline underline-offset-4">← Back to StoryTool</Link></p>
+    </main>
+  )
+}

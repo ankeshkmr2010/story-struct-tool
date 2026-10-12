@@ -26,6 +26,7 @@ export default function Landing() {
         <p className="hero-description">With the AI you already use or none at all. Your manuscript, its structure and its timeline in one place; every change is yours to keep or undo.</p>
         <div className="hero-actions"><Link to="/library" className="landing-primary">Start your story <span aria-hidden="true">↗</span></Link><Link to={SHOWCASE} className="landing-secondary">See a finished story <span aria-hidden="true">→</span></Link></div>
         <p className="hero-footnote">Free during beta · <Link to="/pricing">Pricing →</Link> · New here? <Link to="/how-to-use">See how it works →</Link> · <Link to="/roadmap">On the horizon →</Link></p>
+        <p className="hero-footnote">StoryTool does not use your manuscript to train AI; connected AI services have their own data policies. <Link to="/privacy">Privacy details →</Link></p>
       </div>
       <div className="story-preview" aria-label="Illustrative story outline showing linked beats, timeline events, and a character arc">
         <div className="preview-top"><img src="/branding/storytool.svg" width="32" height="32" alt="" /><span>The Last Lantern <small>A glimpse of your workspace</small></span><span className="preview-draft">Draft</span></div>
@@ -91,6 +92,6 @@ export default function Landing() {
 
     <section className="landing-modes" aria-labelledby="keep-title"><div><p className="eyebrow">YOURS TO KEEP</p><h2 id="keep-title">Your words can<br />always leave.</h2></div><div className="mode-list"><p><strong>Manuscript</strong><span>Export to Word or Markdown.</span></p><p><strong>Full backup</strong><span>Everything in one file, restorable as a new story.</span></p><p><strong>Versions</strong><span>Restore any saved version; your current draft is kept as a recovery copy.</span></p></div></section>
 
-    <footer className="landing-footer"><span>StoryTool · Make room for your story.</span><Link to="/library">Start your story →</Link></footer>
+    <footer className="landing-footer"><span>StoryTool · Make room for your story.</span><Link to="/privacy">Privacy</Link><Link to="/pricing">Pricing</Link><Link to="/library">Start your story →</Link></footer>
   </main>
 }

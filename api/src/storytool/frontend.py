@@ -23,6 +23,7 @@ def frontend_router(directory: Path) -> Router:
             "/roadmap",
             "/thanks",
             "/pricing",
+            "/privacy",
             "/oauth/consent",
             "/stories/{story_id:uuid}",
             "/shared/{story_id:uuid}",

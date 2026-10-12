@@ -11,6 +11,7 @@ import HowToUse from './pages/HowToUse'
 import Roadmap from './pages/Roadmap'
 import Shoutouts from './pages/Shoutouts'
 import Pricing from './pages/Pricing'
+import Privacy from './pages/Privacy'
 import UserSettings from './pages/UserSettings'
 import OAuthConsent from './pages/OAuthConsent'
 
@@ -37,6 +38,7 @@ export default function App() {
       <Route path="/roadmap" element={<Roadmap />} />
       <Route path="/thanks" element={<Shoutouts />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route path="/showcase/:token" element={<Suspense fallback={<p className="p-8">Loading showcase…</p>}><StoryShowcase /></Suspense>} />
       <Route element={<AuthGate><Outlet /></AuthGate>}>
         <Route path="/library" element={<StoryList />} />
