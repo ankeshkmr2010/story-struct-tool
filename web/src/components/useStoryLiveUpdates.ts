@@ -9,7 +9,7 @@ export function useStoryLiveUpdates(storyId: string, shared = false, enabled = t
   const lastToken = useRef<string | undefined>(undefined)
   // When a change from elsewhere (an agent, another tab) last arrived; the first token is the baseline.
   const [changedAt, setChangedAt] = useState<number | null>(null)
-  const activity = useQuery({ queryKey: ['story-activity', storyId, shared], queryFn: () => api.storyActivity(storyId, shared), enabled, refetchInterval: 5000, refetchIntervalInBackground: false, refetchOnWindowFocus: true, staleTime: 0, retry: false })
+  const activity = useQuery({ queryKey: ['story-activity', storyId, shared], queryFn: () => api.storyActivity(storyId, shared), enabled, refetchInterval: 15_000, refetchIntervalInBackground: false, refetchOnWindowFocus: true, staleTime: 0, retry: false })
   useEffect(() => {
     const token = activity.data?.change_token
     if (!enabled || !token || token === lastToken.current) return
