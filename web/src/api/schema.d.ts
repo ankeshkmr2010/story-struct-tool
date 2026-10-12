@@ -965,6 +965,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/evaluations/{evaluator_id}/ai-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run an AI review with a connected key */
+        post: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdAiReviewAiReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/evaluations/{evaluator_id}/package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Instructions and inputs for an AI review */
+        get: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdPackageGetPackage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/evaluations": {
         parameters: {
             query?: never;
@@ -976,6 +1010,24 @@ export interface paths {
         get: operations["ApiStoriesStoryIdEvaluationsListEvaluators"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/evaluations/{evaluator_id}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Saved AI reviews, newest first */
+        get: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdReportsListReports"];
+        put?: never;
+        /** Submit an AI review (MCP agents) */
+        post: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdReportsSubmitReport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1997,6 +2049,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AIReviewRequest */
+        AIReviewRequest: {
+            /** Format: uuid */
+            connection_id: string;
+        };
         /** ActCreate */
         ActCreate: {
             /** @default 1 */
@@ -2453,6 +2510,7 @@ export interface components {
             name: string;
             description: string;
             kind: string;
+            has_review: boolean;
             inputs: string[];
             ready: boolean;
             missing: string[];
@@ -2676,6 +2734,21 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** PackageOut */
+        PackageOut: {
+            /** Format: uuid */
+            story_id: string;
+            evaluator_id: string;
+            base_fingerprint: string;
+            subject: string;
+            instructions: string;
+            inputs: {
+                [key: string]: unknown;
+            };
+            result_schema: {
+                [key: string]: unknown;
+            };
+        };
         /** PassResultOut */
         PassResultOut: {
             noticed_by: string;
@@ -2766,6 +2839,28 @@ export interface components {
             history?: string | null;
             current_dynamic?: string | null;
             tension_notes?: string | null;
+        };
+        /** ReportIn */
+        ReportIn: {
+            base_fingerprint: string;
+            summary: string;
+            verdicts: components["schemas"]["VerdictIn"][];
+        };
+        /** ReportOut */
+        ReportOut: {
+            /** Format: uuid */
+            id: string;
+            evaluator_id: string;
+            source: string;
+            model: string | null;
+            summary: string;
+            verdicts: {
+                [key: string]: unknown;
+            }[];
+            base_fingerprint: string;
+            /** Format: date-time */
+            created_at: string;
+            stale: boolean;
         };
         /** RunOut */
         RunOut: {
@@ -3283,6 +3378,16 @@ export interface components {
             email: string;
             name: string | null;
             picture_url: string | null;
+        };
+        /** VerdictIn */
+        VerdictIn: {
+            /** Format: uuid */
+            entity_id: string;
+            /** @enum {string} */
+            verdict: "works" | "consider" | "needs_change";
+            evidence: string;
+            scene_ids?: string[];
+            fixes?: string[];
         };
         /** VersionChange */
         VersionChange: {
@@ -5708,6 +5813,86 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdEvaluationsEvaluatorIdAiReviewAiReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                evaluator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AIReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdEvaluationsEvaluatorIdPackageGetPackage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                evaluator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackageOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdEvaluationsListEvaluators: {
         parameters: {
             query?: never;
@@ -5726,6 +5911,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvaluatorOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdEvaluationsEvaluatorIdReportsListReports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                evaluator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdEvaluationsEvaluatorIdReportsSubmitReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                evaluator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */
