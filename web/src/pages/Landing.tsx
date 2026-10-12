@@ -11,6 +11,12 @@ const plan = [
   ['03', 'Gaps flagged, never blocked', 'Each level shows what it still needs, in plain words, with a link to fix it. You decide when, or whether, to act.'],
 ] as const
 
+const craft = [
+  ['01', 'Know who wrote what', 'Your words and AI changes have a record. See who changed each field in History, review proposed edits, and choose what to keep.'],
+  ['02', 'Keep your threads connected', 'MICE thread nesting shows where each storyline opens and closes, and flags threads that resolve out of order. Ask an AI to review the promises and payoffs.'],
+  ['03', 'Find your scene rhythm', 'Scene and sequel checks highlight long runs of action or reaction, so you can decide where the story needs room to breathe.'],
+] as const
+
 export default function Landing() {
   return <main className="landing">
     <section className="landing-hero" aria-labelledby="landing-title">
@@ -41,6 +47,11 @@ export default function Landing() {
       <Link to="/thanks" className="landing-banner is-filled"><span aria-hidden="true">🎉</span><span>Shoutouts to the people who made this happen</span><span aria-hidden="true">→</span></Link>
       <Link to="/roadmap" className="landing-banner"><span aria-hidden="true">🧭</span><span>On the horizon: what we're building next</span><span aria-hidden="true">→</span></Link>
     </div>
+
+    <section className="landing-features" aria-labelledby="craft-title">
+      <div className="section-intro"><p className="eyebrow">SEE YOUR STORY CLEARLY</p><h2 id="craft-title">See the changes.<br />Check the craft.</h2><p>On-demand suggestions and a record of authorship, with you in control.</p></div>
+      <div className="feature-grid">{craft.map(([number, title, description]) => <article key={number}><span className="feature-number">{number}</span><h3>{title}</h3><p>{description}</p></article>)}</div>
+    </section>
 
     <section className="landing-writing" aria-labelledby="write-title">
       <div className="section-intro"><p className="eyebrow">WRITE</p><h2 id="write-title">Start with the words.</h2><p>Open a story and type. Chapters, scenes and structure can come later, or never.</p></div>
