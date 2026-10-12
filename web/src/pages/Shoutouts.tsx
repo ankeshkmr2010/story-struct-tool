@@ -1,48 +1,80 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { api, type Shoutout, type ShoutoutInput } from '../api/client'
 
-/** The thank-you page. Wording is the author's own; keep it as written. */
+/**
+ * The thank-you page. Entries live in the database; only the accounts listed in
+ * STORYTOOL_ADMIN_EMAILS see the edit controls (the API enforces the same rule).
+ */
 
-const SHOUTOUTS: readonly { name: string; thanks: string; colour: string; mark: string }[] = [
-  {
-    name: 'Madam Stuti Dutta',
-    thanks: 'The wife (for health and legal reasons she has to be first). Great feedback and encouragement.',
-    colour: 'from-rose-500 via-fuchsia-500 to-violet-600',
-    mark: '👑',
-  },
-  {
-    name: 'Nikhil Doshi',
-    thanks: 'The first reviewer. He actually wrote something.',
-    colour: 'from-amber-400 via-orange-500 to-rose-500',
-    mark: '✍️',
-  },
-  {
-    name: 'Saransh Sharma',
-    thanks: 'The most “author” review.',
-    colour: 'from-emerald-400 via-teal-500 to-cyan-600',
-    mark: '📚',
-  },
-  {
-    name: 'Hena Varma',
-    thanks: 'For the very encouraging and positive feedback and comprehensive feedback.',
-    colour: 'from-sky-400 via-blue-500 to-indigo-600',
-    mark: '🌟',
-  },
-  {
-    name: 'Ananya',
-    thanks: 'The positive vibes.',
-    colour: 'from-lime-400 via-green-500 to-emerald-600',
-    mark: '✨',
-  },
-  {
-    name: 'Aditya Bhatia',
-    thanks:
-      'The first person I bounced this idea off. (Last on the list: he has the most time and still hasn’t reviewed it.)',
-    colour: 'from-slate-500 via-slate-600 to-slate-800',
-    mark: '⏳',
-  },
-]
+const COLOURS: Record<string, string> = {
+  rose: 'from-rose-500 via-fuchsia-500 to-violet-600',
+  amber: 'from-amber-400 via-orange-500 to-rose-500',
+  emerald: 'from-emerald-400 via-teal-500 to-cyan-600',
+  sky: 'from-sky-400 via-blue-500 to-indigo-600',
+  lime: 'from-lime-400 via-green-500 to-emerald-600',
+  violet: 'from-violet-500 via-purple-500 to-fuchsia-600',
+  slate: 'from-slate-500 via-slate-600 to-slate-800',
+}
+
+const BLANK: ShoutoutInput = { name: '', thanks: '', colour: 'rose', mark: '' }
+
+function ShoutoutForm({ initial, onSave, onCancel }: { initial: ShoutoutInput; onSave: (value: ShoutoutInput) => Promise<void>; onCancel: () => void }) {
+  const [value, setValue] = useState(initial)
+  const [saving, setSaving] = useState(false)
+  const field = 'w-full rounded-lg bg-white/95 px-3 py-2 text-slate-900 placeholder:text-slate-400'
+  return (
+    <form
+      className="space-y-3"
+      onSubmit={async (event) => {
+        event.preventDefault()
+        setSaving(true)
+        try { await onSave(value) } finally { setSaving(false) }
+      }}
+    >
+      <input className={field} placeholder="Name" value={value.name} onChange={(e) => setValue({ ...value, name: e.target.value })} required maxLength={120} />
+      <textarea className={field} placeholder="What you're thanking them for" rows={3} value={value.thanks} onChange={(e) => setValue({ ...value, thanks: e.target.value })} required maxLength={2000} />
+      <div className="flex flex-wrap gap-3">
+        <select className={`${field} w-auto`} value={value.colour} onChange={(e) => setValue({ ...value, colour: e.target.value })} aria-label="Colour">
+          {Object.keys(COLOURS).map((key) => <option key={key} value={key}>{key}</option>)}
+        </select>
+        <input className={`${field} w-24`} placeholder="Emoji" value={value.mark} onChange={(e) => setValue({ ...value, mark: e.target.value })} maxLength={16} aria-label="Emoji" />
+      </div>
+      <div className="flex gap-2">
+        <button type="submit" disabled={saving} className="rounded-lg bg-white px-4 py-2 font-semibold text-slate-900 disabled:opacity-60">{saving ? 'Saving…' : 'Save'}</button>
+        <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 font-semibold text-white ring-1 ring-white/70">Cancel</button>
+      </div>
+    </form>
+  )
+}
 
 export default function Shoutouts() {
+  const [items, setItems] = useState<Shoutout[] | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [editing, setEditing] = useState<string | null>(null) // shoutout id, or 'new'
+  const [error, setError] = useState<string | null>(null)
+
+  const load = () => api.listShoutouts().then(setItems).catch(() => setError('Could not load the shoutouts.'))
+  useEffect(() => {
+    load()
+    api.adminStatus().then((s) => setIsAdmin(s.is_admin)).catch(() => setIsAdmin(false))
+  }, [])
+
+  const act = async (action: () => Promise<unknown>) => {
+    setError(null)
+    try { await action(); setEditing(null); await load() } catch { setError('That change did not save. Try again.') }
+  }
+  const move = (index: number, step: -1 | 1) => {
+    if (!items) return
+    const a = items[index], b = items[index + step]
+    if (!b) return
+    void act(async () => {
+      await api.updateShoutout(a.id, { sort_key: b.sort_key })
+      await api.updateShoutout(b.id, { sort_key: a.sort_key })
+    })
+  }
+  const tool = 'rounded-md bg-white/20 px-2 py-1 text-xs font-semibold text-white hover:bg-white/30 disabled:opacity-40'
+
   return (
     <main className="min-h-screen bg-linear-to-br from-rose-50 via-amber-50 to-sky-50 text-slate-900 dark:from-slate-950 dark:via-violet-950 dark:to-slate-950 dark:text-slate-100">
       <div className="mx-auto max-w-5xl px-5 py-10 sm:px-8 sm:py-16">
@@ -58,24 +90,58 @@ export default function Shoutouts() {
           </p>
         </header>
 
+        {error && <p role="alert" className="mt-8 text-center text-sm font-semibold text-rose-700 dark:text-rose-300">{error}</p>}
+        {items === null && !error && <p className="mt-12 text-center text-slate-500">Loading…</p>}
+
         <ul className="mt-12 grid gap-5 sm:grid-cols-2">
-          {SHOUTOUTS.map((person, index) => (
+          {items?.map((person, index) => (
             <li
-              key={person.name}
-              className={`relative overflow-hidden rounded-3xl bg-linear-to-br ${person.colour} p-6 text-white shadow-xl transition-transform hover:-translate-y-1 sm:p-8 ${index === 0 ? 'sm:col-span-2 sm:p-10' : ''}`}
+              key={person.id}
+              className={`relative overflow-hidden rounded-3xl bg-linear-to-br ${COLOURS[person.colour] ?? COLOURS.rose} p-6 text-white shadow-xl transition-transform hover:-translate-y-1 sm:p-8 ${index === 0 ? 'sm:col-span-2 sm:p-10' : ''}`}
             >
               <span aria-hidden="true" className="absolute -right-4 -top-6 text-8xl opacity-25 sm:text-9xl">
                 {person.mark}
               </span>
-              <p className="text-sm font-bold uppercase tracking-widest text-white/80">#{index + 1}</p>
-              <h2 className={`mt-2 font-black tracking-tight ${index === 0 ? 'text-4xl sm:text-5xl' : 'text-3xl'}`}>
-                {person.name}
-              </h2>
-              <p className={`mt-3 leading-relaxed text-white/95 ${index === 0 ? 'text-xl' : 'text-lg'}`}>
-                {person.thanks}
-              </p>
+              {editing === person.id ? (
+                <ShoutoutForm
+                  initial={{ name: person.name, thanks: person.thanks, colour: person.colour, mark: person.mark }}
+                  onSave={(value) => act(() => api.updateShoutout(person.id, value))}
+                  onCancel={() => setEditing(null)}
+                />
+              ) : (
+                <>
+                  <p className="text-sm font-bold uppercase tracking-widest text-white/80">#{index + 1}</p>
+                  <h2 className={`mt-2 font-black tracking-tight ${index === 0 ? 'text-4xl sm:text-5xl' : 'text-3xl'}`}>
+                    {person.name}
+                  </h2>
+                  <p className={`mt-3 leading-relaxed text-white/95 ${index === 0 ? 'text-xl' : 'text-lg'}`}>
+                    {person.thanks}
+                  </p>
+                  {isAdmin && (
+                    <div className="relative mt-5 flex flex-wrap gap-2">
+                      <button type="button" className={tool} onClick={() => setEditing(person.id)}>Edit</button>
+                      <button type="button" className={tool} disabled={index === 0} onClick={() => move(index, -1)} aria-label={`Move ${person.name} up`}>↑</button>
+                      <button type="button" className={tool} disabled={index === items.length - 1} onClick={() => move(index, 1)} aria-label={`Move ${person.name} down`}>↓</button>
+                      <button type="button" className={tool} onClick={() => { if (window.confirm(`Remove ${person.name}?`)) void act(() => api.deleteShoutout(person.id)) }}>Delete</button>
+                    </div>
+                  )}
+                </>
+              )}
             </li>
           ))}
+          {isAdmin && items && (
+            <li className="rounded-3xl border-2 border-dashed border-slate-300 p-6 dark:border-slate-700 sm:p-8">
+              {editing === 'new' ? (
+                <div className={`rounded-2xl bg-linear-to-br ${COLOURS.violet} p-5`}>
+                  <ShoutoutForm initial={BLANK} onSave={(value) => act(() => api.createShoutout(value))} onCancel={() => setEditing(null)} />
+                </div>
+              ) : (
+                <button type="button" onClick={() => setEditing('new')} className="h-full w-full text-lg font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">
+                  + Add a shoutout
+                </button>
+              )}
+            </li>
+          )}
         </ul>
 
         <p className="mt-12 text-center text-sm text-slate-600 dark:text-slate-400">

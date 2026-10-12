@@ -21,6 +21,7 @@ from storytool.domain.narrative.models import (
     scene_beat,
     scene_thread,
 )
+from storytool.domain.site.shoutouts import Shoutout
 from storytool.domain.story.authorship import FieldAuthorship
 from storytool.domain.story.models import Story
 from storytool.domain.story.sharing import StoryShare
@@ -52,6 +53,7 @@ __all__ = (
     "Scene",
     "SceneCharacterMention",
     "SceneRevision",
+    "Shoutout",
     "Story",
     "StoryObservation",
     "StoryShare",

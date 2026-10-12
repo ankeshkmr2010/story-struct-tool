@@ -33,7 +33,7 @@ from storytool.domain.world.models import Location
 SESSION_COOKIE = "storytool_session"
 _STORY_PATH = re.compile(r"^/api/stories/([^/]+)(?:/|$)")
 _ARC_PATH = re.compile(r"^/api/arcs/([^/]+)(?:/|$)")
-_PUBLIC_PATHS = {"/api/health", "/api/auth/config", "/api/auth/google"}
+_PUBLIC_PATHS = {"/api/health", "/api/auth/config", "/api/auth/google", "/api/shoutouts"}
 _REFERENCE_MODELS = {
     "act_id": Act,
     "beat_id": Beat,

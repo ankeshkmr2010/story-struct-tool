@@ -27,6 +27,7 @@ from storytool.domain.narrative.prose_controller import (
     SceneProseController,
 )
 from storytool.domain.noticing.controller import NoticingController
+from storytool.domain.site.shoutouts import AdminShoutoutController, PublicShoutoutController
 from storytool.domain.story.analysis_controller import StoryAnalysisController
 from storytool.domain.story.authorship import AuthorshipController
 from storytool.domain.story.backup import BackupImportController, StoryBackupController
@@ -89,6 +90,8 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             TimelineController,
             StoryAnalysisController,
             EvaluationController,
+            PublicShoutoutController,
+            AdminShoutoutController,
             EventController,
             ActController,
             BeatController,

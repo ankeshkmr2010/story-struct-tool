@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     ai_encryption_key: str | None = None
     frontend_dir: Path | None = None
     public_url: str = "https://storytool.onrender.com"
+    # Comma-separated Google account emails that may edit site content (the /thanks page).
+    admin_emails: str = ""
     mcp_allowed_origins: list[str] = ["https://gemini.google.com"]
 
     @field_validator("database_url")

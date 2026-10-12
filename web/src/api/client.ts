@@ -64,6 +64,8 @@ export type StoryVersionPreview = S['VersionPreview']
 export type AIObservation = S['ObservationOut']
 export type AgentToken = { id: string; story_id: string; label: string; expires_at: string }
 export type OAuthGrant = { id: string; client_name: string; story_title: string; scopes: string[]; expires_at: string; revoked_at: string | null }
+export type Shoutout = { id: string; name: string; thanks: string; colour: string; mark: string; sort_key: number }
+export type ShoutoutInput = { name: string; thanks: string; colour: string; mark: string }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -124,6 +126,11 @@ export const api = {
   // Google sign-in and current account
   authConfig: () => request<AuthConfig>('/api/auth/config'),
   currentUser: () => request<AuthUser>('/api/auth/me'),
+  listShoutouts: () => request<Shoutout[]>('/api/shoutouts'),
+  adminStatus: () => request<{ is_admin: boolean }>('/api/admin/status'),
+  createShoutout: (body: ShoutoutInput) => post<Shoutout>('/api/admin/shoutouts', body),
+  updateShoutout: (id: string, body: Partial<ShoutoutInput> & { sort_key?: number }) => patch<Shoutout>(`/api/admin/shoutouts/${id}`, body),
+  deleteShoutout: (id: string) => request<void>(`/api/admin/shoutouts/${id}`, { method: 'DELETE' }),
   googleLogin: (credential: string) => post<AuthUser>('/api/auth/google', { credential }),
   logout: () => post<{ signed_out: boolean }>('/api/auth/logout'),
 
