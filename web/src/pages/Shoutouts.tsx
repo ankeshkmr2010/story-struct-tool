@@ -86,7 +86,7 @@ export default function Shoutouts() {
             Shoutouts
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-slate-700 dark:text-slate-300">
-            StoryTool exists because these people read it, used it and told me the truth.
+            StoryTool is better because writers took the time to try it, challenge it, and make it better. This page is for them
           </p>
         </header>
 
@@ -143,6 +143,10 @@ export default function Shoutouts() {
             </li>
           )}
         </ul>
+
+        <h2 className="mx-auto mt-12 max-w-2xl text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+          Built with feedback. Improved by writers. Always a work in progress
+        </h2>
 
         <p className="mt-12 text-center text-sm text-slate-600 dark:text-slate-400">
           <Link to="/" className="underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-100">
