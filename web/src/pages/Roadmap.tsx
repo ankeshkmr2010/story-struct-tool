@@ -12,10 +12,20 @@ const BADGE: Record<Status, string> = {
 
 const ITEMS: readonly { title: string; status: Status; description: string }[] = [
   {
-    title: 'Story evaluation',
-    status: 'In progress',
+    title: 'Bring your manuscript in',
+    status: 'Planned',
     description:
-      'Run craft checks when you want them: scene and sequel rhythm, MICE thread nesting, and AI-assisted reads of your value shifts and character arcs. Flags to consider, never rules to obey.',
+      'Import a Word (.docx) manuscript so you can start with prose you have already written. Scrivener support comes later.',
+  },
+  {
+    title: 'Try it before signing up',
+    status: 'Planned',
+    description: 'Edit a sample story, The Last Lantern, and see how continuity checks work before creating an account.',
+  },
+  {
+    title: 'An easier first AI conversation',
+    status: 'Planned',
+    description: 'Start with Claude or ChatGPT and ask a writing question in plain language. Simpler connection guides, with other clients still available.',
   },
   {
     title: 'PDF export',
@@ -53,7 +63,10 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
 const DELIVERED: readonly { date: string; items: readonly (readonly [string, string])[] }[] = [
   {
     date: '12 Oct 2026',
-    items: [['EPUB, HTML and plain-text export', 'take your manuscript out as an e-book, a web page or plain text.']],
+    items: [
+      ['On-demand craft checks', 'check scene/sequel rhythm and MICE thread nesting in Evaluate; get an AI review of your MICE threads. Suggestions to consider, never rules to obey.'],
+      ['EPUB, HTML and plain-text export', 'take your manuscript out as an e-book, a web page or plain text.'],
+    ],
   },
   {
     date: '11 Oct 2026',
@@ -61,6 +74,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
       ['Public story showcase', 'an opt-in, read-only page anyone can open: manuscript, story context and timeline.'],
       ['Catch-up outline', 'an AI agent builds the outline from prose you have already written; keep all, some or none.'],
       ['Backup, restore and Word export', 'download a full backup or a .docx manuscript, and restore any backup into your library.'],
+      ['Who wrote what', 'see which changes came from you or an AI in the authorship report under History.'],
     ],
   },
   {
