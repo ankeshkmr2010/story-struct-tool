@@ -50,6 +50,17 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
 ]
 
 
+const DELIVERED: readonly { title: string; description: string }[] = [
+  {
+    title: 'Review inbox for AI edits',
+    description: 'One place to see, accept or dismiss the changes an AI agent proposes to your story.',
+  },
+  {
+    title: 'EPUB, HTML and plain-text export',
+    description: 'Take your manuscript out as an e-book, a web page or plain text, alongside Word and Markdown.',
+  },
+]
+
 export default function Roadmap() {
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -82,6 +93,27 @@ export default function Roadmap() {
             </li>
           ))}
         </ul>
+
+        <section className="mt-12" aria-labelledby="delivered-heading">
+          <h2 id="delivered-heading" className="text-xl font-semibold tracking-tight">Delivered</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Things that were on this list and are now in StoryTool.</p>
+          <ul className="mt-4 space-y-3">
+            {DELIVERED.map((item) => (
+              <li
+                key={item.title}
+                className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-base font-semibold">{item.title}</h3>
+                  <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800 dark:bg-sky-900/40 dark:text-sky-300">
+                    ✓ Delivered
+                  </span>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.description}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
 
         <p className="mt-8 text-sm text-slate-500 dark:text-slate-400">
           <Link to="/" className="underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-100">
