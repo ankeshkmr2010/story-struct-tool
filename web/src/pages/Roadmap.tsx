@@ -33,9 +33,9 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
     description: 'Add images to your story: maps, character art, illustrations.',
   },
   {
-    title: 'Review inbox for AI edits',
+    title: 'Feedback page',
     status: 'Planned',
-    description: 'One place to see, accept or dismiss the changes an AI agent proposes to your story.',
+    description: 'Tell us what works and what doesn’t, right from StoryTool, once you’re signed in.',
   },
   {
     title: 'Search across your story',
