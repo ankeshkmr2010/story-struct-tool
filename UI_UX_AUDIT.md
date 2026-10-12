@@ -146,5 +146,5 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [x] T16 (836ca39) Landing: reorder to write → plan → share; sell the public showcase.
 - [x] T17 (3a3ce8a) Dead code: `api.listAIObservations`, unused exported types in `web/src/api/client.ts` (C5).
 - [x] T18 (f0ed5bc; tab-bar Assistant button since b8f9907) Make the in-app assistant discoverable: own ASSISTANT sidebar group, obvious "add your API key" step (`AuthoringAssistant.tsx`, `UserSettings.tsx`).
-- [ ] T19 Mobile pass.
+- [x] T19 (c48a0d2 + follow-ups; verified by the user 2026-10-12) Mobile pass.
 - [ ] T20 Audit the parts not yet walked: Story timeline in depth, Settings, MCP setup.
