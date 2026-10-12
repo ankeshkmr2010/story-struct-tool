@@ -148,4 +148,10 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [x] T18 (f0ed5bc; tab-bar Assistant button since b8f9907) Make the in-app assistant discoverable: own ASSISTANT sidebar group, obvious "add your API key" step (`AuthoringAssistant.tsx`, `UserSettings.tsx`).
 - [x] T19 (c48a0d2 + follow-ups; verified by the user 2026-10-12) Mobile pass.
 - [ ] T20 Audit the parts not yet walked: Story timeline in depth, Settings, MCP setup.
-- [ ] T21 (awaiting research, 2026-10-12) Story evaluation systems: user feedback asks for MICE-style evaluation. User is running external research (survey of frameworks, genre matrix, top 3–5 fits for our graph and "flagged, never blocked"). Next: read the research, propose the checks and new fields, get approval before building.
+- [ ] T21 (plan agreed 2026-10-12) Story evaluation systems. Separate from live health findings: an on-demand engine + its own Evaluate page; fields are inputs only, nothing is checked until the user runs an evaluator.
+  - Engine `domain/evaluation/`: pluggable evaluators (id, name, required inputs, run → findings + visual data). Adding one = one file.
+  - API: list evaluators with readiness (missing inputs); run one. Deterministic results computed on request.
+  - LLM evaluators: one package (instructions + relevant inputs + result schema). Run via MCP (`run_evaluation` → agent → `submit_evaluation`) or, with an API key, directly through `domain/ai/runner.py`. Same result format.
+  - LLM reports are saved and versioned (dated, tied to the story fingerprint, history kept, flagged stale when the fingerprint changes).
+  - Step 1: engine + API + scene/sequel rhythm (no new fields) + MICE nesting (`Thread.mice`, `scene_thread.role`). Step 2: page (ask placement first). Step 3: LLM evaluators (value shift vs prose, misbelief at midpoint).
+  - Out: Save the Cat / Story Grid by name (trademark), genre-driven switching (later).
