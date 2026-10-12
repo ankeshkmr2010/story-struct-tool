@@ -23,11 +23,6 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
     description: 'Edit a sample story, The Last Lantern, and see how continuity checks work before creating an account.',
   },
   {
-    title: 'An easier first AI conversation',
-    status: 'Planned',
-    description: 'Start with Claude or ChatGPT and ask a writing question in plain language. Simpler connection guides, with other clients still available.',
-  },
-  {
     title: 'PDF export',
     status: 'Planned',
     description: 'Take your manuscript out as a print-ready PDF. EPUB, HTML and plain text are already in the Export menu.',
@@ -41,11 +36,6 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
     title: 'Images in your story',
     status: 'Planned',
     description: 'Add images to your story: maps, character art, illustrations.',
-  },
-  {
-    title: 'Feedback page',
-    status: 'Planned',
-    description: 'Tell us what works and what doesn’t, right from StoryTool, once you’re signed in.',
   },
   {
     title: 'Search across your story',
@@ -64,6 +54,8 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
   {
     date: '12 Oct 2026',
     items: [
+      ['Easier AI setup', 'Claude and ChatGPT first, other clients available on demand, and a starter prompt in plain writing language.'],
+      ['Product feedback', 'send private bug reports and suggestions about StoryTool from the signed-in Feedback page.'],
       ['On-demand craft checks', 'check scene/sequel rhythm and MICE thread nesting in Evaluate; get an AI review of your MICE threads. Suggestions to consider, never rules to obey.'],
       ['EPUB, HTML and plain-text export', 'take your manuscript out as an e-book, a web page or plain text.'],
     ],
