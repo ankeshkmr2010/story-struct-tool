@@ -292,6 +292,14 @@ TOOL_USAGE["error_recovery"].update(
 )
 
 INSTRUCTIONS = """StoryTool is an author's story graph and writing workspace.
+Authors can ask ordinary writing questions without naming tools, IDs or fingerprints.
+Handle connection discovery and tool arguments yourself; never ask the author to supply them.
+For a critique, read the relevant outline and, when permitted, prose before judging. If more
+than one story is available and the author has not selected one, ask which story they mean.
+If an act or its prose is missing, explain the limitation rather than inventing it.
+Answer review questions with evidence and useful options. A request for critique does not
+authorize edits: stage proposed changes only when requested, and wait for the author's
+approval before applying them. Never restore a version without explicit authorization.
 First get_connection and read the selected story. Its permission scopes govern access
 to the selected story or the explicitly authorized account library. Never request provider keys.
 For library access, list_stories first, then pass story_id to other tools. create_story saves a
