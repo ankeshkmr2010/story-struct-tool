@@ -133,5 +133,6 @@ class DocxImportController(Controller):
         await checkpoint(db_session, story.id, user_id, "Imported Word prose", "initial")
         await record_milestone(db_session, "first_scene", user_id=user_id)
         return DocxImportOut(
-            story=StoryOut.model_validate(story), chapter_count=len(chapters), word_count=word_count
+            story=StoryOut.model_validate(story).model_copy(update={"prose_imported": True}),
+            chapter_count=len(chapters), word_count=word_count,
         )

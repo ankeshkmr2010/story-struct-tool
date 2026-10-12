@@ -67,6 +67,7 @@ class StoryOut(EntityOut):
     deleted_at: datetime | None
     # Filled by the library list (sum of scene word counts); other routes leave it 0.
     word_count: int = 0
+    prose_imported: bool = False
 
 
 class StoryPurge(BaseModel):

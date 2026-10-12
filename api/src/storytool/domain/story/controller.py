@@ -17,6 +17,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.narrative.models import Scene
+from storytool.domain.story.authorship import FieldAuthorship
 from storytool.domain.story.models import Story
 from storytool.domain.story.schemas import StoryCreate, StoryOut, StoryPurge, StoryUpdate
 from storytool.domain.story.services import StoryService
@@ -50,6 +51,7 @@ class StoryController(Controller):
         )
         # One grouped sum for the library cards; scene.word_count is server-maintained.
         words: dict[UUID, int] = {}
+        imported_ids: set[UUID] = set()
         if records:
             rows = await db_session.execute(
                 select(Scene.story_id, func.coalesce(func.sum(Scene.word_count), 0))
@@ -57,9 +59,19 @@ class StoryController(Controller):
                 .group_by(Scene.story_id)
             )
             words = {story_id: int(total) for story_id, total in rows.all()}
+            imported_ids = set(await db_session.scalars(
+                select(FieldAuthorship.story_id).where(
+                    FieldAuthorship.story_id.in_([record.id for record in records]),
+                    FieldAuthorship.origin == "import",
+                    FieldAuthorship.actor_label == "Imported Word prose",
+                ).distinct()
+            ))
         return [
             StoryOut.model_validate(record).model_copy(
-                update={"word_count": words.get(record.id, 0)}
+                update={
+                    "word_count": words.get(record.id, 0),
+                    "prose_imported": record.id in imported_ids,
+                }
             )
             for record in records
         ]

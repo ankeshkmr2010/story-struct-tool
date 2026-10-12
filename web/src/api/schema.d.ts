@@ -3357,6 +3357,8 @@ export interface components {
             deleted_at: string | null;
             /** @default 0 */
             word_count: number;
+            /** @default false */
+            prose_imported: boolean;
         };
         /** StoryProgressOut */
         StoryProgressOut: {

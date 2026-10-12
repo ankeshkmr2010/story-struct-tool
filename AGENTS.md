@@ -23,3 +23,11 @@ Standing user rules:
 - Push finished, authorized code without asking. The user handles manual Render deployment;
   do not trigger it unless explicitly requested. See the handoff's auto-deploy caveat.
 - Never copy credentials into memory, tool output, commits, or chat.
+
+Import UX retrospective (2026-10-13):
+- I dismissed the user's separate-page concern and shipped a transient, disconnected panel.
+  Design the complete flow: start, progress, named result, next actions, dismiss, re-entry.
+- Essential actions must remain reachable after navigation/refresh; preserve imported-story
+  context and identify imported stories visibly. Do not optimize only for a small code diff.
+- Excess investigation and adjacent copy edits compounded the cost. Keep the minimum-token
+  pass and named scope; record unrelated feedback as tasks rather than implementing it.
