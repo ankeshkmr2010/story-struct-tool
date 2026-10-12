@@ -10,6 +10,7 @@ const StoryShowcase = lazy(() => import('./pages/StoryShowcase'))
 import HowToUse from './pages/HowToUse'
 import Roadmap from './pages/Roadmap'
 import Shoutouts from './pages/Shoutouts'
+import Pricing from './pages/Pricing'
 import UserSettings from './pages/UserSettings'
 import OAuthConsent from './pages/OAuthConsent'
 
@@ -35,6 +36,7 @@ export default function App() {
       <Route path="/how-to-use" element={<HowToUse />} />
       <Route path="/roadmap" element={<Roadmap />} />
       <Route path="/thanks" element={<Shoutouts />} />
+      <Route path="/pricing" element={<Pricing />} />
       <Route path="/showcase/:token" element={<Suspense fallback={<p className="p-8">Loading showcase…</p>}><StoryShowcase /></Suspense>} />
       <Route element={<AuthGate><Outlet /></AuthGate>}>
         <Route path="/library" element={<StoryList />} />
