@@ -22,6 +22,8 @@ from storytool.domain.narrative.models import (
     scene_beat,
     scene_thread,
 )
+from storytool.domain.site.feedback import ProductFeedback
+from storytool.domain.site.funnel import FunnelEvent
 from storytool.domain.site.shoutouts import Shoutout
 from storytool.domain.story.authorship import FieldAuthorship
 from storytool.domain.story.models import Story
@@ -45,12 +47,14 @@ __all__ = (
     "EvaluationReport",
     "Event",
     "FieldAuthorship",
+    "FunnelEvent",
     "GlossaryEntry",
     "Location",
     "MCPClient",
     "MCPConsent",
     "MCPGrant",
     "MCPToken",
+    "ProductFeedback",
     "Relationship",
     "Scene",
     "SceneCharacterMention",

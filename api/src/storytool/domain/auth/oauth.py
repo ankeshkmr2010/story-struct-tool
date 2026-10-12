@@ -385,6 +385,9 @@ async def complete_consent(
     )
     db.add(grant)
     await db.flush()
+    from storytool.domain.site.funnel import record_milestone
+
+    await record_milestone(db, "ai_connected", user_id=user_id)
     code = secrets.token_urlsafe(32)
     data = {
         **params.model_dump(mode="json"),

@@ -1120,6 +1120,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/product-feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send private feedback about StoryTool */
+        post: operations["ApiProductFeedbackSubmit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/product-feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the latest product feedback (site admin only) */
+        get: operations["ApiAdminProductFeedbackListFeedback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/site/visit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a browser's first visit */
+        post: operations["ApiSiteVisitVisit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/funnel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Funnel counts since tracking began (site admin only) */
+        get: operations["ApiAdminFunnelCounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/events": {
         parameters: {
             query?: never;
@@ -2568,6 +2636,13 @@ export interface components {
             entity_type: string | null;
             entity_id: string | null;
         };
+        /** FunnelOut */
+        FunnelOut: {
+            visit: number;
+            signup: number;
+            first_scene: number;
+            ai_connected: number;
+        };
         /** GlossaryCreate */
         GlossaryCreate: {
             term: string;
@@ -2763,6 +2838,24 @@ export interface components {
          * @enum {string}
          */
         PovStyle: "first" | "third_limited" | "third_omniscient" | "second" | "mixed";
+        /** ProductFeedbackIn */
+        ProductFeedbackIn: {
+            /**
+             * @default other
+             * @enum {string}
+             */
+            category: "bug" | "suggestion" | "other";
+            message: string;
+        };
+        /** ProductFeedbackOut */
+        ProductFeedbackOut: {
+            /** Format: uuid */
+            id: string;
+            category: string;
+            message: string;
+            /** Format: date-time */
+            created_at: string;
+        };
         /** PromptRequest */
         PromptRequest: {
             /** Format: uuid */
@@ -3438,6 +3531,11 @@ export interface components {
             restored_number: number;
             recovery_version: components["schemas"]["VersionOut"];
             restored_version: components["schemas"]["VersionOut"];
+        };
+        /** VisitIn */
+        VisitIn: {
+            /** Format: uuid */
+            visitor_id: string;
         };
     };
     responses: never;
@@ -6199,6 +6297,122 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminStatusOut"];
+                };
+            };
+        };
+    };
+    ApiProductFeedbackSubmit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductFeedbackIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductFeedbackOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminProductFeedbackListFeedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductFeedbackOut"][];
+                };
+            };
+        };
+    };
+    ApiSiteVisitVisit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisitIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminFunnelCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FunnelOut"];
                 };
             };
         };

@@ -1,5 +1,6 @@
 import type { components } from './schema'
 import { orderChapters, orderScenes } from './ordering'
+import { getVisitorId } from './visitor'
 
 // Types come from the backend's OpenAPI schema, so Pydantic stays the single source of
 // truth. Never hand-write these -- run `npm run gen:api`.
@@ -19,6 +20,9 @@ export type Authorship = S['AuthorshipOut']
 export type StoryActivity = S['StoryActivityOut']
 export type AuthUser = S['UserOut']
 export type AuthConfig = S['AuthConfigOut']
+export type ProductFeedback = S['ProductFeedbackOut']
+export type ProductFeedbackInput = S['ProductFeedbackIn']
+export type Funnel = S['FunnelOut']
 
 export type Ladder = S['LadderOut']
 export type Readiness = S['ReadinessOut']
@@ -71,9 +75,13 @@ export type Shoutout = { id: string; name: string; thanks: string; colour: strin
 export type ShoutoutInput = { name: string; thanks: string; colour: string; mark: string }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const visitorId = getVisitorId()
+  const headers = new Headers(init?.headers)
+  headers.set('Content-Type', 'application/json')
+  if (visitorId) headers.set('X-StoryTool-Visitor', visitorId)
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
     ...init,
+    headers,
   })
   if (!res.ok) {
     throw new Error(`${res.status} ${res.statusText}: ${await res.text()}`)
@@ -131,6 +139,13 @@ export const api = {
   currentUser: () => request<AuthUser>('/api/auth/me'),
   listShoutouts: () => request<Shoutout[]>('/api/shoutouts'),
   adminStatus: () => request<{ is_admin: boolean }>('/api/admin/status'),
+  sendProductFeedback: (body: ProductFeedbackInput) => post<ProductFeedback>('/api/product-feedback', body),
+  listProductFeedback: () => request<ProductFeedback[]>('/api/admin/product-feedback'),
+  funnelCounts: () => request<Funnel>('/api/admin/funnel'),
+  recordVisit: () => {
+    const visitorId = getVisitorId()
+    return visitorId ? post<void>('/api/site/visit', { visitor_id: visitorId }) : Promise.resolve()
+  },
   createShoutout: (body: ShoutoutInput) => post<Shoutout>('/api/admin/shoutouts', body),
   updateShoutout: (id: string, body: Partial<ShoutoutInput> & { sort_key?: number }) => patch<Shoutout>(`/api/admin/shoutouts/${id}`, body),
   deleteShoutout: (id: string) => request<void>(`/api/admin/shoutouts/${id}`, { method: 'DELETE' }),

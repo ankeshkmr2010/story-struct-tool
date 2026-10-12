@@ -79,6 +79,7 @@ class AuthController(Controller):
         user = (
             await db_session.execute(select(User).where(User.google_sub == google_sub))
         ).scalar_one_or_none()
+        new_account = user is None
         if user is None:
             user = User(google_sub=google_sub, email=email)
             db_session.add(user)
@@ -86,6 +87,15 @@ class AuthController(Controller):
         user.name = str(claims["name"]) if claims.get("name") else None
         user.picture_url = str(claims["picture"]) if claims.get("picture") else None
         await db_session.flush()
+
+        if new_account:
+            from storytool.domain.site.funnel import record_milestone, request_visitor
+
+            visitor_id = request_visitor(request)
+            await record_milestone(db_session, "visit", visitor_id=visitor_id)
+            await record_milestone(
+                db_session, "signup", user_id=user.id, visitor_id=visitor_id
+            )
 
         # Claim pre-auth stories only for the explicitly configured, verified Google account.
         if settings.legacy_owner_email and email == settings.legacy_owner_email.lower():

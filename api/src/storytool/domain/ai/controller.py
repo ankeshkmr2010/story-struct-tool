@@ -211,6 +211,9 @@ class AIController(Controller):
             .returning(AIConnection)
         )
         row = (await db_session.execute(stmt)).scalar_one()
+        from storytool.domain.site.funnel import record_milestone
+
+        await record_milestone(db_session, "ai_connected", user_id=actor(request))
         return ConnectionOut.model_validate(row)
 
     @post("/ai/connections/{connection_id:uuid}/test")

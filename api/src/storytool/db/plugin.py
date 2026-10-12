@@ -112,6 +112,12 @@ def build_db_config() -> SQLAlchemyAsyncConfig:
                         origin,
                         actor_label,
                     )
+                    if origin not in {"system", "undo"} and not path.endswith("/restore"):
+                        before_scenes = {row["id"] for row in context["before"].get("scene", [])}
+                        if any(row["id"] not in before_scenes for row in after.get("scene", [])):
+                            from storytool.domain.site.funnel import record_milestone
+
+                            await record_milestone(db, "first_scene", user_id=context["user_id"])
                     if context["initial"]:
                         await versions.checkpoint(
                             db,

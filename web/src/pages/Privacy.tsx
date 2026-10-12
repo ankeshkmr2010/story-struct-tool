@@ -28,6 +28,11 @@ export default function Privacy() {
         <p className="leading-7 text-[var(--muted)]">Moving a story to Trash keeps it recoverable, with its versions. Permanently deleting it removes it from the application database. This does not recall shared imports, data sent to AI services or copies retained in hosting backups and operational logs.</p>
         <p className="leading-7 text-[var(--muted)]">Download a manuscript or full story backup from your workspace whenever you want your own copy.</p>
       </section>
+      <section className="mt-10 space-y-3" aria-labelledby="product-data-title">
+        <h2 id="product-data-title" className="text-xl font-semibold">Product feedback and usage counts</h2>
+        <p className="leading-7 text-[var(--muted)]">Product feedback is stored with your account and is visible only to site admins. It is separate from manuscript reviews.</p>
+        <p className="leading-7 text-[var(--muted)]">To understand where people get started or stop, StoryTool records visits, new accounts, first author-created scenes and AI connections. A random identifier is kept in your browser's local storage; account milestones use your account identifier. These analytics records contain no manuscript text, prompts or IP addresses, and are not sent to an external analytics service. Clearing browser storage resets the browser identifier.</p>
+      </section>
       <p className="mt-12 text-sm text-[var(--muted)]"><Link to="/" className="underline underline-offset-4">← Back to StoryTool</Link></p>
     </main>
   )
