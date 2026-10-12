@@ -58,6 +58,15 @@ class ThreadType(StrEnum):
     THROUGHLINE = "throughline"
 
 
+class MiceType(StrEnum):
+    """Card's MICE quotient: what a thread promises, and so what closing it means."""
+
+    MILIEU = "milieu"
+    IDEA = "idea"
+    CHARACTER = "character"
+    EVENT = "event"
+
+
 class Level(IntEnum):
     """The structural ladder. Ordering is the point, hence IntEnum."""
 

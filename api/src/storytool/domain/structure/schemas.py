@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from storytool.domain.common import EntityOut
-from storytool.domain.enums import ThreadType
+from storytool.domain.enums import MiceType, ThreadType
 
 # --------------------------------------------------------------------- Event
 
@@ -121,6 +121,7 @@ class ThreadCreate(BaseModel):
     type: ThreadType
     title: str | None = Field(default=None, max_length=200)
     owner_character_id: UUID | None = None
+    mice: MiceType | None = None
     sort_key: float = 0.0
 
 
@@ -128,6 +129,7 @@ class ThreadUpdate(BaseModel):
     type: ThreadType | None = None
     title: str | None = Field(default=None, max_length=200)
     owner_character_id: UUID | None = None
+    mice: MiceType | None = None
     sort_key: float | None = None
 
 
@@ -136,4 +138,5 @@ class ThreadOut(EntityOut):
     type: str
     title: str | None
     owner_character_id: UUID | None
+    mice: str | None
     sort_key: float

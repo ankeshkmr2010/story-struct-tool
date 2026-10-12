@@ -67,3 +67,77 @@ async def test_no_sequels_gives_one_hint_instead_of_run_flags(client: AsyncTestC
     story_id = await make_story_with_scenes(client, ["scene"] * 6)
     result = (await client.get(f"{STORIES}/{story_id}/evaluations/scene_rhythm")).json()
     assert [f["code"] for f in result["findings"]] == ["rhythm.no_sequels"]
+
+
+async def link(client: AsyncTestClient, story_id: str, scene_id: str, thread_id: str) -> None:
+    response = await client.post(
+        f"{STORIES}/{story_id}/scenes/{scene_id}/threads", json={"thread_id": thread_id}
+    )
+    assert response.status_code == 201, response.text
+
+
+async def test_thread_mice_category_round_trips(client: AsyncTestClient) -> None:
+    story_id = await make_story_with_scenes(client, ["scene"])
+    thread = (
+        await client.post(f"{STORIES}/{story_id}/threads", json={"type": "a_story", "mice": "idea"})
+    ).json()
+    assert thread["mice"] == "idea"
+    cleared = await client.patch(
+        f"{STORIES}/{story_id}/threads/{thread['id']}", json={"mice": None}
+    )
+    assert cleared.json()["mice"] is None
+    bad = await client.post(f"{STORIES}/{story_id}/threads", json={"type": "a_story", "mice": "x"})
+    assert bad.status_code == 400
+
+
+async def test_mice_flags_crossed_threads(client: AsyncTestClient) -> None:
+    story_id = await make_story_with_scenes(client, ["scene"] * 8)
+    scenes = (await client.get(f"{STORIES}/{story_id}/scenes")).json()
+    scenes.sort(key=lambda s: s["sort_key"])
+    murder = (
+        await client.post(
+            f"{STORIES}/{story_id}/threads",
+            json={"type": "a_story", "title": "Murder", "mice": "idea"},
+        )
+    ).json()
+    island = (
+        await client.post(
+            f"{STORIES}/{story_id}/threads", json={"type": "b_story", "title": "Island"}
+        )
+    ).json()
+    for index in (0, 5):
+        await link(client, story_id, scenes[index]["id"], murder["id"])
+    for index in (2, 7):
+        await link(client, story_id, scenes[index]["id"], island["id"])
+
+    result = (await client.get(f"{STORIES}/{story_id}/evaluations/mice_nesting")).json()
+    assert result["ready"] is True
+    codes = [f["code"] for f in result["findings"]]
+    assert codes == ["mice.crossed_threads", "mice.uncategorised"]
+    assert [(s["title"], s["open"], s["close"]) for s in result["visual"]["spans"]] == [
+        ("Murder", 0, 5),
+        ("Island", 2, 7),
+    ]
+
+
+async def test_mice_nested_threads_have_no_crossing(client: AsyncTestClient) -> None:
+    story_id = await make_story_with_scenes(client, ["scene"] * 6)
+    scenes = (await client.get(f"{STORIES}/{story_id}/scenes")).json()
+    scenes.sort(key=lambda s: s["sort_key"])
+    outer = (
+        await client.post(
+            f"{STORIES}/{story_id}/threads", json={"type": "a_story", "mice": "event"}
+        )
+    ).json()
+    inner = (
+        await client.post(
+            f"{STORIES}/{story_id}/threads", json={"type": "b_story", "mice": "milieu"}
+        )
+    ).json()
+    for index in (0, 5):
+        await link(client, story_id, scenes[index]["id"], outer["id"])
+    for index in (1, 4):
+        await link(client, story_id, scenes[index]["id"], inner["id"])
+
+    result = (await client.get(f"{STORIES}/{story_id}/evaluations/mice_nesting")).json()
+    assert result["findings"] == []

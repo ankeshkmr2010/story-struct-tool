@@ -122,4 +122,6 @@ class Thread(StoryToolBase, CompletableMixin):
     owner_character_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("character.id", ondelete="SET NULL"), default=None
     )
+    # Optional MICE category; only the on-demand evaluator reads it, nothing is flagged.
+    mice: Mapped[str | None] = mapped_column(String(20), default=None)
     sort_key: Mapped[float] = mapped_column(Float, default=0.0)
