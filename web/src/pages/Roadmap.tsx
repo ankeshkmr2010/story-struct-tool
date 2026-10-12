@@ -50,30 +50,55 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
 ]
 
 
-const DELIVERED: readonly { title: string; description: string }[] = [
+const DELIVERED: readonly { date: string; items: readonly (readonly [string, string])[] }[] = [
   {
-    title: 'Review inbox for AI edits',
-    description: 'One place to see, accept or dismiss the changes an AI agent proposes to your story.',
+    date: '12 Oct 2026',
+    items: [['EPUB, HTML and plain-text export', 'take your manuscript out as an e-book, a web page or plain text.']],
   },
   {
-    title: 'EPUB, HTML and plain-text export',
-    description: 'Take your manuscript out as an e-book, a web page or plain text, alongside Word and Markdown.',
+    date: '11 Oct 2026',
+    items: [
+      ['Public story showcase', 'an opt-in, read-only page anyone can open: manuscript, story context and timeline.'],
+      ['Catch-up outline', 'an AI agent builds the outline from prose you have already written; keep all, some or none.'],
+      ['Backup, restore and Word export', 'download a full backup or a .docx manuscript, and restore any backup into your library.'],
+    ],
   },
   {
-    title: 'Scene snapshots and status',
-    description: 'Restore an earlier draft of any scene, and mark each scene placeholder, outlined, drafted or revised.',
+    date: '10 Oct 2026',
+    items: [
+      ['Review inbox for AI edits', 'see, accept or dismiss every change an AI agent proposes, filtered by status and source.'],
+      ['Story grid', 'every scene at a glance with status, POV, place, time, goal, conflict, outcome and word count.'],
+      ['Scene snapshots', 'preview and restore earlier drafts of any scene.'],
+      ['Epigraphs and chapter notes', 'an opening quote plus opening and closing notes for each chapter.'],
+    ],
   },
   {
-    title: 'Story grid',
-    description: 'Every scene at a glance in one grid: status, POV, place, time, goal, conflict, outcome, value shift and word count.',
+    date: '9 Oct 2026',
+    items: [
+      ['Sharing with readers', 'share a story read-only, and optionally let readers import their own copy.'],
+      ['Continuous chapter writer', 'write a whole chapter on one scrolling page, plus focused reading.'],
+      ['Glossary', 'keep your story’s terms, aliases and definitions in one place.'],
+      ['Connect your AI', 'sign your AI assistant in to one story or your whole library, and revoke it any time.'],
+      ['Trash', 'deleted stories wait in Trash until you restore them or delete them for good.'],
+    ],
   },
   {
-    title: 'Import and backup',
-    description: 'Download a full backup of a story and restore it into your library at any time.',
+    date: '8 Oct 2026',
+    items: [
+      ['Accounts, timelines and the assistant', 'Google sign-in, story timelines and an in-app AI assistant.'],
+      ['Whole-story versions', 'automatic checkpoints, and a safe restore that keeps the draft you replaced.'],
+    ],
   },
   {
-    title: 'Catch-up outline',
-    description: 'Builds the outline from prose you have already written: an AI agent proposes summaries, cast, places and events, and you keep all, some or none.',
+    date: '6 Oct 2026',
+    items: [['Places and continuity', 'track where scenes happen and get flagged when the timeline contradicts itself.']],
+  },
+  {
+    date: '5 Oct 2026',
+    items: [
+      ['Chapters, scenes and prose', 'write scenes inside chapters, with revisions, annotations, progress and Markdown export.'],
+      ['Noticing', 'suggestions drawn from what you write, so the plan can follow the draft.'],
+    ],
   },
 ]
 
@@ -112,23 +137,23 @@ export default function Roadmap() {
 
         <section className="mt-12" aria-labelledby="delivered-heading">
           <h2 id="delivered-heading" className="text-xl font-semibold tracking-tight">Delivered</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Things that were on this list and are now in StoryTool.</p>
-          <ul className="mt-4 space-y-3">
-            {DELIVERED.map((item) => (
-              <li
-                key={item.title}
-                className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-base font-semibold">{item.title}</h3>
-                  <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800 dark:bg-sky-900/40 dark:text-sky-300">
-                    ✓ Delivered
-                  </span>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.description}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">What has shipped so far, newest first.</p>
+          <ol className="mt-6 border-l-2 border-slate-200 dark:border-slate-800">
+            {DELIVERED.map((day) => (
+              <li key={day.date} className="relative pb-8 pl-6 last:pb-0">
+                <span aria-hidden="true" className="absolute -left-[7px] top-1.5 h-3 w-3 rounded-full bg-emerald-500 ring-4 ring-slate-50 dark:ring-slate-950" />
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">{day.date}</p>
+                <ul className="mt-2 space-y-2">
+                  {day.items.map(([title, description]) => (
+                    <li key={title} className="text-sm leading-6">
+                      <span className="font-semibold">{title}</span>
+                      <span className="text-slate-600 dark:text-slate-300"> — {description}</span>
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
-          </ul>
+          </ol>
         </section>
 
         <p className="mt-8 text-sm text-slate-500 dark:text-slate-400">
