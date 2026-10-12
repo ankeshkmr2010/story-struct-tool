@@ -155,3 +155,8 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
   - LLM reports are saved and versioned (dated, tied to the story fingerprint, history kept, flagged stale when the fingerprint changes).
   - Step 1: engine + API + scene/sequel rhythm (no new fields) + MICE nesting (`Thread.mice`, `scene_thread.role`). Step 2: page (ask placement first). Step 3: LLM evaluators (value shift vs prose, misbelief at midpoint).
   - Out: Save the Cat / Story Grid by name (trademark), genre-driven switching (later).
+- [ ] T22 (research first, 2026-10-12) Search layers: feedback says there are none. Research what's needed before proposing anything.
+- [ ] T23 (new, 2026-10-12) Image insertion support. Scope (prose inline vs entity images, storage) not decided yet.
+- [ ] T24 (new, 2026-10-12) External reviewers and commenters in shared read mode. Today a share (`domain/story/sharing.py:35`) only stores recipient email + `allow_import`; there is no comment role.
+- [ ] T25 (new, mechanics unclear, 2026-10-12) Viewer count on shared/showcase stories. Define what counts as a view (unique signed-in viewer, anonymous, per story or per chapter) before building.
+- [ ] T26 (new, 2026-10-12) Export formats: EPUB, MOBI, PDF, HTML, plain text. Today only `/manuscript` exists, as Markdown (`domain/narrative/prose_controller.py:250`).
