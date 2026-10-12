@@ -18,9 +18,9 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
       'Run craft checks when you want them: scene and sequel rhythm, MICE thread nesting, and AI-assisted reads of your value shifts and character arcs. Flags to consider, never rules to obey.',
   },
   {
-    title: 'More export formats',
+    title: 'PDF export',
     status: 'Planned',
-    description: 'Take your manuscript out as EPUB, MOBI, PDF, HTML or plain text.',
+    description: 'Take your manuscript out as a print-ready PDF. EPUB, HTML and plain text are already in the Export menu.',
   },
   {
     title: 'Reviewers and commenters',
