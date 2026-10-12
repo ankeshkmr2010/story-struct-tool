@@ -138,7 +138,7 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [x] T10 (8916eee, 082fc20) Library cards: Delete into a ⋯ menu; last edited + word count instead of the "complete" bar; mark examples/tutorial; New story ▾ (Blank / From backup); on-palette tutorial CTA. `web/src/pages/StoryList.tsx`.
 - [ ] T11 (deferred 2026-10-12: a proper demo tour feature will replace this) First run: "Start with the demo" card; empty state per tab saying what it is for.
 - [x] T12 (109a37e; the workspace Timeline stays the editing tool) One shared read-only timeline component for app / shared reader / showcase (C2).
-- [~] T13 (ca3ce1e: library done; workspace activity still 5 s) Polling: library 5 s → refetch on focus or 30 s (`StoryList.tsx:45,47`); same for workspace activity (C4).
+- [~] T13 (ca3ce1e library 30 s; a46fb64 workspace 15 s) Polling: library 5 s → refetch on focus or 30 s (`StoryList.tsx:45,47`); same for workspace activity (C4).
 - [ ] T14 (parked, D3 = later) "Generate" entry points after Design and in Chapters/Scenes (§6).
 
 **Tranche 3 — finish**
