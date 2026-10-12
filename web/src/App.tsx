@@ -8,6 +8,7 @@ import StoryWorkspace from './pages/StoryWorkspace'
 const SharedStoryReader = lazy(() => import('./pages/SharedStoryReader'))
 const StoryShowcase = lazy(() => import('./pages/StoryShowcase'))
 import HowToUse from './pages/HowToUse'
+import Roadmap from './pages/Roadmap'
 import UserSettings from './pages/UserSettings'
 import OAuthConsent from './pages/OAuthConsent'
 
@@ -30,6 +31,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/how-to-use" element={<HowToUse />} />
+      <Route path="/roadmap" element={<Roadmap />} />
       <Route path="/showcase/:token" element={<Suspense fallback={<p className="p-8">Loading showcase…</p>}><StoryShowcase /></Suspense>} />
       <Route element={<AuthGate><Outlet /></AuthGate>}>
         <Route path="/library" element={<StoryList />} />
