@@ -37,7 +37,10 @@ export default function Landing() {
       </div>
     </section>
 
-    <Link to="/thanks" className="shoutout-banner"><span aria-hidden="true">🎉</span><span>Shoutouts to the people who made this happen</span><span aria-hidden="true">→</span></Link>
+    <div className="landing-banners">
+      <Link to="/thanks" className="landing-banner is-filled"><span aria-hidden="true">🎉</span><span>Shoutouts to the people who made this happen</span><span aria-hidden="true">→</span></Link>
+      <Link to="/roadmap" className="landing-banner"><span aria-hidden="true">🧭</span><span>On the horizon: what we're building next</span><span aria-hidden="true">→</span></Link>
+    </div>
 
     <section className="landing-writing" aria-labelledby="write-title">
       <div className="section-intro"><p className="eyebrow">WRITE</p><h2 id="write-title">Start with the words.</h2><p>Open a story and type. Chapters, scenes and structure can come later, or never.</p></div>

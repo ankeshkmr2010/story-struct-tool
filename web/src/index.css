@@ -75,9 +75,11 @@ button:not(:disabled), summary { cursor: pointer; }
 .landing-secondary { display: inline-block; font-size: 13px; }
 .hero-footnote { margin-top: 18px; font-size: 11px; color: var(--muted); }
 .hero-footnote a { display: inline-block; color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
-.shoutout-banner { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 8px 0 40px; padding: 22px 28px; border-radius: 16px; background: linear-gradient(90deg, #f59e0b, #e11d48); color: #fff; font-size: 22px; font-weight: 700; text-align: center; box-shadow: 0 12px 34px #e11d4833; transition: transform .15s ease, box-shadow .15s ease; }
-.shoutout-banner:hover { transform: translateY(-2px); box-shadow: 0 16px 40px #e11d4844; }
-@media (max-width: 640px) { .shoutout-banner { font-size: 17px; padding: 18px 20px; gap: 10px; } }
+.landing-banners { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 8px 0 40px; }
+.landing-banner { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 22px 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--accent-soft); color: var(--accent); font-size: 19px; font-weight: 650; text-align: center; transition: transform .15s ease, box-shadow .15s ease; }
+.landing-banner.is-filled { border-color: var(--accent); background: var(--accent); color: var(--button-ink); }
+.landing-banner:hover { transform: translateY(-2px); box-shadow: 0 12px 30px #0000001a; }
+@media (max-width: 640px) { .landing-banners { grid-template-columns: 1fr; } .landing-banner { font-size: 16px; padding: 18px; } }
 .story-preview { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 18px 60px #0000000c; }
 .preview-top { display: flex; align-items: center; gap: 11px; padding: 20px 24px; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; }
 .preview-top small { display: block; font-size: 10px; font-weight: 400; color: var(--muted); margin-top: 3px; }
