@@ -58,7 +58,11 @@ const SHOUTOUTS: readonly { name: string; thanks: string }[] = [
   { name: 'Saransh Sharma', thanks: 'the most “author” review of them all.' },
   { name: 'Hena Varma', thanks: 'for feedback that was as comprehensive as it was encouraging.' },
   { name: 'Ananya', thanks: 'for the positive vibes.' },
-  { name: 'Aditya Bhatia', thanks: 'the first person I bounced this idea off.' },
+  {
+    name: 'Aditya Bhatia',
+    thanks:
+      'the first person I bounced this idea off. (Last on the list: he has the most time and still hasn’t reviewed it.)',
+  },
 ]
 
 export default function Roadmap() {
