@@ -41,7 +41,7 @@ function brief(s: Sandbox, id: string) {
   const beatIds = linked(s, 'chapter_beat', 'chapter_id', id, 'beat_id')
   const stageIds = scenes.flatMap(scene => linked(s, 'scene_arc_advance', 'scene_id', scene.id, 'arc_stage_id'))
   const arcs = rows(s, 'arc').filter(arc => rows(s, 'arc_stage').some(stage => stage.arc_id === arc.id && stageIds.includes(stage.id)))
-  return { ...chapter, chapter_id: id, act_number: act?.number, act_title: act?.title, beats: rows(s, 'beat').filter(beat => beatIds.includes(beat.id)).map(beat => ({ beat_id: beat.id, label: beat.label, framework_position: beat.framework_position, is_fulfilled: scenes.some(scene => linked(s, 'scene_beat', 'scene_id', scene.id, 'beat_id').includes(beat.id)) })), arcs_advancing: arcs.map(arc => ({ arc_id: arc.id, summary: `${rows(s, 'character').find(c => c.id === arc.character_id)?.name ?? 'Character'} (${sorted(rows(s, 'arc_stage').filter(stage => stage.arc_id === arc.id)).map(stage => stage.label).join(' → ')})` })), threads: rows(s, 'thread').filter(thread => scenes.some(scene => linked(s, 'scene_thread', 'scene_id', scene.id, 'thread_id').includes(thread.id))).map(thread => ({ thread_id: thread.id, title: thread.title, type: thread.type })), pov_character_name: rows(s, 'character').find(c => c.id === scenes[0]?.pov_character_id)?.name, emotional_shift_from: act?.emotional_shift_from, emotional_shift_to: act?.emotional_shift_to, emotional_shift_inherited: true, scenes: scenes.map(scene => ({ scene_id: scene.id, title: scene.title, type: scene.type, status: scene.status, is_complete: out(scene, 'scene').completeness.is_complete })), placeholder_scene_count: scenes.filter(scene => !scene.content).length }
+  return { ...chapter, chapter_id: id, act_number: act?.number, act_title: act?.title, beats: rows(s, 'beat').filter(beat => beatIds.includes(beat.id)).map(beat => ({ beat_id: beat.id, label: beat.label, framework_position: beat.framework_position, is_fulfilled: scenes.some(scene => linked(s, 'scene_beat', 'scene_id', scene.id, 'beat_id').includes(beat.id)) })), arcs_advancing: arcs.map(arc => ({ arc_id: arc.id, summary: `${rows(s, 'character').find(c => c.id === arc.character_id)?.name ?? 'Character'} (${sorted(rows(s, 'arc_stage').filter(stage => stage.arc_id === arc.id)).map(stage => stage.label).join(' → ')})` })), threads: rows(s, 'thread').filter(thread => scenes.some(scene => linked(s, 'scene_thread', 'scene_id', scene.id, 'thread_id').includes(thread.id))).map(thread => String(thread.title || String(thread.type).replaceAll('_', '-'))), pov_character_name: rows(s, 'character').find(c => c.id === scenes[0]?.pov_character_id)?.name, emotional_shift_from: act?.emotional_shift_from, emotional_shift_to: act?.emotional_shift_to, emotional_shift_inherited: true, scenes: scenes.map(scene => ({ scene_id: scene.id, title: scene.title, type: scene.type, status: scene.status, is_complete: out(scene, 'scene').completeness.is_complete })), placeholder_scene_count: scenes.filter(scene => !scene.content).length }
 }
 function search(s: Sandbox, params: URLSearchParams) {
   const query = (params.get('q') ?? '').toLocaleLowerCase()
@@ -65,6 +65,11 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
   const body = init?.body ? JSON.parse(String(init.body)) as Row : {}
   if (path === '/api/auth/me') return { id: SANDBOX_ID, name: 'You', email: '', author_name: null }
   return transact(s => {
+    if (method !== 'GET' && s.imported) {
+      s.importId = crypto.randomUUID()
+      delete s.imported
+      delete s.importedUser
+    }
     const story = rows(s, 'story')[0]
     const parts = url.pathname.replace(`/api/stories/${SANDBOX_ID}`, '').split('/').filter(Boolean)
     if (url.pathname.startsWith('/api/arcs/')) parts.splice(0, parts.length, 'stages', url.pathname.split('/')[3], ...url.pathname.split('/').slice(5))
@@ -105,7 +110,7 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
       const stage = list.find(item => item.id === stageId)
       if (!stage) throw new Error('Stage not found')
       if (method === 'PATCH') Object.assign(stage, body)
-      if (method === 'DELETE') s.backup.state[kind] = list.filter(item => item !== stage)
+      if (method === 'DELETE') deleteEntity(s, kind, stageId)
       return out(stage, kind)
     }
     if (!id) {

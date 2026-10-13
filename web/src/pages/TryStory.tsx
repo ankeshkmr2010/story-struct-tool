@@ -43,7 +43,18 @@ export default function TryStory() {
   const qc = useQueryClient()
   const navigate = useNavigate()
   const state = query.data
-  useEffect(() => { setCoachHost(state?.step === 5 ? document.getElementById('try-search-coach') : null) }, [state?.step])
+  useEffect(() => {
+    if (state?.step !== 5) { setCoachHost(null); return }
+    const findHost = () => {
+      const host = document.getElementById('try-search-coach')
+      if (host) { setCoachHost(host); return true }
+      return false
+    }
+    if (findHost()) return
+    const observer = new MutationObserver(() => { if (findHost()) observer.disconnect() })
+    observer.observe(document.body, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [state?.step])
   useEffect(() => {
     void flushEvents()
     const listener = (event: Event) => {
