@@ -23,11 +23,6 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
     description: 'Edit a sample story, The Last Lantern, and see how continuity checks work before creating an account.',
   },
   {
-    title: 'Reviewers and commenters',
-    status: 'Planned',
-    description: 'Invite readers to leave comments on a shared story without giving them edit access.',
-  },
-  {
     title: 'Images in your story',
     status: 'Planned',
     description: 'Add images to your story: maps, character art, illustrations.',
@@ -41,6 +36,14 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
 
 
 const DELIVERED: readonly { date: string; items: readonly (readonly [string, string])[] }[] = [
+  {
+    date: '13 Oct 2026 — beta readers',
+    items: [
+      ['Beta reading rounds', 'share a frozen manuscript through a signed-in invitation, approve readers or allow automatic joining, and disable, rotate or revoke access.'],
+      ['Private reader conversations', 'comment on passages, scenes or chapters; reply with your author, resolve feedback, and return through a protected conversation URL.'],
+      ['Story polls', 'create, publish, close or archive questions per round, choose named or anonymous answers, and preserve results when questions change.'],
+    ],
+  },
   {
     date: '13 Oct 2026 — search integration',
     items: [

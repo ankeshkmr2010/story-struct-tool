@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { errorText } from '../api/errors'
+import { Link } from 'react-router-dom'
 
 export function StorySharing({ storyId, title, blurb, beforeOpen }: { storyId: string; title: string; blurb?: string | null; beforeOpen?: () => Promise<boolean> }) {
   const qc = useQueryClient()
@@ -43,6 +44,7 @@ export function StorySharing({ storyId, title, blurb, beforeOpen }: { storyId: s
       <ul className="sharing-people">{shares.data?.map(share => <li key={share.id}><span>{share.recipient_email}</span><select aria-label={`Permission for ${share.recipient_email}`} disabled={pending} value={share.allow_import ? 'import' : 'read'} onChange={event => save.mutate({ email: share.recipient_email, allow: event.target.value === 'import' })}><option value="read">Read only</option><option value="import">Read and import a copy</option></select><button type="button" className="share-story-button" disabled={pending} onClick={() => { if (window.confirm(`Revoke access for ${share.recipient_email}? Copies already imported will remain theirs.`)) revoke.mutate(share.id) }}>Revoke</button></li>)}</ul>
       <p className="writer-help">You keep ownership. Imports are independent drafts; later changes and revoked access do not remove copies already imported. Moving this story to Trash hides it from recipients until restored.</p>
       {open && <ShowcaseControls storyId={storyId} />}
+      <section className="mt-5 border-t border-[var(--line)] pt-4"><h3 className="sharing-subheading">Beta readers</h3><p className="writer-help">Publish a fixed draft for readers, collect private conversations and run polls. Beta access is separate from the current-draft permissions above.</p><div className="flex flex-wrap gap-3"><Link className="share-story-button" to={`/stories/${storyId}/beta`} onClick={() => setOpen(false)}>Manage beta readers →</Link><Link className="share-story-button" to={`/stories/${storyId}/polls`} onClick={() => setOpen(false)}>Story polls →</Link></div></section>
     </dialog>
   </>
 }

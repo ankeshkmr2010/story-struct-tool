@@ -16,6 +16,10 @@ import Feedback from './pages/Feedback'
 import { api } from './api/client'
 import UserSettings from './pages/UserSettings'
 import OAuthConsent from './pages/OAuthConsent'
+import BetaOwner from './pages/BetaOwner'
+import BetaPolls from './pages/BetaPolls'
+import BetaReaderPage, { BetaInvitePage } from './pages/BetaReader'
+import BetaThreadPage from './pages/BetaThread'
 
 export default function App() {
   const location = useLocation()
@@ -50,7 +54,14 @@ export default function App() {
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/stories/:storyId" element={<StoryWorkspace />} />
+        <Route path="/stories/:storyId/beta" element={<BetaOwner />} />
+        <Route path="/stories/:storyId/polls" element={<BetaPolls />} />
         <Route path="/shared/:storyId" element={<Suspense fallback={<p className="p-8">Loading reader…</p>}><SharedStoryReader /></Suspense>} />
+      </Route>
+      <Route element={<AuthGate prompt="Sign in with Google to read and discuss this beta manuscript."><Outlet /></AuthGate>}>
+        <Route path="/beta/join/:token" element={<BetaInvitePage />} />
+        <Route path="/beta/rounds/:roundId" element={<BetaReaderPage />} />
+        <Route path="/beta/rounds/:roundId/threads/:threadId" element={<BetaThreadPage />} />
       </Route>
     </Routes>
     </ThemeProvider>

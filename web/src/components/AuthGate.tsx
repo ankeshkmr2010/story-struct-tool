@@ -18,7 +18,7 @@ declare global {
   }
 }
 
-export function AuthGate({ children }: { children: React.ReactNode }) {
+export function AuthGate({ children, prompt = 'Sign in with Google to open your stories.' }: { children: React.ReactNode; prompt?: string }) {
   const qc = useQueryClient()
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, retry: false })
   const config = useQuery({ queryKey: ['auth-config'], queryFn: api.authConfig, enabled: me.isError })
@@ -73,7 +73,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     <main className="flex min-h-[calc(100dvh-73px)] items-center justify-center bg-slate-50 dark:bg-slate-950 p-5">
       <section className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 shadow-sm">
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">StoryTool</h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Sign in with Google to open your stories.</p>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{prompt}</p>
         <Link to="/how-to-use" className="mt-3 inline-block text-sm text-slate-600 dark:text-slate-300 underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-100">New here? Learn how StoryTool works</Link>
         {config.isPending && <p className="mt-6 text-sm text-slate-400">Preparing sign-in…</p>}
         {clientId && <div ref={buttonRef} className="mt-6 min-h-10" />}

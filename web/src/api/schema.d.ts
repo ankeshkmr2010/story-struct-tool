@@ -624,6 +624,285 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/beta/manage/{story_id}/polls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Polls */
+        get: operations["ApiBetaManageStoryIdPollsPolls"];
+        put?: never;
+        /** CreatePoll */
+        post: operations["ApiBetaManageStoryIdPollsCreatePoll"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/beta/manage/{story_id}/polls/{poll_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** DeletePoll */
+        delete: operations["ApiBetaManageStoryIdPollsPollIdDeletePoll"];
+        options?: never;
+        head?: never;
+        /** UpdatePoll */
+        patch: operations["ApiBetaManageStoryIdPollsPollIdUpdatePoll"];
+        trace?: never;
+    };
+    "/api/beta/manage/{story_id}/rounds/{round_id}/members/{member_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** MemberStatus */
+        patch: operations["ApiBetaManageStoryIdRoundsRoundIdMembersMemberIdMemberStatus"];
+        trace?: never;
+    };
+    "/api/beta/manage/{story_id}/rounds/{round_id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Members */
+        get: operations["ApiBetaManageStoryIdRoundsRoundIdMembersMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/beta/manage/{story_id}/rounds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rounds */
+        get: operations["ApiBetaManageStoryIdRoundsRounds"];
+        put?: never;
+        /** Publish */
+        post: operations["ApiBetaManageStoryIdRoundsPublish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/beta/manage/{story_id}/rounds/{round_id}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate */
+        post: operations["ApiBetaManageStoryIdRoundsRoundIdRotateRotate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/beta/manage/{story_id}/rounds/{round_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** UpdateRound */
+        patch: operations["ApiBetaManageStoryIdRoundsRoundIdUpdateRound"];
+        trace?: never;
+    };
+    "/api/beta/threads/{thread_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Thread */
+        get: operations["ApiBetaThreadsThreadIdThread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** ChangeThread */
+        patch: operations["ApiBetaThreadsThreadIdChangeThread"];
+        trace?: never;
+    };
+    "/api/beta/rounds/{round_id}/threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Threads */
+        get: operations["ApiBetaRoundsRoundIdThreadsThreads"];
+        put?: never;
+        /** Comment */
+        post: operations["ApiBetaRoundsRoundIdThreadsComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/beta/messages/{message_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** RemoveMessage */
+        delete: operations["ApiBetaMessagesMessageIdRemoveMessage"];
+        options?: never;
+        head?: never;
+        /** EditMessage */
+        patch: operations["ApiBetaMessagesMessageIdEditMessage"];
+        trace?: never;
+    };
+    "/api/beta/invite/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Invite */
+        get: operations["ApiBetaInviteTokenInvite"];
+        put?: never;
+        /** Join */
+        post: operations["ApiBetaInviteTokenJoin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/beta/rounds/{round_id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Progress */
+        patch: operations["ApiBetaRoundsRoundIdProgressProgress"];
+        trace?: never;
+    };
+    "/api/beta/rounds/{round_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read */
+        get: operations["ApiBetaRoundsRoundIdRead"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/beta/rounds/{round_id}/polls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ReaderPolls */
+        get: operations["ApiBetaRoundsRoundIdPollsReaderPolls"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/beta/threads/{thread_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reply */
+        post: operations["ApiBetaThreadsThreadIdMessagesReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/beta/polls/{poll_id}/vote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vote */
+        post: operations["ApiBetaPollsPollIdVoteVote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/shared-stories/{story_id}/import": {
         parameters: {
             query?: never;
@@ -2497,6 +2776,48 @@ export interface components {
             framework_position?: string | null;
             sort_key?: number | null;
         };
+        /** BetaDocumentOut */
+        BetaDocumentOut: {
+            share: components["schemas"]["SharedStoryOut"];
+            manuscript: string;
+            structure: {
+                [key: string]: {
+                    [key: string]: unknown;
+                }[];
+            };
+            base_fingerprint: string;
+            timeline?: components["schemas"]["TimelineOut"] | null;
+            round: components["schemas"]["RoundOut"];
+            is_owner: boolean;
+            read_chapters: string[];
+            reading_status: string;
+            stopped_reason: string | null;
+        };
+        /** BetaThreadOut */
+        BetaThreadOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            round_id: string;
+            reader_id: string | null;
+            chapter_id: string | null;
+            scene_id: string | null;
+            quote: string | null;
+            paragraph: number | null;
+            submitted: boolean;
+            resolved: boolean;
+            mine: boolean;
+            /** Format: date-time */
+            created_at: string;
+            url: string;
+            messages: components["schemas"]["MessageOut"][];
+            message_count: number;
+        };
+        /** BetaThreadUpdate */
+        BetaThreadUpdate: {
+            submitted?: boolean | null;
+            resolved?: boolean | null;
+        };
         /** ChapterBriefOut */
         ChapterBriefOut: {
             /** Format: uuid */
@@ -2832,6 +3153,12 @@ export interface components {
             info_count: number;
             findings: components["schemas"]["FindingOut"][];
         };
+        /** InviteOut */
+        InviteOut: {
+            round: components["schemas"]["RoundOut"];
+            story_title: string;
+            membership: string;
+        };
         /** LadderOut */
         LadderOut: {
             /** Format: uuid */
@@ -2890,6 +3217,24 @@ export interface components {
             first_story_time: number | null;
             last_story_time: number | null;
         };
+        /** MemberOut */
+        MemberOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            name: string;
+            email: string;
+            status: string;
+            read_chapters: string[];
+            reading_status: string;
+            stopped_reason: string | null;
+        };
+        /** MemberUpdate */
+        MemberUpdate: {
+            /** @enum {string} */
+            status: "approved" | "declined" | "revoked";
+        };
         /** MentionOut */
         MentionOut: {
             /** Format: uuid */
@@ -2909,6 +3254,26 @@ export interface components {
         MentionUpdate: {
             source?: string | null;
             is_rejected?: boolean | null;
+        };
+        /** MessageIn */
+        MessageIn: {
+            body: string;
+            /** @default true */
+            submitted: boolean;
+        };
+        /** MessageOut */
+        MessageOut: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            body: string;
+            submitted: boolean;
+            deleted: boolean;
+            mine: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         /**
          * MiceType
@@ -2979,6 +3344,58 @@ export interface components {
             turning_points_flagged: number;
             suggestions_added: number;
         };
+        /** PollIn */
+        PollIn: {
+            /** Format: uuid */
+            round_id: string;
+            chapter_id?: string | null;
+            question: string;
+            /**
+             * @default single
+             * @enum {string}
+             */
+            kind: "single" | "multiple" | "text";
+            options?: string[];
+            /**
+             * @default draft
+             * @enum {string}
+             */
+            status: "draft" | "open" | "closed" | "archived";
+            /** @default false */
+            show_results: boolean;
+            /** @default false */
+            anonymous: boolean;
+        };
+        /** PollOut */
+        PollOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            round_id: string;
+            chapter_id: string | null;
+            question: string;
+            kind: string;
+            options: string[];
+            status: string;
+            show_results: boolean;
+            anonymous: boolean;
+            version: number;
+            previous_id: string | null;
+            my_response: components["schemas"]["VoteIn"] | null;
+            results: components["schemas"]["PollResultsOut"] | null;
+        };
+        /** PollResponseOut */
+        PollResponseOut: {
+            name: string | null;
+            choices: number[];
+            answer: string;
+        };
+        /** PollResultsOut */
+        PollResultsOut: {
+            total: number;
+            counts: number[];
+            responses?: components["schemas"]["PollResponseOut"][] | null;
+        };
         /**
          * PovStyle
          * @enum {string}
@@ -3001,6 +3418,13 @@ export interface components {
             message: string;
             /** Format: date-time */
             created_at: string;
+        };
+        /** ProgressIn */
+        ProgressIn: {
+            read_chapters: string[];
+            /** @enum {string} */
+            reading_status: "not_started" | "reading" | "finished" | "stopped";
+            stopped_reason?: string | null;
         };
         /** PromptRequest */
         PromptRequest: {
@@ -3100,6 +3524,39 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             stale: boolean;
+        };
+        /** RoundIn */
+        RoundIn: {
+            title: string;
+            /** @default  */
+            brief: string;
+            deadline?: string | null;
+            chapter_ids?: string[] | null;
+            /** @default false */
+            auto_approve: boolean;
+        };
+        /** RoundOut */
+        RoundOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            story_id: string;
+            title: string;
+            brief: string;
+            deadline: string | null;
+            status: string;
+            /** Format: date-time */
+            created_at: string;
+            auto_approve: boolean;
+            link_enabled: boolean;
+            join_path?: string | null;
+        };
+        /** RoundUpdate */
+        RoundUpdate: {
+            /** @enum {null|string} */
+            status?: "open" | "closed" | null;
+            link_enabled?: boolean | null;
+            auto_approve?: boolean | null;
         };
         /** RunOut */
         RunOut: {
@@ -3338,6 +3795,7 @@ export interface components {
             blurb: string | null;
             owner_name: string;
             allow_import: boolean;
+            beta_round_id?: string | null;
         };
         /** ShoutoutCreate */
         ShoutoutCreate: {
@@ -3546,6 +4004,16 @@ export interface components {
             /** @default 0 */
             sort_key: number;
         };
+        /** ThreadIn */
+        ThreadIn: {
+            body: string;
+            /** @default true */
+            submitted: boolean;
+            chapter_id?: string | null;
+            scene_id?: string | null;
+            quote?: string | null;
+            paragraph?: number | null;
+        };
         /** ThreadLink */
         ThreadLink: {
             /** Format: uuid */
@@ -3716,6 +4184,12 @@ export interface components {
         VisitIn: {
             /** Format: uuid */
             visitor_id: string;
+        };
+        /** VoteIn */
+        VoteIn: {
+            choices?: number[];
+            /** @default  */
+            answer: string;
         };
     };
     responses: never;
@@ -5273,6 +5747,902 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaManageStoryIdPollsPolls: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PollOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaManageStoryIdPollsCreatePoll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PollIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PollOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaManageStoryIdPollsPollIdDeletePoll: {
+        parameters: {
+            query?: {
+                confirm?: boolean;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+                poll_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaManageStoryIdPollsPollIdUpdatePoll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                poll_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PollIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PollOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaManageStoryIdRoundsRoundIdMembersMemberIdMemberStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                round_id: string;
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaManageStoryIdRoundsRoundIdMembersMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                round_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaManageStoryIdRoundsRounds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoundOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaManageStoryIdRoundsPublish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoundIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoundOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaManageStoryIdRoundsRoundIdRotateRotate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                round_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoundOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaManageStoryIdRoundsRoundIdUpdateRound: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                round_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoundUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoundOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaThreadsThreadIdThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BetaThreadOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaThreadsThreadIdChangeThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BetaThreadUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BetaThreadOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaRoundsRoundIdThreadsThreads: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                round_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BetaThreadOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaRoundsRoundIdThreadsComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                round_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ThreadIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BetaThreadOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaMessagesMessageIdRemoveMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaMessagesMessageIdEditMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BetaThreadOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaInviteTokenInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InviteOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaInviteTokenJoin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InviteOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaRoundsRoundIdProgressProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                round_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProgressIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaRoundsRoundIdRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                round_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BetaDocumentOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaRoundsRoundIdPollsReaderPolls: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                round_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PollOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaThreadsThreadIdMessagesReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BetaThreadOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaPollsPollIdVoteVote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                poll_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoteIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PollOut"];
+                };
             };
             /** @description Bad request syntax or unsupported method */
             400: {
