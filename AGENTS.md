@@ -22,6 +22,8 @@ Standing user rules:
 - Check git state before editing/committing; preserve other agents' work.
 - Push finished, authorized code without asking. The user handles manual Render deployment;
   do not trigger it unless explicitly requested. See the handoff's auto-deploy caveat.
+- With every release, update `web/src/pages/Roadmap.tsx`: add shipped work to Delivered
+  and update or remove its upcoming cards. Include this in the release before the final push.
 - Never copy credentials into memory, tool output, commits, or chat.
 
 Import UX retrospective (2026-10-13):

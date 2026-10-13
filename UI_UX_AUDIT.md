@@ -177,7 +177,7 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [~] T29 (7853260; built, awaiting user's prod check) Pricing page `/pricing` and homepage link: user confirmed "Free during beta; future pricing undecided". External AI client/API charges remain separate. Public refresh path included in `frontend.py`. Internal task, not a public roadmap card.
 - [~] T30 (94da02a; built, awaiting user's prod check) Sharpened hero for novel writers: plan, write and keep a novel consistent, with existing AI or none (`web/src/pages/Landing.tsx`). Wording/arrangement approved by the user. Internal task.
 - [~] T31 (827e0ab; built, awaiting user's prod check) Homepage differentiators below the hero/banners: authorship, MICE thread nesting, scene/sequel rhythm. Existing feature-grid styling; writer benefits, no competitor claims (`web/src/pages/Landing.tsx`). Internal task.
-- [~] T32 Keep the public roadmap current (`web/src/pages/Roadmap.tsx`): craft checks/authorship in Delivered; DOCX import/no-signup demo planned. Easier AI setup and the new product feedback page moved to Delivered. New T21 value-shift/misbelief reviews stay awaiting production confirmation. Awaiting user's production check; no local tests by request.
+- [~] T32 Public roadmap refreshed 2026-10-13 (`web/src/pages/Roadmap.tsx`): search, automatic report refresh, Word import, PDF, pen names and the newer craft reviews added to Delivered. Word's card now covers remaining Scrivener support; stale PDF/search cards removed. Every release must update Delivered and upcoming cards (`AGENTS.md`). Awaiting the user's production check.
 - [~] T33 (72b0d93; built, awaiting user's prod check) Starter prompt: "Read my story and tell me what's weakest in Act 2." MCP instructions handle discovery, story selection, IDs/fingerprints and evidence; critique alone does not authorize edits/apply/restore (`web/src/components/MCPSetup.tsx`, `api/src/storytool/mcp_server.py`). Public roadmap: easier first AI conversation.
 - [~] T34 (c0d773d; built, awaiting user's prod check) Claude then ChatGPT by default; other clients expandable, with all guides/restrictions, copy actions, source links and keyboard navigation retained (`web/src/components/MCPSetup.tsx`). Arrangement approved by the user. Public roadmap: grouped with T33.
 - [ ] T35 No-signup sandbox and first-run demo: let visitors edit The Last Lantern and trigger a continuity finding before creating an account. Replaces T11's demo-card approach; decide sandbox isolation and persistence before implementation. Public roadmap: try it before signing up.
@@ -196,7 +196,7 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [ ] Add the new checks to the craft section: Misbelief at midpoint and Value shift versus prose.
 
 **3. Roadmap — T41**
-- [ ] Mark the new checks as Delivered: Misbelief and Value shift.
+- [~] Misbelief and Value shift added to Delivered on 2026-10-13; awaiting production confirmation.
 - [ ] Suggested order: DOCX import → search (move from Exploring to Planned) → try before signup → reviewers and commenters → PDF export → view counts (bundle with commenters) → images last.
 
 **4. Evaluate tab polish — T42**

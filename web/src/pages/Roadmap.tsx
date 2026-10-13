@@ -12,20 +12,15 @@ const BADGE: Record<Status, string> = {
 
 const ITEMS: readonly { title: string; status: Status; description: string }[] = [
   {
-    title: 'Bring your manuscript in',
+    title: 'Scrivener support',
     status: 'Planned',
     description:
-      'Import a Word (.docx) manuscript so you can start with prose you have already written. Scrivener support comes later.',
+      'Import a manuscript from Scrivener. Word (.docx) import is already available.',
   },
   {
     title: 'Try it before signing up',
     status: 'Planned',
     description: 'Edit a sample story, The Last Lantern, and see how continuity checks work before creating an account.',
-  },
-  {
-    title: 'PDF export',
-    status: 'Planned',
-    description: 'Take your manuscript out as a print-ready PDF. EPUB, HTML and plain text are already in the Export menu.',
   },
   {
     title: 'Reviewers and commenters',
@@ -38,11 +33,6 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
     description: 'Add images to your story: maps, character art, illustrations.',
   },
   {
-    title: 'Search across your story',
-    status: 'Exploring',
-    description: 'Find a name, a phrase or an idea anywhere: prose, scenes, characters and notes.',
-  },
-  {
     title: 'View counts on shared stories',
     status: 'Exploring',
     description: 'See how many people have read the stories you share.',
@@ -51,6 +41,17 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
 
 
 const DELIVERED: readonly { date: string; items: readonly (readonly [string, string])[] }[] = [
+  {
+    date: '13 Oct 2026',
+    items: [
+      ['Search your story and library', 'find saved prose and planning details in the current section or across your own stories. Open matching passages and items; optional meaning search finds related text.'],
+      ['Automatic review refresh', 'reviews submitted by AI clients appear while Evaluate is open, with manual refresh still available.'],
+      ['Word manuscript import', 'bring a .docx manuscript into a new story, then write, read or build its outline from the imported prose.'],
+      ['Submission PDF export', 'export a manuscript with a title page, double-spaced prose, running page headers and optional reference appendices.'],
+      ['Your author name', 'set a pen name in Settings and use it as the byline in manuscript exports.'],
+      ['More craft reviews', 'review value shifts against scene prose and a character’s misbelief at the midpoint. Use the feedback to decide what to revise.'],
+    ],
+  },
   {
     date: '12 Oct 2026',
     items: [
