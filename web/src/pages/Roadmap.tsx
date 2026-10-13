@@ -35,6 +35,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
     date: '14 Oct 2026',
     items: [
       ['Try before signing up', 'edit The Last Lantern in a browser-local sandbox with a six-step tour, local text search and History. Sign in to keep your story and edits in your library.'],
+      ['Sandbox build correction', 'corrected the browser-storage lock callback’s TypeScript return type.'],
       ['Evaluate polish', 'credited craft definitions, clear review dates, a stale-review notice with re-run actions, and findings that open their specific item in Plan.'],
       ['Homepage craft checks', 'Misbelief at midpoint and Value shift versus prose now appear in the craft section.'],
       ['Roadmap priorities', 'remaining work reordered, with shipped features retained in Delivered and images last.'],

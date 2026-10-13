@@ -51,7 +51,7 @@ export function transact<T>(operation: (value: Sandbox) => T, save = true): Prom
     if (save) await write(value)
     return result
   }
-  const next = queue.catch(() => {}).then(() => navigator.locks ? navigator.locks.request('storytool-sandbox', execute) : execute())
+  const next = queue.catch(() => {}).then(async () => await (navigator.locks ? navigator.locks.request('storytool-sandbox', execute) : execute()))
   queue = next
   return next
 }
