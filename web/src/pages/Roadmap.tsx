@@ -39,6 +39,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
   {
     date: '13 Oct 2026 — beta readers',
     items: [
+      ['Dedicated beta reader flow', 'open Beta readers beside Share; manage reader feedback and beta polls together, with polls below readers.'],
       ['Beta reading rounds', 'share a frozen manuscript through a signed-in invitation, approve readers or allow automatic joining, and disable, rotate or revoke access.'],
       ['Private reader conversations', 'comment on passages, scenes or chapters; reply with your author, resolve feedback, and return through a protected conversation URL.'],
       ['Story polls', 'create, publish, close or archive questions per round, choose named or anonymous answers, and preserve results when questions change.'],

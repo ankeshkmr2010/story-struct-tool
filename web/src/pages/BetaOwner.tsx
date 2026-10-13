@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { api, type BetaRound } from '../api/client'
 import { errorText } from '../api/errors'
+import { BetaPollsSection } from './BetaPolls'
 
 export default function BetaOwner() {
   const { storyId = '' } = useParams()
@@ -18,7 +19,7 @@ export default function BetaOwner() {
   const publish = useMutation({ mutationFn: () => api.createBetaRound(storyId, { title, brief, auto_approve: auto, chapter_ids: all ? null : selected, deadline: deadline ? new Date(deadline + 'T23:59:59').toISOString() : null }), onSuccess: () => { void qc.invalidateQueries({ queryKey: ['beta-rounds', storyId] }) } })
   const control = 'mt-2 block w-full rounded border border-[var(--line)] bg-[var(--surface)] p-3'
   return <main className="mx-auto max-w-4xl px-5 py-8 text-[var(--ink)]">
-    <div className="flex flex-wrap gap-4 text-sm"><Link to={`/stories/${storyId}`} className="underline">← Story</Link><Link to={`/stories/${storyId}/polls`} className="underline">All story polls →</Link></div>
+    <div className="flex flex-wrap gap-4 text-sm"><Link to={`/stories/${storyId}`} className="underline">← Story</Link><a href="#beta-polls" className="underline">Beta polls ↓</a></div>
     <h1 className="mt-6 text-3xl font-semibold">Beta readers</h1><p className="mt-3 text-sm leading-6 text-[var(--muted)]">Publish a frozen draft while you continue writing. Readers see manuscript chapters and your brief, with private feedback and polls. Planning notes, arcs, AI conversations and other readers' feedback stay private. Existing ordinary sharing remains separate.</p>
     <form className="mt-6 space-y-4 rounded-xl border border-[var(--line)] p-5" onSubmit={e => { e.preventDefault(); publish.mutate() }}>
       <h2 className="text-xl font-semibold">Publish a round</h2><label className="block text-sm">Round title<input required maxLength={200} className={control} value={title} onChange={e => setTitle(e.target.value)} disabled={publish.isPending} /></label>
@@ -33,6 +34,7 @@ export default function BetaOwner() {
     {(rounds.error || chapters.error) && <p role="alert" className="writer-error">{errorText(rounds.error ?? chapters.error)}</p>}
     {rounds.isPending && <p className="mt-6">Loading rounds…</p>}
     {rounds.data?.map(round => <RoundCard key={round.id} storyId={storyId} round={round} />)}
+    <div id="beta-polls"><BetaPollsSection storyId={storyId} embedded /></div>
   </main>
 }
 

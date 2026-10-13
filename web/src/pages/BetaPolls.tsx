@@ -7,6 +7,10 @@ import { BetaPollCard } from '../components/BetaPollCard'
 
 export default function BetaPolls() {
   const { storyId = '' } = useParams()
+  return <BetaPollsSection storyId={storyId} />
+}
+
+export function BetaPollsSection({ storyId, embedded = false }: { storyId: string; embedded?: boolean }) {
   const qc = useQueryClient()
   const rounds = useQuery({ queryKey: ['beta-rounds', storyId], queryFn: () => api.betaRounds(storyId) })
   const polls = useQuery({ queryKey: ['beta-polls', storyId], queryFn: () => api.betaPolls(storyId) })
@@ -14,9 +18,11 @@ export default function BetaPolls() {
   const refresh = () => { void qc.invalidateQueries({ queryKey: ['beta-polls', storyId] }) }
   const remove = useMutation({ mutationFn: (id: string) => api.deleteBetaPoll(storyId, id, true), onSuccess: refresh })
   const change = useMutation({ mutationFn: ({ poll, status }: { poll: BetaPoll; status: BetaPollInput['status'] }) => api.updateBetaPoll(storyId, poll.id, { ...poll, kind: poll.kind as BetaPollInput['kind'], status }), onSuccess: refresh })
-  return <main className="mx-auto max-w-4xl px-5 py-8 text-[var(--ink)]">
-    <div className="flex flex-wrap gap-4 text-sm"><Link to={`/stories/${storyId}`} className="underline">← Story</Link><Link to={`/stories/${storyId}/beta`} className="underline">Beta readers</Link></div>
-    <h1 className="mt-6 text-3xl font-semibold">Story polls</h1><p className="mt-3 text-sm text-[var(--muted)]">All polls and past results, grouped by manuscript round. Editing questions, options or anonymity after responses creates a new version and preserves the original results.</p>
+  const Container = embedded ? 'section' : 'main'
+  const Heading = embedded ? 'h2' : 'h1'
+  return <Container className={embedded ? 'mt-12 border-t border-[var(--line)] pt-6' : 'mx-auto max-w-4xl px-5 py-8 text-[var(--ink)]'}>
+    {!embedded && <div className="flex flex-wrap gap-4 text-sm"><Link to={`/stories/${storyId}`} className="underline">← Story</Link><Link to={`/stories/${storyId}/beta`} className="underline">Beta readers</Link></div>}
+    <Heading className="mt-6 text-3xl font-semibold">{embedded ? 'Beta polls' : 'Story polls'}</Heading><p className="mt-3 text-sm text-[var(--muted)]">All polls and past results, grouped by manuscript round. Editing questions, options or anonymity after responses creates a new version and preserves the original results.</p>
     <button className="sharing-primary mt-5" disabled={!rounds.data?.length} onClick={() => setEditing('new')}>Create poll</button>
     {!rounds.isPending && rounds.data?.length === 0 && <p className="mt-3 text-sm">Publish a beta round first.</p>}
     {editing && rounds.data && <PollEditor key={editing === 'new' ? 'new' : editing.id} storyId={storyId} rounds={rounds.data} poll={editing === 'new' ? null : editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refresh() }} />}
@@ -25,7 +31,7 @@ export default function BetaPolls() {
     {rounds.data?.map(round => <section key={round.id} className="mt-8"><h2 className="mb-4 text-xl font-semibold">{round.title} · {round.status}</h2><div className="space-y-4">{polls.data?.filter(p => p.round_id === round.id).map(poll => <BetaPollCard key={poll.id} poll={poll} owner refresh={refresh}>
       <div className="mt-4 flex flex-wrap gap-3 text-xs"><button className="underline" onClick={() => setEditing(poll)}>Edit</button><button className="underline" disabled={change.isPending} onClick={() => change.mutate({ poll, status: poll.status === 'open' ? 'closed' : 'open' })}>{poll.status === 'open' ? 'Close' : 'Publish / reopen'}</button><button className="underline" disabled={change.isPending} onClick={() => change.mutate({ poll, status: 'archived' })}>Archive</button><button className="text-red-600 dark:text-red-300" disabled={remove.isPending} onClick={() => { if (window.confirm('Permanently delete this poll and all its responses? Archive keeps the results.')) remove.mutate(poll.id) }}>Delete</button></div>
     </BetaPollCard>)}</div></section>)}
-  </main>
+  </Container>
 }
 
 function PollEditor({ storyId, rounds, poll, onClose, onSaved }: {
