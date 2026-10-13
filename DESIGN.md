@@ -394,3 +394,95 @@ somewhere it is not is a costlier error than failing to guess.
 Phase 1 deliberately precedes the editor, accepting that the flagship brief lands last.
 
 **Open decisions:** Railway vs Fly; OAuth vs email+password; public vs private sharing.
+
+## 9. Try before signing up — guided sandbox (T35)
+
+User-supplied product design, recorded 2026-10-14. Effort: **High**.
+Status: specification only; not implemented or production-confirmed. A new session
+should read this section, inspect the existing behavior narrowly, and think through
+an implementation plan before building. This replaces T35's earlier continuity-finding
+tour concept and T11's first-run demo card.
+
+### Goal and success measures
+
+A visitor writes in a real story, sees the plan follow their words, and leaves wanting
+to keep it. Target tour completion above 50% and sandbox-to-signup conversion above 15%.
+Use the funnel events below to identify the step where visitors leave; settle exact
+deduplication, cohort and conversion definitions during planning.
+
+### Entry and local storage
+
+- Homepage hero: a second button beside **Start your story**, labeled
+  **Try it now, no account →**, opens `/try`.
+- Load a browser-local copy of **The Last Lantern** from a pinned full-backup JSON file
+  served as a static asset. No login, no server story writes, no backend cold start.
+- Keep a slim banner visible: **Sandbox · your changes stay in this browser · Keep this story free →**.
+- Store the story in IndexedDB using the existing full-backup JSON format. Resume edits
+  and tour progress on return. Local data expires after seven days.
+- Put **Reset sandbox** in the banner menu.
+
+### Available experience
+
+Show only **Write**, **Read** and **Design**. Hide Evaluate, Connect AI, Share,
+Beta readers, Export and Settings completely. Text search runs locally; meaning search
+and AI stay off. Context, Story timeline and History remain available for the tour.
+Keep existing UI behavior through one storage adapter behind the API client: sandbox
+reads and writes use IndexedDB; ordinary stories continue to use the server.
+
+If a visitor reaches an unavailable feature by URL, show a one-line card:
+**Available with a free account**, plus the Keep button.
+
+### Guided path — six steps, about three minutes
+
+One coach mark at a time, with one action, a **1 of 6** progress indicator and six dots.
+**Skip tour** always remains available and opens free play. On mobile, coach marks
+become a bottom sheet with the same steps. Never use Next buttons: a tiny state machine
+advances only after the visitor performs the real event.
+
+| Step | Destination and guidance | Completion event |
+| --- | --- | --- |
+| 1. Meet the story | Read opens on chapter 1. “This is Maya's story. Turn a page.” | Page forward. |
+| 2. Write a line | Write opens on **The lantern goes out**, cursor at the end of the scene. “Add a sentence: what does Maya see?” Autosave reads **Saved in this browser**. | A prose-editing keystroke; preserve the resulting edit for History and signup carry-over. |
+| 3. Your plan, beside your words | Context button pulses. “Every scene knows its beat, its POV and Maya's arc.” Panel shows **Inciting incident · Maya · Isolation → Trust**. | Open Context. |
+| 4. Two orders of time | Open Story timeline and flip **World time ↔ Reading order**. “The harbor secret happened years earlier. Readers just learn it later.” Seed this flashback. | Toggle the timeline order. |
+| 5. Find anything | Prefill local text search with **lantern**. “Jump straight to any line.” An **Exact** result lands on its passage. | Click an Exact result and open the passage. |
+| 6. It's yours | History opens on the visitor's line, labeled **You**. “Every change is on record. Keep this story and everything you wrote.” Primary: **Keep this story, sign in with Google**. Secondary: **Keep exploring**. | Open History; keeping or exploring is the final choice. |
+
+Never interrupt with signup prompts before step 6; the banner is the only standing
+nudge. A skipped tour still permits editing, navigation and keeping the story.
+
+### Carry-over after signup
+
+1. Keep the sandbox's full-backup JSON in IndexedDB through Google sign-in.
+2. After sign-in, POST that backup to the existing restore-backup endpoint so it becomes
+   a new story in the visitor's library, including their edits. Reuse import code;
+   do not create another importer.
+3. Land in Write on the scene they edited. Show a toast:
+   **Your Last Lantern is saved. Start your own story →**.
+
+### Admin funnel events
+
+Add **try_start**, **try_step_1** through **try_step_6**, **try_skip**,
+**try_keep_click** and **try_imported** to the existing admin funnel. Step events follow
+the real completion events above; imported means the restored story was created
+successfully. Preserve resumable tour state without inflating completion counts.
+
+### Next-session planning checks
+
+- Inspect the existing writer, paged reader, Context, timeline, search, History and
+  API client before choosing the adapter boundary. Determine which derived reads must
+  work locally; no AI, semantic search or story API calls may be required for the tour.
+- Confirm the pinned seed contains the specified scene, beat, POV, arc and flashback.
+- Check whether existing backup restore preserves local History entries labeled You,
+  and how fresh imported IDs map to the edited scene. The full-backup format and existing
+  importer are requirements; do not assume carry-over behavior is already supported.
+- Plan durable sign-in return intent, import retry behavior and duplicate-import
+  prevention so authentication or restore failure cannot lose the visitor's writing.
+- Resolve seven-day expiry timing and browser-storage failure behavior.
+- Clarify analytics transport: the sandbox must load without backend dependency and
+  make no server story writes, while admin funnel events need server-side aggregation.
+  Plan when events are sent and how signup/import conversion is attributed.
+
+This section records the requested experience and planning questions, not authorization
+to implement it in this documentation session. Leave T35 open until implementation and
+the user's production walkthrough.
