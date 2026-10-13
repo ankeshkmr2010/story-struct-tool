@@ -26,7 +26,8 @@ export default function Landing() {
         <p className="eyebrow"><span /> A workspace for novel writers</p>
         <h1 id="landing-title">Plan, write, and keep<br /><em>your novel consistent.</em></h1>
         <p className="hero-description">With the AI you already use or none at all. Your manuscript, its structure and its timeline in one place; every change is yours to keep or undo.</p>
-        <div className="hero-actions"><Link to="/library" className="landing-primary">Start your story <span aria-hidden="true">↗</span></Link><Link to="/try" className="landing-secondary">Try it now, no account →</Link></div>
+        <div className="hero-actions"><Link to="/try" className="landing-primary">Try the guided tour <span aria-hidden="true">→</span></Link><Link to="/library" className="landing-secondary">Start your story <span aria-hidden="true">↗</span></Link></div>
+        <p className="hero-footnote">Explore a real story in three minutes. No account needed.</p>
         <div className="hero-assurances">
           <Link to="/pricing"><strong>Free during beta</strong><span>No StoryTool subscription charge. Pricing details →</span></Link>
           <Link to="/privacy"><strong>StoryTool doesn't train AI on your manuscript.</strong><span>Connected AI services have their own policies. Privacy details →</span></Link>

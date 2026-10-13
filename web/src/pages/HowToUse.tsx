@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { WriteWithAI } from '../components/WriteWithAI'
 
 /**
  * The guide.
@@ -98,6 +100,11 @@ const FEEDBACK = [
 ] as const
 
 export default function HowToUse() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const isAIHash = (hash: string) => hash === '#write-with-ai' || hash === '#mcp' || hash.startsWith('#ai-')
+  const [tab, setTab] = useState<'basics' | 'ai'>(() => isAIHash(location.hash) ? 'ai' : 'basics')
+  useEffect(() => { if (location.hash) setTab(isAIHash(location.hash) ? 'ai' : 'basics') }, [location.hash])
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
@@ -115,16 +122,28 @@ export default function HowToUse() {
             it sits in and which beat it owes.
           </p>
           <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
-            You write the story. The tool keeps its structure close at hand and points out
-            gaps — it never writes for you, and it never blocks you.
+            Write on your own or with your connected AI. StoryTool keeps the structure
+            close at hand, points out gaps, and leaves every change in your control.
           </p>
         </header>
 
+        <div className="history-tabs mt-8" role="tablist" aria-label="How to use guides" onKeyDown={event => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+          event.preventDefault()
+          const next = event.key === 'Home' ? 'basics' : event.key === 'End' ? 'ai' : tab === 'ai' ? 'basics' : 'ai'
+          setTab(next); navigate(next === 'ai' ? '#write-with-ai' : '#guide-basics'); document.getElementById(`guide-tab-${next}`)?.focus()
+        }}>
+          <button id="guide-tab-basics" type="button" role="tab" aria-selected={tab === 'basics'} aria-controls="guide-basics" tabIndex={tab === 'basics' ? 0 : -1} onClick={() => { setTab('basics'); navigate('#guide-basics') }}>Use StoryTool</button>
+          <button id="guide-tab-ai" type="button" role="tab" aria-selected={tab === 'ai'} aria-controls="write-with-ai" tabIndex={tab === 'ai' ? 0 : -1} onClick={() => { setTab('ai'); navigate('#write-with-ai') }}>Write with AI</button>
+        </div>
+        <section id="write-with-ai" role="tabpanel" aria-labelledby="guide-tab-ai" hidden={tab !== 'ai'}>{tab === 'ai' && <WriteWithAI />}</section>
+        <div id="guide-basics" role="tabpanel" aria-labelledby="guide-tab-basics" hidden={tab !== 'basics'}>
         <div className="mt-12 gap-10 lg:grid lg:grid-cols-[180px_minmax(0,1fr)]">
           {/* Sticky contents: the page is long enough that a reader needs a way back. */}
           <nav
             aria-label="Contents"
-            className="mb-8 lg:mb-0 lg:sticky lg:top-8 lg:self-start"
+            className="mb-8 lg:mb-0 lg:sticky lg:self-start"
+            style={{ top: 'calc(var(--site-header-height, 73px) + 20px)' }}
           >
             <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
               Contents
@@ -465,6 +484,7 @@ export default function HowToUse() {
           </div>
         </div>
 
+        </div>
         <footer className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700 pt-6">
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Start with what you know. Build the rest as the story grows.

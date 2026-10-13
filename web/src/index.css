@@ -52,10 +52,11 @@
   --slate-600: #4f5257; --slate-700: #3a3c40; --slate-800: #2a2c2f; --slate-900: #1e1f22; --slate-950: #151618;
 }
 body { margin: 0; background: var(--page); color: var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+html { scroll-padding-top: calc(var(--site-header-height, 73px) + 16px); }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button:not(:disabled), summary { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
-.site-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px max(24px, calc((100vw - 1200px) / 2)); border-bottom: 1px solid var(--line); background: var(--page); }
+.site-header { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px max(24px, calc((100vw - 1200px) / 2)); border-bottom: 1px solid var(--line); background: var(--page); }
 .site-brand { display: flex; gap: 10px; align-items: center; font-weight: 650; font-size: 19px; letter-spacing: -.6px; }
 .site-brand > span, .preview-mark { display: grid; place-items: center; background: var(--accent); color: var(--button-ink); border-radius: 9px; width: 32px; height: 32px; font-family: Georgia, serif; font-size: 22px; }
 .site-header nav { display: flex; align-items: center; gap: 24px; margin-left: auto; font-size: 13px; }

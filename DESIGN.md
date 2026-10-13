@@ -436,8 +436,10 @@ If a visitor reaches an unavailable feature by URL, show a one-line card:
 
 One coach mark at a time, with one action, a **1 of 6** progress indicator and six dots.
 **Skip tour** always remains available and opens free play. On mobile, coach marks
-become a bottom sheet with the same steps. Never use Next buttons: a tiny state machine
-advances only after the visitor performs the real event.
+become a bottom sheet with the same steps. Updated per user feedback: **Previous**
+and **Next** control navigation. A real event enables Next; it never advances the tour
+by itself. Typing stays in Write until the visitor presses Next. **Finish tour** completes
+step 6 after History has been opened.
 
 | Step | Destination and guidance | Completion event |
 | --- | --- | --- |
@@ -487,6 +489,12 @@ successfully. Preserve resumable tour state without inflating completion counts.
   no separate static host was provisioned.
 - The user must confirm the six steps, mobile/keyboard behavior, resume/skip/reset,
   browser-storage failures, import retries, and prose/history carry-over in production.
+- Follow-up built: the tour is the primary homepage action; the banner has Start/Resume
+  and Discover more. Discover more previews Catch up, Evaluate, export formats with text/HTML
+  sample downloads, and private/public reader experiences. It uses the pinned sample and
+  does not modify the visitor's sandbox. How to use has a Write with AI tab with the existing
+  connection guides, a quickstart and copyable prompts. Sticky site navigation and measured
+  header/banner/coach offsets keep guided targets reachable. Awaiting production confirmation.
 
 Leave T35 awaiting confirmation until the user's production walkthrough. Completion and
 conversion targets need observed funnel data; implementation alone does not confirm them.

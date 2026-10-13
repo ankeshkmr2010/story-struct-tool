@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, Route, Routes, useLocation } from 'react-router-dom'
-import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from 'react'
 import Landing from './pages/Landing'
 import { ThemeProvider, ThemeToggle } from './components/Theme'
 import { AccountMenu, AuthGate } from './components/AuthGate'
@@ -26,6 +26,16 @@ const TryLocked = lazy(() => import('./pages/TryStory').then(m => ({ default: m.
 
 export default function App() {
   const location = useLocation()
+  const header = useRef<HTMLElement>(null)
+  useLayoutEffect(() => {
+    const element = header.current
+    if (!element) return
+    const measure = () => document.documentElement.style.setProperty('--site-header-height', `${element.getBoundingClientRect().height}px`)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
   const sandbox = location.pathname === '/try' || location.pathname.startsWith('/try/')
   useEffect(() => { void api.recordVisit().catch(() => {}) }, [])
   useLayoutEffect(() => {
@@ -33,7 +43,7 @@ export default function App() {
   }, [location.pathname, location.hash])
   return (
     <ThemeProvider>
-      <header className="site-header">
+      <header ref={header} className="site-header">
         <Link to="/" className="site-brand"><img src="/branding/storytool.svg" alt="" width="32" height="32" />StoryTool</Link>
         {!sandbox && <nav aria-label="Main navigation">
           <NavLink to="/library" className={`site-nav-link ${location.pathname.startsWith('/stories/') ? 'is-active' : ''}`}>Your stories</NavLink>

@@ -3,7 +3,7 @@ export const FIRST_SCENE = '00000000-0000-4000-8000-000000000010'
 export type Row = Record<string, unknown> & { id?: string }
 export type Backup = { format: string; version: number; state: Record<string, Row[] | number>; title: string }
 export type Edit = { scene_id: string; content: string; created_at: string }
-export type Sandbox = { backup: Backup; created: number; step: number; skipped: boolean; completed: boolean; editedScene: string; edits: Edit[]; events: string[]; importId: string; imported?: string; importedUser?: string }
+export type Sandbox = { backup: Backup; created: number; step: number; doneSteps?: number[]; skipped: boolean; completed: boolean; editedScene: string; edits: Edit[]; events: string[]; importId: string; imported?: string; importedUser?: string }
 const key = 'last-lantern-v1'
 let connection: Promise<IDBDatabase> | undefined
 let queue: Promise<unknown> = Promise.resolve()
