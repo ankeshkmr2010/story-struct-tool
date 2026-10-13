@@ -2,7 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNod
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { api, type SearchContext, type SearchHit } from '../api/client'
-import { StorySearch } from '../components/StorySearch'
+import { SearchDialog } from '../components/StorySearch'
 import { Ladder, type AuthoringMode } from '../components/Ladder'
 import { ChapterBriefCard } from '../components/ChapterBriefCard'
 import { InsightsPanel } from '../components/InsightsPanel'
@@ -126,20 +126,13 @@ function Workspace() {
   const [searchOpen, setSearchOpen] = useState(() => {
     try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' } catch { return false }
   })
-  const [searchText, setSearchText] = useState('')
-  const [searchEntry, setSearchEntry] = useState<{ q: string; sequence: number; context: SearchContext } | undefined>()
-  const searchSequence = useRef(0)
   const [searchParams] = useSearchParams()
   const handledSearchTarget = useRef('')
-  const hasPanel = Boolean(refPanel || searchOpen)
+  const hasPanel = Boolean(refPanel)
   const searchContext: SearchContext | null = refPanel === 'places' ? 'location'
     : refPanel === 'glossary' ? 'glossary_entry' : refPanel === 'timeline' ? 'timeline'
     : refPanel === 'assistant' ? null : tab !== 'design' ? 'prose'
     : ({ 1: 'story', 2: 'event', 3: 'character', 4: 'act', 5: 'beat', 6: 'thread', 7: 'chapter', 8: 'scene', [GRID_VIEW]: 'scene' } as Record<number, SearchContext>)[level] ?? null
-  useEffect(() => {
-    setSearchEntry(undefined)
-    try { setSearchText(searchContext ? JSON.parse(localStorage.getItem(`storytool-search:${storyId}:${searchContext}`) || '{}').q || '' : '') } catch { setSearchText('') }
-  }, [storyId, searchContext])
   useEffect(() => {
     try { localStorage.setItem(`storytool-search-open:${storyId}`, String(searchOpen)) } catch { /* Optional browser storage. */ }
   }, [storyId, searchOpen])
@@ -148,12 +141,6 @@ function Workspace() {
     if (!searchOpen) return
     try { localStorage.setItem(`storytool-search-context:${storyId}`, JSON.stringify({ tab, level, refPanel })) } catch { /* Optional browser storage. */ }
   }, [storyId, searchOpen, tab, level, refPanel])
-  useEffect(() => {
-    if (!searchOpen) return
-    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setSearchOpen(false); document.getElementById('story-search-toggle')?.focus() } }
-    window.addEventListener('keydown', escape)
-    return () => window.removeEventListener('keydown', escape)
-  }, [searchOpen])
   const [writerScene, setWriterScene] = useState<{ id: string; at: number } | null>(null)
   const [readerScene, setReaderScene] = useState<{ sceneId: string; sequence: number } | undefined>()
   const revealSearchTarget = async (id: string) => {
@@ -172,6 +159,7 @@ function Workspace() {
   const openSearchHit = async (hit: SearchHit) => {
     if (tab === 'write' && !await writerFlush.current()) throw new Error('Your writing has not saved yet. Retry the save before opening a result.')
     const target = await api.searchTarget(storyId, hit)
+    document.querySelector<HTMLDialogElement>('dialog.story-search-dialog')?.close()
     const narrow = window.matchMedia('(max-width: 1100px)').matches
     if (hit.matches.some(match => match.field === 'content')) {
       if (tab === 'read') setReaderScene({ sceneId: hit.id, sequence: Date.now() })
@@ -411,9 +399,9 @@ function Workspace() {
       }}>
         {(['write', 'read', 'design'] as const).map(item => <button key={item} id={`workspace-tab-${item}`} type="button" role="tab" aria-selected={tab === item} aria-controls={`workspace-panel-${item}`} tabIndex={tab === item ? 0 : -1} onClick={() => { void changeTab(item) }}>{item === 'write' ? 'Write' : item === 'read' ? 'Read' : 'Design'}</button>)}
       </div>
-        <form role="search" className="workspace-search-entry" onSubmit={event => { event.preventDefault(); if (searchContext && searchText.trim()) { setSearchEntry({ q: searchText.trim(), sequence: ++searchSequence.current, context: searchContext }); setSearchOpen(true) } }}>
-          <input id="story-search-toggle" type="search" enterKeyHint="search" aria-label="Search current section" aria-controls="story-search-panel" placeholder="Search this section…" maxLength={300} value={searchText} onChange={event => setSearchText(event.target.value)} disabled={!searchContext} />
-        </form>
+        <button id="story-search-toggle" type="button" className="workspace-search-entry search-launcher" aria-haspopup="dialog" onClick={() => setSearchOpen(true)} disabled={!searchContext}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg><span>Search this section…</span>
+        </button>
         <div className="workspace-reference-controls">
         <p className={`live-update-status in-bar${live.activity.isError ? ' is-paused' : ''}`} role="status">{live.activity.isError ? <>Live updates paused.<button type="button" onClick={() => { void live.activity.refetch() }}>Retry</button></> : <><span className="group relative inline-flex cursor-help items-center p-1.5 -m-1.5" tabIndex={0} aria-label="Live updates on"><span className="live-dot" /><span role="tooltip" className="pointer-events-none absolute left-0 top-6 z-30 hidden w-64 rounded-md border border-slate-200 bg-white p-2 text-xs leading-5 text-slate-700 shadow-lg group-hover:block group-focus:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">Live: changes from agents and other tabs appear here on their own. No need to refresh.</span></span>{justUpdated && <span className="live-updated">Updated just now</span>}</>}</p>
         <div className="workspace-ref-toggles" role="group" aria-label="Reference panels">
@@ -626,15 +614,15 @@ function Workspace() {
       </div>
       </div>
       </div>
-      <aside id="story-search-panel" hidden={!hasPanel} className="workspace-ref-panel" aria-label={searchOpen ? 'Search' : REF_PANELS.find(([key]) => key === refPanel)?.[1]}>
-        <div className="workspace-ref-head"><h2>{searchOpen ? 'Search' : REF_PANELS.find(([key]) => key === refPanel)?.[1]}</h2><div>{!searchOpen && <button type="button" onClick={() => setSearchOpen(true)}>Search</button>}<button type="button" aria-label="Close panel" onClick={() => { if (searchOpen) setSearchOpen(false); else setRefPanel(null); document.getElementById('story-search-toggle')?.focus() }}>✕</button></div></div>
-        <div hidden={!searchOpen}><StorySearch storyId={storyId} context={searchContext} active={searchOpen} onOpen={openSearchHit} externalInput entry={searchEntry?.context === searchContext ? searchEntry : undefined} onQueryChange={setSearchText} /></div>
-        {!searchOpen && refPanel === 'timeline' && <StoryTimeline storyId={storyId} compact allowInsert={tab !== 'read'} onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
-        {!searchOpen && refPanel === 'places' && <PlacesPanel storyId={storyId} />}
-        {!searchOpen && refPanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
-        {!searchOpen && refPanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
+      <aside hidden={!hasPanel} className="workspace-ref-panel" aria-label={REF_PANELS.find(([key]) => key === refPanel)?.[1]}>
+        <div className="workspace-ref-head"><h2>{REF_PANELS.find(([key]) => key === refPanel)?.[1]}</h2><div><button type="button" onClick={() => setSearchOpen(true)} disabled={!searchContext}>Search</button><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div></div>
+        {refPanel === 'timeline' && <StoryTimeline storyId={storyId} compact allowInsert={tab !== 'read'} onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
+        {refPanel === 'places' && <PlacesPanel storyId={storyId} />}
+        {refPanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
+        {refPanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
       </aside>
       </div>
+      <SearchDialog storyId={storyId} context={searchContext} active={searchOpen} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={openSearchHit} />
     </main>
   )
 }

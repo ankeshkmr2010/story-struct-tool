@@ -45,6 +45,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
     date: '13 Oct 2026',
     items: [
       ['Search your story and library', 'find saved prose and planning details in the current section or across your own stories. Open matching passages and items; optional meaning search finds related text.'],
+      ['Search in one place', 'type into one search window with readable filters and results together. Text matches appear first, with related passages added automatically.'],
       ['Automatic review refresh', 'reviews submitted by AI clients appear while Evaluate is open, with manual refresh still available.'],
       ['Word manuscript import', 'bring a .docx manuscript into a new story, then write, read or build its outline from the imported prose.'],
       ['Submission PDF export', 'export a manuscript with a title page, double-spaced prose, running page headers and optional reference appendices.'],

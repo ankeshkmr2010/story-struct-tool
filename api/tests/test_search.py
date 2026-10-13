@@ -36,6 +36,23 @@ def test_array_fields_use_authored_items_not_json_serialization():
     )
     assert "jsonb_array_elements_text" in query
     assert "string_agg" in query
+    assert "jsonb_typeof" in query and "CASE WHEN" in query
+
+
+@pytest.mark.asyncio
+async def test_pending_index_returns_searchable_state_without_provider(monkeypatch):
+    import storytool.domain.search.semantic as semantic
+
+    class DB:
+        async def scalar(self, statement):
+            return None
+
+    async def provider(values):
+        pytest.fail("Pending index called the embedding provider")
+
+    monkeypatch.setattr(semantic, "embed", provider)
+    page = await semantic.semantic_search(DB(), uuid4(), "prose", "door", None, 0, 20)
+    assert page.indexing and page.items == []
 
 
 def test_global_scene_fields_share_the_same_untitled_label():

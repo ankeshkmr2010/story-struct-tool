@@ -274,9 +274,7 @@ async def semantic_search(
             indexing=await library_indexing(db, story_id, current_profile),
         )
     if not library and not await index_ready(db, story_id, current_profile):
-        raise ClientException(
-            status_code=409, detail="Meaning search is updating. Try again shortly."
-        )
+        return SearchPage(items=[], semantic_available=True, indexing=True)
     await db.rollback()  # No transaction held across the remote call.
     try:
         vector = (await embed([get_settings().search_embedding_query_prefix + query]))[0]
@@ -330,9 +328,7 @@ async def semantic_search(
         .all()
     )
     if not library and not await index_ready(db, story_id, current_profile):
-        raise ClientException(
-            status_code=409, detail="Meaning search is updating. Try again shortly."
-        )
+        return SearchPage(items=[], semantic_available=True, indexing=True)
     metadata = {}
     if rows:
         for row in (

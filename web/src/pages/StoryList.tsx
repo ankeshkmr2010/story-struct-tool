@@ -5,7 +5,7 @@ import { api, type Story, type DocxImport } from '../api/client'
 import { errorText } from '../api/errors'
 import { StorySharing } from '../components/StorySharing'
 import { WordImportDialog } from '../components/WordImportDialog'
-import { StorySearch } from '../components/StorySearch'
+import { SearchDialog } from '../components/StorySearch'
 
 // Library cards show when a story was last touched rather than a completeness bar.
 function editedLabel(iso: string) {
@@ -27,6 +27,10 @@ export default function StoryList() {
   const qc = useQueryClient()
   const navigate = useNavigate()
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser })
+  const [searchOpen, setSearchOpen] = useState(() => {
+    try { return localStorage.getItem('storytool-library-search-open') === 'true' } catch { return false }
+  })
+  useEffect(() => { try { localStorage.setItem('storytool-library-search-open', String(searchOpen)) } catch { /* Optional browser storage. */ } }, [searchOpen])
   const [title, setTitle] = useState('')
   const [showTrash, setShowTrash] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Story | null>(null)
@@ -107,11 +111,13 @@ export default function StoryList() {
   return (
     <main className={`mx-auto ${showTrash ? 'max-w-3xl' : 'max-w-[1200px]'} p-5 sm:p-8`}>
       <div className={showTrash ? '' : 'library-with-search'}>
-      {!showTrash && <aside className="library-search" aria-label="Search your stories"><h2>Search your stories</h2>{me.data && <StorySearch storyId="" accountId={me.data.id} context="all" active onOpen={async hit => {
+      {!showTrash && <aside className="library-search" aria-label="Search your stories"><h2>Search your stories</h2><button type="button" className="search-launcher" aria-haspopup="dialog" onClick={() => setSearchOpen(true)}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg><span>Find a name, phrase or idea…</span></button></aside>}
+      {me.data && <SearchDialog storyId="" accountId={me.data.id} context="all" active={searchOpen && !showTrash} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={async hit => {
         await api.searchTarget(hit.story_id, hit)
+        document.querySelector<HTMLDialogElement>('dialog.story-search-dialog')?.close()
         const params = new URLSearchParams({ search_entity: hit.entity, search_id: hit.id, search_field: hit.matches.some(match => match.field === 'content') ? 'content' : hit.matches[0]?.field || 'title' })
         navigate(`/stories/${hit.story_id}?${params}`)
-      }} />}</aside>}
+      }} />}
       <div className="min-w-0">
       <div className="page-heading"><h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{showTrash ? 'Trash' : 'Your stories'}</h1><button ref={trashToggle} type="button" onClick={() => setShowTrash(!showTrash)} className="shrink-0 rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm">{showTrash ? 'Back to library' : `Trash${trash.data?.length ? ` (${trash.data.length})` : ''}`}</button></div>
       {message && <p role="status" className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</p>}

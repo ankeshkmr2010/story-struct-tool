@@ -4,6 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import String, case, cast, func, literal, select, union_all
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.cast.models import Character
@@ -64,7 +65,11 @@ TITLE_FIELDS = {"name", "title", "term", "label", "aliases"}
 def text_column(model: Any, field: str) -> Any:
     column = getattr(model, field)
     if field in ARRAY_FIELDS:
-        values = func.jsonb_array_elements_text(column).table_valued("value")
+        array = case(
+            (func.jsonb_typeof(column) == "array", column),
+            else_=cast(literal("[]"), JSONB),
+        )
+        values = func.jsonb_array_elements_text(array).table_valued("value")
         return select(func.string_agg(values.c.value, "\n")).scalar_subquery()
     return column
 
