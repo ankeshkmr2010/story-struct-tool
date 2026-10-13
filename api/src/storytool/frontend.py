@@ -28,11 +28,16 @@ def frontend_router(directory: Path) -> Router:
             "/oauth/consent",
             "/stories/{story_id:uuid}",
             "/shared/{story_id:uuid}",
+            "/stories/{story_id:uuid}/beta",
+            "/stories/{story_id:uuid}/polls",
+            "/beta/join/{token:str}",
+            "/beta/rounds/{round_id:uuid}",
+            "/beta/rounds/{round_id:uuid}/threads/{thread_id:uuid}",
             "/showcase/{token:str}",
         ],
         include_in_schema=False,
     )
-    async def index(story_id: UUID | None = None, token: str | None = None) -> File:
+    async def index(story_id: UUID | None = None, token: str | None = None, round_id: UUID | None = None, thread_id: UUID | None = None) -> File:
         return File(
             directory / "index.html",
             media_type="text/html",

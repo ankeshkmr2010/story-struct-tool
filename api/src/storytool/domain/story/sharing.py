@@ -66,6 +66,7 @@ class SharedStoryOut(BaseModel):
     blurb: str | None
     owner_name: str
     allow_import: bool
+    beta_round_id: UUID | None = None
 
 
 class SharedDocumentOut(BaseModel):
@@ -235,7 +236,20 @@ class SharedStoriesController(Controller):
                 .order_by(Story.title)
             )
         ).all()
-        return [shared_summary(story, grant, owner) for story, grant, owner in records]
+        result = [shared_summary(story, grant, owner) for story, grant, owner in records]
+        from storytool.domain.story.beta import BetaMember, BetaRound
+
+        rounds = await db_session.scalars(select(BetaRound).join(BetaMember).join(Story).where(
+            BetaMember.user_id == recipient.id, BetaMember.status == "approved",
+            Story.deleted_at.is_(None),
+        ).order_by(BetaRound.created_at.desc()))
+        result.extend(SharedStoryOut(
+            story_id=row.story_id, title=f"{row.snapshot['title']} · {row.title}",
+            premise=None, blurb=row.snapshot.get("blurb"),
+            owner_name=row.snapshot.get("author_name") or "StoryTool author",
+            allow_import=False, beta_round_id=row.id,
+        ) for row in rounds)
+        return result
 
     @get("/{story_id:uuid}")
     async def read(
