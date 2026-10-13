@@ -82,6 +82,7 @@ function MiceInputs({ storyId, onOpenInbox }: { storyId: string; onOpenInbox: ()
   const agentPrompt = [
     `Set the MICE category of each thread that has none in my StoryTool story "${story.data?.title ?? 'Untitled'}" (story_id ${storyId}).`,
     'Use query_story_entities for thread, scene_thread and scene, and get_entity_schema for thread.',
+    'When prose access is available, use search_story in prose context to find relevant thread passages: text mode for names/phrases, semantic mode for related ideas when enabled. Read the matched scenes before proposing categories; do not treat limited or indexing results as missing story evidence.',
     ...instructions,
     "I'll accept or reject each change in StoryTool's Agent changes.",
   ].join('\n')
@@ -160,6 +161,7 @@ function ReviewInputs({ storyId, evaluatorId, ready, onOpenInbox }: {
       ? 'Use query_story_entities for scene and chapter, read_scene_prose for complete scene prose, and get_entity_schema for scene.'
       : 'Use query_story_entities for character, arc, arc_stage, beat, scene, chapter, scene_beat and chapter_beat; read_scene_prose for relevant prose; get_entity_schema for character and beat.',
     prompt,
+    `Use search_story with story_id ${storyId} and context prose to locate evidence for the missing inputs, then read the matched passages with read_scene_prose. Use text mode for names/phrases and semantic mode for related ideas when available. Do not infer missing canon from empty or indexing results.`,
     `After I accept the proposal in Agent changes, fetch a fresh get_evaluation_package with evaluator_id ${evaluatorId}, evaluate its inputs, then submit_evaluation_report with that evaluator_id and the fresh base_fingerprint.`,
   ].join('\n')
   const ask = useMutation({
@@ -219,7 +221,9 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
   })
   const agentPrompt = [
     `Run the "${evaluatorName}" review for my StoryTool story "${story.data?.title ?? 'Untitled'}" (story_id ${storyId}).`,
-    `Call get_evaluation_package with evaluator_id ${evaluatorId} and that story_id, and judge exactly as its instructions say, using only its inputs.`,
+    `Call get_evaluation_package with evaluator_id ${evaluatorId} and that story_id. Follow its review instructions and use the supplied search_evidence as a starting point.`,
+    `Use search_story with story_id ${storyId} and context prose to find setups, payoffs, motif appearances and supporting passages for this review. Use text mode for literal names/phrases and semantic mode for related ideas when enabled. Follow next_offset when more matches are needed, then use read_scene_prose to verify the relevant passages.`,
+    'Exact hits match text; Related hits are evidence candidates, not proof. Do not claim that a setup, payoff or motif is absent from limited, unavailable or indexing results. Cite verified scene IDs. If the story changes during the review, fetch a fresh evaluation package and recheck the evidence.',
     `Then call submit_evaluation_report with evaluator_id ${evaluatorId}, the package's base_fingerprint, a short summary and one verdict per subject specified in the package. Don't change the story.`,
   ].join('\n')
   const copy = async () => {

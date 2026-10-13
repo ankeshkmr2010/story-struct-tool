@@ -46,6 +46,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
     items: [
       ['Search for your connected AI', 'search_story finds bounded passages and story details through MCP, with exact or related matching.'],
       ['Search evidence in Evaluate', 'existing AI reviews can use retrieved scenes to examine setups, payoffs and motifs, with limited coverage made explicit.'],
+      ['Evaluate agent prompts', 'copied review and input-filling prompts explicitly guide your AI to search and verify relevant passages.'],
       ['Match explanations', 'search results label literal matches Exact and meaning matches Related.'],
     ],
   },
