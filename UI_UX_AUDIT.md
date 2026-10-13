@@ -202,21 +202,21 @@ or production visual confirmation. T20 remains open for the unfinished walkthrou
 **2. Landing page touch-ups — T40**
 - [x] Update "Yours to keep." Add EPUB, HTML, plain text, PDF and Word import. Built in T47; awaiting production check.
 - [x] Point the Connect AI nav link at the MCP section, not the top of the page. Built in T47; awaiting production check.
-- [ ] Add the new checks to the craft section: Misbelief at midpoint and Value shift versus prose.
+- [~] Built 2026-10-14; awaiting production confirmation: added Misbelief at midpoint and Value shift versus prose to the craft section.
 
 **3. Roadmap — T41**
 - [x] Misbelief and Value shift added to Delivered on 2026-10-13; awaiting production confirmation.
-- [ ] Suggested order: DOCX import → search (move from Exploring to Planned) → try before signup → reviewers and commenters → PDF export → view counts (bundle with commenters) → images last.
+- [~] Updated 2026-10-14; awaiting production confirmation: remaining cards are try before signup → Scrivener support → shared-story view counts → images. DOCX import, search, beta readers/commenting and PDF export remain in Delivered; this batch added to Delivered.
 
 **4. Evaluate tab polish — T42**
-- [ ] Explain the greyed-out "Ask the assistant" button with a tooltip.
-- [ ] Flag stale reviews: "Story edited since this review. Re-run?"
+- [~] Already implemented in all three input/review buttons: native tooltips explain missing provider connections or missing inputs. Retained; awaiting production confirmation.
+- [~] Built 2026-10-14; awaiting production confirmation: "Story edited since this review. Re-run?" with assistant re-run (when connected) and an agent-prompt action.
 - [ ] Draw thread nesting visually instead of printing <Idea><Event> tags.
-- [ ] Define MICE and misbelief in one line each, with credit (Card and Kowal, Cron).
-- [ ] Use an unambiguous timestamp: "12 Oct 2026, 2:09 PM".
+- [~] Built 2026-10-14; awaiting production confirmation: one-line MICE and misbelief definitions credit Orson Scott Card / Mary Robinette Kowal and Lisa Cron.
+- [~] Built 2026-10-14; awaiting production confirmation: current and historical reviews use dates such as "12 Oct 2026, 2:09 PM" in the viewer’s local time.
 - [x] (08dd32f) Refresh reports automatically: every 15 seconds while Evaluate is open, plus on window focus. Manual refresh retained (`web/src/components/StoryEvaluation.tsx:207`); awaiting production confirmation.
 - [ ] Add an all-checks summary with a Run all button.
-- [ ] Make every flag jump to its thread or scene in Plan.
+- [~] Built 2026-10-14; awaiting production confirmation: scene findings retain exact scene selection; thread and character review links now scroll to and focus the specific item in Plan. Story-wide findings open the story plan.
 
 **5. Bigger bets (later)**
 - [ ] T43 Package the authorship report as a shareable summary for AI disclosure to agents, publishers and contests.

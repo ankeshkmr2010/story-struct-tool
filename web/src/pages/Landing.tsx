@@ -15,6 +15,8 @@ const craft = [
   ['01', 'Know who wrote what', 'Your words and AI changes have a record. See who changed each field in History, review proposed edits, and choose what to keep.'],
   ['02', 'Keep your threads connected', 'MICE thread nesting shows where each storyline opens and closes, and flags threads that resolve out of order. Ask an AI to review the promises and payoffs.'],
   ['03', 'Find your scene rhythm', 'Scene and sequel checks highlight long runs of action or reaction, so you can decide where the story needs room to breathe.'],
+  ['04', 'Misbelief at midpoint', 'Ask an AI to review how the midpoint challenges a character’s false belief, using evidence from your story.'],
+  ['05', 'Value shift versus prose', 'Compare a scene’s planned emotional change with what its prose delivers, and consider where to revise.'],
 ] as const
 
 export default function Landing() {

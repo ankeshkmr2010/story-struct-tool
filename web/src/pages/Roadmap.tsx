@@ -12,25 +12,25 @@ const BADGE: Record<Status, string> = {
 
 const ITEMS: readonly { title: string; status: Status; description: string }[] = [
   {
+    title: 'Try it before signing up',
+    status: 'Planned',
+    description: 'Edit a sample story, The Last Lantern, and see how continuity checks work before creating an account.',
+  },
+  {
     title: 'Scrivener support',
     status: 'Planned',
     description:
       'Import a manuscript from Scrivener. Word (.docx) import is already available.',
   },
   {
-    title: 'Try it before signing up',
-    status: 'Planned',
-    description: 'Edit a sample story, The Last Lantern, and see how continuity checks work before creating an account.',
+    title: 'View counts on shared stories',
+    status: 'Exploring',
+    description: 'See how many people have read the stories you share.',
   },
   {
     title: 'Images in your story',
     status: 'Planned',
     description: 'Add images to your story: maps, character art, illustrations.',
-  },
-  {
-    title: 'View counts on shared stories',
-    status: 'Exploring',
-    description: 'See how many people have read the stories you share.',
   },
 ]
 
@@ -39,6 +39,9 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
   {
     date: '14 Oct 2026',
     items: [
+      ['Evaluate polish', 'credited craft definitions, clear review dates, a stale-review notice with re-run actions, and findings that open their specific item in Plan.'],
+      ['Homepage craft checks', 'Misbelief at midpoint and Value shift versus prose now appear in the craft section.'],
+      ['Roadmap priorities', 'remaining work reordered, with shipped features retained in Delivered and images last.'],
       ['Beta reader guides', 'homepage and How to use explain frozen manuscript rounds, signed-in invitations, private feedback conversations and beta polls.'],
     ],
   },

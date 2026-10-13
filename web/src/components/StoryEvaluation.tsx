@@ -196,14 +196,19 @@ const VERDICT: Record<string, { icon: string; label: string; border: string }> =
   needs_change: { icon: '🔴', label: 'Needs change', border: 'border-rose-500' },
 }
 
+function reviewTimestamp(value: string) {
+  const date = new Date(value)
+  return `${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}, ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`
+}
+
 function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onOpenThreads, onOpenCharacters }: {
   storyId: string
   evaluatorId: string
   evaluatorName: string
   ready: boolean
   onOpenScene: (scene: { id: string; chapter_id: string | null }) => void
-  onOpenThreads: () => void
-  onOpenCharacters: () => void
+  onOpenThreads: (id: string) => void
+  onOpenCharacters: (id: string) => void
 }) {
   const qc = useQueryClient()
   const reports = useQuery({ queryKey: ['evaluation-reports', storyId, evaluatorId], queryFn: () => api.listEvaluationReports(storyId, evaluatorId), refetchInterval: 15_000, refetchOnWindowFocus: true })
@@ -237,8 +242,8 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
       const scene = sceneOf(id)
       return scene ? <button type="button" className="underline" onClick={() => onOpenScene({ id: scene.id, chapter_id: scene.chapter_id ?? null })}>{scene.title || 'Untitled scene'}</button> : 'A scene'
     }
-    if (type === 'character') return <button type="button" className="underline" onClick={onOpenCharacters}>{characters.data?.find((item) => item.id === id)?.name ?? 'A character'}</button>
-    return <button type="button" className="underline" onClick={onOpenThreads}>{threadName(id)}</button>
+    if (type === 'character') return <button type="button" className="underline" onClick={() => onOpenCharacters(id)}>{characters.data?.find((item) => item.id === id)?.name ?? 'A character'}</button>
+    return <button type="button" className="underline" onClick={() => onOpenThreads(id)}>{threadName(id)}</button>
   }
   const source = (item: { source: string; model: string | null }) => item.source === 'assistant' ? `Assistant${item.model ? ` (${item.model})` : ''}` : item.source === 'mcp' ? 'Your agent (MCP)' : 'You'
 
@@ -259,9 +264,15 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
       {report && (
         <div className="space-y-3">
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {new Date(report.created_at).toLocaleString()} · {source(report)}
-            {report.stale && <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Stale: the story changed since</span>}
+            {reviewTimestamp(report.created_at)} · {source(report)}
           </p>
+          {report.stale && <div role="status" className="rounded-md bg-amber-100 p-3 text-sm text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+            <p>Story edited since this review. Re-run?</p>
+            <div className="mt-2 flex flex-wrap gap-3">
+              {connection && <button type="button" disabled={!ready || ask.isPending} title={!ready ? 'Fill in the missing inputs above first' : undefined} onClick={() => ask.mutate()} className="underline disabled:opacity-40">{ask.isPending ? 'Reviewing…' : 'Re-run with the assistant'}</button>}
+              <button type="button" onClick={() => void copy()} className="underline">{copied ? 'Copied' : 'Copy re-run prompt for your agent'}</button>
+            </div>
+          </div>}
           <p className="text-sm leading-6">{report.summary}</p>
           <ul className="space-y-2">
             {report.verdicts.map((item) => {
@@ -292,7 +303,7 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
             {reports.data.map((item) => (
               <li key={item.id}>
                 <button type="button" onClick={() => setShownId(item.id)} className={`text-left underline ${item.id === report?.id ? 'font-semibold' : ''}`}>
-                  {new Date(item.created_at).toLocaleString()} · {source(item)}{item.stale ? ' · stale' : ''}
+                  {reviewTimestamp(item.created_at)} · {source(item)}{item.stale ? ' · stale' : ''}
                 </button>
               </li>
             ))}
@@ -303,12 +314,13 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
   )
 }
 
-export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters }: {
+export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters, onOpenStory }: {
   storyId: string
   onOpenInbox: () => void
   onOpenScene: (scene: { id: string; chapter_id: string | null }) => void
-  onOpenThreads: () => void
-  onOpenCharacters: () => void
+  onOpenThreads: (id: string) => void
+  onOpenCharacters: (id: string) => void
+  onOpenStory: () => void
 }) {
   const evaluators = useQuery({ queryKey: ['evaluators', storyId], queryFn: () => api.listEvaluators(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
@@ -324,7 +336,8 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
       const scene = scenes.data?.find((item) => item.id === id)
       return scene ? () => onOpenScene({ id: scene.id, chapter_id: scene.chapter_id ?? null }) : null
     }
-    if (type === 'thread') return onOpenThreads
+    if (type === 'thread') return () => onOpenThreads(id)
+    if (type === 'story') return onOpenStory
     return null
   }
 
@@ -356,6 +369,8 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
 
         <section className="space-y-4 rounded-lg border border-slate-200 p-5 dark:border-slate-700">
           <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{selected.description}</p>
+          {selected.id === 'mice_nesting' && <p className="text-xs text-slate-500 dark:text-slate-400">MICE means Milieu, Idea, Character and Event: four kinds of story thread, from Orson Scott Card and taught by Mary Robinette Kowal.</p>}
+          {selected.id === 'misbelief_midpoint' && <p className="text-xs text-slate-500 dark:text-slate-400">A misbelief is a false conviction that drives a character’s choices, from Lisa Cron’s Story Genius.</p>}
           {selected.missing.length > 0 && (
             <ul className="list-disc pl-5 text-sm text-amber-800 dark:text-amber-300">
               {selected.missing.map((item) => <li key={item}>{item}</li>)}
@@ -388,7 +403,7 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
                   return (
                     <li key={`${finding.code}-${index}`} className={`rounded-md border-l-4 bg-white p-3 text-sm dark:bg-slate-900 ${finding.severity === 'warning' ? 'border-amber-400' : 'border-slate-300 dark:border-slate-600'}`}>
                       <p>{finding.message}</p>
-                      {open && <button type="button" onClick={open} className="mt-1 text-xs underline">{finding.entity_type === 'scene' ? 'Open the scene →' : 'Open threads →'}</button>}
+                      {open && <button type="button" onClick={open} className="mt-1 text-xs underline">Open {finding.entity_type === 'story' ? 'story' : finding.entity_type} in Plan →</button>}
                     </li>
                   )
                 })}
