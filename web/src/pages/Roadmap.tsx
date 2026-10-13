@@ -37,6 +37,12 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
 
 const DELIVERED: readonly { date: string; items: readonly (readonly [string, string])[] }[] = [
   {
+    date: '14 Oct 2026',
+    items: [
+      ['Beta reader guides', 'homepage and How to use explain frozen manuscript rounds, signed-in invitations, private feedback conversations and beta polls.'],
+    ],
+  },
+  {
     date: '13 Oct 2026 — beta readers',
     items: [
       ['Dedicated beta reader flow', 'open Beta readers beside Share; manage reader feedback and beta polls together, with polls below readers.'],

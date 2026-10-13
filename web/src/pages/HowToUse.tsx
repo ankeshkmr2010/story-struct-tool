@@ -28,6 +28,7 @@ const SECTIONS = [
   ['feedback', 'What the tool tells you'],
   ['writing', 'Write, Focus, and exporting'],
   ['sharing', 'Sharing and reading stories'],
+  ['beta-readers', 'Beta readers, feedback and polls'],
 ] as const
 
 const LEVELS: readonly (readonly [string, string])[] = [
@@ -345,6 +346,14 @@ export default function HowToUse() {
                 <Item title="Read stories shared with you">Open Shared with you in your library, or follow the reader link while signed in with the authorized email. The separate reader shows the manuscript with chapter navigation and a timeline. Context shows linked beats, arc stages, characters, and places without editing controls.</Item>
                 <Item title="Import only when permitted">If the author allows it, choose Import a copy and confirm. The copy includes current prose, structure, arcs, and timeline links, starts its own version history, and belongs to your account. Changes to either draft do not sync. Past versions and AI conversations aren’t shared or imported.</Item>
                 <Item title="Change or revoke access">Open Share again to change a recipient’s permission or revoke access. The reader shows the author’s current saved draft; Refresh story loads newer changes. Moving the original to Trash hides it from recipients until restored. Revoking or deleting the original does not remove copies already imported.</Item>
+              </div>
+              <h3 id="beta-readers" className="mt-8 scroll-mt-24 text-xl font-semibold">Beta readers, feedback and polls</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Choose Beta readers beside Share on a library card or in the story header. Reader management and feedback come first; Beta polls is below them on the same page.</p>
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                <Item title="Publish a manuscript round">Give the round a title and reader brief, choose all or selected chapters, and optionally set a deadline. Publish saved draft freezes that manuscript for the round while you continue writing. Readers see the manuscript and brief; planning details, AI conversations and other readers’ private feedback stay hidden. The deadline is guidance, not an automatic lock.</Item>
+                <Item title="Invite and manage readers">Copy the invitation link and send it yourself; StoryTool does not send an email. Anyone with it must sign in and request your approval by default. Enable automatic admission if you prefer. Approved rounds appear under Shared with you. Disable or rotate the invitation without removing admitted readers, or revoke a reader’s access separately. Closing a round stops new feedback and votes while existing feedback stays readable.</Item>
+                <Item title="Have a private feedback conversation">Readers can select a passage and choose Comment on selected text, use Leave scene feedback, or leave chapter or whole-story feedback. Save a private draft or send it to the author. My feedback and polls keeps conversations reachable; each has a protected URL showing the quoted passage and replies. Readers see their own threads and author replies; authors can mark feedback addressed or reopen it. Readers may also share their chapter progress and reading status.</Item>
+                <Item title="Create polls and see results">Under Beta polls, create a question for a round or chapter with one-choice, multiple-choice or written answers. Manage draft, open, closed and archived polls, edit or delete them, and see results. Each reader has one response, editable while open. Choose identified or name-hidden answers; readers see results only if enabled, after answering or closing. Changing questions or options after responses creates a new version. Archive preserves results; permanent deletion asks for confirmation.</Item>
               </div>
             </Section>
 

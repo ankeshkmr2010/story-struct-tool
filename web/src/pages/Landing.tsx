@@ -85,14 +85,16 @@ export default function Landing() {
       <div className="section-intro sharing-intro">
         <p className="eyebrow">SHARE</p>
         <h2 id="sharing-title">Ready for readers.</h2>
-        <p>Invite the readers you choose, or give your story a public page anyone can open.</p>
-        <div className="sharing-actions"><Link to={SHOWCASE} className="landing-primary">See a showcase <span aria-hidden="true">→</span></Link><Link to="/how-to-use#sharing" className="landing-secondary">How sharing works →</Link></div>
+        <p>Collect private beta feedback on a fixed draft, share your latest manuscript, or give your story a public page anyone can open.</p>
+        <div className="sharing-actions"><Link to={SHOWCASE} className="landing-primary">See a showcase <span aria-hidden="true">→</span></Link><Link to="/how-to-use#beta-readers" className="landing-secondary">How beta reading works →</Link></div>
       </div>
       <div className="sharing-permissions">
+        <article><span className="writing-tab-label">Beta readers</span><h3>Feedback you can talk through.</h3><p>Publish a frozen manuscript round, send a signed-in invitation and approve readers. Each passage comment becomes a private conversation with you, with replies, an open or resolved state and a link you can return to.</p></article>
+        <article><span className="writing-tab-label">Beta polls</span><h3>Ask your readers directly.</h3><p>Put questions to a beta round and see the results below reader management. Choose named or anonymous answers, let readers update their response while a poll is open, and keep past results when a question changes.</p></article>
         <article><span className="writing-tab-label">Reader link</span><h3>For the readers you pick.</h3><p>Invite someone by their sign-in email. They read your latest draft with characters and timeline close at hand, and can import their own copy if you allow it.</p></article>
         <article><span className="writing-tab-label">Public showcase</span><h3>For anyone with the link.</h3><p>Turn on a page with your premise, cast and timeline. Visitors need no account, and you can change or switch off the link at any time.</p></article>
       </div>
-      <ol className="sharing-steps"><li><span>01</span><p>Open <strong>Share</strong> on your story.</p></li><li><span>02</span><p>Add a reader's email, or turn on the showcase.</p></li><li><span>03</span><p>Send the link.</p></li></ol>
+      <ol className="sharing-steps"><li><span>01</span><p>Open <strong>Beta readers</strong> or <strong>Share</strong> beside it.</p></li><li><span>02</span><p>Publish a beta round, invite a reader by email, or turn on the showcase.</p></li><li><span>03</span><p>Send the link.</p></li></ol>
       <p className="sharing-footnote">Your private notes, version history and AI conversations stay private. You can revoke access later; copies already imported remain independent.</p>
     </section>
 
