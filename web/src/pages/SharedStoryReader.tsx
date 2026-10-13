@@ -5,6 +5,7 @@ import { api } from '../api/client'
 import { errorText } from '../api/errors'
 import { orderChapters, orderScenes } from '../api/ordering'
 import { ManuscriptReading, type ReadingTarget } from '../components/ManuscriptReading'
+import { SANDBOX_ID } from '../sandbox/storage'
 import { ReadOnlyTimeline } from '../components/ReadOnlyTimeline'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 
@@ -22,7 +23,7 @@ export function StoryReader({ storyId, owned = false, embedded = false, openTarg
   const qc = useQueryClient()
   const navigate = useNavigate()
   const document = useQuery({ queryKey: betaRoundId ? ['beta-document', betaRoundId] : [owned ? 'reading-document' : 'shared-document', storyId], queryFn: () => betaRoundId ? api.readBetaRound(betaRoundId) : owned ? api.readOwnedStory(storyId) : api.readSharedStory(storyId), retry: false })
-  const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser })
+  const me = useQuery({ queryKey: [storyId === SANDBOX_ID ? 'sandbox-me' : 'me'], queryFn: api.currentUser })
   const [focus, setFocus] = useState(false)
   const [target, setTarget] = useState<ReadingTarget | undefined>(undefined)
   const sequence = useRef(0)

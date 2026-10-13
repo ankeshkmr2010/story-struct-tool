@@ -42,6 +42,7 @@ function savedSearch(key: string, context: LibrarySearchContext): Saved {
 
 type SearchProps = {
   storyId: string; accountId?: string; context: LibrarySearchContext | null; active: boolean;
+  initialQuery?: string;
   onOpen: (hit: SearchHit) => Promise<void>;
 }
 export function SearchDialog({ onClose, onReopen, ...props }: SearchProps & { onClose: () => void; onReopen: () => void }) {
@@ -60,6 +61,7 @@ export function SearchDialog({ onClose, onReopen, ...props }: SearchProps & { on
     if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) event.currentTarget.close()
   }}>
     <header className="story-search-dialog-head"><h2 id={titleId}>Search</h2><button type="button" aria-label="Close search" onClick={() => dialog.current?.close()}>✕</button></header>
+    {props.storyId === '00000000-0000-4000-8000-000000000001' && <div id="try-search-coach" />}
     {dialogError && <p role="alert" className="writer-error">{dialogError}</p>}
     <StorySearch {...props} onOpen={async hit => {
       setDialogError(null)
@@ -73,12 +75,13 @@ export function StorySearch({ context, ...props }: SearchProps) {
   return <SearchResults key={`${props.storyId || props.accountId}:${context}`} {...props} context={context} />
 }
 
-function SearchResults({ storyId, accountId, context, active, onOpen }: SearchProps & { context: LibrarySearchContext }) {
+function SearchResults({ storyId, accountId, context, active, onOpen, initialQuery }: SearchProps & { context: LibrarySearchContext }) {
   const scopeKey = storyId || `library:${accountId}`
   const storageKey = `storytool-search:${scopeKey}:${context}`
   const [saved] = useState(() => savedSearch(storageKey, context))
   const [input, setInput] = useState(saved.q)
   const [query, setQuery] = useState(saved.q)
+  useEffect(() => { if (initialQuery) { setInput(initialQuery); setQuery(initialQuery) } }, [initialQuery])
   const [field, setField] = useState(saved.field)
   const [entity, setEntity] = useState(saved.entity)
   const [opening, setOpening] = useState<string | null>(null)

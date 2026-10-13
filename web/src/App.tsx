@@ -20,9 +20,13 @@ import BetaOwner from './pages/BetaOwner'
 import BetaPolls from './pages/BetaPolls'
 import BetaReaderPage, { BetaInvitePage } from './pages/BetaReader'
 import BetaThreadPage from './pages/BetaThread'
+const TryStory = lazy(() => import('./pages/TryStory'))
+const TryKeep = lazy(() => import('./pages/TryStory').then(m => ({ default: m.TryKeep })))
+const TryLocked = lazy(() => import('./pages/TryStory').then(m => ({ default: m.TryLocked })))
 
 export default function App() {
   const location = useLocation()
+  const sandbox = location.pathname === '/try' || location.pathname.startsWith('/try/')
   useEffect(() => { void api.recordVisit().catch(() => {}) }, [])
   useLayoutEffect(() => {
     if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'start' })
@@ -31,17 +35,20 @@ export default function App() {
     <ThemeProvider>
       <header className="site-header">
         <Link to="/" className="site-brand"><img src="/branding/storytool.svg" alt="" width="32" height="32" />StoryTool</Link>
-        <nav aria-label="Main navigation">
+        {!sandbox && <nav aria-label="Main navigation">
           <NavLink to="/library" className={`site-nav-link ${location.pathname.startsWith('/stories/') ? 'is-active' : ''}`}>Your stories</NavLink>
           <NavLink to="/how-to-use" className="site-nav-link">How to use</NavLink>
           <NavLink to="/roadmap" className="site-nav-link">Roadmap</NavLink>
           <a href="/#mcp" className={`site-nav-link ${location.hash === '#mcp' ? 'is-active' : ''}`}>Connect AI</a>
           <NavLink to="/feedback" className="site-nav-link site-feedback-link">Feedback</NavLink>
-        </nav>
-        <div className="site-header-actions"><ThemeToggle /><AccountMenu /></div>
+        </nav>}
+        <div className="site-header-actions"><ThemeToggle />{!sandbox && <AccountMenu />}</div>
       </header>
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/try" element={<Suspense fallback={<p className="p-8">Opening sandbox…</p>}><TryStory /></Suspense>} />
+      <Route path="/try/keep" element={<Suspense fallback={<p className="p-8">Preparing sign-in…</p>}><TryKeep /></Suspense>} />
+      <Route path="/try/*" element={<Suspense fallback={<p className="p-8">Opening…</p>}><TryLocked /></Suspense>} />
       <Route path="/how-to-use" element={<HowToUse />} />
       <Route path="/roadmap" element={<Roadmap />} />
       <Route path="/thanks" element={<Shoutouts />} />

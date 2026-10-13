@@ -18,6 +18,9 @@ def frontend_router(directory: Path) -> Router:
         [
             "/",
             "/library",
+            "/try",
+            "/try/keep",
+            "/try/{feature:path}",
             "/settings",
             "/how-to-use",
             "/roadmap",
@@ -37,7 +40,7 @@ def frontend_router(directory: Path) -> Router:
         ],
         include_in_schema=False,
     )
-    async def index(story_id: UUID | None = None, token: str | None = None, round_id: UUID | None = None, thread_id: UUID | None = None) -> File:
+    async def index(story_id: UUID | None = None, token: str | None = None, round_id: UUID | None = None, thread_id: UUID | None = None, feature: Path | None = None) -> File:
         return File(
             directory / "index.html",
             media_type="text/html",
@@ -53,6 +56,8 @@ def frontend_router(directory: Path) -> Router:
         handlers.append(
             create_static_files_router("/branding", directories=[directory / "branding"])
         )
+    if (directory / "sandbox").is_dir():
+        handlers.append(create_static_files_router("/sandbox", directories=[directory / "sandbox"]))
     if (directory / "vite.svg").is_file():
 
         @get("/vite.svg", include_in_schema=False)

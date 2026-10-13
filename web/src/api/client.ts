@@ -1,6 +1,7 @@
 import type { components, operations } from './schema'
 import { orderChapters, orderScenes } from './ordering'
 import { getVisitorId } from './visitor'
+import { isSandboxRequest, sandboxRequest } from '../sandbox/adapter'
 
 // Types come from the backend's OpenAPI schema, so Pydantic stays the single source of
 // truth. Never hand-write these -- run `npm run gen:api`.
@@ -85,6 +86,7 @@ export type Shoutout = { id: string; name: string; thanks: string; colour: strin
 export type ShoutoutInput = { name: string; thanks: string; colour: string; mark: string }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (isSandboxRequest(path)) return await sandboxRequest(path, init) as T
   const visitorId = getVisitorId()
   const headers = new Headers(init?.headers)
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
@@ -191,6 +193,11 @@ export const api = {
   sendProductFeedback: (body: ProductFeedbackInput) => post<ProductFeedback>('/api/product-feedback', body),
   listProductFeedback: () => request<ProductFeedback[]>('/api/admin/product-feedback'),
   funnelCounts: () => request<Funnel>('/api/admin/funnel'),
+  tryFunnelCounts: () => request<Record<string, number>>('/api/admin/funnel/try'),
+  recordTryEvents: (events: string[]) => {
+    const visitor_id = getVisitorId()
+    return visitor_id ? post<void>('/api/site/try', { visitor_id, events: [...new Set(events)].slice(0, 10) }) : Promise.resolve()
+  },
   recordVisit: () => {
     const visitorId = getVisitorId()
     return visitorId ? post<void>('/api/site/visit', { visitor_id: visitorId }) : Promise.resolve()

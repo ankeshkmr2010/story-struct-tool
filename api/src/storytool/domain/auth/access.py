@@ -39,6 +39,7 @@ _PUBLIC_PATHS = {
     "/api/auth/google",
     "/api/shoutouts",
     "/api/site/visit",
+    "/api/site/try",
 }
 _REFERENCE_MODELS = {
     "act_id": Act,

@@ -30,7 +30,7 @@ from storytool.domain.noticing.controller import NoticingController
 from storytool.domain.search.controller import LibrarySearchController, SearchController
 from storytool.domain.search.semantic import search_lifespan
 from storytool.domain.site.feedback import AdminFeedbackController, ProductFeedbackController
-from storytool.domain.site.funnel import FunnelController, VisitController
+from storytool.domain.site.funnel import FunnelController, VisitController, TryController
 from storytool.domain.site.shoutouts import AdminShoutoutController, PublicShoutoutController
 from storytool.domain.story.analysis_controller import StoryAnalysisController
 from storytool.domain.story.authorship import AuthorshipController
@@ -104,6 +104,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             ProductFeedbackController,
             AdminFeedbackController,
             VisitController,
+            TryController,
             FunnelController,
             EventController,
             ActController,

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type TimelineEntry } from '../api/client'
 import { EventDelete } from './EventDelete'
 import { AddForm, InlineNumber, InlineSelect, InlineText } from './fields'
+import { SANDBOX_ID, tourEvent } from '../sandbox/storage'
 
 const entryKey = (entry: TimelineEntry) => `${entry.kind}:${entry.id}`
 const isSuggested = (source: string, isPov: boolean) => source === 'inferred' && !isPov
@@ -21,7 +22,7 @@ export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact =
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [characterFilter, setCharacterFilter] = useState('')
   const [locationFilter, setLocationFilter] = useState('')
-  const [showScenes, setShowScenes] = useState(false)
+  const [showScenes, setShowScenes] = useState(storyId === SANDBOX_ID)
   const [order, setOrder] = useState<'world' | 'reading'>('world')
   const [showAdd, setShowAdd] = useState(false)
   const [insertAfter, setInsertAfter] = useState<number | null>(null)
@@ -99,7 +100,7 @@ export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact =
       {showAdd && <section className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-4"><AddForm placeholder="What happens in this event?" onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} /><p className="mt-2 text-xs text-slate-500 dark:text-slate-400">The new event starts at the end of the timeline. Select it to set its time, people, and place.</p></section>}
 
       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-300">
-        <div className="flex rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-0.5" role="group" aria-label="Timeline order">{(['world', 'reading'] as const).map((value) => <button key={value} type="button" aria-pressed={order === value} onClick={() => setOrder(value)} className={`rounded px-3 py-1.5 ${order === value ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900'}`}>{value === 'world' ? 'World time' : 'Reading order'}</button>)}</div>
+        <div className="flex rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-0.5" role="group" aria-label="Timeline order">{(['world', 'reading'] as const).map((value) => <button key={value} type="button" aria-pressed={order === value} onClick={() => { setOrder(value); if (storyId === SANDBOX_ID && value !== order) tourEvent('timeline') }} className={`rounded px-3 py-1.5 ${order === value ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900'}`}>{value === 'world' ? 'World time' : 'Reading order'}</button>)}</div>
         <label>Person<select aria-label="Filter timeline by person" value={characterFilter} onChange={(event) => setCharacterFilter(event.target.value)} className="ml-2 max-w-48 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5"><option value="">Everyone</option>{timeline.data.characters.map((character) => <option key={character.id} value={character.id}>{character.name}</option>)}</select></label>
         <label>Place<select aria-label="Filter timeline by place" value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} className="ml-2 max-w-48 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5"><option value="">Everywhere</option>{locations.data?.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select></label>
         <label className="flex items-center gap-2"><input type="checkbox" checked={showScenes} onChange={(event) => setShowScenes(event.target.checked)} />Include scenes</label>

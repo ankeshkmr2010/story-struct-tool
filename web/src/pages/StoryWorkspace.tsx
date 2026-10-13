@@ -25,6 +25,8 @@ import { StorySharing } from '../components/StorySharing'
 import { DownloadMenu } from '../components/DownloadMenu'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
+import { SANDBOX_ID, FIRST_SCENE, tourEvent, type Sandbox } from '../sandbox/storage'
+import { SandboxHistory } from '../sandbox/History'
 const StoryWriter = lazy(() => import('../components/StoryWriter').then(m => ({ default: m.StoryWriter })))
 const StoryReader = lazy(() => import('./SharedStoryReader').then(m => ({ default: m.StoryReader })))
 
@@ -65,11 +67,11 @@ const REF_PANELS: [RefPanel, string][] = [['timeline', 'Timeline'], ['places', '
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
-  return <Workspace key={storyId} />
+  return <Workspace key={storyId} storyId={storyId} />
 }
 
-function Workspace() {
-  const { storyId = '' } = useParams()
+export function Workspace({ storyId, sandboxStep, sandboxHistory }: { storyId: string; sandboxStep?: number; sandboxHistory?: Sandbox }) {
+  const sandbox = storyId === SANDBOX_ID
   const qc = useQueryClient()
   const live = useStoryLiveUpdates(storyId)
   // The live line stays a quiet dot and only speaks for a few seconds after the story changes.
@@ -120,7 +122,7 @@ function Workspace() {
   }
   // Design pages (Grid, History, …) need the full width; the header's Agent changes badge opens one from any tab.
   const openView = async (view: number) => { if (await changeTab('design')) setLevel(view) }
-  const viewItem = (view: number, label: ReactNode) => <button type="button" aria-current={level === view ? 'page' : undefined} onClick={() => setLevel(view)}>{label}</button>
+  const viewItem = (view: number, label: ReactNode) => <button type="button" aria-current={level === view ? 'page' : undefined} onClick={() => { setLevel(view); if (sandbox && view === HISTORY_VIEW) tourEvent('history') }}>{label}</button>
   // Reference panels sit beside the text in every tab, so looking something up never leaves the page.
   const [refPanel, setRefPanel] = useState<RefPanel | null>(() => REF_PANELS.some(([key]) => key === savedSearchContext.refPanel) ? savedSearchContext.refPanel : null)
   const [searchOpen, setSearchOpen] = useState(() => {
@@ -141,7 +143,7 @@ function Workspace() {
     if (!searchOpen) return
     try { localStorage.setItem(`storytool-search-context:${storyId}`, JSON.stringify({ tab, level, refPanel })) } catch { /* Optional browser storage. */ }
   }, [storyId, searchOpen, tab, level, refPanel])
-  const [writerScene, setWriterScene] = useState<{ id: string; at: number } | null>(null)
+  const [writerScene, setWriterScene] = useState<{ id: string; at: number; find?: string } | null>(null)
   const [readerScene, setReaderScene] = useState<{ sceneId: string; sequence: number } | undefined>()
   const revealSearchTarget = async (id: string) => {
     for (let attempt = 0; attempt < 30; attempt++) {
@@ -163,7 +165,11 @@ function Workspace() {
     const narrow = window.matchMedia('(max-width: 1100px)').matches
     if (hit.matches.some(match => match.field === 'content')) {
       if (tab === 'read') setReaderScene({ sceneId: hit.id, sequence: Date.now() })
-      else if (await changeTab('write')) setWriterScene({ id: hit.id, at: Date.now() })
+      else if (await changeTab('write')) {
+        let find: string | undefined
+        if (sandbox) { try { find = JSON.parse(localStorage.getItem(`storytool-search:${storyId}:${searchContext}`) || '{}').q } catch { /* Selection remains optional. */ } }
+        setWriterScene({ id: hit.id, at: Date.now(), find })
+      }
       if (narrow) { setSearchOpen(false); setRefPanel(null) }
       return
     }
@@ -253,6 +259,27 @@ function Workspace() {
     ?? null
   const sceneSiblings = scenes.data?.filter((item) => item.chapter_id === selectedScene?.chapter_id) ?? []
   const sceneIndex = sceneSiblings.findIndex((item) => item.id === selectedScene?.id)
+
+  useEffect(() => {
+    if (!sandbox || !sandboxStep) return
+    if (sandboxStep === 1) { void changeTab('read'); setReaderScene({ sceneId: FIRST_SCENE, sequence: Date.now() }) }
+    if (sandboxStep === 2) { void changeTab('write'); setWriterScene({ id: FIRST_SCENE, at: Date.now() }) }
+    if (sandboxStep === 4) setRefPanel('timeline')
+    if (sandboxStep === 5) {
+      setRefPanel(null)
+      void changeTab('write').then(ok => { if (ok) { localStorage.setItem(`storytool-search:${storyId}:prose`, JSON.stringify({ q: 'lantern', field: '', entity: '' })); setSearchOpen(true) } })
+    }
+    if (sandboxStep === 6) { setSearchOpen(false); setRefPanel(null) }
+    // The persisted step drives navigation once; ordinary browsing remains free.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sandboxStep, sandbox])
+  useEffect(() => {
+    if (!sandbox) return
+    window.storytoolTryFlush = () => writerFlush.current()
+    const history = () => { void changeTab('design').then(ok => { if (ok) { setLevel(HISTORY_VIEW); tourEvent('history') } }) }
+    window.addEventListener('storytool-try-history', history)
+    return () => { delete window.storytoolTryFlush; window.removeEventListener('storytool-try-history', history) }
+  })
 
   const progress = useQuery({
     queryKey: ['progress', storyId],
@@ -365,9 +392,10 @@ function Workspace() {
 
   return (
     <main className="workspace-page mx-auto max-w-[1600px] overflow-x-clip p-4 sm:p-6 lg:p-8">
-      <Link to="/library" className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+      {sandbox ? null : <Link to="/library" className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
         ← all stories
-      </Link>
+      </Link>}
+      {searchParams.get('sandbox_saved') === '1' && <p role="status" className="try-saved">Your Last Lantern is saved. <Link to="/library">Start your own story →</Link></p>}
 
       <header className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -380,10 +408,10 @@ function Workspace() {
               {progress.data.drafted_scene_count}/{progress.data.scene_count} scenes drafted
             </span>
           )}
-          <StorySharing storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} />
+          {!sandbox && <StorySharing storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} />}
           {/* Export is first-class: this tool augments a writer's process, so the words
               must always be able to leave. */}
-          <DownloadMenu storyId={storyId} />
+          {!sandbox && <DownloadMenu storyId={storyId} />}
         </div>
       </header>
 
@@ -406,7 +434,7 @@ function Workspace() {
         <p className={`live-update-status in-bar${live.activity.isError ? ' is-paused' : ''}`} role="status">{live.activity.isError ? <>Live updates paused.<button type="button" onClick={() => { void live.activity.refetch() }}>Retry</button></> : <><span className="group relative inline-flex cursor-help items-center p-1.5 -m-1.5" tabIndex={0} aria-label="Live updates on"><span className="live-dot" /><span role="tooltip" className="pointer-events-none absolute left-0 top-6 z-30 hidden w-64 rounded-md border border-slate-200 bg-white p-2 text-xs leading-5 text-slate-700 shadow-lg group-hover:block group-focus:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">Live: changes from agents and other tabs appear here on their own. No need to refresh.</span></span>{justUpdated && <span className="live-updated">Updated just now</span>}</>}</p>
         <div className="workspace-ref-toggles" role="group" aria-label="Reference panels">
           {pendingRuns > 0 && <button type="button" className="workspace-ref-alert" onClick={() => { void openView(INBOX_VIEW) }}>Agent changes<span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span></button>}
-          {REF_PANELS.map(([key, label]) => <button key={key} type="button" aria-pressed={refPanel === key} onClick={() => setRefPanel(refPanel === key ? null : key)}>{label}</button>)}
+          {REF_PANELS.filter(([key]) => !sandbox || key !== 'assistant').map(([key, label]) => <button key={key} type="button" aria-pressed={refPanel === key} onClick={() => setRefPanel(refPanel === key ? null : key)}>{label}</button>)}
         </div>
         </div>
       </div>
@@ -414,7 +442,7 @@ function Workspace() {
       <div className={`workspace-body${hasPanel ? ' has-panel' : ''}`}>
       <div className="min-w-0">
       <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>
-        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} registerFlush={registerFlush} openScene={writerScene} panelOpen={hasPanel} onContextOpen={() => { setRefPanel(null); setSearchOpen(false) }} /></Suspense>}
+        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} registerFlush={registerFlush} openScene={writerScene} panelOpen={hasPanel} onContextOpen={() => { setRefPanel(null); setSearchOpen(false); if (sandbox) tourEvent('context') }} /></Suspense>}
       </div>
       <div id="workspace-panel-read" role="tabpanel" aria-labelledby="workspace-tab-read" hidden={tab !== 'read'}>
         {tab === 'read' && <Suspense fallback={<p className="p-6">Loading reader…</p>}><StoryReader storyId={storyId} owned embedded openTarget={readerScene} /></Suspense>}
@@ -423,10 +451,10 @@ function Workspace() {
       <nav aria-label="Design pages" className="workspace-views">
         <div><button type="button" aria-current={!isView ? 'page' : undefined} onClick={() => setLevel(planLevel.current)}>Plan</button>{viewItem(GRID_VIEW, 'Grid')}</div>
         <div>
-          {viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
+          {!sandbox && viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
           {viewItem(HISTORY_VIEW, 'History')}
-          {viewItem(CATCHUP_VIEW, 'Catch up')}
-          {viewItem(EVALUATE_VIEW, 'Evaluate')}
+          {!sandbox && viewItem(CATCHUP_VIEW, 'Catch up')}
+          {!sandbox && viewItem(EVALUATE_VIEW, 'Evaluate')}
         </div>
       </nav>
 
@@ -451,7 +479,8 @@ function Workspace() {
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
           {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
-          {level === HISTORY_VIEW && <div>
+          {level === HISTORY_VIEW && sandboxHistory && <SandboxHistory value={sandboxHistory} />}
+          {level === HISTORY_VIEW && !sandbox && <div>
             <div className="history-tabs" role="tablist" aria-label="History">
               <button type="button" role="tab" aria-selected={historyTab === 'versions'} onClick={() => setHistoryTab('versions')}>Versions</button>
               <button type="button" role="tab" aria-selected={historyTab === 'authorship'} onClick={() => setHistoryTab('authorship')}>Who wrote what</button>
@@ -609,7 +638,7 @@ function Workspace() {
         </section>
 
         {!isView && !hasPanel && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
-          <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, rung.label]))} onOpenLevel={selectLevel} />
+          {!sandbox && <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, rung.label]))} onOpenLevel={selectLevel} />}
         </aside>}
       </div>
       </div>
@@ -622,7 +651,7 @@ function Workspace() {
         {refPanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
       </aside>
       </div>
-      <SearchDialog storyId={storyId} context={searchContext} active={searchOpen} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={openSearchHit} />
+      <SearchDialog storyId={storyId} initialQuery={sandboxStep === 5 ? 'lantern' : undefined} context={searchContext} active={searchOpen} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={async hit => { await openSearchHit(hit); if (sandbox) tourEvent('search') }} />
     </main>
   )
 }

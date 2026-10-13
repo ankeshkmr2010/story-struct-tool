@@ -10,6 +10,7 @@ export default function Feedback() {
   const admin = useQuery({ queryKey: ['admin-status'], queryFn: api.adminStatus })
   const feedback = useQuery({ queryKey: ['product-feedback'], queryFn: api.listProductFeedback, enabled: admin.data?.is_admin === true })
   const funnel = useQuery({ queryKey: ['funnel-counts'], queryFn: api.funnelCounts, enabled: admin.data?.is_admin === true })
+  const tryFunnel = useQuery({ queryKey: ['try-funnel-counts'], queryFn: api.tryFunnelCounts, enabled: admin.data?.is_admin === true })
   const send = useMutation({
     mutationFn: () => api.sendProductFeedback({ message: message.trim(), category }),
     onSuccess: () => { setMessage(''); if (admin.data?.is_admin) void feedback.refetch() },
@@ -46,7 +47,11 @@ export default function Feedback() {
           ] as const).map(([label, count]) => <div key={label} className="rounded-lg border border-[var(--line)] p-4"><dt className="text-xs text-[var(--muted)]">{label}</dt><dd className="mt-2 text-2xl font-semibold">{count}</dd></div>)}</dl>}
         </section>
         <section className="mt-12" aria-labelledby="feedback-title">
-          <div className="flex items-center justify-between gap-3"><h2 id="feedback-title" className="text-xl font-semibold">Latest product feedback</h2><button type="button" className="text-sm underline" onClick={() => { void feedback.refetch(); void funnel.refetch() }}>Refresh</button></div>
+          <h2 className="text-xl font-semibold">Guided sandbox funnel</h2>
+          <p className="writer-help">Unique browsers per milestone; signup means a new account from a browser that started the sandbox. Targets: tour completion &gt;50% and signup &gt;15%.</p>
+          {tryFunnel.error && <p role="alert">{errorText(tryFunnel.error)}</p>}
+          {tryFunnel.data && <><dl className="my-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{Object.entries(tryFunnel.data).map(([kind, count]) => <div key={kind} className="rounded-lg border border-[var(--line)] p-3"><dt className="text-xs">{kind.replace('try_', '').replaceAll('_', ' ')}</dt><dd className="text-xl">{count}</dd></div>)}</dl><p className="writer-help">Tour completion: {tryFunnel.data.try_start ? ((tryFunnel.data.try_step_6 / tryFunnel.data.try_start) * 100).toFixed(1) : '0'}% · Sandbox → signup: {tryFunnel.data.try_start ? ((tryFunnel.data.try_signup / tryFunnel.data.try_start) * 100).toFixed(1) : '0'}%</p></>}
+          <div className="flex items-center justify-between gap-3"><h2 id="feedback-title" className="text-xl font-semibold">Latest product feedback</h2><button type="button" className="text-sm underline" onClick={() => { void feedback.refetch(); void funnel.refetch(); void tryFunnel.refetch() }}>Refresh</button></div>
           {feedback.isPending && <p className="mt-4 text-sm">Loading feedback…</p>}
           {feedback.error && <p role="alert" className="mt-4 text-sm">{errorText(feedback.error)}</p>}
           {feedback.data?.length === 0 && <p className="mt-4 text-sm text-[var(--muted)]">No feedback yet.</p>}

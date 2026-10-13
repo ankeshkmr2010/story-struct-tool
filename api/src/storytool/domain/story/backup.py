@@ -5,12 +5,12 @@ import io
 import re
 from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid5
 
 from docx import Document
 from litestar import Controller, Request, Response, get, post
 from litestar.exceptions import ClientException, NotFoundException
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid_utils import uuid7
@@ -331,6 +331,30 @@ class BackupImportController(Controller):
         self, db_session: AsyncSession, request: Request, data: dict[str, Any]
     ) -> StoryOut:
         user_id: UUID = request.scope["state"]["storytool_user_id"]
+        sandbox = data.get("sandbox")
+        import_subject = None
+        if sandbox is not None:
+            if not isinstance(sandbox, dict):
+                raise ClientException(detail="Invalid sandbox backup metadata")
+            try:
+                import_subject = uuid5(user_id, str(UUID(sandbox["import_id"])))
+                edits = sandbox.get("edits", [])
+                if not isinstance(edits, list) or len(edits) > 10000:
+                    raise ValueError("Too many sandbox history entries")
+                for edit in edits:
+                    UUID(edit["scene_id"])
+                    datetime.fromisoformat(edit["created_at"])
+            except (ValueError, TypeError, KeyError) as error:
+                raise ClientException(detail="Invalid sandbox backup metadata") from error
+            # Serialize retries for this user's sandbox; the marker and story commit together.
+            await db_session.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"), {"key": str(import_subject)})
+            from storytool.domain.site.funnel import FunnelEvent
+
+            prior = await db_session.scalar(select(Story).join(FunnelEvent, FunnelEvent.id == Story.id).where(FunnelEvent.kind == "try_restore", FunnelEvent.subject_id == import_subject, Story.user_id == user_id))
+            if prior is not None:
+                if prior.deleted_at is not None:
+                    raise ClientException(detail="Your kept sandbox story is in Trash. Restore it from your library.")
+                return StoryOut.model_validate(prior)
         try:
             state = validated_state(data)
             async with db_session.begin_nested():
@@ -339,7 +363,8 @@ class BackupImportController(Controller):
                 )
                 db_session.add(created)
                 await db_session.flush()
-                await restore_state(db_session, created.id, rehome(state, created.id, strict=True))
+                copied = rehome(state, created.id, strict=True)
+                await restore_state(db_session, created.id, copied)
         except (ValueError, TypeError, KeyError, SQLAlchemyError) as error:
             detail = str(error) if isinstance(error, ValueError) else "The backup is damaged"
             raise ClientException(detail=f"Could not restore backup: {detail}") from error
@@ -355,5 +380,21 @@ class BackupImportController(Controller):
             "import",
             "Restored from backup",
         )
-        await checkpoint(db_session, created.id, user_id, "Restored from backup", "initial")
+        if sandbox is not None:
+            from storytool.domain.story.authorship import FieldAuthorship
+            from storytool.domain.site.funnel import FunnelEvent, record_milestone, request_visitor
+
+            scene_ids = {old["id"]: new["id"] for old, new in zip(state["scene"], copied["scene"], strict=True)}
+            for edit in sandbox.get("edits", []):
+                new_id = scene_ids.get(edit["scene_id"])
+                if new_id is None:
+                    continue  # An edited scene may have been deleted in free play.
+                moment = datetime.fromisoformat(edit["created_at"])
+                if moment.tzinfo is None:
+                    moment = moment.replace(tzinfo=UTC)
+                moment = min(moment, datetime.now(UTC))
+                db_session.add(FieldAuthorship(story_id=created.id, user_id=user_id, entity_type="scene", entity_id=UUID(new_id), field="content", origin="author", actor_label="You", action="update", created_at=moment))
+            db_session.add(FunnelEvent(id=created.id, kind="try_restore", subject_id=import_subject, user_id=user_id, visitor_id=request_visitor(request)))
+            await record_milestone(db_session, "try_imported", user_id=user_id, visitor_id=request_visitor(request))
+        await checkpoint(db_session, created.id, user_id, "Kept from sandbox" if sandbox else "Restored from backup", "initial")
         return StoryOut.model_validate(created)

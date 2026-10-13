@@ -26,12 +26,12 @@ export default function Landing() {
         <p className="eyebrow"><span /> A workspace for novel writers</p>
         <h1 id="landing-title">Plan, write, and keep<br /><em>your novel consistent.</em></h1>
         <p className="hero-description">With the AI you already use or none at all. Your manuscript, its structure and its timeline in one place; every change is yours to keep or undo.</p>
-        <div className="hero-actions"><Link to="/library" className="landing-primary">Start your story <span aria-hidden="true">↗</span></Link><Link to={SHOWCASE} className="landing-secondary">See a finished story <span aria-hidden="true">→</span></Link></div>
+        <div className="hero-actions"><Link to="/library" className="landing-primary">Start your story <span aria-hidden="true">↗</span></Link><Link to="/try" className="landing-secondary">Try it now, no account →</Link></div>
         <div className="hero-assurances">
           <Link to="/pricing"><strong>Free during beta</strong><span>No StoryTool subscription charge. Pricing details →</span></Link>
           <Link to="/privacy"><strong>StoryTool doesn't train AI on your manuscript.</strong><span>Connected AI services have their own policies. Privacy details →</span></Link>
         </div>
-        <p className="hero-footnote">New here? <Link to="/how-to-use">See how it works →</Link> · <Link to="/roadmap">On the horizon →</Link></p>
+        <p className="hero-footnote">New here? <Link to="/how-to-use">See how it works →</Link> · <Link to={SHOWCASE}>See a finished story →</Link> · <Link to="/roadmap">On the horizon →</Link></p>
       </div>
       <div className="story-preview" aria-label="Illustrative story outline showing linked beats, timeline events, and a character arc">
         <div className="preview-top"><img src="/branding/storytool.svg" width="32" height="32" alt="" /><span>The Last Lantern <small>A glimpse of your workspace</small></span><span className="preview-draft">Draft</span></div>

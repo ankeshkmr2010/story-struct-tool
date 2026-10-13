@@ -1,0 +1,21 @@
+.try-page .workspace-page { padding-bottom: 240px; }
+.try-banner { position: sticky; top: 0; z-index: 35; display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding: .6rem 1.25rem; background: var(--surface); border-bottom: 1px solid var(--line); font-size: .8rem; }
+.try-banner > span { flex: 1; }
+.try-banner button { color: var(--accent); }
+.try-banner details { position: relative; }
+.try-banner summary { cursor: pointer; }
+.try-banner details button { position: absolute; right: 0; top: 1.8rem; width: 10rem; padding: .7rem; background: var(--surface); border: 1px solid var(--line); border-radius: .5rem; }
+.try-coach { position: fixed; bottom: 1rem; right: 1.5rem; z-index: 40; width: min(380px, calc(100vw - 2rem)); padding: 1rem; border: 1px solid var(--accent); border-radius: .8rem; background: var(--surface); color: var(--text); box-shadow: 0 8px 30px #0002; font-size: .9rem; }
+.try-coach p { margin: .9rem 0; line-height: 1.6; }
+.try-progress { display: flex; align-items: center; gap: .7rem; font-size: .75rem; }
+.try-progress > span:nth-child(2) { display: flex; gap: .3rem; }
+.try-progress i { width: .4rem; height: .4rem; border-radius: 100%; background: var(--line); }
+.try-progress i.filled { background: var(--accent); }
+.try-progress button { margin-left: auto; text-decoration: underline; }
+.story-search-dialog .try-coach { position: static; width: auto; margin-bottom: 1rem; box-shadow: none; }
+.try-saved { margin: 1rem 0; padding: .8rem; border: 1px solid var(--accent); border-radius: .5rem; }
+.try-saved a { text-decoration: underline; }
+[data-try-step="3"] .writer-context-toggle { animation: try-context-pulse 1.5s ease-in-out infinite; }
+@keyframes try-context-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 30%, transparent); } }
+@media (max-width: 640px) { .try-coach { bottom: 0; right: 0; width: 100%; border-radius: 1rem 1rem 0 0; padding-bottom: max(1rem, env(safe-area-inset-bottom)); } .try-banner { padding: .5rem .75rem; } .story-search-dialog .try-coach { border-radius: .5rem; } }
+@media (prefers-reduced-motion: reduce) { [data-try-step="3"] .writer-context-toggle { animation: none; outline: 2px solid var(--accent); } }

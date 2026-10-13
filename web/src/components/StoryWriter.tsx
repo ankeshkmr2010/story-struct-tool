@@ -12,11 +12,12 @@ import { SceneDelete } from './SceneDelete'
 import { SceneRevisions } from './SceneRevisions'
 import { InlineText } from './fields'
 import { useTheme } from './theme-context'
+import { SANDBOX_ID, tourEvent } from '../sandbox/storage'
 import { flushWriter, writerDraft, writerHasUnsaved } from './writerDraft'
 
-export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onContextOpen }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number } | null; panelOpen?: boolean; onContextOpen?: () => void }) {
+export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onContextOpen }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number; find?: string } | null; panelOpen?: boolean; onContextOpen?: () => void }) {
   const qc = useQueryClient()
-  const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser })
+  const me = useQuery({ queryKey: [storyId === SANDBOX_ID ? 'sandbox-me' : 'me'], queryFn: api.currentUser })
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
   const prefix = `storytool-writer:${me.data?.id}:${storyId}:`
@@ -70,7 +71,20 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
     const scene = openScene && openScene.at !== handledScene.current && scenes.data?.find(item => item.id === openScene.id)
     if (!scene) return
     handledScene.current = openScene.at
-    void chooseChapter(scene.chapter_id ?? 'unfiled').then(ok => { if (ok) { setActiveScene(scene.id); setFocusTarget(scene.id) } })
+    void chooseChapter(scene.chapter_id ?? 'unfiled').then(async ok => {
+      if (!ok) return
+      setActiveScene(scene.id); setFocusTarget(scene.id)
+      if (openScene?.find) for (let attempt = 0; attempt < 30; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+        const element = document.querySelector<HTMLElement>(`[data-writing-scene="${scene.id}"] .cm-editor`)
+        const editor = element && EditorView.findFromDOM(element)
+        if (!editor) continue
+        const index = editor.state.doc.toString().toLocaleLowerCase().indexOf(openScene.find.toLocaleLowerCase())
+        if (index >= 0) editor.dispatch({ selection: { anchor: index, head: index + openScene.find.length }, effects: EditorView.scrollIntoView(index, { y: 'center' }) })
+        editor.focus()
+        break
+      }
+    })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openScene, scenes.data])
   const chooseChapter = async (id: string) => {
@@ -135,7 +149,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
       <span className="writer-current-chapter">{unfiled ? 'Unfiled writing' : `Chapter ${chapter?.number ?? 1}`}</span>
       <span className="writer-toolbar-spacer" />
       <button type="button" aria-pressed={focus} onClick={() => setFocus(!focus)}>{focus ? 'Exit focus' : 'Focus'}</button>
-      <button type="button" aria-expanded={showContext} onClick={() => { if (!showContext) onContextOpen?.(); setShowContext(!showContext); setShowNavigation(false) }}>Context</button>
+      <button type="button" className="writer-context-toggle" aria-expanded={showContext} onClick={() => { if (!showContext) onContextOpen?.(); setShowContext(!showContext); setShowNavigation(false) }}>Context</button>
     </div>
     {error && <p role="alert" className="writer-error">{error}</p>}
     <div className={`writer-layout ${showContext && !focus ? 'writer-with-context' : ''} ${!showNavigation || focus ? 'writer-no-navigation' : ''}`}>
@@ -207,21 +221,21 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   useEffect(() => { draft.observe(initial) }, [draft, initial])
   useEffect(() => () => { if (draft.state.status !== 'error') void draft.flush() }, [draft])
   // Focus alone keeps the page where it is; bring the scene into view too (Open in Write, Timeline jumps).
-  useEffect(() => { if (focus) { view.current?.focus(); view.current?.dom.scrollIntoView({ behavior: 'smooth', block: 'center' }) } }, [focus])
+  useEffect(() => { if (focus) { if (storyId === SANDBOX_ID && view.current) view.current.dispatch({ selection: { anchor: view.current.state.doc.length } }); view.current?.focus(); view.current?.dom.scrollIntoView({ behavior: 'smooth', block: 'center' }) } }, [focus, storyId])
   const review = async () => {
     try { setReviewError(null); setLatest(realScene.current ? (await api.getContent(storyId, realScene.current.id)).content ?? '' : '') }
     catch (error) { setReviewError(errorText(error)) }
   }
   const words = state.text.trim().split(/\s+/).filter(Boolean).length
-  return <section className="writer-passage" aria-label={scene?.title ?? 'Writing passage'}>
+  return <section className="writer-passage" data-writing-scene={scene?.id} aria-label={scene?.title ?? 'Writing passage'}>
     {separator && <div className="writer-scene-break" aria-label="Scene break">⁂</div>}
     <div className="writer-passage-heading">
       {scene ? <InlineText value={scene.title} placeholder="Scene name (optional)" onSave={async title => { await api.updateScene(storyId, scene.id, { title }); refresh() }} /> : <span className="writer-help">Start writing…</span>}
-      <span className="writer-passage-status" role="status">{words} words · {state.status === 'error' ? 'Not saved' : state.status === 'saving' ? 'Saving…' : state.status === 'unsaved' ? 'Unsaved' : 'Saved'}</span>
+      <span className="writer-passage-status" role="status">{words} words · {state.status === 'error' ? 'Not saved' : state.status === 'saving' ? 'Saving…' : state.status === 'unsaved' ? 'Unsaved' : storyId === SANDBOX_ID ? 'Saved in this browser' : 'Saved'}</span>
       {scene && <SceneDelete storyId={storyId} scene={scene} onDeleted={refresh} />}
     </div>
     {state.status === 'error' && <div role="alert" className="writer-error"><p>{state.error}</p><p>Your draft is preserved in this browser tab.</p><button type="button" onClick={() => { void draft.flush() }}>Retry save</button> <button type="button" onClick={() => { void review() }}>Review latest text</button>{reviewError && <p>{reviewError}</p>}{latest !== null && <div><h3>Latest saved text</h3><pre className="writer-latest">{latest || '(Empty passage)'}</pre><button type="button" onClick={() => { if (window.confirm('Replace your local draft with the latest saved text?')) { draft.useLatest(latest); setLatest(null) } }}>Use latest text</button> <button type="button" onClick={() => { if (window.confirm('Save your draft over the latest text? A prose revision will preserve the previous text.')) { lastCheckpoint.current = 0; draft.rebase(latest); setLatest(null); void draft.flush() } }}>Keep my draft</button></div>}</div>}
-    <CodeMirror value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder="Start writing your story…" onChange={draft.change} onCreateEditor={editor => { view.current = editor; if (focus) { editor.focus(); editor.dom.scrollIntoView({ block: 'center' }) } }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[
+    <CodeMirror value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder="Start writing your story…" onChange={(text, update) => { draft.change(text); if (storyId === SANDBOX_ID && update.transactions.some(transaction => transaction.isUserEvent('input'))) tourEvent('write') }} onCreateEditor={editor => { view.current = editor; if (focus) { if (storyId === SANDBOX_ID) editor.dispatch({ selection: { anchor: editor.state.doc.length } }); editor.focus(); editor.dom.scrollIntoView({ block: 'center' }) } }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[
       markdown(), EditorView.lineWrapping,
       EditorView.contentAttributes.of({ 'aria-label': scene?.title ? `Prose: ${scene.title}` : 'Story prose', spellcheck: 'true', autocapitalize: 'sentences' }),
       keymap.of([{ key: 'Mod-s', run: () => { void draft.flush(); return true } }]),

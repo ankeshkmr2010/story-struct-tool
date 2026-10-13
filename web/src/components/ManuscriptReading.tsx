@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { orderChapters } from '../api/ordering'
+import { SANDBOX_ID, tourEvent } from '../sandbox/storage'
 
 type Row = Record<string, unknown>
 type Preferences = { layout: 'scroll' | 'pages'; size: number; font: 'serif' | 'sans'; spacing: number; width: 'narrow' | 'normal' | 'wide'; titles: boolean }
@@ -35,7 +36,7 @@ export function ManuscriptReading({ structure, storyId, accountId, target, onPas
   onPassage: (chapterId: string, sceneId: string) => void
   onContext: (chapterId: string, sceneId: string) => void
 }) {
-  const [preferences, setPreferences] = useState(loadPreferences)
+  const [preferences, setPreferences] = useState(() => storyId === SANDBOX_ID ? { ...loadPreferences(), layout: 'pages' as const } : loadPreferences())
   const [page, setPage] = useState(0)
   const [pageCount, setPageCount] = useState(1)
   const [progress, setProgress] = useState(0)
@@ -145,6 +146,7 @@ export function ManuscriptReading({ structure, storyId, accountId, target, onPas
     const port = viewport.current
     if (!port) return
     const next = bounded(destination, 0, pageCount - 1)
+    if (storyId === SANDBOX_ID && next > page) tourEvent('page')
     port.scrollLeft = next * (port.clientWidth + 32)
     setPage(next)
     requestAnimationFrame(updatePlace)

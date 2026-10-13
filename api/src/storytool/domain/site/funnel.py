@@ -5,7 +5,7 @@ from typing import Literal
 from uuid import UUID
 
 from litestar import Controller, Request, get, post
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import ForeignKey, String, UniqueConstraint, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
@@ -15,7 +15,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from storytool.db.base import StoryToolBase
 from storytool.domain.site.shoutouts import require_admin
 
-EventKind = Literal["visit", "signup", "first_scene", "ai_connected"]
+TryKind = Literal["try_start", "try_step_1", "try_step_2", "try_step_3", "try_step_4", "try_step_5", "try_step_6", "try_skip", "try_keep_click", "try_imported"]
+EventKind = Literal["visit", "signup", "first_scene", "ai_connected"] | TryKind
 logger = logging.getLogger(__name__)
 
 
@@ -45,7 +46,7 @@ async def record_milestone(
     user_id: UUID | None = None,
     visitor_id: UUID | None = None,
 ) -> None:
-    subject_id = visitor_id if kind == "visit" else user_id
+    subject_id = visitor_id if kind == "visit" or kind.startswith("try_") else user_id
     if subject_id is None:
         return
     # A telemetry failure must not roll back a signup or manuscript change.
@@ -62,6 +63,11 @@ async def record_milestone(
 
 class VisitIn(BaseModel):
     visitor_id: UUID
+
+
+class TryEventsIn(BaseModel):
+    visitor_id: UUID
+    events: list[TryKind] = Field(max_length=10)
 
 
 class FunnelOut(BaseModel):
@@ -81,10 +87,33 @@ class VisitController(Controller):
         await record_milestone(db_session, "visit", visitor_id=data.visitor_id)
 
 
+class TryController(Controller):
+    path = "/api/site/try"
+    tags = ["site"]  # noqa: RUF012
+    signature_namespace = {"AsyncSession": AsyncSession}  # noqa: RUF012
+
+    @post(status_code=204, summary="Record browser sandbox milestones")
+    async def events(self, db_session: AsyncSession, data: TryEventsIn) -> None:
+        for kind in set(data.events):
+            if kind != "try_imported":  # Successful imports are recorded by the importer.
+                await record_milestone(db_session, kind, visitor_id=data.visitor_id)
+
+
 class FunnelController(Controller):
     path = "/api/admin/funnel"
     tags = ["site"]  # noqa: RUF012
     signature_namespace = {"AsyncSession": AsyncSession}  # noqa: RUF012
+
+    @get("/try", summary="Guided sandbox funnel (site admin only)")
+    async def try_counts(self, request: Request, db_session: AsyncSession) -> dict[str, int]:
+        await require_admin(request, db_session)
+        kinds = ["try_start", *[f"try_step_{i}" for i in range(1, 7)], "try_skip", "try_keep_click", "try_imported"]
+        grouped = await db_session.execute(select(FunnelEvent.kind, func.count()).where(FunnelEvent.kind.in_(kinds)).group_by(FunnelEvent.kind))
+        result = {kind: 0 for kind in kinds}
+        result.update(dict(grouped.all()))
+        starters = select(FunnelEvent.visitor_id).where(FunnelEvent.kind == "try_start")
+        result["try_signup"] = await db_session.scalar(select(func.count()).select_from(FunnelEvent).where(FunnelEvent.kind == "signup", FunnelEvent.visitor_id.in_(starters))) or 0
+        return result
 
     @get(summary="Funnel counts since tracking began (site admin only)")
     async def counts(self, request: Request, db_session: AsyncSession) -> FunnelOut:

@@ -398,9 +398,9 @@ Phase 1 deliberately precedes the editor, accepting that the flagship brief land
 ## 9. Try before signing up — guided sandbox (T35)
 
 User-supplied product design, recorded 2026-10-14. Effort: **High**.
-Status: specification only; not implemented or production-confirmed. A new session
-should read this section, inspect the existing behavior narrowly, and think through
-an implementation plan before building. This replaces T35's earlier continuity-finding
+Status: built 2026-10-14, awaiting the user's production confirmation; no local tests or
+builds were run. The implementation uses the existing workspace with an IndexedDB
+adapter, static seed and Google/backup restore flow. This replaces T35's earlier continuity-finding
 tour concept and T11's first-run demo card.
 
 ### Goal and success measures
@@ -467,22 +467,26 @@ Add **try_start**, **try_step_1** through **try_step_6**, **try_skip**,
 the real completion events above; imported means the restored story was created
 successfully. Preserve resumable tour state without inflating completion counts.
 
-### Next-session planning checks
+### Implementation decisions and production checks
 
-- Inspect the existing writer, paged reader, Context, timeline, search, History and
-  API client before choosing the adapter boundary. Determine which derived reads must
-  work locally; no AI, semantic search or story API calls may be required for the tour.
-- Confirm the pinned seed contains the specified scene, beat, POV, arc and flashback.
-- Check whether existing backup restore preserves local History entries labeled You,
-  and how fresh imported IDs map to the edited scene. The full-backup format and existing
-  importer are requirements; do not assume carry-over behavior is already supported.
-- Plan durable sign-in return intent, import retry behavior and duplicate-import
-  prevention so authentication or restore failure cannot lose the visitor's writing.
-- Resolve seven-day expiry timing and browser-storage failure behavior.
-- Clarify analytics transport: the sandbox must load without backend dependency and
-  make no server story writes, while admin funnel events need server-side aggregation.
-  Plan when events are sent and how signup/import conversion is attributed.
+- The API request boundary dispatches sandbox story/arc reads and writes to IndexedDB.
+  Reader, writer, plan, Context, timeline, text search and snapshots use local data.
+- The pinned seed is `web/public/sandbox/last-lantern-v1.json`, with the specified
+  scene, linked beat/POV/arc and a later-read flashback set seven years earlier.
+- The existing backup importer accepts optional sandbox history metadata, remaps its
+  scene IDs and retains You attribution. A user-scoped marker in the existing funnel
+  table and transaction lock prevent duplicate stories on retry; no new importer or migration.
+- `/try/keep` retains local data through Google sign-in and restore errors. Successful
+  carry-over opens Write at the latest authored scene and shows the requested message.
+- Expiry is seven days from creation/reset. Storage failures show retry feedback;
+  writer save errors prevent keeping until the draft flush succeeds.
+- Funnel events queue locally and send asynchronously without delaying the tour.
+  Telemetry is the only pre-signup server write; manuscripts stay local. Events deduplicate
+  by browser; signup conversion counts new accounts whose visitor ID started the sandbox.
+  Direct page/static-asset requests still use the existing hosting and its availability;
+  no separate static host was provisioned.
+- The user must confirm the six steps, mobile/keyboard behavior, resume/skip/reset,
+  browser-storage failures, import retries, and prose/history carry-over in production.
 
-This section records the requested experience and planning questions, not authorization
-to implement it in this documentation session. Leave T35 open until implementation and
-the user's production walkthrough.
+Leave T35 awaiting confirmation until the user's production walkthrough. Completion and
+conversion targets need observed funnel data; implementation alone does not confirm them.
