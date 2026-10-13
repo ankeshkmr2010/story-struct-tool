@@ -70,7 +70,7 @@ export default function StoryWorkspace() {
   return <Workspace key={storyId} storyId={storyId} />
 }
 
-export function Workspace({ storyId, sandboxStep, sandboxHistory }: { storyId: string; sandboxStep?: number; sandboxHistory?: Sandbox }) {
+export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: { storyId: string; sandboxStep?: number; sandboxRun?: number; sandboxHistory?: Sandbox }) {
   const sandbox = storyId === SANDBOX_ID
   const qc = useQueryClient()
   const live = useStoryLiveUpdates(storyId)
@@ -263,7 +263,7 @@ export function Workspace({ storyId, sandboxStep, sandboxHistory }: { storyId: s
   useEffect(() => {
     if (!sandbox || !sandboxStep) return
     if (sandboxStep === 1) { void changeTab('read'); setReaderScene({ sceneId: FIRST_SCENE, sequence: Date.now() }) }
-    if (sandboxStep === 2) { void changeTab('write'); setWriterScene({ id: FIRST_SCENE, at: Date.now() }) }
+    if (sandboxStep === 2 || sandboxStep === 3) { void changeTab('write'); setWriterScene({ id: FIRST_SCENE, at: Date.now() }) }
     if (sandboxStep === 4) setRefPanel('timeline')
     if (sandboxStep === 5) {
       setRefPanel(null)
@@ -272,7 +272,7 @@ export function Workspace({ storyId, sandboxStep, sandboxHistory }: { storyId: s
     if (sandboxStep === 6) { setSearchOpen(false); setRefPanel(null) }
     // The persisted step drives navigation once; ordinary browsing remains free.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sandboxStep, sandbox])
+  }, [sandboxStep, sandbox, sandboxRun])
   useEffect(() => {
     if (!sandbox) return
     window.storytoolTryFlush = () => writerFlush.current()
