@@ -223,3 +223,6 @@ or production visual confirmation. T20 remains open for the unfinished walkthrou
 - [ ] T44 Series bible: shared characters, places and glossary across books.
 - [ ] T45 German, then Spanish: a localized interface, plus a per-story language setting passed through MCP so the AI stays in that language.
 - [ ] T46 Monetisation: an early-supporter lifetime deal through Gumroad or Paddle once beta feedback settles.
+
+**Authorship percentages — requested 2026-10-14**
+- [ ] T50 Show current manuscript word percentages attributed to human writing, AI (app assistant + MCP, with an optional breakdown), and unknown origin (pasted/imported text or text predating tracking). Effort: High. Existing authorship records identify field edits, not retained words; accurate percentages need text-span attribution across typing, paste, AI edits, deletion, undo and restore. Preserve mixed origins when part of a scene changes; do not label a whole scene human after a small manual edit. Percentages cover current prose and total 100%; describe them as tracked provenance, not AI detection. Keep unknown text unknown unless reliable origin evidence exists. Related to T43, but separate from the shareable disclosure summary.
