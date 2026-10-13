@@ -2104,6 +2104,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/search/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Capabilities */
+        get: operations["ApiSearchCapabilitiesCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search */
+        get: operations["ApiSearchSearch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/glossary": {
         parameters: {
             query?: never;
@@ -3241,6 +3275,9 @@ export interface components {
         };
         /** SearchHit */
         SearchHit: {
+            /** Format: uuid */
+            story_id: string;
+            story_title: string;
             entity: string;
             /** Format: uuid */
             id: string;
@@ -3260,6 +3297,8 @@ export interface components {
             next_offset?: number | null;
             /** @default false */
             semantic_available: boolean;
+            /** @default false */
+            indexing: boolean;
         };
         /** ShareInput */
         ShareInput: {
@@ -9847,6 +9886,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchHit"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSearchCapabilitiesCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchCapabilities"];
+                };
+            };
+        };
+    };
+    ApiSearchSearch: {
+        parameters: {
+            query: {
+                q: string;
+                context?: ("prose" | "story" | "scene" | "character" | "location" | "glossary_entry" | "chapter" | "event" | "act" | "beat" | "thread" | "timeline") | "all";
+                field?: string | null;
+                entity?: string | null;
+                mode?: "text" | "semantic";
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchPage"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

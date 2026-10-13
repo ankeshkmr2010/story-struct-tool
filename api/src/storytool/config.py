@@ -39,8 +39,12 @@ class Settings(BaseSettings):
     search_embedding_model: str | None = None
     search_embedding_dimensions: int | None = Field(default=None, gt=0)
     search_embedding_api_key: str | None = None
+    search_embedding_max_input_bytes: int | None = Field(default=None, ge=64)
+    search_embedding_query_prefix: str = ""
 
-    @field_validator("search_embedding_dimensions", mode="before")
+    @field_validator(
+        "search_embedding_dimensions", "search_embedding_max_input_bytes", mode="before"
+    )
     @classmethod
     def empty_embedding_dimensions(cls, value: Any) -> Any:
         return None if value == "" else value

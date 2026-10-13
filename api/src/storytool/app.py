@@ -27,7 +27,7 @@ from storytool.domain.narrative.prose_controller import (
     SceneProseController,
 )
 from storytool.domain.noticing.controller import NoticingController
-from storytool.domain.search.controller import SearchController
+from storytool.domain.search.controller import LibrarySearchController, SearchController
 from storytool.domain.search.semantic import search_lifespan
 from storytool.domain.site.feedback import AdminFeedbackController, ProductFeedbackController
 from storytool.domain.site.funnel import FunnelController, VisitController
@@ -116,6 +116,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             ManuscriptController,
             NoticingController,
             SearchController,
+            LibrarySearchController,
             GlossaryController,
             LocationController,
             ContinuityController,

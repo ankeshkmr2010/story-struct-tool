@@ -17,6 +17,7 @@ SearchContext = Literal[
     "thread",
     "timeline",
 ]
+LibrarySearchContext = SearchContext | Literal["all"]
 
 
 class SearchMatch(BaseModel):
@@ -25,6 +26,8 @@ class SearchMatch(BaseModel):
 
 
 class SearchHit(BaseModel):
+    story_id: UUID
+    story_title: str
     entity: str
     id: UUID
     title: str
@@ -37,6 +40,7 @@ class SearchPage(BaseModel):
     items: list[SearchHit]
     next_offset: int | None = None
     semantic_available: bool = False
+    indexing: bool = False
 
 
 class SearchCapabilities(BaseModel):

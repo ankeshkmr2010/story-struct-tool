@@ -30,13 +30,30 @@ def profile() -> str:
                 settings.search_embedding_url,
                 settings.search_embedding_model,
                 settings.search_embedding_dimensions,
-                "chunks-v1",
+                settings.search_embedding_max_input_bytes,
+                "chunks-v2",
             ]
         ).encode()
     ).hexdigest()
 
 
-def chunks(value: str, size: int = 2000, overlap: int = 200) -> list[str]:
+def chunks(
+    value: str, size: int = 2000, overlap: int = 200, max_bytes: int | None = None
+) -> list[str]:
+    if max_bytes:
+        data = value.encode("utf-8")
+        result, start = [], 0
+        while start < len(data):
+            end = min(start + max_bytes, len(data))
+            while end < len(data) and data[end] & 0xC0 == 0x80:
+                end -= 1
+            result.append(data[start:end].decode("utf-8"))
+            if end == len(data):
+                break
+            start = end - min(overlap, max_bytes // 5)
+            while data[start] & 0xC0 == 0x80:
+                start += 1
+        return result
     result = []
     for start in range(0, len(value), size - overlap):
         result.append(value[start : start + size])
@@ -49,6 +66,12 @@ async def embed(values: list[str]) -> list[list[float]]:
     settings = get_settings()
     if not settings.semantic_search_available:
         raise ClientException(status_code=503, detail="Meaning search is not enabled yet")
+    if settings.search_embedding_max_input_bytes and any(
+        len(value.encode("utf-8")) > settings.search_embedding_max_input_bytes for value in values
+    ):
+        raise ClientException(
+            detail="This query exceeds the model's input limit. Shorten it and retry."
+        )
     vectors = []
     # Adapter contract: OpenAI-compatible embeddings endpoint, with no default provider/model.
     async with httpx.AsyncClient(timeout=60) as client:
@@ -86,7 +109,7 @@ async def index_story(config: Any, story_id: UUID) -> None:
         source_updated_at = story.updated_at
         rows = []
         for context in CONTEXTS:
-            if context != "timeline":
+            if context not in {"timeline", "all"}:
                 source = fields_query(story_id, context)
                 rows.extend((await db.execute(select(source))).mappings().all())
         cached = (
@@ -100,7 +123,9 @@ async def index_story(config: Any, story_id: UUID) -> None:
     documents = []
     missing: dict[str, str] = {}
     for row in rows:
-        for ordinal, value in enumerate(chunks(row["value"])):
+        for ordinal, value in enumerate(
+            chunks(row["value"], max_bytes=get_settings().search_embedding_max_input_bytes)
+        ):
             digest = hashlib.sha256(value.encode()).hexdigest()
             documents.append(
                 dict(
@@ -195,16 +220,35 @@ def search_lifespan(config: Any) -> Any:
     return lifespan
 
 
+def ready_stories(story_id: Any, current_profile: str) -> Any:
+    return (
+        select(Story.id)
+        .join(SearchIndex, Story.id == SearchIndex.story_id)
+        .where(
+            Story.id == story_id if isinstance(story_id, UUID) else Story.id.in_(story_id),
+            Story.deleted_at.is_(None),
+            SearchIndex.profile == current_profile,
+            SearchIndex.source_updated_at == Story.updated_at,
+        )
+    )
+
+
 async def index_ready(db: Any, story_id: UUID, current_profile: str) -> bool:
+    return bool(await db.scalar(ready_stories(story_id, current_profile)))
+
+
+async def library_indexing(db: Any, story_scope: Any, current_profile: str) -> bool:
+    ready = ready_stories(story_scope, current_profile)
     return bool(
         await db.scalar(
-            select(SearchIndex.id)
-            .join(Story, Story.id == SearchIndex.story_id)
-            .where(
-                Story.id == story_id,
-                Story.deleted_at.is_(None),
-                SearchIndex.profile == current_profile,
-                SearchIndex.source_updated_at == Story.updated_at,
+            select(
+                select(Story.id)
+                .where(
+                    Story.id.in_(story_scope),
+                    Story.id.not_in(ready),
+                    Story.deleted_at.is_(None),
+                )
+                .exists()
             )
         )
     )
@@ -212,7 +256,7 @@ async def index_ready(db: Any, story_id: UUID, current_profile: str) -> bool:
 
 async def semantic_search(
     db: Any,
-    story_id: UUID,
+    story_id: Any,
     context: str,
     query: str,
     field: str | None,
@@ -221,23 +265,32 @@ async def semantic_search(
     entity: str | None = None,
 ) -> SearchPage:
     current_profile = profile()
-    if not await index_ready(db, story_id, current_profile):
+    library = not isinstance(story_id, UUID)
+    scope = ready_stories(story_id, current_profile) if library else story_id
+    if library and not await db.scalar(select(scope.exists())):
+        return SearchPage(
+            items=[],
+            semantic_available=True,
+            indexing=await library_indexing(db, story_id, current_profile),
+        )
+    if not library and not await index_ready(db, story_id, current_profile):
         raise ClientException(
             status_code=409, detail="Meaning search is updating. Try again shortly."
         )
     await db.rollback()  # No transaction held across the remote call.
     try:
-        vector = (await embed([query]))[0]
+        vector = (await embed([get_settings().search_embedding_query_prefix + query]))[0]
     except (httpx.HTTPError, KeyError, ValueError) as exc:
         raise ClientException(
             status_code=503, detail="Meaning search is unavailable. Retry shortly."
         ) from exc
-    source = fields_query(story_id, context, field)
+    source = fields_query(scope, context, field)
     if entity:
         source = select(source).where(source.c.entity == entity).cte("restricted_fields")
     distance = SearchChunk.embedding.op("<=>")(vector)
     ranked = (
         select(
+            SearchChunk.story_id,
             SearchChunk.entity,
             SearchChunk.entity_id,
             SearchChunk.field,
@@ -245,7 +298,7 @@ async def semantic_search(
             distance.label("distance"),
             func.row_number()
             .over(
-                partition_by=(SearchChunk.entity, SearchChunk.entity_id),
+                partition_by=(SearchChunk.story_id, SearchChunk.entity, SearchChunk.entity_id),
                 order_by=(distance, SearchChunk.field, SearchChunk.ordinal),
             )
             .label("position"),
@@ -253,11 +306,12 @@ async def semantic_search(
         .join(
             source,
             (source.c.entity == SearchChunk.entity)
+            & (source.c.story_id == cast(SearchChunk.story_id, source.c.story_id.type))
             & (source.c.id == cast(SearchChunk.entity_id, source.c.id.type))
             & (source.c.field == SearchChunk.field),
         )
         .where(
-            SearchChunk.story_id == story_id,
+            SearchChunk.story_id == story_id if not library else SearchChunk.story_id.in_(scope),
             SearchChunk.profile == current_profile,
         )
         .cte("ranked_search")
@@ -275,7 +329,7 @@ async def semantic_search(
         .mappings()
         .all()
     )
-    if not await index_ready(db, story_id, current_profile):
+    if not library and not await index_ready(db, story_id, current_profile):
         raise ClientException(
             status_code=409, detail="Meaning search is updating. Try again shortly."
         )
@@ -283,18 +337,28 @@ async def semantic_search(
     if rows:
         for row in (
             await db.execute(
-                select(source).where(
-                    source.c.id.in_([str(hit["entity_id"]) for hit in rows[:limit]])
+                select(
+                    source.c.story_id,
+                    source.c.story_title,
+                    source.c.entity,
+                    source.c.id,
+                    source.c.title,
+                    source.c.chapter_id,
+                    source.c.chapter_title,
                 )
+                .distinct()
+                .where(source.c.id.in_([str(hit["entity_id"]) for hit in rows[:limit]]))
             )
         ).mappings():
-            metadata[(row["entity"], row["id"])] = row
+            metadata[(row["story_id"], row["entity"], row["id"])] = row
     hits = []
     for row in rows[:limit]:
-        info = metadata.get((row["entity"], str(row["entity_id"])))
+        info = metadata.get((str(row["story_id"]), row["entity"], str(row["entity_id"])))
         if info:
             hits.append(
                 SearchHit(
+                    story_id=info["story_id"],
+                    story_title=info["story_title"],
                     entity=row["entity"],
                     id=row["entity_id"],
                     title=info["title"],
@@ -307,4 +371,5 @@ async def semantic_search(
         items=hits,
         next_offset=offset + limit if len(rows) > limit else None,
         semantic_available=True,
+        indexing=await library_indexing(db, story_id, current_profile) if library else False,
     )

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api, type Story, type DocxImport } from '../api/client'
 import { errorText } from '../api/errors'
 import { StorySharing } from '../components/StorySharing'
 import { WordImportDialog } from '../components/WordImportDialog'
+import { StorySearch } from '../components/StorySearch'
 
 // Library cards show when a story was last touched rather than a completeness bar.
 function editedLabel(iso: string) {
@@ -24,6 +25,8 @@ function exampleTag(story: Story) {
 
 export default function StoryList() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
+  const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser })
   const [title, setTitle] = useState('')
   const [showTrash, setShowTrash] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Story | null>(null)
@@ -102,7 +105,14 @@ export default function StoryList() {
   } })
 
   return (
-    <main className="mx-auto max-w-3xl p-5 sm:p-8">
+    <main className={`mx-auto ${showTrash ? 'max-w-3xl' : 'max-w-[1200px]'} p-5 sm:p-8`}>
+      <div className={showTrash ? '' : 'library-with-search'}>
+      {!showTrash && <aside className="library-search" aria-label="Search your stories"><h2>Search your stories</h2>{me.data && <StorySearch storyId="" accountId={me.data.id} context="all" active onOpen={async hit => {
+        await api.searchTarget(hit.story_id, hit)
+        const params = new URLSearchParams({ search_entity: hit.entity, search_id: hit.id, search_field: hit.matches.some(match => match.field === 'content') ? 'content' : hit.matches[0]?.field || 'title' })
+        navigate(`/stories/${hit.story_id}?${params}`)
+      }} />}</aside>}
+      <div className="min-w-0">
       <div className="page-heading"><h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{showTrash ? 'Trash' : 'Your stories'}</h1><button ref={trashToggle} type="button" onClick={() => setShowTrash(!showTrash)} className="shrink-0 rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm">{showTrash ? 'Back to library' : `Trash${trash.data?.length ? ` (${trash.data.length})` : ''}`}</button></div>
       {message && <p role="status" className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</p>}
       {showTrash && <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Restore a story to keep working, or delete it permanently to remove its contents and version history from the database.</p>}
@@ -226,6 +236,7 @@ export default function StoryList() {
         {purge.isError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{String(purge.error)}</p>}
         <div className="mt-5 flex flex-wrap justify-end gap-3"><button type="button" autoFocus disabled={purge.isPending} onClick={() => setPendingPurge(null)} className="rounded border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm">Cancel</button><button type="button" disabled={purge.isPending || purgeConfirmation !== 'DELETE'} onClick={() => { if (pendingPurge) purge.mutate({ id: pendingPurge.id, expected_title: pendingPurge.title, confirmation: 'DELETE' }) }} className="rounded bg-red-700 px-4 py-2 text-sm text-white disabled:opacity-50">{purge.isPending ? 'Deleting…' : 'Delete permanently'}</button></div>
       </dialog>
+      </div></div>
     </main>
   )
 }

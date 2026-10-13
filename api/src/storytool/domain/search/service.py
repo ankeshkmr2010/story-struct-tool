@@ -56,6 +56,7 @@ FIELDS: dict[str, tuple[Any, tuple[str, ...]]] = {
 }
 CONTEXTS = {key: (key,) for key in FIELDS}
 CONTEXTS["timeline"] = ("event", "scene")
+CONTEXTS["all"] = tuple(FIELDS)
 ARRAY_FIELDS = {"aliases", "motifs", "world_rules", "style_rules"}
 TITLE_FIELDS = {"name", "title", "term", "label", "aliases"}
 
@@ -68,7 +69,7 @@ def text_column(model: Any, field: str) -> Any:
     return column
 
 
-def fields_query(story_id: UUID, context: str, field: str | None = None) -> Any:
+def fields_query(story_id: Any, context: str, field: str | None = None) -> Any:
     queries = []
     for kind in CONTEXTS[context]:
         model, names = FIELDS[kind]
@@ -88,7 +89,8 @@ def fields_query(story_id: UUID, context: str, field: str | None = None) -> Any:
         title_field = next(
             (name for name in ("name", "term", "title", "label") if hasattr(model, name)), None
         )
-        title = func.coalesce(getattr(model, title_field), f"Untitled {kind}")
+        display_kind = "scene" if kind == "prose" else kind
+        title = func.coalesce(getattr(model, title_field), f"Untitled {display_kind}")
         for name in names:
             if field and name != field:
                 continue
@@ -100,6 +102,8 @@ def fields_query(story_id: UUID, context: str, field: str | None = None) -> Any:
             chapter_tie = cast(Chapter.id, String) if model is Scene else literal("")
             sort = getattr(model, "sort_key", literal(0))
             query = select(
+                cast(Story.id, String).label("story_id"),
+                Story.title.label("story_title"),
                 literal("scene" if kind == "prose" else kind).label("entity"),
                 cast(model.id, String).label("id"),
                 title.label("title"),
@@ -111,9 +115,15 @@ def fields_query(story_id: UUID, context: str, field: str | None = None) -> Any:
                 sort.label("sort"),
                 literal(name).label("field"),
                 value.label("value"),
-            ).where(model.id == story_id if model is Story else model.story_id == story_id)
+            )
+            owner_key = model.id if model is Story else model.story_id
+            query = query.where(
+                owner_key == story_id if isinstance(story_id, UUID) else owner_key.in_(story_id)
+            )
             if model is Scene:
                 query = query.outerjoin(Chapter, Scene.chapter_id == Chapter.id)
+            if model is not Story:
+                query = query.join(Story, Story.id == model.story_id)
             queries.append(query.where(value.is_not(None), value != ""))
     if not queries:
         raise ValueError("Field is not available in this search context")
@@ -135,7 +145,7 @@ def literal_pattern(query: str) -> str:
 
 async def text_search(
     db: AsyncSession,
-    story_id: UUID,
+    story_id: Any,
     context: str,
     query: str,
     field: str | None,
@@ -155,6 +165,8 @@ async def text_search(
         else_=2,
     )
     columns = [
+        c.story_id,
+        c.story_title,
         c.entity,
         c.id,
         c.title,
@@ -180,6 +192,8 @@ async def text_search(
     return SearchPage(
         items=[
             SearchHit(
+                story_id=row["story_id"],
+                story_title=row["story_title"],
                 entity=row["entity"],
                 id=row["id"],
                 title=row["title"],

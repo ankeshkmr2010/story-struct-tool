@@ -27,6 +27,7 @@ export type DocxImport = S['DocxImportOut']
 export type SearchHit = S['SearchHit']
 export type SearchPage = S['SearchPage']
 export type SearchContext = operations['ApiStoriesStoryIdSearchSearch']['parameters']['query']['context']
+export type LibrarySearchContext = NonNullable<operations['ApiSearchSearch']['parameters']['query']['context']>
 
 export type Ladder = S['LadderOut']
 export type Readiness = S['ReadinessOut']
@@ -102,6 +103,13 @@ const patch = <T,>(path: string, body: unknown) =>
 
 export const api = {
   searchCapabilities: (id: string) => request<S['SearchCapabilities']>(`/api/stories/${id}/search/capabilities`),
+  librarySearchCapabilities: () => request<S['SearchCapabilities']>('/api/search/capabilities'),
+  searchLibrary: (context: LibrarySearchContext, q: string, field: string, entity: string, mode: 'text' | 'semantic', offset: number, signal?: AbortSignal) => {
+    const params = new URLSearchParams({ context, q, mode, offset: String(offset) })
+    if (field) params.set('field', field)
+    if (entity) params.set('entity', entity)
+    return request<SearchPage>(`/api/search?${params}`, { signal })
+  },
   searchTarget: (storyId: string, hit: SearchHit) => request<SearchHit>(`/api/stories/${storyId}/search/target?${new URLSearchParams({ entity: hit.entity, id: hit.id })}`),
   searchStory: (id: string, context: SearchContext, q: string, field: string, entity: string, mode: 'text' | 'semantic', offset: number, signal?: AbortSignal) => {
     const params = new URLSearchParams({ context, q, mode, offset: String(offset) })
