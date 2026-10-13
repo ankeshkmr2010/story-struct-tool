@@ -204,7 +204,7 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
   onOpenCharacters: () => void
 }) {
   const qc = useQueryClient()
-  const reports = useQuery({ queryKey: ['evaluation-reports', storyId, evaluatorId], queryFn: () => api.listEvaluationReports(storyId, evaluatorId) })
+  const reports = useQuery({ queryKey: ['evaluation-reports', storyId, evaluatorId], queryFn: () => api.listEvaluationReports(storyId, evaluatorId), refetchInterval: 15_000, refetchOnWindowFocus: true })
   const threads = useQuery({ queryKey: ['threads', storyId], queryFn: () => api.listThreads(storyId) })
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })

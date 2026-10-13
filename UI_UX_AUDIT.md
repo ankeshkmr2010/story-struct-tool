@@ -205,7 +205,7 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 - [ ] Draw thread nesting visually instead of printing <Idea><Event> tags.
 - [ ] Define MICE and misbelief in one line each, with credit (Card and Kowal, Cron).
 - [ ] Use an unambiguous timestamp: "12 Oct 2026, 2:09 PM".
-- [ ] Refresh reports automatically instead of making people click "Check for new reports."
+- [~] Refresh reports automatically: every 15 seconds while Evaluate is open, plus on window focus. Manual refresh retained (`web/src/components/StoryEvaluation.tsx:207`); awaiting production confirmation.
 - [ ] Add an all-checks summary with a Run all button.
 - [ ] Make every flag jump to its thread or scene in Plan.
 
