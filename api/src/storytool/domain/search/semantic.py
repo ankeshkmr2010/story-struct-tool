@@ -263,6 +263,7 @@ async def semantic_search(
     offset: int,
     limit: int,
     entity: str | None = None,
+    *, query_vector: list[float] | None = None,
 ) -> SearchPage:
     current_profile = profile()
     library = not isinstance(story_id, UUID)
@@ -277,7 +278,9 @@ async def semantic_search(
         return SearchPage(items=[], semantic_available=True, indexing=True)
     await db.rollback()  # No transaction held across the remote call.
     try:
-        vector = (await embed([get_settings().search_embedding_query_prefix + query]))[0]
+        vector = query_vector if query_vector is not None else (
+            await embed([get_settings().search_embedding_query_prefix + query])
+        )[0]
     except (httpx.HTTPError, KeyError, ValueError) as exc:
         raise ClientException(
             status_code=503, detail="Meaning search is unavailable. Retry shortly."

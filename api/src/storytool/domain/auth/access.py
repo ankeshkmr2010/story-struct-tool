@@ -249,6 +249,11 @@ class StoryAccessMiddleware:
                         )
                     )
                     or suffix in {"/ai/runs", "/ai/observations", "/ai/catchup"}
+                    or (
+                        suffix.startswith("/evaluations/")
+                        and suffix.endswith("/reports")
+                        and http_scope["method"] == "GET"
+                    )
                     or suffix.startswith(
                         ("/evaluations/value_shift/", "/evaluations/misbelief_midpoint/")
                     )

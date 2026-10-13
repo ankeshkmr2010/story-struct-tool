@@ -4,6 +4,7 @@ import hashlib
 import json
 from collections.abc import Callable
 from typing import Annotated, Any, Literal, cast
+from urllib.parse import urlencode
 from uuid import UUID
 
 import httpx
@@ -21,6 +22,7 @@ from storytool.domain.ai.patches import ListPatch, ProsePatch
 from storytool.domain.ai.schemas import Proposal
 from storytool.domain.auth.access import _reject
 from storytool.domain.auth.oauth import SCOPES, Delegation, delegated_access, issuer
+from storytool.domain.search.schemas import SearchContext
 from storytool.domain.story.schemas import StoryCreate
 
 GUIDELINES = {
@@ -292,6 +294,9 @@ TOOL_USAGE["error_recovery"].update(
 )
 
 INSTRUCTIONS = """StoryTool is an author's story graph and writing workspace.
+Use search_story to locate relevant passages before reading full scenes. Text mode finds
+literal names/phrases; semantic mode finds related ideas when enabled. Results are bounded:
+follow next_offset for more matches and read_scene_prose for the full cited passage.
 Use product_feedback only to submit feedback about StoryTool when the author asks.
 It writes a private product-feedback message; it does not read feedback or edit stories.
 Keep manuscript critique in the story's review/evaluation flow. Never send credentials or
@@ -334,7 +339,8 @@ Existing-item edits need expected_value. Never guess a hash or use fuzzy matchin
 Never claim a proposal was applied until apply returns applied. Stale plans must be rebuilt.
 Undo refuses later edits. Version restore replaces the whole draft: preview, get explicit author
 authorization, then use its exact fingerprint; a recovery checkpoint preserves the previous draft.
-No tool calls a billable LLM or runs shell/database commands. The connected client writes/reasons.
+No tool calls a text-generation model or runs shell/database commands. Meaning search uses
+the configured embedding service only while enabled. The connected client writes/reasons.
 """
 
 
@@ -420,6 +426,32 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
             ctx, "/product-feedback", "POST", {"message": message, "category": category}
         )
         return {"submitted": True, "feedback_id": saved["id"]}
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def search_story(
+        ctx: Context,
+        q: Annotated[str, Field(min_length=1, max_length=300)],
+        context: SearchContext = "prose",
+        mode: Literal["text", "semantic"] = "text",
+        story_id: UUID | None = None,
+        field: str | None = None,
+        entity: str | None = None,
+        offset: Annotated[int, Field(ge=0, le=100000)] = 0,
+        limit: Annotated[int, Field(ge=1, le=50)] = 20,
+    ) -> dict[str, Any]:
+        """Find relevant passages or story details without reading the whole manuscript.
+        text returns exact name/phrase matches; semantic returns related ideas when enabled.
+        Prose needs prose:read. Use Type/entity and Field to narrow results, next_offset to
+        page through matches, and read_scene_prose to read selected scenes in full.
+        An indexing response is not evidence that a motif or setup is missing."""
+        params = dict(q=q, context=context, mode=mode, offset=offset, limit=limit)
+        if field:
+            params["field"] = field
+        if entity:
+            params["entity"] = entity
+        result = await call(ctx, "/search?" + urlencode(params), story_id=story_id)
+        result["match_kind"] = "exact" if mode == "text" else "related"
+        return result
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_connection(ctx: Context) -> dict[str, Any]:
@@ -848,7 +880,12 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         (MICE threads, scene value shifts, or character misbeliefs at midpoint).
         Prose-based reviews require prose:read. Judge only from the inputs, then
         call submit_evaluation_report with one verdict per subject. It never edits the story."""
-        return await call(ctx, f"/evaluations/{evaluator_id}/package", story_id=story_id)
+        grant = await principal(ctx.headers or {})
+        include_prose = grant is not None and "prose:read" in grant.scopes
+        return await call(
+            ctx, f"/evaluations/{evaluator_id}/package?include_prose={str(include_prose).lower()}",
+            story_id=story_id,
+        )
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
     async def submit_evaluation_report(

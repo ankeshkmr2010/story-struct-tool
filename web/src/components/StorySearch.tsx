@@ -146,7 +146,7 @@ function SearchResults({ storyId, accountId, context, active, onOpen }: SearchPr
     <ul className="story-search-results">{hits.map(({ hit, related }) => <li key={`${hit.story_id}:${hit.entity}:${hit.id}`}>
       {!storyId && <p className="story-search-story">{hit.story_title}</p>}
       <p className="story-search-kind">{SEARCH_LABELS[hit.entity as SearchContext] ?? hit.entity}{hit.chapter_id ? ` · ${hit.chapter_title || 'Untitled chapter'}` : hit.entity === 'scene' ? ' · Unfiled writing' : ''}</p>
-      <h3>{hit.title}{related && <span className="story-search-related">Related</span>}</h3>
+      <h3>{hit.title}<span className="story-search-related" title={related ? 'Matches a related idea' : 'Matches your search text'}>{related ? 'Related' : 'Exact'}</span></h3>
       {hit.matches.map(match => <p key={match.field} className="story-search-excerpt"><strong>{fieldLabel(match.field)}:</strong> <Highlight text={match.excerpt} query={query} /></p>)}
       <button type="button" className="share-story-button" disabled={opening !== null} onClick={() => { void open(hit) }}>{opening === hit.id ? 'Opening…' : hit.matches.some(match => match.field === 'content') ? 'Open passage' : 'Open item'}</button>
     </li>)}</ul>

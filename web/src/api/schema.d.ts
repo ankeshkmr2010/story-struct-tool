@@ -6253,7 +6253,9 @@ export interface operations {
     };
     ApiStoriesStoryIdEvaluationsEvaluatorIdPackageGetPackage: {
         parameters: {
-            query?: never;
+            query?: {
+                include_prose?: boolean;
+            };
             header?: never;
             path: {
                 story_id: string;

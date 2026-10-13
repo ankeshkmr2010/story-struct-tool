@@ -148,20 +148,35 @@ class EvaluationController(Controller):
         return evaluator, evaluator.review
 
     async def _package(
-        self, db_session: AsyncSession, story_id: UUID, evaluator_id: str
+        self, db_session: AsyncSession, story_id: UUID, evaluator_id: str,
+        *, include_prose: bool = False,
     ) -> PackageOut:
         evaluator, review = self._reviewer(evaluator_id)
         graph = await self._graph(db_session, story_id)
         missing = evaluator.missing(graph)
         if missing:
             raise ClientException(detail="Not ready for review: " + "; ".join(missing))
+        inputs = review.inputs(graph)
+        motifs = list(graph.story.motifs or [])
+        base_fingerprint = fingerprint(await snapshot(db_session, story_id))
+        if include_prose:
+            from storytool.domain.evaluation.search_evidence import retrieve_evidence
+
+            inputs["search_evidence"] = await retrieve_evidence(db_session, story_id, inputs, motifs)
+            if fingerprint(await snapshot(db_session, story_id)) != base_fingerprint:
+                raise ClientException(
+                    status_code=409,
+                    detail="Story changed during evidence retrieval. Fetch the package again.",
+                )
         return PackageOut(
             story_id=story_id,
             evaluator_id=evaluator.id,
-            base_fingerprint=fingerprint(await snapshot(db_session, story_id)),
+            base_fingerprint=base_fingerprint,
             subject=review.subject,
-            instructions=review.instructions,
-            inputs=review.inputs(graph),
+            instructions=review.instructions + "\nIf search_evidence is supplied, use it to check "
+            "setups/payoffs and motif appearances. Cite its scene IDs where relevant; treat "
+            "related hits as candidates and never infer absence from limited retrieval.",
+            inputs=inputs,
             result_schema=result_schema(review.subject),
         )
 
@@ -198,9 +213,10 @@ class EvaluationController(Controller):
 
     @get("/{evaluator_id:str}/package", summary="Instructions and inputs for an AI review")
     async def get_package(
-        self, db_session: AsyncSession, story_id: UUID, evaluator_id: str
+        self, db_session: AsyncSession, story_id: UUID, evaluator_id: str,
+        include_prose: bool = False,
     ) -> PackageOut:
-        return await self._package(db_session, story_id, evaluator_id)
+        return await self._package(db_session, story_id, evaluator_id, include_prose=include_prose)
 
     @get("/{evaluator_id:str}/reports", summary="Saved AI reviews, newest first")
     async def list_reports(
@@ -252,7 +268,7 @@ class EvaluationController(Controller):
             text("SELECT pg_advisory_xact_lock(:key)"),
             {"key": int.from_bytes(story_id.bytes[:8], "big", signed=True)},
         )
-        package = await self._package(db_session, story_id, evaluator_id)
+        package = await self._package(db_session, story_id, evaluator_id, include_prose=True)
         await db_session.commit()
         result, _ = await runner.generate_review(
             provider,
