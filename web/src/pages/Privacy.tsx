@@ -19,6 +19,11 @@ export default function Privacy() {
         <p className="leading-7 text-[var(--muted)]">An external AI client can read the stories and prose you authorize through the connection's permissions. API use and chat-client use can have different retention and training settings. StoryTool's no-training statement does not override your provider's or client's policies.</p>
         <p className="leading-7 text-[var(--muted)]">Saved provider API keys are encrypted. You can disconnect a provider or revoke an external client's access in <Link to="/settings" className="underline underline-offset-4">Settings</Link>. Revoking access prevents future requests; it does not erase data already sent to another service.</p>
       </section>
+      <section className="mt-10 space-y-3" aria-labelledby="meaning-search-title">
+        <h2 id="meaning-search-title" className="text-xl font-semibold">Meaning search and Cloudflare</h2>
+        <p className="leading-7 text-[var(--muted)]">When meaning search is enabled for StoryTool, scene prose and searchable story details are sent in chunks to Cloudflare to create embeddings—numeric representations used to find related ideas. Indexing runs in the background and updates as stories change, even when you are not actively searching. Meaning-search queries are also sent to Cloudflare for an embedding.</p>
+        <p className="leading-7 text-[var(--muted)]">When meaning search is disabled, StoryTool makes no embedding requests. Text search runs in StoryTool's database and does not itself send text to Cloudflare. Cloudflare's own data policies apply to embedding requests; StoryTool's no-training statement does not override them.</p>
+      </section>
       <section className="mt-10 space-y-3" aria-labelledby="sharing-data-title">
         <h2 id="sharing-data-title" className="text-xl font-semibold">Sharing is your choice</h2>
         <p className="leading-7 text-[var(--muted)]">Stories are private to your account unless you share them or authorize an AI connection. Private reader access is tied to the email you invite. A public showcase can be read by anyone with its link. If you allow a reader to import a copy, that copy is independent and remains after you revoke sharing.</p>

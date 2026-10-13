@@ -20,6 +20,7 @@ const DOT: Record<Status, string> = {
 
 const SECTIONS = [
   ['start', 'First five minutes'],
+  ['search', 'Search your stories'],
   ['modes', 'How you work'],
   ['levels', 'The eight levels'],
   ['links', 'Linking plan to draft'],
@@ -143,7 +144,7 @@ export default function HowToUse() {
 
           <div className="min-w-0 space-y-14">
             <Section id="start" eyebrow="01" title="Your first five minutes">
-              <ol className="space-y-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              <ol start={1} className="list-none space-y-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 {[
                   <>Sign in with Google. Your library belongs to your account.</>,
                   <>
@@ -151,13 +152,13 @@ export default function HowToUse() {
                     <strong className="font-medium text-slate-900 dark:text-slate-100">Create</strong>, and open
                     the story.
                   </>,
-                  <>Pick an authoring mode in the header — Hybrid is the default.</>,
+                  <>Pick an authoring mode in <strong className="font-medium">Design → Plan → Premise</strong> — Hybrid is the default.</>,
                   <>Open <strong className="font-medium">Write</strong>, add an optional chapter title, and start typing. You don’t need to name a scene first.</>,
                   <>Use <strong className="font-medium">Design</strong> for your premise, protagonist, outline, and timeline. Come back to structure whenever useful; half-filled entries are fine.</>,
                 ].map((step, index) => (
-                  <li key={index} className="flex gap-3">
-                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-slate-900 dark:bg-slate-200 text-[11px] font-medium text-white dark:text-slate-950">
-                      {index + 1}
+                  <li key={index} value={index + 1} className="flex gap-3">
+                    <span className="mt-0.5 inline-flex h-fit shrink-0 items-center rounded bg-slate-900 px-2 py-0.5 text-[11px] font-medium text-white dark:bg-slate-200 dark:text-slate-950">
+                      Step {index + 1}
                     </span>
                     <span>{step}</span>
                   </li>
@@ -165,10 +166,16 @@ export default function HowToUse() {
               </ol>
             </Section>
 
+            <Section id="search" eyebrow="SEARCH" title="Find a line or an idea">
+              <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">Open Search in Your stories to search across your library, or use a story's search control for its current context. Type a name, phrase or idea, then use Type and Field to narrow the results. Open a result to jump to its scene or Plan entry.</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Text matches find names and phrases. When enabled, meaning search adds related matches based on ideas rather than exact words; these are labeled Related. Results can take time to appear while a story is being indexed.</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Meaning search sends scene text, story details and search queries to Cloudflare for embeddings while enabled. <Link to="/privacy#meaning-search-title" className="underline">Read the privacy details →</Link></p>
+            </Section>
+
             <Section id="modes" eyebrow="02" title="Choose how you work">
               <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
                 All three modes read the same story — the mode only decides how firmly the
-                sidebar holds you to the order. Switch at any time from the story header;
+                sidebar holds you to the order. Switch from Design → Plan → Premise;
                 nothing you have written changes.
               </p>
               <div className="mt-5 grid gap-4 md:grid-cols-3">
@@ -430,12 +437,19 @@ export default function HowToUse() {
                   come from the prose, so they are always current.
                 </Item>
                 <Item title="Take the words with you">
-                  <strong className="font-medium">Export .md</strong> compiles the manuscript
-                  in reading order. Undrafted chapters are marked rather than skipped, so the
-                  export doubles as a to-do list. <strong className="font-medium">Export .docx</strong> gives
-                  the same manuscript as a Word document. <strong className="font-medium">Backup</strong> downloads
+                  Open <strong className="font-medium">Export ▾</strong> for Word (.docx), Markdown (.md),
+                  EPUB, HTML, plain text or submission PDF. PDF uses double-spaced manuscript pages
+                  and offers optional glossary, timeline and places appendices; it may reject characters
+                  its fonts cannot display. Set your author name in Settings for the export byline.
+                  <strong className="font-medium"> Backup</strong> downloads
                   everything, including notes and scene revisions; use Restore backup in your library to bring
                   it back as a new story.
+                </Item>
+                <Item title="Bring in existing prose">
+                  In Your stories, choose <strong className="font-medium">Create ▾ → From Word (.docx)</strong>.
+                  The import window stays open through completion and offers prompts to organize
+                  chapters/scenes or populate story components while preserving your prose.
+                  Imported stories keep an <strong className="font-medium">Import prompts</strong> entry.
                 </Item>
               </div>
             </Section>

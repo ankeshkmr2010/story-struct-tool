@@ -42,6 +42,14 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
 
 const DELIVERED: readonly { date: string; items: readonly (readonly [string, string])[] }[] = [
   {
+    date: '13 Oct 2026 — site guide update',
+    items: [
+      ['Search and export guides', 'homepage and How to use now cover library search, meaning matches, all manuscript formats and Word import.'],
+      ['Meaning-search privacy', 'explains Cloudflare embedding requests and background indexing while meaning search is enabled.'],
+      ['Connect AI navigation', 'opens the MCP section directly; retired the sleeping-server note.'],
+    ],
+  },
+  {
     date: '13 Oct 2026',
     items: [
       ['Search your story and library', 'find saved prose and planning details in the current section or across your own stories. Open matching passages and items; optional meaning search finds related text.'],

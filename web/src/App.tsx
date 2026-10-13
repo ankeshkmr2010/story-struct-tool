@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, Route, Routes, useLocation } from 'react-router-dom'
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
 import Landing from './pages/Landing'
 import { ThemeProvider, ThemeToggle } from './components/Theme'
 import { AccountMenu, AuthGate } from './components/AuthGate'
@@ -20,8 +20,8 @@ import OAuthConsent from './pages/OAuthConsent'
 export default function App() {
   const location = useLocation()
   useEffect(() => { void api.recordVisit().catch(() => {}) }, [])
-  useEffect(() => {
-    if (location.hash) window.setTimeout(() => document.getElementById(location.hash.slice(1))?.scrollIntoView({ behavior: 'smooth' }), 0)
+  useLayoutEffect(() => {
+    if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'start' })
   }, [location.pathname, location.hash])
   return (
     <ThemeProvider>
@@ -31,7 +31,7 @@ export default function App() {
           <NavLink to="/library" className={`site-nav-link ${location.pathname.startsWith('/stories/') ? 'is-active' : ''}`}>Your stories</NavLink>
           <NavLink to="/how-to-use" className="site-nav-link">How to use</NavLink>
           <NavLink to="/roadmap" className="site-nav-link">Roadmap</NavLink>
-          <Link to="/#mcp" className={`site-nav-link ${location.hash === '#mcp' ? 'is-active' : ''}`}>Connect AI</Link>
+          <a href="/#mcp" className={`site-nav-link ${location.hash === '#mcp' ? 'is-active' : ''}`}>Connect AI</a>
           <NavLink to="/feedback" className="site-nav-link site-feedback-link">Feedback</NavLink>
         </nav>
         <div className="site-header-actions"><ThemeToggle /><AccountMenu /></div>

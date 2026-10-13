@@ -190,9 +190,11 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 
 **User feedback — tasks only (2026-10-12)**
 
+- [~] T47 (built 2026-10-13; awaiting production check) Requested site-guide batch: Privacy names Cloudflare and discloses background embedding of prose/story details and query embedding only while meaning search is enabled (provider hostname/enabled flag verified read-only). Homepage Yours to keep lists Word/Markdown/PDF/EPUB/HTML/plain text and Word import; one Search card links to How to use. How to use covers Type/Field filters, Related meaning matches, exports/import, and explicit Step 1–5 numbering. Connect AI uses a native /#mcp anchor with layout-time fragment scrolling. Sleeping-server notes removed; current domain retained per user. Roadmap Delivered updated. No local tests/builds; no deployment triggered.
+
 **2. Landing page touch-ups — T40**
-- [ ] Update "Yours to keep." It still lists only Word and Markdown. Add EPUB, HTML and plain text.
-- [ ] Point the Connect AI nav link at the MCP section, not the top of the page.
+- [~] Update "Yours to keep." Add EPUB, HTML, plain text, PDF and Word import. Built in T47; awaiting production check.
+- [~] Point the Connect AI nav link at the MCP section, not the top of the page. Built in T47; awaiting production check.
 - [ ] Add the new checks to the craft section: Misbelief at midpoint and Value shift versus prose.
 
 **3. Roadmap — T41**

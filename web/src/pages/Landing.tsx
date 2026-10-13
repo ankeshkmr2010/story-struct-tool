@@ -76,6 +76,9 @@ export default function Landing() {
         <article><span className="writing-tab-label">History</span><h3>Every change on record.</h3><p>Restore any saved version, and see who wrote what: you, the assistant or a connected AI.</p></article>
       </div>
     </section>
+    <section className="landing-writing" aria-labelledby="search-title">
+      <article className="section-intro rounded-xl border border-[var(--line)] bg-[var(--surface)] p-6 sm:p-8"><p className="eyebrow">FIND YOUR WORDS</p><h2 id="search-title">Find any line, or any idea,<br />across your library.</h2><p>Search prose and story details, narrow results by type or field, and jump to the matching passage. Text search finds names and phrases; meaning search finds related ideas when enabled.</p><Link to="/how-to-use#search" className="landing-secondary">How search works →</Link></article>
+    </section>
     <MCPSetup />
 
     <section id="sharing" className="landing-sharing" aria-labelledby="sharing-title">
@@ -93,7 +96,7 @@ export default function Landing() {
       <p className="sharing-footnote">Your private notes, version history and AI conversations stay private. You can revoke access later; copies already imported remain independent.</p>
     </section>
 
-    <section className="landing-modes" aria-labelledby="keep-title"><div><p className="eyebrow">YOURS TO KEEP</p><h2 id="keep-title">Your words can<br />always leave.</h2></div><div className="mode-list"><p><strong>Manuscript</strong><span>Export to Word or Markdown.</span></p><p><strong>Full backup</strong><span>Everything in one file, restorable as a new story.</span></p><p><strong>Versions</strong><span>Restore any saved version; your current draft is kept as a recovery copy.</span></p></div></section>
+    <section className="landing-modes" aria-labelledby="keep-title"><div><p className="eyebrow">YOURS TO KEEP</p><h2 id="keep-title">Your words can<br />always leave.</h2></div><div className="mode-list"><p><strong>Manuscript</strong><span>Export to Word, Markdown, PDF, EPUB, HTML or plain text.</span></p><p><strong>Word import</strong><span>Start with prose from a .docx manuscript.</span></p><p><strong>Full backup</strong><span>Everything in one file, restorable as a new story.</span></p><p><strong>Versions</strong><span>Restore any saved version; your current draft is kept as a recovery copy.</span></p></div></section>
 
     <footer className="landing-footer"><span>StoryTool · Make room for your story.</span><Link to="/privacy">Privacy</Link><Link to="/pricing">Pricing</Link><Link to="/library">Start your story →</Link></footer>
   </main>
