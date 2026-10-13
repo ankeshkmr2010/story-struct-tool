@@ -1,7 +1,8 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { api } from '../api/client'
+import { api, type SearchContext, type SearchHit } from '../api/client'
+import { StorySearch } from '../components/StorySearch'
 import { Ladder, type AuthoringMode } from '../components/Ladder'
 import { ChapterBriefCard } from '../components/ChapterBriefCard'
 import { InsightsPanel } from '../components/InsightsPanel'
@@ -79,7 +80,10 @@ function Workspace() {
     const timer = setTimeout(() => setJustUpdated(false), 4000)
     return () => clearTimeout(timer)
   }, [live.changedAt])
-  const [level, setLevel] = useState(1)
+  const [savedSearchContext] = useState(() => {
+    try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' ? JSON.parse(localStorage.getItem(`storytool-search-context:${storyId}`) || '{}') : {} } catch { return {} }
+  })
+  const [level, setLevel] = useState(() => [1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1)
   // Levels 1-8 are the Plan; ids from 104 up are full-width Design pages (Grid, History, …).
   const isView = level >= INBOX_VIEW
   const planLevel = useRef(1)
@@ -95,6 +99,7 @@ function Workspace() {
   if (!isView) planLevel.current = level
   const [historyTab, setHistoryTab] = useState<'versions' | 'authorship'>('versions')
   const [tab, setTab] = useState<'write' | 'read' | 'design'>(() => {
+    if (['write', 'read', 'design'].includes(savedSearchContext.tab)) return savedSearchContext.tab
     try { const saved = localStorage.getItem(`storytool-workspace:${storyId}`); return saved === 'write' || saved === 'read' ? saved : 'design' } catch { return 'design' }
   })
   const [writerOpened, setWriterOpened] = useState(tab === 'write')
@@ -117,8 +122,71 @@ function Workspace() {
   const openView = async (view: number) => { if (await changeTab('design')) setLevel(view) }
   const viewItem = (view: number, label: ReactNode) => <button type="button" aria-current={level === view ? 'page' : undefined} onClick={() => setLevel(view)}>{label}</button>
   // Reference panels sit beside the text in every tab, so looking something up never leaves the page.
-  const [refPanel, setRefPanel] = useState<RefPanel | null>(null)
+  const [refPanel, setRefPanel] = useState<RefPanel | null>(() => REF_PANELS.some(([key]) => key === savedSearchContext.refPanel) ? savedSearchContext.refPanel : null)
+  const [searchOpen, setSearchOpen] = useState(() => {
+    try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' } catch { return false }
+  })
+  const hasPanel = Boolean(refPanel || searchOpen)
+  const searchContext: SearchContext | null = refPanel === 'places' ? 'location'
+    : refPanel === 'glossary' ? 'glossary_entry' : refPanel === 'timeline' ? 'timeline'
+    : refPanel === 'assistant' ? null : tab !== 'design' ? 'prose'
+    : ({ 1: 'story', 2: 'event', 3: 'character', 4: 'act', 5: 'beat', 6: 'thread', 7: 'chapter', 8: 'scene', [GRID_VIEW]: 'scene' } as Record<number, SearchContext>)[level] ?? null
+  useEffect(() => {
+    try { localStorage.setItem(`storytool-search-open:${storyId}`, String(searchOpen)) } catch { /* Optional browser storage. */ }
+  }, [storyId, searchOpen])
+  // Restore the search's source context on refresh as well as its query and filters.
+  useEffect(() => {
+    if (!searchOpen) return
+    try { localStorage.setItem(`storytool-search-context:${storyId}`, JSON.stringify({ tab, level, refPanel })) } catch { /* Optional browser storage. */ }
+  }, [storyId, searchOpen, tab, level, refPanel])
+  useEffect(() => {
+    if (!searchOpen) return
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setSearchOpen(false); document.getElementById('story-search-toggle')?.focus() } }
+    window.addEventListener('keydown', escape)
+    return () => window.removeEventListener('keydown', escape)
+  }, [searchOpen])
   const [writerScene, setWriterScene] = useState<{ id: string; at: number } | null>(null)
+  const [readerScene, setReaderScene] = useState<{ sceneId: string; sequence: number } | undefined>()
+  const revealSearchTarget = async (id: string) => {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const target = document.getElementById(id)
+      if (target) {
+        target.querySelectorAll('details').forEach(detail => { detail.open = true })
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        target.setAttribute('tabindex', '-1'); target.focus({ preventScroll: true })
+        return
+      }
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    throw new Error('Could not open this item. Refresh results and try again.')
+  }
+  const openSearchHit = async (hit: SearchHit) => {
+    if (tab === 'write' && !await writerFlush.current()) throw new Error('Your writing has not saved yet. Retry the save before opening a result.')
+    const target = await api.searchTarget(storyId, hit)
+    const narrow = window.matchMedia('(max-width: 1100px)').matches
+    if (hit.matches.some(match => match.field === 'content')) {
+      if (tab === 'read') setReaderScene({ sceneId: hit.id, sequence: Date.now() })
+      else if (await changeTab('write')) setWriterScene({ id: hit.id, at: Date.now() })
+      if (narrow) { setSearchOpen(false); setRefPanel(null) }
+      return
+    }
+    if (hit.entity === 'location' || hit.entity === 'glossary_entry') {
+      setRefPanel(hit.entity === 'location' ? 'places' : 'glossary'); setSearchOpen(false)
+      await revealSearchTarget(`search-${hit.entity}-${hit.id}`)
+      return
+    }
+    const destination = ({ story: 1, event: 2, character: 3, act: 4, beat: 5, thread: 6, chapter: 7, scene: 8 } as Record<string, number>)[hit.entity]
+    if (!destination) throw new Error('This item has no editing destination.')
+    if (!await changeTab('design')) throw new Error('Save your writing before opening this item.')
+    setLevel(destination)
+    if (hit.entity === 'chapter') setChapterId(hit.id)
+    if (hit.entity === 'scene') { setChapterId(target.chapter_id ?? null); setSceneId(hit.id) }
+    if (narrow) { setSearchOpen(false); setRefPanel(null) }
+    const collection = hit.entity === 'character' ? 'characters' : hit.entity === 'event' ? 'events' : `${hit.entity}s`
+    void qc.invalidateQueries({ queryKey: [collection, storyId] })
+    await revealSearchTarget(hit.entity === 'character' ? `character-${hit.id}`
+      : ['story', 'chapter', 'scene'].includes(hit.entity) ? 'story-search-design-section' : `search-${hit.entity}-${hit.id}`)
+  }
   const openScene = (id: string) => {
     if (!id) return
     // Below 1100px the panel covers the text, so close it to show where the jump landed.
@@ -327,16 +395,17 @@ function Workspace() {
         <div className="workspace-ref-toggles" role="group" aria-label="Reference panels">
           {pendingRuns > 0 && <button type="button" className="workspace-ref-alert" onClick={() => { void openView(INBOX_VIEW) }}>Agent changes<span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span></button>}
           {REF_PANELS.map(([key, label]) => <button key={key} type="button" aria-pressed={refPanel === key} onClick={() => setRefPanel(refPanel === key ? null : key)}>{label}</button>)}
+          <button id="story-search-toggle" type="button" aria-pressed={searchOpen} aria-controls="story-search-panel" onClick={() => setSearchOpen(!searchOpen)}>Search</button>
         </div>
       </div>
       {tabError && <p role="alert" className="writer-error">{tabError}</p>}
-      <div className={`workspace-body${refPanel ? ' has-panel' : ''}`}>
+      <div className={`workspace-body${hasPanel ? ' has-panel' : ''}`}>
       <div className="min-w-0">
       <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>
-        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} registerFlush={registerFlush} openScene={writerScene} panelOpen={Boolean(refPanel)} onContextOpen={() => setRefPanel(null)} /></Suspense>}
+        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} registerFlush={registerFlush} openScene={writerScene} panelOpen={hasPanel} onContextOpen={() => { setRefPanel(null); setSearchOpen(false) }} /></Suspense>}
       </div>
       <div id="workspace-panel-read" role="tabpanel" aria-labelledby="workspace-tab-read" hidden={tab !== 'read'}>
-        {tab === 'read' && <Suspense fallback={<p className="p-6">Loading reader…</p>}><StoryReader storyId={storyId} owned embedded /></Suspense>}
+        {tab === 'read' && <Suspense fallback={<p className="p-6">Loading reader…</p>}><StoryReader storyId={storyId} owned embedded openTarget={readerScene} /></Suspense>}
       </div>
       <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design" hidden={tab !== 'design'}>
       <nav aria-label="Design pages" className="workspace-views">
@@ -350,7 +419,7 @@ function Workspace() {
       </nav>
 
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setRefPanel('timeline')} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
-      <div className={`mt-6 grid grid-cols-1 gap-5 ${isView ? '' : refPanel ? 'md:grid-cols-[170px_minmax(0,1fr)]' : 'md:grid-cols-[170px_minmax(0,1fr)] xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
+      <div className={`mt-6 grid grid-cols-1 gap-5 ${isView ? '' : hasPanel ? 'md:grid-cols-[170px_minmax(0,1fr)]' : 'md:grid-cols-[170px_minmax(0,1fr)] xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
         {!isView && <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
           <nav aria-label="Story design" className="workspace-nav">
             <h2>Plan</h2>
@@ -365,7 +434,7 @@ function Workspace() {
           </nav>
         </aside>}
 
-        <section ref={levelSection} className="min-w-0 scroll-mt-4">
+        <section ref={levelSection} id="story-search-design-section" className="min-w-0 scroll-mt-4">
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
           {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8) }} onOpenThreads={() => setLevel(6)} onOpenCharacters={() => setLevel(3)} />}
@@ -527,19 +596,20 @@ function Workspace() {
           )}
         </section>
 
-        {!isView && !refPanel && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
+        {!isView && !hasPanel && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
           <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, rung.label]))} onOpenLevel={selectLevel} />
         </aside>}
       </div>
       </div>
       </div>
-      {refPanel && <aside className="workspace-ref-panel" aria-label={REF_PANELS.find(([key]) => key === refPanel)?.[1]}>
-        <div className="workspace-ref-head"><h2>{REF_PANELS.find(([key]) => key === refPanel)?.[1]}</h2><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div>
-        {refPanel === 'timeline' && <StoryTimeline storyId={storyId} compact allowInsert={tab !== 'read'} onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
-        {refPanel === 'places' && <PlacesPanel storyId={storyId} />}
-        {refPanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
-        {refPanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
-      </aside>}
+      <aside id="story-search-panel" hidden={!hasPanel} className="workspace-ref-panel" aria-label={searchOpen ? 'Search' : REF_PANELS.find(([key]) => key === refPanel)?.[1]}>
+        <div className="workspace-ref-head"><h2>{searchOpen ? 'Search' : REF_PANELS.find(([key]) => key === refPanel)?.[1]}</h2><div>{!searchOpen && <button type="button" onClick={() => setSearchOpen(true)}>Search</button>}<button type="button" aria-label="Close panel" onClick={() => { if (searchOpen) setSearchOpen(false); else setRefPanel(null); document.getElementById('story-search-toggle')?.focus() }}>✕</button></div></div>
+        <div hidden={!searchOpen}><StorySearch storyId={storyId} context={searchContext} active={searchOpen} onOpen={openSearchHit} /></div>
+        {!searchOpen && refPanel === 'timeline' && <StoryTimeline storyId={storyId} compact allowInsert={tab !== 'read'} onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
+        {!searchOpen && refPanel === 'places' && <PlacesPanel storyId={storyId} />}
+        {!searchOpen && refPanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
+        {!searchOpen && refPanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
+      </aside>
       </div>
     </main>
   )

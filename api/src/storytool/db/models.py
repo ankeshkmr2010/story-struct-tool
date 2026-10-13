@@ -22,6 +22,7 @@ from storytool.domain.narrative.models import (
     scene_beat,
     scene_thread,
 )
+from storytool.domain.search.models import SearchChunk, SearchIndex
 from storytool.domain.site.feedback import ProductFeedback
 from storytool.domain.site.funnel import FunnelEvent
 from storytool.domain.site.shoutouts import Shoutout
@@ -59,6 +60,8 @@ __all__ = (
     "Scene",
     "SceneCharacterMention",
     "SceneRevision",
+    "SearchChunk",
+    "SearchIndex",
     "Shoutout",
     "Story",
     "StoryObservation",

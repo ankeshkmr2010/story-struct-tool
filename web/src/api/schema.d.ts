@@ -2053,6 +2053,57 @@ export interface paths {
         patch: operations["ApiStoriesStoryIdSuggestionsSuggestionIdUpdateSuggestion"];
         trace?: never;
     };
+    "/api/stories/{story_id}/search/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Capabilities */
+        get: operations["ApiStoriesStoryIdSearchCapabilitiesCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search */
+        get: operations["ApiStoriesStoryIdSearchSearch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/search/target": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Target */
+        get: operations["ApiStoriesStoryIdSearchTargetTarget"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/glossary": {
         parameters: {
             query?: never;
@@ -3183,6 +3234,32 @@ export interface components {
             emotional_value_to?: string | null;
             status?: components["schemas"]["DraftStatus"] | null;
             sort_key?: number | null;
+        };
+        /** SearchCapabilities */
+        SearchCapabilities: {
+            semantic_available: boolean;
+        };
+        /** SearchHit */
+        SearchHit: {
+            entity: string;
+            /** Format: uuid */
+            id: string;
+            title: string;
+            chapter_id?: string | null;
+            chapter_title?: string | null;
+            matches: components["schemas"]["SearchMatch"][];
+        };
+        /** SearchMatch */
+        SearchMatch: {
+            field: string;
+            excerpt: string;
+        };
+        /** SearchPage */
+        SearchPage: {
+            items: components["schemas"]["SearchHit"][];
+            next_offset?: number | null;
+            /** @default false */
+            semantic_available: boolean;
         };
         /** ShareInput */
         ShareInput: {
@@ -9648,6 +9725,128 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuggestionOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSearchCapabilitiesCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchCapabilities"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSearchSearch: {
+        parameters: {
+            query: {
+                context: "prose" | "story" | "scene" | "character" | "location" | "glossary_entry" | "chapter" | "event" | "act" | "beat" | "thread" | "timeline";
+                q: string;
+                field?: string | null;
+                mode?: "text" | "semantic";
+                offset?: number;
+                limit?: number;
+                entity?: string | null;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchPage"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSearchTargetTarget: {
+        parameters: {
+            query: {
+                entity: string;
+                id: string;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchHit"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

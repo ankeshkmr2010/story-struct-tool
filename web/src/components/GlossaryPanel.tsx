@@ -27,7 +27,7 @@ export function GlossaryPanel({ storyId }: { storyId: string }) {
     {entries.data?.length === 0 && <p className="writer-help mt-4">No terms yet. Define a magic system, a rank, or an unfamiliar word for your readers.</p>}
     <div className="mt-5 space-y-4">{entries.data?.map(item => {
       const save = (body: GlossaryUpdate) => update.mutateAsync({ id: item.id, body })
-      return <article key={item.id} className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+      return <article key={item.id} id={`search-glossary_entry-${item.id}`} className="scroll-mt-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
         <div className="flex items-start gap-3"><label className="min-w-0 flex-1 text-xs text-slate-500 dark:text-slate-400">Term<InlineText value={item.term} placeholder="Term" onSave={term => term ? save({ term }) : Promise.reject(new Error('Term is required'))} className="font-semibold" /></label><DeleteButton what={`glossary entry “${item.term}”`} onConfirm={() => remove.mutateAsync(item.id)} /></div>
         <div className="mt-3 space-y-3">
           <label className="block text-xs text-slate-500 dark:text-slate-400">Aliases (one per line)<InlineText value={item.aliases?.join('\n') ?? null} placeholder="Other names, spellings, or formal titles" multiline onSave={value => save({ aliases: value?.split('\n').map(alias => alias.trim()).filter(Boolean) ?? [] })} /></label>

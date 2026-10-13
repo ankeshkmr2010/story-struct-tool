@@ -226,6 +226,9 @@ class StoryAccessMiddleware:
                     "1",
                     "yes",
                 }
+                prose_query = prose_query or (
+                    suffix == "/search" and "prose" in query.get("context", [])
+                )
                 if (
                     prose_query
                     or suffix.endswith(

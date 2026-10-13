@@ -17,7 +17,7 @@ export default function SharedStoryReader() {
   return <StoryReader key={storyId} storyId={storyId} />
 }
 
-export function StoryReader({ storyId, owned = false, embedded = false }: { storyId: string; owned?: boolean; embedded?: boolean }) {
+export function StoryReader({ storyId, owned = false, embedded = false, openTarget }: { storyId: string; owned?: boolean; embedded?: boolean; openTarget?: ReadingTarget }) {
   useStoryLiveUpdates(storyId, !owned, !embedded)
   const qc = useQueryClient()
   const navigate = useNavigate()
@@ -31,6 +31,9 @@ export function StoryReader({ storyId, owned = false, embedded = false }: { stor
   const [contextOpen, setContextOpen] = useState(false)
   const [chaptersOpen, setChaptersOpen] = useState(false)
   const [view, setView] = useState<'manuscript' | 'timeline'>('manuscript')
+  useEffect(() => {
+    if (openTarget) { setTarget(openTarget); setSceneId(openTarget.sceneId ?? null); setView('manuscript') }
+  }, [openTarget])
   const [importFingerprint, setImportFingerprint] = useState<string | null>(null)
   const importDialog = useRef<HTMLDialogElement>(null)
   const imported = useMutation({ mutationFn: (fingerprint: string) => api.importSharedStory(storyId, fingerprint), onSuccess: story => { void qc.invalidateQueries({ queryKey: ['stories'] }); navigate(`/stories/${story.id}`) } })

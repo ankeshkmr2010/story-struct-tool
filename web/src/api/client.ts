@@ -1,4 +1,4 @@
-import type { components } from './schema'
+import type { components, operations } from './schema'
 import { orderChapters, orderScenes } from './ordering'
 import { getVisitorId } from './visitor'
 
@@ -24,6 +24,9 @@ export type ProductFeedback = S['ProductFeedbackOut']
 export type ProductFeedbackInput = S['ProductFeedbackIn']
 export type Funnel = S['FunnelOut']
 export type DocxImport = S['DocxImportOut']
+export type SearchHit = S['SearchHit']
+export type SearchPage = S['SearchPage']
+export type SearchContext = operations['ApiStoriesStoryIdSearchSearch']['parameters']['query']['context']
 
 export type Ladder = S['LadderOut']
 export type Readiness = S['ReadinessOut']
@@ -98,6 +101,14 @@ const patch = <T,>(path: string, body: unknown) =>
   request<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 
 export const api = {
+  searchCapabilities: (id: string) => request<S['SearchCapabilities']>(`/api/stories/${id}/search/capabilities`),
+  searchTarget: (storyId: string, hit: SearchHit) => request<SearchHit>(`/api/stories/${storyId}/search/target?${new URLSearchParams({ entity: hit.entity, id: hit.id })}`),
+  searchStory: (id: string, context: SearchContext, q: string, field: string, entity: string, mode: 'text' | 'semantic', offset: number, signal?: AbortSignal) => {
+    const params = new URLSearchParams({ context, q, mode, offset: String(offset) })
+    if (field) params.set('field', field)
+    if (entity) params.set('entity', entity)
+    return request<SearchPage>(`/api/stories/${id}/search?${params}`, { signal })
+  },
   getAuthorship: (id: string) => request<Authorship[]>(`/api/stories/${id}/authorship`),
   listShares: (id: string) => request<StoryShare[]>(`/api/stories/${id}/shares`),
   shareStory: (id: string, recipient_email: string, allow_import: boolean) =>

@@ -33,6 +33,28 @@ class Settings(BaseSettings):
     ai_encryption_key: str | None = None
     frontend_dir: Path | None = None
     public_url: str = "https://storytool.onrender.com"
+    # Off until the embedding endpoint, model and billing credentials are chosen.
+    semantic_search_enabled: bool = False
+    search_embedding_url: str | None = None
+    search_embedding_model: str | None = None
+    search_embedding_dimensions: int | None = Field(default=None, gt=0)
+    search_embedding_api_key: str | None = None
+
+    @field_validator("search_embedding_dimensions", mode="before")
+    @classmethod
+    def empty_embedding_dimensions(cls, value: Any) -> Any:
+        return None if value == "" else value
+
+    @property
+    def semantic_search_available(self) -> bool:
+        return bool(
+            self.semantic_search_enabled
+            and self.search_embedding_url
+            and self.search_embedding_model
+            and self.search_embedding_dimensions
+            and self.search_embedding_api_key
+        )
+
     # Comma-separated Google account emails that may edit site content (the /thanks page).
     admin_emails: str = ""
     mcp_allowed_origins: list[str] = ["https://gemini.google.com"]

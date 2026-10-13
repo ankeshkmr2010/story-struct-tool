@@ -90,7 +90,7 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
         {locations.data?.map((location) => {
           const used = usageFor(location.id)
           return (
-            <li key={location.id} className="py-2.5">
+            <li key={location.id} id={`search-location-${location.id}`} className="py-2.5 scroll-mt-4">
               <div className="flex items-baseline gap-2">
                 <div className="min-w-0 flex-1"><InlineText value={location.name} placeholder="Place name" onSave={(name) => update.mutateAsync({ id: location.id, body: { name } })} className="font-medium" /></div>
                 {used && used.scene_count > 0 ? (

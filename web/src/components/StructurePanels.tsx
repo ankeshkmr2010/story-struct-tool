@@ -39,7 +39,7 @@ export function EventsPanel({ storyId }: { storyId: string }) {
       <AddForm placeholder="Turning point…" onAdd={(label) => create.mutateAsync(label)} pending={create.isPending} />
       <ul className="mt-4 space-y-3">
         {events.data?.map((event) => (
-          <li key={event.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
+          <li key={event.id} id={`search-event-${event.id}`} className="scroll-mt-4 rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1">
                 <InlineText value={event.label} placeholder="event label" onSave={(v) => save(event.id, 'label', v)} className="section-title" />
@@ -96,7 +96,7 @@ export function ActsPanel({ storyId, framework }: { storyId: string; framework: 
       <div className="mt-3"><AddForm placeholder="New act title…" onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} /></div>
       <ul className="mt-4 space-y-3">
         {acts.data?.map((act) => (
-          <li key={act.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
+          <li key={act.id} id={`search-act-${act.id}`} className="scroll-mt-4 rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <InlineNumber value={act.number} min={1} onSave={(v) => save(act.id, 'number', v)} />
               <div className="min-w-0 flex-1"><InlineText value={act.title} placeholder="act title" onSave={(v) => save(act.id, 'title', v)} className="section-title" /></div>
@@ -146,7 +146,7 @@ export function BeatsPanel({ storyId, framework }: { storyId: string; framework:
       <div className="mt-3"><AddForm placeholder="New beat label…" onAdd={(label) => create.mutateAsync(label)} pending={create.isPending} /></div>
       <ul className="mt-4 space-y-3">
         {beats.data?.map((beat) => (
-          <li key={beat.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
+          <li key={beat.id} id={`search-beat-${beat.id}`} className="scroll-mt-4 rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1"><InlineText value={beat.label} placeholder="beat label" onSave={(v) => save(beat.id, 'label', v)} className="section-title" /></div>
               <Chip complete={beat.completeness.is_complete} missing={beat.completeness.missing} />
@@ -181,7 +181,7 @@ export function ThreadsPanel({ storyId }: { storyId: string }) {
       <AddForm placeholder="Thread title…" onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} />
       <ul className="mt-4 space-y-3">
         {threads.data?.map((thread) => (
-          <li key={thread.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
+          <li key={thread.id} id={`search-thread-${thread.id}`} className="scroll-mt-4 rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1"><InlineText value={thread.title} placeholder="thread title" onSave={(v) => save(thread.id, 'title', v)} className="section-title" /></div>
               <Chip complete={thread.completeness.is_complete} missing={thread.completeness.missing} />
