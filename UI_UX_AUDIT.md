@@ -420,3 +420,5 @@ from future real feedback remain unverified. T53–T60 implementation is built, 
 - [~] T54/T55 usefulness fix: value charges now assess the same selected value at both ends, with a meaningful-change guard against flat-scene warnings. Findings show observations, quoted passages and next steps; passage links open Write. Live hints read bounded sections instead of rejecting ordinary scenes by paragraph count, preserve partial results, and require a located passage before displaying an issue. New craft-v2/hints-v2 rubrics separate feedback from earlier readings. Static checks only; production quality and UX await user confirmation.
 
 - [~] Evaluate finding-card design: tighter spacing, inline confidence and a single wrapping action row; Useful/Dismiss use accessible icons. Existing evidence, passage links and verification actions retained. Awaiting production visual confirmation.
+
+- [~] Evaluate findings use a keyboard-focusable vertical scroll area capped at half the viewport height; shorter lists keep their natural height. Awaiting production visual confirmation.
