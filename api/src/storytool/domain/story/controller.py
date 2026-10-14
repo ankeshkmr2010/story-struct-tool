@@ -182,6 +182,16 @@ class StoryController(Controller):
             raise ClientException(
                 status_code=409, detail="The story title changed; reopen the confirmation"
             )
+        from storytool.config import get_settings
+        from storytool.domain.story.image_models import ImageBlob, ImageDeletion
+
+        # Queue every retained file in the same transaction as the permanent purge.
+        # Trash, library removal and version restoration never enqueue deletion.
+        blobs = await db_session.scalars(select(ImageBlob).where(ImageBlob.story_id == story_id))
+        for blob in blobs:
+            db_session.add(ImageDeletion(
+                story_id=story_id, bucket=get_settings().image_bucket, object_key=blob.object_key
+            ))
         await db_session.execute(
             sql_delete(Story).where(
                 Story.id == story_id,

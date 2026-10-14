@@ -31,3 +31,14 @@ class StoryImage(StoryToolBase):
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
     # Each entry is {entity: character|location|glossary|scene, id: UUID}.
     attachments: Mapped[list[dict[str, str]]] = mapped_column(JSONB, default=list)
+
+
+class ImageDeletion(StoryToolBase):
+    """Durable cleanup jobs committed with a permanent story purge."""
+
+    __tablename__ = "image_deletion"
+
+    # No foreign key: the job must survive deletion of the story and its blobs.
+    story_id: Mapped[UUID] = mapped_column()
+    bucket: Mapped[str] = mapped_column(String(63))
+    object_key: Mapped[str] = mapped_column(String(300), unique=True)

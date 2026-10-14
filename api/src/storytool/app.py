@@ -38,6 +38,7 @@ from storytool.domain.story.backup import BackupImportController, StoryBackupCon
 from storytool.domain.story.beta import BetaOwnerController, BetaReaderController
 from storytool.domain.story.controller import StoryController
 from storytool.domain.story.docx_import import DocxImportController
+from storytool.domain.story.image_cleanup import image_cleanup_lifespan
 from storytool.domain.story.images import (
     BetaImagesController,
     SharedImagesController,
@@ -137,7 +138,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             *frontend,
         ],
         plugins=[plugin],
-        lifespan=[mcp_lifespan, search_lifespan(config)],
+        lifespan=[mcp_lifespan, search_lifespan(config), image_cleanup_lifespan(config)],
         middleware=[
             DefineMiddleware(
                 StoryAccessMiddleware,

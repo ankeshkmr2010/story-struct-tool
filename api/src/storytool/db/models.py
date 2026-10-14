@@ -35,7 +35,7 @@ from storytool.domain.story.beta import (
     BetaThread,
     BetaVote,
 )
-from storytool.domain.story.image_models import ImageBlob, StoryImage
+from storytool.domain.story.image_models import ImageBlob, ImageDeletion, StoryImage
 from storytool.domain.story.models import Story
 from storytool.domain.story.sharing import StoryShare
 from storytool.domain.story.showcase import StoryShowcase
@@ -66,6 +66,7 @@ __all__ = (
     "FunnelEvent",
     "GlossaryEntry",
     "ImageBlob",
+    "ImageDeletion",
     "Location",
     "MCPClient",
     "MCPConsent",
