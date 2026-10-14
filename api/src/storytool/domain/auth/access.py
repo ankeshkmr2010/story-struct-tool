@@ -219,7 +219,7 @@ class StoryAccessMiddleware:
                     )
                 )
                 validator_path = bool(
-                    re.fullmatch(r"/api/validators(?:/[0-9a-fA-F-]{36})?/?", path)
+                    re.fullmatch(r"/api/validators(?:/[0-9a-fA-F-]{36}|/preview)?/?", path)
                 )
                 validator_scope = (
                     "validators:read"

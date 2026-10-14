@@ -12,12 +12,23 @@ from storytool.domain.decisions.service import DecisionService, DecisionUnavaila
 from storytool.domain.decisions.types import Choice, Noul, Question, Score
 
 
+class CharacterNames(BaseModel):
+    name: str
+    aliases: list[str] = Field(default_factory=list)
+
+
+class HintPassage(BaseModel):
+    paragraph: int
+    text: str
+
+
 class HintInput(BaseModel):
     content: str = Field(max_length=1000000)
     known_names: list[Annotated[str, Field(max_length=200)]] = Field(
         default_factory=list, max_length=255
     )
     known_names_complete: bool = True
+    characters: list[CharacterNames] = Field(default_factory=list, max_length=255)
 
 
 class WritingHint(BaseModel):
@@ -31,6 +42,11 @@ class WritingHint(BaseModel):
     action: str | None = None
     scope: Literal["sentence", "paragraph", "scene"] | None = None
     rubric_version: str | None = None
+    passages: list[HintPassage] = Field(default_factory=list)
+    highlight_scope: Literal["sentence", "paragraph", "scene"] | None = None
+    highlight_confidence: float | None = None
+    location_uncertain: bool = False
+    observed: list[str] = Field(default_factory=list)
 
 
 class HintReading(BaseModel):
