@@ -35,13 +35,13 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
 ]
 
 
-const HERO_FEATURES = new Set(['Jev Noticing for everyone', 'Images in your story', 'Try before signing up', 'Beta readers and polls', 'Search your story and library', 'On-demand craft checks', 'Catch-up outline', 'Connect your AI', 'Continuous chapter writer', 'Whole-story versions', 'Review inbox for AI edits', 'Story grid', 'Backup, restore and Word export'])
+const HERO_FEATURES = new Set(['Custom real-time writing checks', 'Jev Noticing for everyone', 'Images in your story', 'Try before signing up', 'Beta readers and polls', 'Search your story and library', 'On-demand craft checks', 'Catch-up outline', 'Connect your AI', 'Continuous chapter writer', 'Whole-story versions', 'Review inbox for AI edits', 'Story grid', 'Backup, restore and Word export'])
 
 const DELIVERED: readonly { date: string; items: readonly (readonly [string, string])[] }[] = [
   {
     date: '14 Oct 2026',
     items: [
-      ['Personal writing-check builder', 'shape private rules, try real samples with character counts and clear identity versus involvement uncertainty, and highlight contributing sentence groups in context; manage checks yourself or through your connected AI.'],
+      ['Custom real-time writing checks', 'build private checks without coding, try samples with character counts, and get live hints highlighting contributing sentences with your own advice; manage checks yourself or through your connected AI.'],
       ['Images in your story', 'illustrations and reference art with captions, inline Write thumbnails, right-click insertion, scene links and portable exports. Large photos shrink before upload, with a gentle alt-text prompt. A dedicated page manages usage and safe deletion; guided samples show the flow.'],
       ['Try before signing up', 'a guided writing sandbox with local search and History, plus interactive feature demos and sample downloads. Tours support Previous, Next and resume; sign in to keep your edits.'],
       ['Writing and reader guides', 'AI quickstart prompts, images and exports, plus beta rounds, private reader conversations and polls.'],
