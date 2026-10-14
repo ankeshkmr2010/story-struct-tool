@@ -342,34 +342,8 @@ def aggregate(
             rhythm_run = []
             last_rhythm = None
             continue
-        uncertain_checks: set[str] = set()
-        for key, answer in answers.items():
-            certainty = (
-                max(answer.noul, 1 - answer.noul)
-                if answer.noul is not None
-                else answer.confidence or 0
-            )
-            check = (
-                "scene_rhythm"
-                if key == "rhythm"
-                else "value_shift"
-                if key in {"value", "charge_start", "charge_end"}
-                else "mice_nesting"
-                if key in {"opens", "closes"}
-                else "misbelief_midpoint"
-                if key.startswith("belief:")
-                else "continuity"
-            )
-            if certainty < threshold_for(check) and check not in uncertain_checks:
-                finding(
-                    check,
-                    "uncertain_reading",
-                    "The scene reading is uncertain. Verify this evidence before "
-                    "drawing a craft conclusion.",
-                    [row.id],
-                    certainty,
-                )
-                uncertain_checks.add(check)
+        # Low confidence alone is not a craft finding. Flag uncertainty only when
+        # there is a concrete observation for the writer to assess or verify.
         rhythm = answers["rhythm"]
         if rhythm.choice != last_rhythm:
             flush_run()

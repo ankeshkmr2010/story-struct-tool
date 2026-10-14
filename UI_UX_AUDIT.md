@@ -396,6 +396,11 @@ prevent omitted worklist pages looking clean. Existing staged proposals and appl
 in place; read results mark concurrent changes stale. Static checks only; awaiting production
 confirmation. T60 remains.
 
+Evaluate follow-up: removed generic “The scene reading is uncertain” finding cards. A low
+confidence answer alone offers no revision or verification target; uncertainty now remains
+on concrete craft observations. User's production example exposed the unhelpful card.
+Awaiting production confirmation; no local tests/builds.
+
 T60 built: Useful/Dismiss actions on live hints and Evaluate findings, linked to cached
 answers verified against the current user or signed sandbox session. Repeated labels upsert
 once per answer unit/check; numeric labels survive answer-cache expiry, with 90-day reports
