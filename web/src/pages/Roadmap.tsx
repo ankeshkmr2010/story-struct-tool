@@ -13,7 +13,7 @@ const BADGE: Record<Status, string> = {
 const ITEMS: readonly { title: string; status: Status; description: string }[] = [
   {
     title: 'Writing checks you can make your own',
-    status: 'Planned',
+    status: 'In progress',
     description: 'Build your own checks with a simple form—no coding needed. Choose what to look for, such as stray sentences, modern slang or breaks in character voice, and turn checks on or off for your writing. See flagged passages with your chosen advice; your prose stays yours. Your connected AI can help create and manage checks too.',
   },
   {
@@ -41,6 +41,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
   {
     date: '14 Oct 2026',
     items: [
+      ['Private writing-check definitions', 'your connected AI can save and manage personal checks with your permission. The simple builder and running custom checks are coming next.'],
       ['Images in your story', 'illustrations and reference art with captions, inline Write thumbnails, right-click insertion, scene links and portable exports. Large photos shrink before upload, with a gentle alt-text prompt. A dedicated page manages usage and safe deletion; guided samples show the flow.'],
       ['Try before signing up', 'a guided writing sandbox with local search and History, plus interactive feature demos and sample downloads. Tours support Previous, Next and resume; sign in to keep your edits.'],
       ['Writing and reader guides', 'AI quickstart prompts, images and exports, plus beta rounds, private reader conversations and polls.'],

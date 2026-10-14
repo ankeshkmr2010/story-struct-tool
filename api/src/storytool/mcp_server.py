@@ -22,6 +22,7 @@ from storytool.domain.ai.patches import ListPatch, ProsePatch
 from storytool.domain.ai.schemas import Proposal
 from storytool.domain.auth.access import _reject
 from storytool.domain.auth.oauth import SCOPES, Delegation, delegated_access, issuer
+from storytool.domain.decisions.validators import ValidatorCreate, ValidatorUpdate
 from storytool.domain.search.schemas import SearchContext
 from storytool.domain.story.schemas import StoryCreate
 
@@ -380,9 +381,12 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
             raise ToolError("Authentication expired or revoked. Reconnect or sign in again.")
         identifier = story_id or grant.story_id
         product_feedback = suffix == "/product-feedback" and method == "POST"
-        if not collection and not product_feedback and identifier is None:
+        validators = suffix.split("?", 1)[0] == "/validators" or suffix.startswith("/validators/")
+        if not collection and not product_feedback and not validators and identifier is None:
             raise ToolError("Choose a story ID from list_stories and pass story_id to this tool")
-        if product_feedback:
+        if validators:
+            target = "/api" + suffix
+        elif product_feedback:
             target = "/api/product-feedback"
         else:
             target = "/api/stories" + suffix if collection else f"/api/stories/{identifier}{suffix}"
@@ -411,6 +415,50 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
                 detail = "Request rejected. Read fresh story context and check your permissions."
             raise ToolError(f"StoryTool {response.status_code}: {detail}")
         return response.json() if response.content else {}
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def list_validators(ctx: Context, offset: int = 0, limit: int = 50) -> dict[str, Any]:
+        """List this user's private writing validators. Requires validators:read or write.
+        Definitions are account-wide; they do not contain manuscript text. Saving or
+        enabling a definition does not yet run it. Pagination returns next_offset.
+        """
+        return await call(ctx, "/validators?" + urlencode(dict(offset=offset, limit=limit)))
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_validator(ctx: Context, validator_id: UUID) -> dict[str, Any]:
+        """Read an owned validator and its current version before updating or deleting it."""
+        return await call(ctx, f"/validators/{validator_id}")
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def create_validator(ctx: Context, validator: ValidatorCreate) -> dict[str, Any]:
+        """Save a private provider-neutral check. Requires validators:write.
+        Question types: noul (yes/no), choice (1-255 options), score (2-10 levels).
+        Trigger must match the question type. Advice is user-authored, never generated.
+        Definitions start disabled unless explicitly enabled; execution is not wired yet.
+        """
+        return await call(ctx, "/validators", "POST", validator.model_dump(mode="json"))
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def update_validator(
+        ctx: Context, validator_id: UUID, changes: ValidatorUpdate
+    ) -> dict[str, Any]:
+        """Replace an owned definition or toggle enabled. Supply expected_version.
+        Requires validators:write; conflicting edits return 409. Read fresh after a conflict.
+        """
+        return await call(
+            ctx, f"/validators/{validator_id}", "PATCH", changes.model_dump(mode="json")
+        )
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=True))
+    async def delete_validator(
+        ctx: Context, validator_id: UUID, expected_version: int
+    ) -> dict[str, Any]:
+        """Permanently delete an owned definition at its current version. Requires validators:write.
+        This does not edit prose or delete built-in checks.
+        """
+        return await call(
+            ctx, f"/validators/{validator_id}?expected_version={expected_version}", "DELETE"
+        )
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
     async def product_feedback(
@@ -463,6 +511,10 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
             "story_id": str(grant.story_id) if grant.story_id else None,
             "library_access": "library:read" in grant.scopes,
             "can_create_stories": "story:create" in grant.scopes,
+            "can_read_validators": bool(
+                {"validators:read", "validators:write"} & set(grant.scopes)
+            ),
+            "can_manage_validators": "validators:write" in grant.scopes,
             "access_mode": "library" if grant.story_id is None else "story",
             "expires_at": grant.expires_at.isoformat(),
             "permissions": grant.scopes,

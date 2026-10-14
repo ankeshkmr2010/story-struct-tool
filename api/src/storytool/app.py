@@ -30,6 +30,7 @@ from storytool.domain.decisions.hint_controller import (
     WritingHintsController,
 )
 from storytool.domain.decisions.providers import decisions_lifespan
+from storytool.domain.decisions.validators import ValidatorController
 from storytool.domain.evaluation.controller import EvaluationController
 from storytool.domain.glossary import GlossaryController
 from storytool.domain.narrative.controller import ChapterController, SceneController
@@ -147,6 +148,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             DecisionFeedbackController,
             SandboxFeedbackController,
             DecisionCalibrationController,
+            ValidatorController,
             SearchController,
             LibrarySearchController,
             GlossaryController,

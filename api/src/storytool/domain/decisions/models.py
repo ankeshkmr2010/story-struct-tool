@@ -56,3 +56,15 @@ class DecisionBudget(StoryToolBase):
     input_tokens: Mapped[int] = mapped_column(Integer, default=0)
     failures: Mapped[int] = mapped_column(Integer, default=0)
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class DecisionValidator(StoryToolBase):
+    """An owner's private check; no executable code or access to other users' data."""
+    __tablename__ = "decision_validator"
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("app_user.id", ondelete="CASCADE"), index=True
+    )
+    definition: Mapped[dict] = mapped_column(JSONB)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    definition_hash: Mapped[str] = mapped_column(String(64))

@@ -22,9 +22,11 @@ export default function OAuthConsent() {
   const [allowWrite, setAllowWrite] = useState(false)
   const [allowRestore, setAllowRestore] = useState(false)
   const [allowCreate, setAllowCreate] = useState(false)
+  const [allowReadValidators, setAllowReadValidators] = useState(false)
+  const [allowWriteValidators, setAllowWriteValidators] = useState(false)
   const library = storyId === '__library__'
   const requested = request.data?.requested_scopes ?? []
-  const scopes = ['story:read', ...(allowProse ? ['prose:read'] : []), ...(allowWrite ? ['story:write'] : []), ...(allowWrite && allowProse && allowRestore ? ['versions:restore'] : []), ...(library ? ['library:read'] : []), ...(library && allowCreate ? ['story:create'] : [])].filter(scope => requested.includes(scope))
+  const scopes = ['story:read', ...(allowProse ? ['prose:read'] : []), ...(allowWrite ? ['story:write'] : []), ...(allowWrite && allowProse && allowRestore ? ['versions:restore'] : []), ...(library ? ['library:read'] : []), ...(library && allowCreate ? ['story:create'] : []), ...(allowReadValidators || allowWriteValidators ? ['validators:read'] : []), ...(allowWriteValidators ? ['validators:write'] : [])].filter(scope => requested.includes(scope))
   const decide = useMutation({ mutationFn: (deny: boolean) => api.decideOAuthConsent(requestId, { story_id: deny || library ? null : storyId, scopes: deny ? [] : scopes, deny }), onSuccess: ({ redirect_url }) => window.location.assign(redirect_url) })
   return <main className="mx-auto max-w-xl px-5 py-10">
     <p className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">StoryTool connection</p>
@@ -40,6 +42,8 @@ export default function OAuthConsent() {
       {stories.isError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(stories.error)}</p>}
       {stories.data?.length === 0 && !requested.includes('library:read') && <p className="mt-3 text-sm">Create or restore a story in your library, then restart the connection.</p>}
       <div className="mt-5 space-y-3 text-sm">
+        {requested.includes('validators:read') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowReadValidators || allowWriteValidators} disabled={allowWriteValidators} onChange={event => setAllowReadValidators(event.target.checked)} />Read my private writing checks across all stories</label>}
+        {requested.includes('validators:write') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowWriteValidators} onChange={event => setAllowWriteValidators(event.target.checked)} />Create, edit, enable and delete my private writing checks across all stories</label>}
         <p>{scopeLabels['story:read']} (required)</p>
         {library && requested.includes('story:create') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowCreate} onChange={event => setAllowCreate(event.target.checked)} />Create new stories in my account</label>}
         {requested.includes('prose:read') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowProse} onChange={event => setAllowProse(event.target.checked)} />{scopeLabels['prose:read']}</label>}

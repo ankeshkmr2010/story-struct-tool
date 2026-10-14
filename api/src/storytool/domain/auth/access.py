@@ -218,6 +218,20 @@ class StoryAccessMiddleware:
                         or (http_scope["method"] == "POST" and "story:create" in scopes)
                     )
                 )
+                validator_path = bool(
+                    re.fullmatch(r"/api/validators(?:/[0-9a-fA-F-]{36})?/?", path)
+                )
+                validator_scope = (
+                    "validators:read"
+                    if http_scope["method"] == "GET" and "validators:read" in scopes
+                    else "validators:write"
+                )
+                allowed = allowed or bool(
+                    delegated
+                    and validator_path
+                    and http_scope["method"] in {"GET", "POST", "PATCH", "DELETE"}
+                    and validator_scope in scopes
+                )
                 if not delegated or not allowed:
                     await _reject(send, 401, "Invalid or out-of-scope agent token")
                     return
@@ -274,6 +288,8 @@ class StoryAccessMiddleware:
                     needed.add("story:write")
                 if suffix.startswith("/versions/") and suffix.endswith("/restore"):
                     needed.update({"versions:restore", "prose:read"})
+                if validator_path:
+                    needed = {validator_scope}
                 if not needed <= set(scopes):
                     await _reject(send, 403, "Connection lacks required story permissions")
                     return

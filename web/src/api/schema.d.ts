@@ -2623,6 +2623,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/validators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ListValidators */
+        get: operations["ApiValidatorsListValidators"];
+        put?: never;
+        /** CreateValidator */
+        post: operations["ApiValidatorsCreateValidator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/validators/{validator_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetValidator */
+        get: operations["ApiValidatorsValidatorIdGetValidator"];
+        put?: never;
+        post?: never;
+        /** DeleteValidator */
+        delete: operations["ApiValidatorsValidatorIdDeleteValidator"];
+        options?: never;
+        head?: never;
+        /** UpdateValidator */
+        patch: operations["ApiValidatorsValidatorIdUpdateValidator"];
+        trace?: never;
+    };
     "/api/stories/{story_id}/search/capabilities": {
         parameters: {
             query?: never;
@@ -3320,6 +3357,15 @@ export interface components {
             relation_to_protagonist?: string | null;
             notes?: string | null;
         };
+        /** ChoiceTrigger */
+        ChoiceTrigger: {
+            /**
+             * @default choice
+             * @constant
+             */
+            type: "choice";
+            matches: string[];
+        };
         /** CommentTriage */
         CommentTriage: {
             /** Format: uuid */
@@ -3804,6 +3850,16 @@ export interface components {
             /** @default false */
             shared: boolean;
         };
+        /** NoulTrigger */
+        NoulTrigger: {
+            /**
+             * @default noul
+             * @constant
+             */
+            type: "noul";
+            /** @default true */
+            expected: boolean;
+        };
         /** ObservationOut */
         ObservationOut: {
             /** Format: uuid */
@@ -3959,6 +4015,15 @@ export interface components {
             recommendations?: components["schemas"]["Recommendation"][];
             operations?: components["schemas"]["Operation"][];
             base_fingerprint?: string | null;
+        };
+        /** Question */
+        Question: {
+            /** @enum {string} */
+            type: "noul" | "choice" | "score";
+            instructions: string;
+            criteria?: {
+                [key: string]: string;
+            } | string[] | null;
         };
         /** ReaderVerifyRequest */
         ReaderVerifyRequest: {
@@ -4262,6 +4327,15 @@ export interface components {
             emotional_value_to?: string | null;
             status?: components["schemas"]["DraftStatus"] | null;
             sort_key?: number | null;
+        };
+        /** ScoreTrigger */
+        ScoreTrigger: {
+            /**
+             * @default score
+             * @constant
+             */
+            type: "score";
+            levels: number[];
         };
         /** SearchCapabilities */
         SearchCapabilities: {
@@ -4669,6 +4743,56 @@ export interface components {
             name: string | null;
             author_name: string | null;
             picture_url: string | null;
+        };
+        /** ValidatorCreate */
+        ValidatorCreate: {
+            definition: components["schemas"]["ValidatorDefinition"];
+            /** @default false */
+            enabled: boolean;
+        };
+        /** ValidatorDefinition */
+        ValidatorDefinition: {
+            /**
+             * @default 1
+             * @constant
+             */
+            schema_version: 1;
+            name: string;
+            /**
+             * @default paragraph
+             * @enum {string}
+             */
+            input_scope: "sentence" | "paragraph" | "scene";
+            question: components["schemas"]["Question"];
+            trigger: components["schemas"]["NoulTrigger"] | components["schemas"]["ChoiceTrigger"] | components["schemas"]["ScoreTrigger"];
+            /** @default 0.8 */
+            minimum_probability: number;
+            advice: string;
+        };
+        /** ValidatorOut */
+        ValidatorOut: {
+            /** Format: uuid */
+            id: string;
+            definition: components["schemas"]["ValidatorDefinition"];
+            enabled: boolean;
+            version: number;
+            definition_hash: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** ValidatorPage */
+        ValidatorPage: {
+            items: components["schemas"]["ValidatorOut"][];
+            total: number;
+            next_offset: number | null;
+        };
+        /** ValidatorUpdate */
+        ValidatorUpdate: {
+            expected_version: number;
+            definition?: components["schemas"]["ValidatorDefinition"] | null;
+            enabled?: boolean | null;
         };
         /** VerdictIn */
         VerdictIn: {
@@ -12410,6 +12534,202 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CalibrationOut"][];
+                };
+            };
+        };
+    };
+    ApiValidatorsListValidators: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidatorPage"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiValidatorsCreateValidator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidatorCreate"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidatorOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiValidatorsValidatorIdGetValidator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                validator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidatorOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiValidatorsValidatorIdDeleteValidator: {
+        parameters: {
+            query: {
+                expected_version: number;
+            };
+            header?: never;
+            path: {
+                validator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiValidatorsValidatorIdUpdateValidator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                validator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidatorUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidatorOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
                 };
             };
         };
