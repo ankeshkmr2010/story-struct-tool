@@ -441,3 +441,7 @@ from future real feedback remain unverified. T53–T60 implementation is built, 
 - Current state: typed questions, provider adapters, caching and feedback exist under `api/src/storytool/domain/decisions/`; the user-facing builder, saved custom definitions and validator MCP CRUD are not built. This entry authorizes documentation only.
 
 - [~] Live-hint card design: disclosure under About live hints, highlighted source passage, quieter advice and one wrapping row for the passage link plus Useful/Dismiss icons. Reading/error/retry and feedback behavior retained. User screenshot confirms the apple sentence was detected and highlighted; new design awaits production confirmation.
+
+- [~] Evaluate visual refinement: findings capped at 56rem width/45vh height, surface-filled cards with colored status borders/badges, separated action footer and accented scene links. Redundant nesting verification sentence is represented by the Verify badge/actions. Awaiting production visual confirmation.
+
+- [~] Value-shift readings explain inferred safety/trust/belonging/freedom/control/understanding changes and give revision questions; scores and reader metadata move into optional details. Tentative readings are labelled, and similar conditions are not treated as proof of a flat scene. Existing scene navigation retained. Awaiting production quality/visual confirmation.
