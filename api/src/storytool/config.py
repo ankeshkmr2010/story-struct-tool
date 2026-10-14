@@ -116,6 +116,7 @@ class Settings(BaseSettings):
     jev_model: str = "jev-1.13.0"
     decision_provider: Literal["typesafe", "local"] = "typesafe"
     decision_hint_probability: float = Field(default=0.7, ge=0.5, le=1)
+    decision_nudge_probability: float = Field(default=0.8, ge=0.5, le=1)
     decision_endpoint: str | None = None
     decision_model: str | None = None
     decision_api_key: str | None = None

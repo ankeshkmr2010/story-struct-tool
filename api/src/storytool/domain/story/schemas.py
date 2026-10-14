@@ -86,6 +86,7 @@ class ReadinessOut(BaseModel):
     label: str
     is_ready: bool
     blocked_by: tuple[str, ...]
+    assessed: bool = False
 
 
 class SnapshotOut(BaseModel):

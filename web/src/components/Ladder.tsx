@@ -14,14 +14,15 @@ function statusFor(
   rung: Readiness,
   mode: AuthoringMode,
   furthest: number,
-): 'ready' | 'nudge' | 'locked' {
+): 'ready' | 'nudge' | 'locked' | 'unknown' {
+  if (mode === 'pantser' || !rung.assessed) return 'unknown'
   if (mode === 'plotter' && rung.level > furthest) return 'locked'
   if (rung.is_ready) return 'ready'
-  if (mode === 'pantser') return 'ready'
   return 'nudge'
 }
 
 const dot = {
+  unknown: 'bg-slate-300 dark:bg-slate-600',
   ready: 'bg-emerald-500',
   nudge: 'bg-amber-400',
   locked: 'bg-slate-300 dark:bg-slate-600',

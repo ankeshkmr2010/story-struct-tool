@@ -7,21 +7,23 @@ of sync with the data they describe.
 
 from uuid import UUID
 
-from litestar import Controller, get, post
+from litestar import Controller, Request, get, post
 from litestar.exceptions import NotFoundException
 from litestar.params import Parameter
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from storytool.config import get_settings
 from storytool.domain.analysis import load_graph_by_id, snapshot_from_graph
+from storytool.domain.decisions.nudges import read_nudges
+from storytool.domain.decisions.providers import shared_provider
+from storytool.domain.decisions.service import Actor, DecisionService
 from storytool.domain.enums import Level
 from storytool.domain.health import Severity, run_health
-from storytool.domain.readiness import furthest_ready_level, ladder
 from storytool.domain.scaffolding import scaffold_story
 from storytool.domain.story.schemas import (
     FindingOut,
     HealthOut,
     LadderOut,
-    ReadinessOut,
     ScaffoldOut,
     SnapshotOut,
 )
@@ -33,24 +35,54 @@ class StoryAnalysisController(Controller):
     signature_namespace = {"AsyncSession": AsyncSession}
 
     @get("/ladder", summary="Level readiness for a story")
-    async def get_ladder(self, db_session: AsyncSession, story_id: UUID) -> LadderOut:
+    async def get_ladder(
+        self, request: Request, db_session: AsyncSession, story_id: UUID
+    ) -> LadderOut:
         graph = await load_graph_by_id(db_session, story_id)
         if graph is None:
             raise NotFoundException(detail=f"No story with id {story_id}")
 
         snapshot = snapshot_from_graph(graph)
+        state = {
+            "mode": graph.story.authoring_mode,
+            "premise": graph.story.premise,
+            "genre": graph.story.genre,
+            "characters": [
+                {"name": c.name, "role": c.role, "want": c.want, "need": c.need}
+                for c in graph.characters
+            ],
+            "turning_points": [
+                {"label": e.label, "description": e.description}
+                for e in graph.events
+                if e.is_turning_point
+            ],
+            "acts": [
+                {
+                    "title": a.title,
+                    "summary": a.summary,
+                    "from": a.emotional_shift_from,
+                    "to": a.emotional_shift_to,
+                }
+                for a in graph.acts
+            ],
+            "beats": [{"label": b.label, "description": b.description} for b in graph.beats],
+            "threads": [{"title": t.title, "type": t.type, "mice": t.mice} for t in graph.threads],
+            "chapters": [{"title": c.title, "summary": c.summary} for c in graph.chapters],
+            "scenes": [{"title": s.title, "summary": s.summary} for s in graph.scenes],
+        }
+        service, model = None, ""
+        if get_settings().shared_reader_available and graph.story.authoring_mode != "pantser":
+            provider, model = shared_provider()
+            service = DecisionService(
+                db_session, Actor.user(request.scope["state"]["storytool_user_id"]), provider
+            )
+        await db_session.commit()
+        levels = await read_nudges(service, model, state)
+        furthest = next((max(1, rung.level - 1) for rung in levels if not rung.is_ready), 8)
         return LadderOut(
             story_id=story_id,
-            furthest_ready_level=int(furthest_ready_level(snapshot)),
-            levels=[
-                ReadinessOut(
-                    level=int(rung.level),
-                    label=rung.label,
-                    is_ready=rung.is_ready,
-                    blocked_by=rung.blocked_by,
-                )
-                for rung in ladder(snapshot)
-            ],
+            furthest_ready_level=furthest,
+            levels=levels,
             snapshot=SnapshotOut.model_validate(snapshot),
         )
 

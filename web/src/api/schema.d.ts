@@ -3825,6 +3825,8 @@ export interface components {
             label: string;
             is_ready: boolean;
             blocked_by: string[];
+            /** @default false */
+            assessed: boolean;
         };
         /** Recommendation */
         Recommendation: {
