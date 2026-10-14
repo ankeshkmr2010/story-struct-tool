@@ -572,6 +572,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspace-position/{story_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GetPosition */
+        get: operations["ApiWorkspacePositionStoryIdGetPosition"];
+        /** SavePosition */
+        put: operations["ApiWorkspacePositionStoryIdSavePosition"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/images/{image_id}": {
         parameters: {
             query?: never;
@@ -4110,6 +4128,14 @@ export interface components {
             /** @default false */
             assessed: boolean;
         };
+        /** ReadingPlace */
+        ReadingPlace: {
+            anchor: string;
+            /** @default 0 */
+            fragment: number;
+            /** @default 0 */
+            within: number;
+        };
         /** Recommendation */
         Recommendation: {
             title: string;
@@ -4966,6 +4992,28 @@ export interface components {
             choices?: number[];
             /** @default  */
             answer: string;
+        };
+        /** WorkspacePlace */
+        WorkspacePlace: {
+            /**
+             * @default design
+             * @enum {string}
+             */
+            mode: "write" | "read" | "design";
+            /**
+             * @default 1
+             * @enum {integer}
+             */
+            level: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 104 | 105 | 106 | 107 | 108;
+            chapter_id?: string | null;
+            scene_id?: string | null;
+            write_chapter_id?: string | "unfiled" | null;
+            write_scene_id?: string | null;
+            /** @default 0 */
+            write_within: number;
+            /** @default 0 */
+            scroll_fraction: number;
+            reading?: components["schemas"]["ReadingPlace"] | null;
         };
         /** WritingHint */
         WritingHint: {
@@ -6392,6 +6440,84 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StoryOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiWorkspacePositionStoryIdGetPosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspacePlace"] | null;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiWorkspacePositionStoryIdSavePosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspacePlace"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspacePlace"];
                 };
             };
             /** @description Bad request syntax or unsupported method */
