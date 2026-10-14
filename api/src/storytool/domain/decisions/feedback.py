@@ -40,6 +40,7 @@ class DecisionLabelIn(BaseModel):
     )
     probability: float = Field(ge=0, le=1, allow_inf_nan=False)
     outcome: Literal["accepted", "dismissed"]
+    rubric_version: Literal["hints-v1", "hints-v2", "craft-v1", "craft-v2"] | None = None
 
     @field_validator("check_code")
     @classmethod
@@ -87,8 +88,12 @@ async def save_label(db: AsyncSession, actor: Actor, data: DecisionLabelIn) -> N
             ),
         )
     row = rows[0]
-    version = "hints-v1" if data.check_code.startswith("hint.") else "craft-v1"
-    unit = hashlib.sha256("|".join(keys).encode()).hexdigest()
+    family = "hints" if data.check_code.startswith("hint.") else "craft"
+    version = data.rubric_version or f"{family}-v1"
+    if not version.startswith(family + "-"):
+        raise ClientException(detail="Feedback rubric does not match this check")
+    basis = "|".join(keys) if version.endswith("-v1") else version + "|" + "|".join(keys)
+    unit = hashlib.sha256(basis.encode()).hexdigest()
     statement = insert(DecisionFeedback).values(
         actor_key=actor.key,
         user_id=actor.user_id,

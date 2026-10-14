@@ -3372,6 +3372,9 @@ export interface components {
             uncertain: boolean;
             thread_ids?: string[];
             character_ids?: string[];
+            observed?: string[];
+            passages?: components["schemas"]["FindingPassage"][];
+            action?: string | null;
         };
         /** CraftReading */
         CraftReading: {
@@ -3389,6 +3392,11 @@ export interface components {
             check_missing?: {
                 [key: string]: string;
             };
+            /**
+             * @default craft-v2
+             * @constant
+             */
+            rubric_version: "craft-v2";
         };
         /** DecisionLabelIn */
         DecisionLabelIn: {
@@ -3397,6 +3405,8 @@ export interface components {
             probability: number;
             /** @enum {string} */
             outcome: "accepted" | "dismissed";
+            /** @enum {null|string} */
+            rubric_version?: "hints-v1" | "hints-v2" | "craft-v1" | "craft-v2" | null;
         };
         /** DocxImportOut */
         DocxImportOut: {
@@ -3498,6 +3508,14 @@ export interface components {
             entity_type: string | null;
             entity_id: string | null;
         };
+        /** FindingPassage */
+        FindingPassage: {
+            /** Format: uuid */
+            scene_id: string;
+            paragraph: number;
+            text: string;
+            label: string;
+        };
         /** FunnelOut */
         FunnelOut: {
             visit: number;
@@ -3561,6 +3579,15 @@ export interface components {
             hints?: components["schemas"]["WritingHint"][];
             unavailable?: string | null;
             model?: string | null;
+            /**
+             * @default hints-v2
+             * @constant
+             */
+            rubric_version: "hints-v2";
+            /** @default 0 */
+            sections_read: number;
+            /** @default 0 */
+            sections_total: number;
         };
         /** ImageAttachment */
         ImageAttachment: {
@@ -4721,6 +4748,9 @@ export interface components {
             probability: number;
             paragraph?: number | null;
             evidence_keys?: string[];
+            kind?: string | null;
+            excerpt?: string | null;
+            action?: string | null;
         };
     };
     responses: never;

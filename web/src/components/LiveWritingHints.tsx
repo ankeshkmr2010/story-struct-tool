@@ -5,7 +5,7 @@ import { errorText } from '../api/errors'
 import { SANDBOX_ID } from '../sandbox/storage'
 import { ReadingFeedback } from './ReadingFeedback'
 
-export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { storyId: string; sceneId: string; content: string; onParagraph: (paragraph: number) => void }) {
+export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { storyId: string; sceneId: string; content: string; onParagraph: (paragraph: number, find?: string) => void }) {
   const sandbox = storyId === SANDBOX_ID
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId), enabled: sandbox })
   const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId), enabled: sandbox })
@@ -38,10 +38,14 @@ export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { s
   return <aside className="live-writing-hints" aria-label="Live writing hints">
     <h3>Live hints</h3>
     <p className="writer-help">Only this scene and known names go to the shared reader. Notes never change your prose.</p>
-    {!content.trim() ? <p className="writer-help">Start writing to see hints.</p> : !ready ? <p className="writer-help">Loading known names… {(characters.isError || glossary.isError) && <button type="button" onClick={() => { void characters.refetch(); void glossary.refetch() }}>Retry</button>}</p> : !result ? <p role="status" className="writer-help">Reading after you pause…</p> : (result.error || result.result?.unavailable) ? <p className="writer-help">{result.error || result.result?.unavailable} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry</button></p> : hints.length === 0 ? <p className="writer-help">No hints to show. Keep writing.</p> : hints.map(hint => <div className="live-writing-hint" key={hint.code}>
+    {result?.result?.unavailable && <p role="status" className="writer-help">{result.result.unavailable} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry unread sections</button></p>}
+    {!content.trim() ? <p className="writer-help">Start writing to see hints.</p> : !ready ? <p className="writer-help">Loading known names… {(characters.isError || glossary.isError) && <button type="button" onClick={() => { void characters.refetch(); void glossary.refetch() }}>Retry</button>}</p> : !result ? <p role="status" className="writer-help">Reading after you pause…</p> : result.error ? <p className="writer-help">{result.error} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry</button></p> : hints.length === 0 ? result.result?.unavailable ? null : <p className="writer-help">No specific issue found in this reading.</p> : hints.map(hint => <div className="live-writing-hint" key={hint.code}>
       <p>{hint.message}</p>
-      {hint.paragraph && <button type="button" onClick={() => onParagraph(hint.paragraph!)}>Paragraph {hint.paragraph}</button>}
-      <ReadingFeedback storyId={storyId} checkCode={`hint.${hint.code.startsWith('telling_') ? 'telling' : hint.code}`} evidenceKeys={hint.evidence_keys ?? []} probability={hint.probability} onRecorded={() => dismiss(hint.code)} />
+      {hint.excerpt && <blockquote className="my-2 border-l-2 border-[var(--line)] pl-2 text-[var(--muted)]">{hint.excerpt}</blockquote>}
+      {hint.action && <p>{hint.action}</p>}
+
+      {hint.paragraph && <button type="button" onClick={() => onParagraph(hint.paragraph!, hint.excerpt ?? undefined)}>Open paragraph {hint.paragraph}</button>}
+      <ReadingFeedback storyId={storyId} checkCode={`hint.${hint.kind ?? (hint.code.startsWith('telling_') ? 'telling' : hint.code)}`} evidenceKeys={hint.evidence_keys ?? []} probability={hint.probability} rubricVersion={result?.result?.rubric_version} onRecorded={() => dismiss(hint.code)} />
     </div>)}
   </aside>
 }

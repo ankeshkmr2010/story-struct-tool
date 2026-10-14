@@ -1,7 +1,9 @@
 """Atomic scene decisions and code-owned craft aggregation, independent of the provider."""
 
 import asyncio
+import re
 from dataclasses import dataclass
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -57,6 +59,13 @@ class SceneEvidence(BaseModel):
     unavailable: str | None = None
 
 
+class FindingPassage(BaseModel):
+    scene_id: UUID
+    paragraph: int
+    text: str
+    label: str
+
+
 class CraftFinding(BaseModel):
     check: str
     code: str
@@ -66,6 +75,9 @@ class CraftFinding(BaseModel):
     uncertain: bool
     thread_ids: list[UUID] = Field(default_factory=list)
     character_ids: list[UUID] = Field(default_factory=list)
+    observed: list[str] = Field(default_factory=list)
+    passages: list[FindingPassage] = Field(default_factory=list)
+    action: str | None = None
 
 
 class ThreadSpan(BaseModel):
@@ -94,6 +106,7 @@ class CraftReading(BaseModel):
     base_fingerprint: str = ""
     stale: bool = False
     check_missing: dict[str, str] = Field(default_factory=dict)
+    rubric_version: Literal["craft-v2"] = "craft-v2"
 
 
 def questions_for(
@@ -103,6 +116,14 @@ def questions_for(
     locations: dict[str, str],
 ) -> dict[str, Question]:
     questions: dict[str, Question] = {
+        "change": Noul(
+            instructions=(
+                "Does this scene introduce a meaningful discovery, decision, reversal, "
+                "escalation, resolution or change in knowledge, intention or situation? "
+                "An important new problem or request counts even if the chosen value "
+                "stays neutral. Do not require a dramatic reversal in every scene."
+            )
+        ),
         "rhythm": Choice(
             instructions=(
                 "Classify the enacted scene's dominant dramatic function. Treat "
@@ -114,23 +135,21 @@ def questions_for(
             instructions="Which value pair is most important to the change enacted in this scene?",
             criteria=VALUE_PAIRS,
         ),
-        "charge_start": Score(
-            instructions=(
-                "How positive or negative is the POV character's situation at the "
-                "scene's start, for its dominant value? Judge the situation, not "
-                "upbeat wording."
-            ),
-            criteria=CHARGE,
-        ),
-        "charge_end": Score(
-            instructions=(
-                "How positive or negative is the POV character's situation at the "
-                "scene's end, for its dominant value? Judge the situation, not "
-                "upbeat wording."
-            ),
-            criteria=CHARGE,
-        ),
     }
+    # Score explicit value pairs in parallel, then select the chosen pair in code.
+    for pair, description in VALUE_PAIRS.items():
+        if pair == "other":
+            continue
+        for end in ("start", "end"):
+            questions[f"charge_{pair}_{end}"] = Score(
+                instructions=(
+                    f"Assess {description} at the scene's {end}. "
+                    "How positive or negative is the POV character's "
+                    "situation for this specific value? Judge circumstances, "
+                    "not wording."
+                ),
+                criteria=CHARGE,
+            )
     for identifier, (name, belief) in beliefs.items():
         questions[f"belief:{identifier}"] = Noul(
             instructions=(
@@ -138,6 +157,22 @@ def questions_for(
                 f"than merely mentioning it? Misbelief data: {belief}"
             )
         )
+        paragraphs = [part.strip() for part in re.split(r"\n\s*\n", scene.prose) if part.strip()]
+        if len(paragraphs) <= 254:
+            questions[f"belief_where:{identifier}"] = Choice(
+                instructions=(
+                    f"Which paragraph most clearly shows {name} acting on "
+                    f"the misbelief '{belief}'? Paragraph numbers refer "
+                    "to the supplied paragraphs, starting at 1. Choose "
+                    "none if no passage supports it."
+                ),
+                criteria={
+                    **{
+                        str(index + 1): f"Paragraph {index + 1}" for index in range(len(paragraphs))
+                    },
+                    "none": "No supporting passage.",
+                },
+            )
     for identifier, name in scene.cast.items():
         questions[f"present:{identifier}"] = Noul(
             instructions=(
@@ -205,13 +240,26 @@ async def read_scenes(
             try:
                 result = await service.evaluate(
                     model=model,
-                    state={"scene": scene.prose},
+                    state={
+                        "rubric": "craft-v2",
+                        "paragraphs": [
+                            part.strip()
+                            for part in re.split(r"\n\s*\n", scene.prose)
+                            if part.strip()
+                        ],
+                    },
                     questions=questions_for(scene, beliefs, threads, locations),
                 )
                 evidence.answers = result.answers
                 evidence.model = result.model
                 evidence.cache_keys = result.cache_keys
                 hits = result.cached
+                value = result.answers["value"].choice
+                if value != "other":
+                    for end in ("start", "end"):
+                        key = f"charge_{value}_{end}"
+                        evidence.answers[f"charge_{end}"] = result.answers[key]
+                        evidence.cache_keys[f"charge_{end}"] = result.cache_keys[key]
                 for key, options, instruction in [
                     (
                         "opens",
@@ -262,7 +310,7 @@ async def read_scenes(
     if len(actual_models) == 1:
         model = next(iter(actual_models))
     findings, spans, curves = aggregate(
-        evidence, scenes, beliefs, threads, threshold, model, service.provider.identity
+        evidence, scenes, beliefs, threads, threshold, model, service.provider.identity, locations
     )
     missing = {}
     if not beliefs:
@@ -296,6 +344,7 @@ def aggregate(
     threshold: float,
     model: str = "",
     provider: str = "",
+    locations: dict[str, str] | None = None,
 ) -> tuple[list[CraftFinding], list[dict], list[dict]]:
     findings: list[CraftFinding] = []
     spans: list[dict] = []
@@ -306,19 +355,41 @@ def aggregate(
 
     def threshold_for(check: str) -> float:
         return get_settings().decision_threshold(
-            f"evaluate.{check}", model, provider, "craft-v1", threshold
+            f"evaluate.{check}", model, provider, "craft-v2", threshold
         )
 
-    def finding(check: str, code: str, message: str, ids: list[UUID], confidence: float) -> None:
-        findings.append(
-            CraftFinding(
-                check=check,
-                code=code,
-                message=message,
-                scene_ids=ids,
-                confidence=round(confidence, 3),
-                uncertain=confidence < threshold_for(check),
-            )
+    def finding(
+        check: str, code: str, message: str, ids: list[UUID], confidence: float
+    ) -> CraftFinding:
+        item = CraftFinding(
+            check=check,
+            code=code,
+            message=message,
+            scene_ids=ids,
+            confidence=round(confidence, 3),
+            uncertain=confidence < threshold_for(check),
+            action={
+                "scene_rhythm": "Check whether these passages repeat the same work or "
+                "deliberately build momentum. Keep the pattern if it serves the pace.",
+                "value_shift": "Compare what the character knows, wants or can do at "
+                "the opening and close. Clarify the intended change if it is missing.",
+                "misbelief_midpoint": "Compare this decision with the planned midpoint "
+                "change. Keep it if holding this belief fits the intended arc.",
+                "continuity": "Compare the scene's cast and place in Design with the "
+                "passage. Correct the planning entry if the prose is intentional.",
+                "mice_nesting": "Check the named threads' opening and resolution "
+                "scenes. Adjust the order only if this crossing is unintended.",
+                "setups_payoffs": "Locate the named thread's earlier setup or later "
+                "resolution; keep an open promise if the draft is unfinished.",
+            }.get(check),
+        )
+        findings.append(item)
+        return item
+
+    def passage(scene: SceneInput, number: int, label: str) -> FindingPassage:
+        paragraphs = [part.strip() for part in re.split(r"\n\s*\n", scene.prose) if part.strip()]
+        return FindingPassage(
+            scene_id=scene.id, paragraph=number, text=paragraphs[number - 1][:320], label=label
         )
 
     def flush_run() -> None:
@@ -350,18 +421,44 @@ def aggregate(
             rhythm_run = []
         last_rhythm = rhythm.choice
         rhythm_run.append(row)
-        start, end = answers["charge_start"], answers["charge_end"]
-        if abs((end.score or 0) - (start.score or 0)) <= 0.5:
-            finding(
+        start, end = answers.get("charge_start"), answers.get("charge_end")
+        change = answers.get("change")
+        if (
+            start
+            and end
+            and change
+            and change.noul is not None
+            and 1 - change.noul >= threshold_for("value_shift")
+            and abs((end.score or 0) - (start.score or 0)) <= 0.5
+        ):
+            item = finding(
                 "value_shift",
                 "little_value_movement",
                 (
-                    "The scene ends near where it began in value charge. Consider "
-                    "whether its intended turn is visible in the prose."
+                    f"{row.title}: the reader found little movement in "
+                    f"{(answers['value'].choice or '').replace('_', ' / ')} "
+                    "and no clear discovery, decision or change in situation."
                 ),
                 [row.id],
-                min(start.confidence or 0, end.confidence or 0, answers["value"].confidence or 0),
+                min(
+                    start.confidence or 0,
+                    end.confidence or 0,
+                    answers["value"].confidence or 0,
+                    1 - change.noul,
+                ),
             )
+            item.observed = [
+                f"Value: {VALUE_PAIRS[answers['value'].choice]}",
+                "Opening: " + CHARGE[int(max(start.probabilities, key=start.probabilities.get))],
+                "Close: " + CHARGE[int(max(end.probabilities, key=end.probabilities.get))],
+            ]
+            count = len(
+                [part for part in re.split(r"\n\s*\n", scenes[index].prose) if part.strip()]
+            )
+            item.passages = [
+                passage(scenes[index], 1, "Scene opening"),
+                passage(scenes[index], count, "Scene close"),
+            ]
         for character, (name, _) in beliefs.items():
             answer = answers.get(f"belief:{character}")
             if answer is None or answer.noul is None:
@@ -375,18 +472,25 @@ def aggregate(
                     "probability": answer.noul,
                 }
             )
-            if 0.4 <= row.position <= 0.6 and answer.noul >= 0.5:
-                finding(
+            where = answers.get(f"belief_where:{character}")
+            if (
+                0.4 <= row.position <= 0.6
+                and answer.noul >= threshold_for("misbelief_midpoint")
+                and where
+                and where.choice != "none"
+                and (where.confidence or 0) >= 0.7
+            ):
+                item = finding(
                     "misbelief_midpoint",
                     "midpoint_misbelief",
                     (
                         f"Around the manuscript midpoint, {name} still appears to act on "
-                        f"their misbelief. Check whether that fits the intended arc; a "
-                        f"falling curve is not a universal rule."
+                        f"the belief: {beliefs[character][1]}"
                     ),
                     [row.id],
-                    answer.noul,
+                    min(answer.noul, where.confidence or 0),
                 )
+                item.passages = [passage(scenes[index], int(where.choice), "Passage to check")]
         scene = scenes[index]
         for character, name in scene.cast.items():
             answer = answers.get(f"present:{character}")
@@ -402,22 +506,15 @@ def aggregate(
                     1 - answer.noul,
                 )
         location = answers.get("location")
-        if location and scene.location_id and location.choice == "none":
-            finding(
-                "continuity",
-                "unclear_place",
-                "The assigned place is not clear in the prose. Verify the location "
-                "rather than assuming a mismatch.",
-                [row.id],
-                0.5,
-            )
         if location and scene.location_id and location.choice not in (scene.location_id, "none"):
             finding(
                 "continuity",
                 "place_mismatch",
                 (
-                    "The main action appears to occur somewhere other than the "
-                    "assigned place. Check the scene's location."
+                    f"Planned place: {(locations or {}).get(scene.location_id, 'assigned place')}. "
+                    "The reader instead identified "
+                    f"{(locations or {}).get(location.choice, 'another place')} "
+                    "as the setting of the main action."
                 ),
                 [row.id],
                 location.confidence or 0,
@@ -459,7 +556,8 @@ def aggregate(
                     "setups_payoffs",
                     "payoff_without_setup",
                     (
-                        "This thread seems to resolve without a confident earlier opening "
+                        f"Thread {threads.get(closing.choice, 'unknown')} seems to resolve "
+                        "without a confident earlier opening "
                         "in the reviewed prose. Missing or uncertain scenes can also "
                         "explain the gap."
                     ),
@@ -474,8 +572,8 @@ def aggregate(
                         "mice_nesting",
                         "crossed_threads",
                         (
-                            "A thread seems to close while a more recently opened thread is "
-                            "still open. Check whether the crossing is intentional."
+                            f"Thread {threads[item[0]]} closes while the later-opened "
+                            f"thread {threads[stack[-1][0]]} is still open."
                         ),
                         [evidence[item[1]].id, row.id],
                         confidence,

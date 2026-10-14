@@ -22,7 +22,7 @@ import { LiveWritingHints } from './LiveWritingHints'
 const imageMarkdown = (image: StoryImage) => `![${image.alt.replace(/[\]\n]/g, ' ')}](storytool-image:${image.id})`
 const proseWords = (text: string) => text.replace(/!\[[^\]\n]*\]\(storytool-image:[0-9a-fA-F-]{36}\)/g, '').trim().split(/\s+/).filter(Boolean).length
 
-export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onContextOpen }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number; find?: string } | null; panelOpen?: boolean; onContextOpen?: () => void }) {
+export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onContextOpen }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number; find?: string; paragraph?: number } | null; panelOpen?: boolean; onContextOpen?: () => void }) {
   const qc = useQueryClient()
   const me = useQuery({ queryKey: [storyId === SANDBOX_ID ? 'sandbox-me' : 'me'], queryFn: api.currentUser })
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
@@ -87,7 +87,10 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
         const element = document.querySelector<HTMLElement>(`[data-writing-scene="${scene.id}"] .cm-editor`)
         const editor = element && EditorView.findFromDOM(element)
         if (!editor) continue
-        const index = editor.state.doc.toString().toLocaleLowerCase().indexOf(openScene.find.toLocaleLowerCase())
+        const prose = editor.state.doc.toString()
+        const paragraph = openScene.paragraph ? [...prose.matchAll(/(?:^|\n\s*\n)([\s\S]*?)(?=\n\s*\n|$)/g)].filter(part => part[1].trim())[openScene.paragraph - 1] : undefined
+        const local = paragraph?.[1].toLocaleLowerCase().indexOf(openScene.find.toLocaleLowerCase()) ?? -1
+        const index = paragraph && local >= 0 ? paragraph.index! + paragraph[0].indexOf(paragraph[1]) + local : prose.toLocaleLowerCase().indexOf(openScene.find.toLocaleLowerCase())
         if (index >= 0) editor.dispatch({ selection: { anchor: index, head: index + openScene.find.length }, effects: EditorView.scrollIntoView(index, { y: 'center' }) })
         editor.focus()
         break
@@ -304,13 +307,17 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       } }))),
       EditorView.theme({ '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' }, '.cm-scroller': { fontFamily: 'Georgia, serif', fontSize: '18px', overflow: 'visible' }, '.cm-content': { padding: '12px 0 24px', lineHeight: '1.9' }, '.cm-focused': { outline: 'none' }, '.cm-cursor': { borderLeftColor: 'var(--accent)' } }),
     ]} basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, bracketMatching: false, closeBrackets: false, autocompletion: false }} />
-    {liveHints && scene && <LiveWritingHints key={scene.id} storyId={storyId} sceneId={scene.id} content={state.text} onParagraph={paragraph => {
+    {liveHints && scene && <LiveWritingHints key={scene.id} storyId={storyId} sceneId={scene.id} content={state.text} onParagraph={(paragraph, find) => {
       const editor = view.current
       if (!editor) return
       const parts = [...editor.state.doc.toString().matchAll(/(?:^|\n\s*\n)([\s\S]*?)(?=\n\s*\n|$)/g)].filter(part => part[1].replace(/!\[[^\]\n]*\]\([^\n)]*\)/g, '').trim())
       const part = parts[paragraph - 1]
       if (!part) return
       const at = part.index! + part[0].indexOf(part[1])
+      const match = find ? part[1].indexOf(find) : -1
+      if (match >= 0) {
+        editor.dispatch({ selection: { anchor: at + match, head: at + match + find!.length }, effects: EditorView.scrollIntoView(at + match, { y: 'center' }) }); editor.focus(); return
+      }
       editor.dispatch({ selection: { anchor: at }, scrollIntoView: true }); editor.focus()
     }} />}
     </div>

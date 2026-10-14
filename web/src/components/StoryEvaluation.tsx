@@ -315,13 +315,14 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
   )
 }
 
-export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters, onOpenStory }: {
+export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters, onOpenStory, onOpenPassage }: {
   storyId: string
   onOpenInbox: () => void
   onOpenScene: (scene: { id: string; chapter_id: string | null }) => void
   onOpenThreads: (id: string) => void
   onOpenCharacters: (id: string) => void
   onOpenStory: () => void
+  onOpenPassage?: (id: string, find: string, paragraph: number) => void
 }) {
   const evaluators = useQuery({ queryKey: ['evaluators', storyId], queryFn: () => api.listEvaluators(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
@@ -396,7 +397,7 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
           {run.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(run.error)}</p>}
         </section>
 
-        {reader.data && selected && usesReader && <SceneReaderResults key={selected.id} storyId={storyId} reading={reader.data} check={selected.id} onOpenScene={id => { const scene = scenes.data?.find(scene => scene.id === id); if (scene) onOpenScene({ id, chapter_id: scene.chapter_id ?? null }) }} />}
+        {reader.data && selected && usesReader && <SceneReaderResults key={selected.id} storyId={storyId} reading={reader.data} check={selected.id} onOpenPassage={onOpenPassage} onOpenScene={id => { const scene = scenes.data?.find(scene => scene.id === id); if (scene) onOpenScene({ id, chapter_id: scene.chapter_id ?? null }) }} />}
         {shown && (
           <section className="space-y-4" aria-label="Results">
             <h3 className="text-lg font-semibold">Results</h3>

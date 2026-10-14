@@ -415,3 +415,6 @@ instructions/aggregation change. Migration c4e9a1b7d602 applied on expiring test
 br-floral-pond-b4o21270 only; cache=11 columns, feedback=13. No production SQL, billed model
 calls, local tests/builds or manual deployment. Production UX/latency and threshold tuning
 from future real feedback remain unverified. T53–T60 implementation is built, not user-confirmed.
+
+
+- [~] T54/T55 usefulness fix: value charges now assess the same selected value at both ends, with a meaningful-change guard against flat-scene warnings. Findings show observations, quoted passages and next steps; passage links open Write. Live hints read bounded sections instead of rejecting ordinary scenes by paragraph count, preserve partial results, and require a located passage before displaying an issue. New craft-v2/hints-v2 rubrics separate feedback from earlier readings. Static checks only; production quality and UX await user confirmation.
