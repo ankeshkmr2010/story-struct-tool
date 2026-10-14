@@ -19,6 +19,7 @@ from storytool.domain.cast.controller import (
     CharacterController,
     RelationshipController,
 )
+from storytool.domain.decisions.beta_triage import BetaTriageController
 from storytool.domain.decisions.hint_controller import (
     SandboxHintsController,
     WritingHintsController,
@@ -104,6 +105,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             AuthorshipController,
             StoryShareController,
             BetaOwnerController,
+            BetaTriageController,
             BetaReaderController,
             SharedStoriesController,
             StoryShowcaseController,

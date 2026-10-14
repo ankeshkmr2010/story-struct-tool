@@ -850,6 +850,23 @@ export interface paths {
         patch: operations["ApiBetaManageStoryIdRoundsRoundIdUpdateRound"];
         trace?: never;
     };
+    "/api/beta/manage/{story_id}/rounds/{round_id}/triage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Classify submitted reader feedback for this owned beta round */
+        post: operations["ApiBetaManageStoryIdRoundsRoundIdTriageRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/beta/threads/{thread_id}": {
         parameters: {
             query?: never;
@@ -3062,6 +3079,14 @@ export interface components {
             submitted?: boolean | null;
             resolved?: boolean | null;
         };
+        /** BetaTriageOut */
+        BetaTriageOut: {
+            items?: components["schemas"]["CommentTriage"][];
+            chapters?: components["schemas"]["ChapterFeedback"][];
+            /** @default 0 */
+            unavailable_count: number;
+            notice?: string | null;
+        };
         /** ChapterBriefOut */
         ChapterBriefOut: {
             /** Format: uuid */
@@ -3098,6 +3123,13 @@ export interface components {
             status?: components["schemas"]["DraftStatus"];
             /** @default 0 */
             sort_key: number;
+        };
+        /** ChapterFeedback */
+        ChapterFeedback: {
+            chapter_id: string | null;
+            category: string;
+            readers: number;
+            comments: number;
         };
         /** ChapterMove */
         ChapterMove: {
@@ -3215,6 +3247,17 @@ export interface components {
             aliases?: string[] | null;
             relation_to_protagonist?: string | null;
             notes?: string | null;
+        };
+        /** CommentTriage */
+        CommentTriage: {
+            /** Format: uuid */
+            message_id: string;
+            /** Format: uuid */
+            thread_id: string;
+            category: string;
+            severity: number;
+            confidence: number;
+            uncertain: boolean;
         };
         /** CompletenessOut */
         CompletenessOut: {
@@ -6852,6 +6895,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoundOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaManageStoryIdRoundsRoundIdTriageRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                round_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BetaTriageOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

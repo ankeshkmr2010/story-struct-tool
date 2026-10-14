@@ -136,7 +136,7 @@ is separate. Adding these tasks authorizes documentation only, not implementatio
 ### Medium effort — implementation
 
 - [~] T56 Jev ladder nudges: score premise/stakes and other readiness gaps with Plotter/Hybrid/Pantser context; amber only for likely gaps, silence for weak evidence.
-- [ ] T57 Beta-comment triage: categorize and grade feedback, then summarize repeated concerns by chapter for the author.
+- [~] T57 Beta-comment triage: categorize and grade feedback, then summarize repeated concerns by chapter for the author.
 - [ ] T58 Related-search reranking: use Jev relevance scores to reorder semantic hits; preserve Exact results and existing permissions.
 - [ ] T59 Catch-up staleness: assess whether each scene still matches its outline before asking an LLM to rebuild it.
 - [ ] T60 Calibration from author feedback: record acceptance/dismissal labels, assess checks in aggregate, and tune thresholds by check and visibility.
@@ -308,7 +308,7 @@ T53; they are not verified product promises. Keep existing shipped Jev Noticing 
 - [ ] **T54 — Craft evaluation and uncertainty cascade (High; depends on T53).** Run the four existing craft checks on scene-level Jev answers: scene/sequel classification, value pairs and start/end charge, thread opens/closes, and protagonist misbelief. Aggregate runs, shifts, the MICE stack and the midpoint curve in code; add setup/payoff matching and character/place continuity. Winning option descriptions become prewritten hints, not generated prose. High-confidence findings display directly; uncertain findings offer Verify with your AI, sending only the relevant scenes/evidence to the author's Claude/ChatGPT flow. Include visual MICE nesting from T42. Findings remain advisory, not automatic story changes.
 - [~] **T55 — Live writing hints, including /try (High; depends on T53).** About two seconds after typing stops, assess only the current scene for POV/tense slips, showing/telling, dialogue beats, unknown names and the scene's turn. Use paragraph-level scores where needed, discard stale responses after edits, and show dismissible margin notes without touching prose. Demonstrate live hints in The Last Lantern without signup or a personal key, under the anonymous limits from T53. Sub-second responses are a target to measure, not a guarantee.
 - [~] **T56 — Mode-aware ladder nudges (Medium; depends on T53).** Use small rubrics for premise specificity, stakes/cost and readiness gaps. Include Plotter/Hybrid/Pantser in context so questions can be stricter for Plotters. Show amber only when the gap is likely; low-confidence results remain quiet, particularly in Hybrid mode. Keep nudges advisory.
-- [ ] **T57 — Beta feedback triage (Medium; depends on T53).** Classify comments as confusion, pacing, character, typo or praise; score severity and summarize repeated concerns by chapter, such as multiple readers reporting confusion. Count distinct readers accurately, preserve original comments and their private access boundaries, and present classifications as suggestions.
+- [~] **T57 — Beta feedback triage (Medium; depends on T53).** Classify comments as confusion, pacing, character, typo or praise; score severity and summarize repeated concerns by chapter, such as multiple readers reporting confusion. Count distinct readers accurately, preserve original comments and their private access boundaries, and present classifications as suggestions.
 - [ ] **T58 — Related-search reranking (Medium; depends on T53).** Score relevance of already-retrieved Related passages against the query. Rerank within the existing authorized result set; preserve literal matches, pagination/coverage and usable results if Jev fails. Include query/context in cache keys rather than treating this as a scene-only answer.
 - [ ] **T59 — Outline mismatch detection (Medium; depends on T53).** Ask whether each outline still matches its scene before a Catch up LLM call. Mark likely stale summaries/beats with uncertainty, reuse unchanged answers, and retain the staged-proposal/author-approval flow. Include outline changes in cache invalidation.
 - [ ] **T60 — Calibration and feedback labels (Medium; depends on the relevant Jev surfaces).** Record dismissals/acceptances as labels linked to the check/model/rubric version, and tune thresholds from aggregate outcomes. Do not treat confidence as a guarantee about an individual answer. The supplied plan proposes competing thresholds (0.75 for cascade, 0.7 for hints, 0.8 for nudges, 0.85 for Evaluate); reconcile them by check and visibility, then make them configurable. Use offline/mock cases if the SDK supports them; do not bill network calls merely to unit-test threshold logic.
@@ -374,3 +374,10 @@ scoring calls. Fixed minimum-count gates no longer drive the ladder UI. Every le
 reachable. User explicitly approved premise, character goals and outline-summary transfer
 after automatic approval rejected the broader initial payload. No prose/private notes sent.
 Static checks only; awaiting production confirmation.
+
+T57 built: per-comment cached category/severity questions, submitted reader messages only,
+owner-only access, no reader identifiers/quotes/manuscript sent to the provider. Distinct-reader
+chapter/category counts exclude uncertain answers; changed feedback rejects the result.
+Approved inline Group feedback controls filter the original conversations and label scores.
+These are code-generated counts, not Jev-generated prose summaries. Static checks only;
+production confirmation pending.
