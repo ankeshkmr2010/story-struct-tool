@@ -24,6 +24,7 @@ _WORD = re.compile(r"[^\W_]+(?:['’-][^\W_]+)*", re.UNICODE)  # noqa: RUF001
 def count_words(content: str | None) -> int:
     if not content:
         return 0
+    content = re.sub(r"!\[[^\]\n]*\]\(storytool-image:[0-9a-fA-F-]{36}\)", "", content)
     return len(_WORD.findall(content))
 
 

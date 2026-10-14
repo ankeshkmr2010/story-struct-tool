@@ -12,6 +12,7 @@ from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint, select, te
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
+from uuid_utils import uuid7
 
 from storytool.db.base import StoryToolBase
 from storytool.domain.ai.commands import ENTITIES, LINKS, owned_story
@@ -94,10 +95,22 @@ def activity(source: Story) -> StoryActivityOut:
 
 
 def visible_state(state: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
-    return {
+    from storytool.domain.story.images import public_images
+
+    visible = {
         kind: [{key: value for key, value in row.items() if key != "notes"} for row in state[kind]]
         for kind in (*ENTITIES, *LINKS)
     }
+    visible["story_image"] = [{k: v for k, v in row.items() if k != "url"}
+                              for row in public_images(state, "")]
+    return visible
+
+
+def reading_state(state: dict[str, Any], image_base: str) -> dict[str, Any]:
+    visible = visible_state(state)
+    visible["story_image"] = [row | {"url": f"{image_base}/{row['id']}/file"}
+                              for row in visible["story_image"]]
+    return visible
 
 
 def actor(request: Request) -> UUID:
@@ -156,9 +169,16 @@ async def import_graph(db: AsyncSession, source: Story, user_id: UUID) -> Story:
     db.add(created)
     await db.flush()
     # Only the visible current graph is copied, never private notes, past prose, or findings.
+    from storytool.domain.story.images import import_images, portable_images
+
+    visible_ids = {row["id"] for row in visible_state(state)["story_image"]}
     for kind in EXTRAS:
-        state[kind] = []
-    await restore_state(db, created.id, rehome(state, created.id))
+        state[kind] = [r for r in state[kind] if r["id"] in visible_ids] if kind == "story_image" else []
+    files = await portable_images(db, state)
+    image_ids = {k: str(uuid7()) for k in files}
+    copied = rehome(state, created.id, image_ids=image_ids)
+    await import_images(db, state, files, copied, created.id, image_ids=image_ids)
+    await restore_state(db, created.id, copied)
     await db.refresh(created)
     from storytool.domain.story.authorship import record_changes
 
@@ -263,7 +283,7 @@ class SharedStoriesController(Controller):
         return SharedDocumentOut(
             share=shared_summary(source, grant, owner),
             manuscript=compile_manuscript(graph),
-            structure=visible_state(state),
+            structure=reading_state(state, f"/api/shared-stories/{story_id}/images"),
             base_fingerprint=fingerprint(visible_state(state)),
             timeline=await story_timeline(db_session, story_id),
         )
@@ -322,7 +342,7 @@ class StoryReaderController(Controller):
                 allow_import=False,
             ),
             manuscript=compile_manuscript(graph),
-            structure=visible_state(state),
+            structure=reading_state(state, f"/api/stories/{story_id}/images"),
             base_fingerprint=fingerprint(visible_state(state)),
         )
 

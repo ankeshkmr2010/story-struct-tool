@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { AddForm, Chip, DeleteButton, InlineSelect, InlineText } from './fields'
 import { HelpTip } from './HelpTip'
+import { ReferenceImages } from './StoryImages'
 
 const ROLES = ['protagonist', 'antagonist', 'mentor', 'foil', 'supporting', 'minor'] as const
 const ARC_TYPES = ['positive', 'negative', 'flat'] as const
@@ -140,6 +141,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
               </div>
 
               <OriginSummary storyId={storyId} entityId={character.id} entityType="character" />
+              <ReferenceImages storyId={storyId} entity="character" entityId={character.id} />
               <div className="mt-3 space-y-2">
                 <label className="block text-xs"><span className="field-label">Description</span><InlineText value={character.description} placeholder="Who are they?" onSave={set('description')} multiline /></label>
                 <label className="block text-xs"><span className="field-label">Aliases</span> (one per line)<InlineText value={character.aliases?.join('\n') ?? null} placeholder="Other names or titles" onSave={value => set('aliases')(value ? value.split('\n').map(item => item.trim()).filter(Boolean) : [])} multiline /></label>

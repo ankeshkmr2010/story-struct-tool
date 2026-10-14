@@ -246,7 +246,9 @@ class StoryAccessMiddleware:
                             "/manuscript.html",
                             "/manuscript.txt",
                             "/manuscript.epub",
+                            "/manuscript.zip",
                             "/backup",
+                            "/file",
                         )
                     )
                     or suffix in {"/ai/runs", "/ai/observations", "/ai/catchup"}

@@ -3,11 +3,13 @@
 import copy
 import io
 import re
+import zipfile
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid5
 
 from docx import Document
+from docx.shared import Inches
 from litestar import Controller, Request, Response, get, post
 from litestar.exceptions import ClientException, NotFoundException
 from sqlalchemy import select, text
@@ -22,6 +24,8 @@ from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.narrative.prose import compile_manuscript
 from storytool.domain.story.manuscript_formats import (
     Block,
+    ImageFiles,
+    blocks,
     manuscript_epub,
     manuscript_html,
     manuscript_text,
@@ -33,7 +37,7 @@ from storytool.domain.story.timeline_controller import story_timeline
 from storytool.domain.versioning.service import ADMIN, EXTRAS, checkpoint, full_state, restore_state
 
 BACKUP_FORMAT = "storytool-backup"
-MAX_BACKUP_BYTES = 50 * 1024 * 1024
+MAX_BACKUP_BYTES = 200 * 1024 * 1024
 
 
 def tables() -> dict[str, Any]:
@@ -44,15 +48,17 @@ def tables() -> dict[str, Any]:
     }
 
 
-def rehome(state: dict[str, Any], story_id: UUID, *, strict: bool = False) -> dict[str, Any]:
+def rehome(state: dict[str, Any], story_id: UUID, *, strict: bool = False,
+           image_ids: dict[str, str] | None = None) -> dict[str, Any]:
     """Copy a full_state under fresh IDs. Strict mode rejects references outside the copy."""
     state = copy.deepcopy(state)
     identifiers = {row["id"]: str(uuid7()) for kind in ENTITIES for row in state[kind]}
+    identifiers.update(image_ids or {r["id"]: str(uuid7()) for r in state.get("story_image", [])})
     identifiers[state["story"][0]["id"]] = str(story_id)
     for kind, table in tables().items():
         for row in state.get(kind, []):
             if "id" in row:
-                row["id"] = identifiers[row["id"]] if kind in ENTITIES else str(uuid7())
+                row["id"] = identifiers[row["id"]] if kind in ENTITIES or kind == "story_image" else str(uuid7())
             for column in table.c:
                 value = row.get(column.name)
                 if not column.foreign_keys or value is None:
@@ -61,6 +67,15 @@ def rehome(state: dict[str, Any], story_id: UUID, *, strict: bool = False) -> di
                     row[column.name] = identifiers[value]
                 elif strict:
                     raise ValueError(f"{kind}.{column.name} points outside this backup")
+            if kind == "story_image":
+                row["attachments"] = [{"entity": a["entity"], "id": identifiers[a["id"]]}
+                                      for a in row.get("attachments", [])]
+            if kind in {"scene", "scene_revision"} and row.get("content"):
+                from storytool.domain.story.images import IMAGE_REF
+
+                row["content"] = IMAGE_REF.sub(
+                    lambda m: f"![{m[1]}](storytool-image:{identifiers.get(m[2], m[2])})", row["content"]
+                )
     return state
 
 
@@ -87,7 +102,7 @@ def validated_state(payload: Any) -> dict[str, Any]:
             extra = set(row) - columns
             if extra:
                 raise ValueError(f"Unknown {kind} fields: " + ", ".join(sorted(extra)))
-            if kind in ENTITIES:
+            if kind in ENTITIES or kind == "story_image":
                 if not isinstance(row.get("id"), str) or row["id"] in seen:
                     raise ValueError(f"Every {kind} needs a unique id")
                 seen.add(row["id"])
@@ -118,11 +133,26 @@ def add_runs(paragraph: Any, text: str) -> None:
             paragraph.add_run(part)
 
 
-def manuscript_docx(markdown: str, author_name: str | None = None) -> bytes:
+def manuscript_docx(markdown: str, author_name: str | None = None, images: ImageFiles | None = None) -> bytes:
     """Lay out the compiled Markdown manuscript as a plain Word document."""
     document = Document()
     document.core_properties.author = author_name or ""
     for block in re.split(r"\n\s*\n", markdown):
+        parsed = blocks(block)
+        if len(parsed) == 1 and parsed[0].kind == "image":
+            image = (images or {}).get(parsed[0].image_id)
+            if image is None:
+                raise ClientException(detail="A manuscript image is unavailable")
+            from PIL import Image
+
+            with Image.open(io.BytesIO(image[0])) as picture:
+                scale = min(6 / picture.width, 8 / picture.height)
+                shape = document.add_picture(io.BytesIO(image[0]), width=Inches(picture.width * scale),
+                                             height=Inches(picture.height * scale))
+                shape._inline.docPr.set("descr", image[2] or parsed[0].text)
+            if image[3]:
+                document.add_paragraph(image[3])
+            continue
         lines = [line.rstrip() for line in block.strip().splitlines()]
         if not lines:
             continue
@@ -154,13 +184,18 @@ class StoryBackupController(Controller):
         if story is None:
             raise NotFoundException(detail=f"No story with id {story_id}")
         exported = datetime.now(UTC)
+        from storytool.domain.story.images import portable_images
+
+        state = await full_state(db_session, story_id)
+        files = await portable_images(db_session, state, include_history=True)
         return Response(
             content={
                 "format": BACKUP_FORMAT,
                 "version": 1,
                 "exported_at": exported.isoformat(),
                 "title": story.title,
-                "state": await full_state(db_session, story_id),
+                "state": state,
+                "images": files,
             },
             headers={
                 "content-disposition": (
@@ -179,10 +214,14 @@ class StoryBackupController(Controller):
         author_name = await db_session.scalar(
             select(User.author_name).where(User.id == graph.story.user_id)
         )
+        from storytool.domain.story.images import export_images
+
+        markdown = compile_manuscript(graph, include_unplaced=include_unplaced, author_name=author_name)
         return Response(
             content=manuscript_docx(
-                compile_manuscript(graph, include_unplaced=include_unplaced, author_name=author_name),
+                markdown,
                 author_name,
+                await export_images(db_session, story_id, markdown),
             ),
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             headers={
@@ -211,8 +250,9 @@ class StoryBackupController(Controller):
         self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True
     ) -> Response[str]:
         markdown, title, _, author = await self._manuscript(db_session, story_id, include_unplaced)
+        from storytool.domain.story.images import export_images
         return Response(
-            content=manuscript_html(markdown, title, author),
+            content=manuscript_html(markdown, title, author, await export_images(db_session, story_id, markdown)),
             media_type="text/html; charset=utf-8",
             headers={"content-disposition": f'attachment; filename="{slug(title)}.html"'},
         )
@@ -222,6 +262,18 @@ class StoryBackupController(Controller):
         self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True
     ) -> Response[str]:
         markdown, title, _, _ = await self._manuscript(db_session, story_id, include_unplaced)
+        from storytool.domain.story.image_models import StoryImage
+        from storytool.domain.story.images import IMAGE_REF
+
+        descriptions = {str(image.id): image for image in await db_session.scalars(
+            select(StoryImage).where(StoryImage.story_id == story_id)
+        )}
+        def describe_image(match: re.Match[str]) -> str:
+            image = descriptions.get(match[2])
+            alt = (image.alt if image else "") or match[1]
+            caption = image.caption if image else ""
+            return f"[Image: {alt}]" + ("\n\n" + caption if caption else "")
+        markdown = IMAGE_REF.sub(describe_image, markdown)
         return Response(
             content=manuscript_text(markdown),
             media_type="text/plain; charset=utf-8",
@@ -233,8 +285,9 @@ class StoryBackupController(Controller):
         self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True
     ) -> Response[bytes]:
         markdown, title, identifier, author = await self._manuscript(db_session, story_id, include_unplaced)
+        from storytool.domain.story.images import export_images
         return Response(
-            content=manuscript_epub(markdown, title, identifier, author),
+            content=manuscript_epub(markdown, title, identifier, author, await export_images(db_session, story_id, markdown)),
             media_type="application/epub+zip",
             headers={"content-disposition": f'attachment; filename="{slug(title)}.epub"'},
         )
@@ -305,8 +358,11 @@ class StoryBackupController(Controller):
             appendices.append(("Places", section or [Block("para", "No places yet.")]))
         scenes = graph.scenes if include_unplaced else graph.scenes_in_reading_order()
         try:
+            from storytool.domain.story.images import export_images
+
             content = manuscript_pdf(
-                markdown, title, author, sum(scene.word_count for scene in scenes), appendices
+                markdown, title, author, sum(scene.word_count for scene in scenes), appendices,
+                await export_images(db_session, story_id, markdown),
             )
         except ValueError as error:
             raise ClientException(detail=str(error)) from None
@@ -314,6 +370,26 @@ class StoryBackupController(Controller):
             content=content, media_type="application/pdf",
             headers={"content-disposition": f'attachment; filename="{slug(title)}.pdf"'},
         )
+
+    @get("/manuscript.zip", summary="Portable Markdown with its image files")
+    async def export_markdown_images(self, db_session: AsyncSession, story_id: UUID,
+                                     include_unplaced: bool = True) -> Response[bytes]:
+        from storytool.domain.story.images import IMAGE_REF, export_images
+
+        markdown, title, _, _ = await self._manuscript(db_session, story_id, include_unplaced)
+        images = await export_images(db_session, story_id, markdown)
+        if not images:
+            return Response(content=markdown.encode(), media_type="text/markdown",
+                            headers={"content-disposition": f'attachment; filename="{slug(title)}.md"'})
+        markdown = IMAGE_REF.sub(lambda m: f"![{m[1]}](images/{m[2]}.{images[m[2]][1].split('/')[1]})" +
+                                 ("\n\n" + images[m[2]][3] if images[m[2]][3] else ""), markdown)
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(f"{slug(title)}.md", markdown)
+            for id_, image in images.items():
+                archive.writestr(f"images/{id_}.{image[1].split('/')[1]}", image[0])
+        return Response(content=buffer.getvalue(), media_type="application/zip",
+                        headers={"content-disposition": f'attachment; filename="{slug(title)}.zip"'})
 
 
 class BackupImportController(Controller):
@@ -357,13 +433,22 @@ class BackupImportController(Controller):
                 return StoryOut.model_validate(prior)
         try:
             state = validated_state(data)
+            files = data.get("images", {})
+            if not isinstance(files, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in files.items()):
+                raise ValueError("Invalid image files in backup")
+            from storytool.domain.story.images import import_images
+
+            image_ids = {str(UUID(k)): str(uuid7()) for k in files}
+            if set(image_ids) & {r["id"] for kind in ENTITIES for r in state[kind]}:
+                raise ValueError("Image IDs overlap story entity IDs")
             async with db_session.begin_nested():
                 created = Story(
                     title=state["story"][0].get("title") or "Restored story", user_id=user_id
                 )
                 db_session.add(created)
                 await db_session.flush()
-                copied = rehome(state, created.id, strict=True)
+                copied = rehome(state, created.id, strict=True, image_ids=image_ids)
+                await import_images(db_session, state, files, copied, created.id, image_ids=image_ids)
                 await restore_state(db_session, created.id, copied)
         except (ValueError, TypeError, KeyError, SQLAlchemyError) as error:
             detail = str(error) if isinstance(error, ValueError) else "The backup is damaged"
@@ -381,8 +466,8 @@ class BackupImportController(Controller):
             "Restored from backup",
         )
         if sandbox is not None:
-            from storytool.domain.story.authorship import FieldAuthorship
             from storytool.domain.site.funnel import FunnelEvent, record_milestone, request_visitor
+            from storytool.domain.story.authorship import FieldAuthorship
 
             scene_ids = {old["id"]: new["id"] for old, new in zip(state["scene"], copied["scene"], strict=True)}
             for edit in sandbox.get("edits", []):

@@ -24,7 +24,7 @@ from storytool.domain.auth.models import User
 from storytool.domain.narrative.prose import compile_manuscript
 from storytool.domain.story.authorship import FieldAuthorship
 from storytool.domain.story.models import Story
-from storytool.domain.story.sharing import actor, visible_state
+from storytool.domain.story.sharing import actor, reading_state
 from storytool.domain.story.timeline_controller import story_timeline
 from storytool.domain.timeline import TimelineOut
 from storytool.domain.versioning.models import StoryVersion
@@ -181,7 +181,7 @@ class PublicShowcaseController(Controller):
             owner_name=owner.name or "StoryTool author",
             updated_at=story.updated_at,
             manuscript=compile_manuscript(graph),
-            structure=visible_state(state),
+            structure=reading_state(state, f"/api/showcase/{token}/images"),
             versions=[
                 ShowcaseVersionOut(
                     number=v.number,

@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     ai_encryption_key: str | None = None
     frontend_dir: Path | None = None
     public_url: str = "https://storytool.onrender.com"
+    image_bucket: str = "storytool-images"
+    image_storage_endpoint: str | None = None
+    image_storage_region: str = "us-east-2"
+    image_storage_access_key: str | None = None
+    image_storage_secret_key: str | None = None
     # Off until the embedding endpoint, model and billing credentials are chosen.
     semantic_search_enabled: bool = False
     search_embedding_url: str | None = None

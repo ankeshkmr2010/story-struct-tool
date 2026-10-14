@@ -572,6 +572,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/images/{image_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove */
+        delete: operations["ApiStoriesStoryIdImagesImageIdRemove"];
+        options?: never;
+        head?: never;
+        /** Describe */
+        patch: operations["ApiStoriesStoryIdImagesImageIdDescribe"];
+        trace?: never;
+    };
+    "/api/stories/{story_id}/images/{image_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** File */
+        get: operations["ApiStoriesStoryIdImagesImageIdFileFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Library */
+        get: operations["ApiStoriesStoryIdImagesLibrary"];
+        put?: never;
+        /** Upload */
+        post: operations["ApiStoriesStoryIdImagesUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared-stories/{story_id}/images/{image_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** File */
+        get: operations["ApiSharedStoriesStoryIdImagesImageIdFileFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/showcase/{token}/images/{image_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** File */
+        get: operations["ApiShowcaseTokenImagesImageIdFileFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/beta/rounds/{round_id}/images/{image_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** File */
+        get: operations["ApiBetaRoundsRoundIdImagesImageIdFileFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/authorship": {
         parameters: {
             query?: never;
@@ -1074,6 +1178,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/manuscript.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Portable Markdown with its image files */
+        get: operations["ApiStoriesStoryIdManuscriptZipExportMarkdownImages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/manuscript.pdf": {
         parameters: {
             query?: never;
@@ -1501,6 +1622,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/site/try": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record browser sandbox milestones */
+        post: operations["ApiSiteTryEvents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/funnel": {
         parameters: {
             query?: never;
@@ -1510,6 +1648,23 @@ export interface paths {
         };
         /** Funnel counts since tracking began (site admin only) */
         get: operations["ApiAdminFunnelCounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/funnel/try": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Guided sandbox funnel (site admin only) */
+        get: operations["ApiAdminFunnelTryTryCounts"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3153,6 +3308,62 @@ export interface components {
             info_count: number;
             findings: components["schemas"]["FindingOut"][];
         };
+        /** ImageAttachment */
+        ImageAttachment: {
+            /** @enum {string} */
+            entity: "character" | "location" | "glossary" | "scene";
+            /** Format: uuid */
+            id: string;
+        };
+        /** ImageDescription */
+        ImageDescription: {
+            name: string;
+            /** @default  */
+            alt: string;
+            /** @default  */
+            caption: string;
+            attachments?: components["schemas"]["ImageAttachment"][];
+        };
+        /** ImageLibrary */
+        ImageLibrary: {
+            images: components["schemas"]["ImageOut"][];
+            retained_count: number;
+            retained_bytes: number;
+            /** @default 5242880 */
+            max_image_bytes: number;
+            /** @default 104857600 */
+            max_story_bytes: number;
+            /** @default 50 */
+            max_images: number;
+        };
+        /** ImageOut */
+        ImageOut: {
+            name: string;
+            /** @default  */
+            alt: string;
+            /** @default  */
+            caption: string;
+            attachments?: components["schemas"]["ImageAttachment"][];
+            archived: boolean;
+            /** Format: uuid */
+            id: string;
+            size: number;
+            width: number;
+            height: number;
+            url: string;
+        };
+        /** ImageUpload */
+        ImageUpload: {
+            name: string;
+            /** @default  */
+            alt: string;
+            /** @default  */
+            caption: string;
+            attachments?: components["schemas"]["ImageAttachment"][];
+            /** Format: uuid */
+            upload_id: string;
+            data: string;
+        };
         /** InviteOut */
         InviteOut: {
             round: components["schemas"]["RoundOut"];
@@ -4110,6 +4321,12 @@ export interface components {
             story_id: string;
             /** @default Story agent */
             label: string;
+        };
+        /** TryEventsIn */
+        TryEventsIn: {
+            /** Format: uuid */
+            visitor_id: string;
+            events: ("try_start" | "try_step_1" | "try_step_2" | "try_step_3" | "try_step_4" | "try_step_5" | "try_step_6" | "try_skip" | "try_keep_click" | "try_imported")[];
         };
         /** UserOut */
         UserOut: {
@@ -5614,6 +5831,314 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdImagesImageIdRemove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdImagesImageIdDescribe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImageDescription"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdImagesImageIdFileFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdImagesLibrary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageLibrary"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdImagesUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImageUpload"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSharedStoriesStoryIdImagesImageIdFileFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiShowcaseTokenImagesImageIdFileFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaRoundsRoundIdImagesImageIdFileFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                round_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdAuthorshipHistory: {
         parameters: {
             query?: never;
@@ -7065,6 +7590,45 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdManuscriptZipExportMarkdownImages: {
+        parameters: {
+            query?: {
+                include_unplaced?: boolean;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdManuscriptPdfExportPdf: {
         parameters: {
             query?: {
@@ -8067,6 +8631,43 @@ export interface operations {
             };
         };
     };
+    ApiSiteTryEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TryEventsIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiAdminFunnelCounts: {
         parameters: {
             query?: never;
@@ -8083,6 +8684,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FunnelOut"];
+                };
+            };
+        };
+    };
+    ApiAdminFunnelTryTryCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
                 };
             };
         };

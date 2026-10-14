@@ -435,6 +435,11 @@ class BetaOwnerController(Controller):
                 "scene": [{k: s[k] for k in ("id", "title", "chapter_id", "sort_key", "content")} for s in state["scene"] if str(s["chapter_id"]) in selected],
             },
         )
+        from storytool.domain.story.images import public_images
+
+        snapshot["structure"]["story_image"] = public_images(
+            {"scene": snapshot["structure"]["scene"], "story_image": state.get("story_image", [])}, ""
+        )
         row = BetaRound(story_id=story_id, title=data.title, brief=data.brief, deadline=data.deadline,
                         auto_approve=data.auto_approve, token=secrets.token_urlsafe(32), snapshot=json.loads(json.dumps(snapshot, default=str)), source_fingerprint=fingerprint(state))
         db_session.add(row)
@@ -568,9 +573,12 @@ class BetaReaderController(Controller):
     async def read(self, request: Request, db_session: AsyncSession, round_id: UUID) -> BetaDocumentOut:
         row, _, member, owner = await round_access(db_session, request, round_id)
         snapshot = row.snapshot
+        structure = dict(snapshot["structure"])
+        structure["story_image"] = [image | {"url": f"/api/beta/rounds/{row.id}/images/{image['id']}/file"}
+                                    for image in structure.get("story_image", [])]
         return BetaDocumentOut(
             share=SharedStoryOut(story_id=row.story_id, title=snapshot["title"], premise=None, blurb=snapshot.get("blurb"), owner_name=snapshot.get("author_name") or "StoryTool author", allow_import=False),
-            manuscript=snapshot["manuscript"], structure=snapshot["structure"], base_fingerprint=row.source_fingerprint,
+            manuscript=snapshot["manuscript"], structure=structure, base_fingerprint=row.source_fingerprint,
             round=round_out(row), is_owner=owner,
             read_chapters=member.read_chapters if member else [], reading_status=member.reading_status if member else "not_started", stopped_reason=member.stopped_reason if member else None,
         )

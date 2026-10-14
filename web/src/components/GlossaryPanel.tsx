@@ -32,9 +32,11 @@ export function GlossaryPanel({ storyId }: { storyId: string }) {
         <div className="mt-3 space-y-3">
           <label className="block text-xs text-slate-500 dark:text-slate-400">Aliases (one per line)<InlineText value={item.aliases?.join('\n') ?? null} placeholder="Other names, spellings, or formal titles" multiline onSave={value => save({ aliases: value?.split('\n').map(alias => alias.trim()).filter(Boolean) ?? [] })} /></label>
           <label className="block text-xs text-slate-500 dark:text-slate-400">Definition<InlineText value={item.definition} placeholder="What does this term mean in your story?" multiline onSave={definition => save({ definition })} /></label>
+          <ReferenceImages storyId={storyId} entity="glossary" entityId={item.id} />
           <label className="block text-xs text-slate-500 dark:text-slate-400">First explained in<InlineSelect value={item.first_explained_scene_id} options={(scenes.data ?? []).map(scene => ({ value: scene.id, label: scene.title || 'Untitled scene' }))} placeholder="Not explained yet" onSave={first_explained_scene_id => save({ first_explained_scene_id })} /></label>
         </div>
       </article>
     })}</div>
   </section>
 }
+import { ReferenceImages } from './StoryImages'

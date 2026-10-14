@@ -27,7 +27,15 @@ from storytool.domain.site.feedback import ProductFeedback
 from storytool.domain.site.funnel import FunnelEvent
 from storytool.domain.site.shoutouts import Shoutout
 from storytool.domain.story.authorship import FieldAuthorship
-from storytool.domain.story.beta import BetaMember, BetaMessage, BetaPoll, BetaRound, BetaThread, BetaVote
+from storytool.domain.story.beta import (
+    BetaMember,
+    BetaMessage,
+    BetaPoll,
+    BetaRound,
+    BetaThread,
+    BetaVote,
+)
+from storytool.domain.story.image_models import ImageBlob, StoryImage
 from storytool.domain.story.models import Story
 from storytool.domain.story.sharing import StoryShare
 from storytool.domain.story.showcase import StoryShowcase
@@ -57,6 +65,7 @@ __all__ = (
     "FieldAuthorship",
     "FunnelEvent",
     "GlossaryEntry",
+    "ImageBlob",
     "Location",
     "MCPClient",
     "MCPConsent",
@@ -71,6 +80,7 @@ __all__ = (
     "SearchIndex",
     "Shoutout",
     "Story",
+    "StoryImage",
     "StoryObservation",
     "StoryShare",
     "StoryShowcase",

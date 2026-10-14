@@ -8,19 +8,21 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen.canvas import Canvas
-from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
+from reportlab.platypus import Image, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer
 
-from storytool.domain.story.manuscript_formats import Block, blocks, inline_html
+from storytool.domain.story.manuscript_formats import Block, ImageFiles, blocks, inline_html
 
 
 def manuscript_pdf(
     markdown: str, title: str, author_name: str | None, word_count: int,
     appendices: list[tuple[str, list[Block]]],
+    images: ImageFiles | None = None,
 ) -> bytes:
     # The standard Times faces use WinAnsi. Refuse unsupported text rather than
     # silently replacing manuscript characters with boxes or question marks.
     texts = [markdown, title, author_name or ""]
     texts.extend(block.text for _, section in appendices for block in section)
+    texts.extend(data[3] for data in (images or {}).values())
     try:
         "".join(texts).encode("cp1252")
     except UnicodeEncodeError:
@@ -60,6 +62,19 @@ def manuscript_pdf(
         manuscript_blocks = manuscript_blocks[1:]
     seen_chapter = False
     for block in manuscript_blocks:
+        if block.kind == "image":
+            data = (images or {}).get(block.image_id)
+            if data is None:
+                raise ValueError("A manuscript image is unavailable")
+            image = Image(io.BytesIO(data[0]))
+            scale = min(468 / image.imageWidth, 500 / image.imageHeight, 1)
+            image.drawWidth = image.imageWidth * scale
+            image.drawHeight = image.imageHeight * scale
+            group = [image]
+            if data[3]:
+                group.append(Paragraph(escape(data[3]), centered))
+            flow.append(KeepTogether(group))
+            continue
         if block.kind == "heading":
             if block.level == 2:
                 if seen_chapter:

@@ -22,11 +22,6 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
     status: 'Exploring',
     description: 'See how many people have read the stories you share.',
   },
-  {
-    title: 'Images in your story',
-    status: 'Planned',
-    description: 'Add images to your story: maps, character art, illustrations.',
-  },
 ]
 
 
@@ -34,6 +29,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
   {
     date: '14 Oct 2026',
     items: [
+      ['Images in your story', 'insert manuscript illustrations or attach reference images to characters, places, glossary entries and scenes. Captions, private Neon storage, upload limits, reader access and portable exports keep images with your story.'],
       ['Try before signing up', 'edit The Last Lantern in a browser-local sandbox with a six-step tour, local text search and History. Sign in to keep your story and edits in your library.'],
       ['Sandbox build correction', 'corrected the browser-storage lock callback’s TypeScript return type.'],
       ['Sandbox reliability corrections', 'readable Context thread labels, safe arc-stage deletion, a visible coach after resuming search, and fresh carry-over for edits made after keeping a copy.'],

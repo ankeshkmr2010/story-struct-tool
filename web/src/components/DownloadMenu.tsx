@@ -6,7 +6,7 @@ const ITEMS = [
   { label: 'Submission manuscript (.pdf)', help: 'Double-spaced; optional appendices below', href: api.manuscriptPdfUrl },
   { label: 'E-book (.epub)', help: 'For Apple Books, Kobo and Kindle (via Send to Kindle)', href: api.manuscriptEpubUrl },
   { label: 'Web page (.html)', help: 'Opens in any browser', href: api.manuscriptHtmlUrl },
-  { label: 'Manuscript (.md)', help: 'Plain text with Markdown headings', href: api.manuscriptUrl },
+  { label: 'Manuscript (.md)', help: 'Includes an image folder in a ZIP when needed', href: api.manuscriptUrl },
   { label: 'Plain text (.txt)', help: 'No formatting at all', href: api.manuscriptTextUrl },
   { label: 'Full backup (.json)', help: 'Everything, including notes and revisions. Restore it from your library.', href: api.backupUrl },
 ]

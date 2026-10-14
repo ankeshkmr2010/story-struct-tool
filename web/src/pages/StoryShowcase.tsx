@@ -1,3 +1,4 @@
+import { ReadOnlyReferenceImages } from '../components/StoryImages'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
@@ -125,7 +126,7 @@ function ShowcaseContext({ story, rows, name }: { story: Row; rows: (kind: strin
       const inner = [['wound', 'Wound'], ['misbelief', 'Misbelief'], ['voice_notes', 'Voice']].filter(([field]) => value(person, field))
       return <article key={value(person, 'id')} className="showcase-card showcase-person">
         <header><span className="showcase-avatar" aria-hidden="true">{value(person, 'name').charAt(0)}</span><div><h3>{value(person, 'name')}</h3>{value(person, 'role') && <span className="showcase-pill">{human(value(person, 'role'))}</span>}</div></header>
-        {value(person, 'description') && <p>{value(person, 'description')}</p>}
+        <ReadOnlyReferenceImages images={rows('story_image')} entity="character" entityId={value(person, 'id')} />{value(person, 'description') && <p>{value(person, 'description')}</p>}
         {(value(person, 'want') || value(person, 'need')) && <div className="showcase-wantneed">{value(person, 'want') && <div><small>Wants</small>{value(person, 'want')}</div>}{value(person, 'need') && <div><small>Needs</small>{value(person, 'need')}</div>}</div>}
         {inner.length > 0 && <details><summary>More</summary><dl className="reader-context-fields">{inner.map(([field, label]) => <div key={field}><dt>{label}</dt><dd>{value(person, field)}</dd></div>)}</dl></details>}
       </article>
@@ -138,10 +139,10 @@ function ShowcaseContext({ story, rows, name }: { story: Row; rows: (kind: strin
     </article>)}</div></Section>
 
     <Section id="ctx-places" title="Places" count={rows('location').length}><div className="showcase-grid">{rows('location').map(place => <article key={value(place, 'id')} className="showcase-card">
-      <h3>{value(place, 'name')}</h3>{value(place, 'description') && <p>{value(place, 'description')}</p>}{value(place, 'atmosphere_notes') && <p className="showcase-atmosphere">{value(place, 'atmosphere_notes')}</p>}
+      <h3>{value(place, 'name')}</h3><ReadOnlyReferenceImages images={rows('story_image')} entity="location" entityId={value(place, 'id')} />{value(place, 'description') && <p>{value(place, 'description')}</p>}{value(place, 'atmosphere_notes') && <p className="showcase-atmosphere">{value(place, 'atmosphere_notes')}</p>}
     </article>)}</div></Section>
 
-    <Section id="ctx-glossary" title="Glossary" count={rows('glossary_entry').length}><div className="showcase-glossary">{rows('glossary_entry').map(entry => <div key={value(entry, 'id')}><strong>{value(entry, 'term')}</strong><p>{value(entry, 'definition')}</p></div>)}</div></Section>
+    <Section id="ctx-glossary" title="Glossary" count={rows('glossary_entry').length}><div className="showcase-glossary">{rows('glossary_entry').map(entry => <div key={value(entry, 'id')}><strong>{value(entry, 'term')}</strong><p>{value(entry, 'definition')}</p><ReadOnlyReferenceImages images={rows('story_image')} entity="glossary" entityId={value(entry, 'id')} /></div>)}</div></Section>
   </div>
 }
 

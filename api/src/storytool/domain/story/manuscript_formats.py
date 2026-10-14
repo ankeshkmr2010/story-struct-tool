@@ -5,6 +5,7 @@ block grammar the .docx export understands -- headings, epigraph quotes, scene b
 paragraphs with bold/italic runs -- so every format says the same thing.
 """
 
+import base64
 import io
 import re
 import zipfile
@@ -16,6 +17,8 @@ from uuid import UUID
 _INLINE = re.compile(r"(\*\*[^*]+\*\*|\*[^*\s][^*]*\*|_[^_\s][^_]*_)")
 _HEADING = re.compile(r"^(#{1,4})\s+(.*)$")
 SCENE_BREAK = "* * *"
+_IMAGE = re.compile(r"!\[([^\]\n]*)\]\(storytool-image:([0-9a-fA-F-]{36})\)")
+ImageFiles = dict[str, tuple[bytes, str, str, str]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,6 +26,7 @@ class Block:
     kind: str  # "heading" | "quote" | "break" | "para"
     text: str = ""
     level: int = 0
+    image_id: str = ""
 
 
 def blocks(markdown: str) -> list[Block]:
@@ -32,7 +36,10 @@ def blocks(markdown: str) -> list[Block]:
         if not lines:
             continue
         heading = _HEADING.match(lines[0])
-        if heading and len(lines) == 1:
+        image = _IMAGE.fullmatch(lines[0]) if len(lines) == 1 else None
+        if image:
+            out.append(Block("image", image[1], image_id=image[2]))
+        elif heading and len(lines) == 1:
             out.append(Block("heading", heading.group(2), len(heading.group(1))))
         elif all(line.startswith(">") for line in lines):
             out.append(Block("quote", " ".join(line.lstrip("> ").strip() for line in lines)))
@@ -68,7 +75,22 @@ def plain(text: str) -> str:
     )
 
 
-def _block_html(block: Block) -> str:
+def _block_html(block: Block, images: ImageFiles | None = None, *, epub: bool = False) -> str:
+    if block.kind == "image":
+        data = (images or {}).get(block.image_id)
+        if data is None:
+            return f"<p>[Image: {escape(block.text)}]</p>"
+        raw, mime, alt, caption = data
+        source = (
+            f"images/{block.image_id}.{mime.split('/')[1]}"
+            if epub
+            else f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}"
+        )
+        return (
+            f'<figure><img src="{source}" alt="{escape(alt or block.text, quote=True)}"/>'
+            + (f"<figcaption>{escape(caption)}</figcaption>" if caption else "")
+            + "</figure>"
+        )
     if block.kind == "heading":
         return f"<h{block.level}>{inline_html(block.text)}</h{block.level}>"
     if block.kind == "quote":
@@ -84,11 +106,14 @@ _CSS = (
     "h1,h2{text-align:center}h2{margin-top:3em}"
     "blockquote{font-style:italic;margin:1.5em 2em}"
     ".scene-break{text-align:center;margin:1.5em 0}"
+    "figure{margin:1.5em 0;break-inside:avoid}img{max-width:100%;height:auto}figcaption{text-align:center;font-size:.85em}"
 )
 
 
-def manuscript_html(markdown: str, title: str, author_name: str | None = None) -> str:
-    body = "\n".join(_block_html(b) for b in blocks(markdown))
+def manuscript_html(
+    markdown: str, title: str, author_name: str | None = None, images: ImageFiles | None = None
+) -> str:
+    body = "\n".join(_block_html(b, images) for b in blocks(markdown))
     author_meta = f'<meta name="author" content="{escape(author_name)}"/>\n' if author_name else ""
     return (
         '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
@@ -108,6 +133,8 @@ def manuscript_text(markdown: str) -> str:
             lines.append("    " + plain(block.text))
         elif block.kind == "break":
             lines.append(SCENE_BREAK)
+        elif block.kind == "image":
+            lines.append("[Image: " + block.text + "]")
         else:
             lines.append(plain(block.text))
     return "\n\n".join(lines) + "\n"
@@ -124,7 +151,11 @@ def _xhtml(title: str, body: str) -> str:
 
 
 def manuscript_epub(
-    markdown: str, title: str, identifier: UUID, author_name: str | None = None
+    markdown: str,
+    title: str,
+    identifier: UUID,
+    author_name: str | None = None,
+    images: ImageFiles | None = None,
 ) -> bytes:
     """An EPUB 3 book: a title page, then one file per chapter (level-2 heading)."""
     sections: list[tuple[str, list[Block]]] = [(title, [])]
@@ -135,7 +166,11 @@ def manuscript_epub(
             sections[-1][1].append(block)
 
     files = [
-        (f"section-{index}.xhtml", label, _xhtml(label, "\n".join(_block_html(b) for b in body)))
+        (
+            f"section-{index}.xhtml",
+            label,
+            _xhtml(label, "\n".join(_block_html(b, images, epub=True) for b in body)),
+        )
         for index, (label, body) in enumerate(sections)
     ]
     modified = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -144,6 +179,10 @@ def manuscript_epub(
         for i, (name, _, _) in enumerate(files)
     )
     spine = "\n".join(f'<itemref idref="s{i}"/>' for i in range(len(files)))
+    manifest += "\n" + "\n".join(
+        f'<item id="img-{id_}" href="images/{id_}.{data[1].split("/")[1]}" media-type="{data[1]}"/>'
+        for id_, data in (images or {}).items()
+    )
     creator = f"<dc:creator>{escape(author_name)}</dc:creator>\n" if author_name else ""
     opf = (
         '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -176,4 +215,6 @@ def manuscript_epub(
         book.writestr("OEBPS/style.css", _CSS, compress_type=zipfile.ZIP_DEFLATED)
         for name, _, content in files:
             book.writestr(f"OEBPS/{name}", content, compress_type=zipfile.ZIP_DEFLATED)
+        for id_, data in (images or {}).items():
+            book.writestr(f"OEBPS/images/{id_}.{data[1].split('/')[1]}", data[0])
     return buffer.getvalue()

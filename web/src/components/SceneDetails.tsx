@@ -52,6 +52,7 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
         <h3 className="section-title">Structure</h3>
         <div className="flex items-center gap-2"><Chip complete={scene.completeness.is_complete} missing={scene.completeness.missing} /></div>
       </div>
+      <ReferenceImages storyId={storyId} entity="scene" entityId={scene.id} />
       <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Field label="Title"><InlineText value={scene.title} placeholder="Scene title" onSave={save('title')} /></Field>
         <Field label="Chapter"><InlineSelect value={scene.chapter_id} options={(chapters.data ?? []).map((chapter) => ({ value: chapter.id, label: `${chapter.number}. ${chapter.title ?? 'Untitled'}` }))} onSave={save('chapter_id')} /></Field>
@@ -85,3 +86,4 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
     </details></div>
   )
 }
+import { ReferenceImages } from './StoryImages'

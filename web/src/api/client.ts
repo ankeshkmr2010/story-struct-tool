@@ -84,6 +84,40 @@ export type AgentToken = { id: string; story_id: string; label: string; expires_
 export type OAuthGrant = { id: string; client_name: string; story_title: string; scopes: string[]; expires_at: string; revoked_at: string | null }
 export type Shoutout = { id: string; name: string; thanks: string; colour: string; mark: string; sort_key: number }
 export type ShoutoutInput = { name: string; thanks: string; colour: string; mark: string }
+export type ImageAttachment = S['ImageAttachment']
+export type StoryImage = S['ImageOut']
+export type ImageLibrary = S['ImageLibrary']
+export type ImageDescription = Pick<StoryImage, 'name' | 'alt' | 'caption' | 'attachments'>
+
+export function uploadStoryImage(storyId: string, uploadId: string, file: File, description: ImageDescription, progress: (value: number) => void, signal: AbortSignal): Promise<StoryImage> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    const xhr = new XMLHttpRequest()
+    const abort = () => { reader.abort(); xhr.abort(); reject(new Error('Upload cancelled')) }
+    signal.addEventListener('abort', abort, { once: true })
+    const cleanup = () => signal.removeEventListener('abort', abort)
+    reader.onerror = () => { cleanup(); reject(new Error('Could not read this image')) }
+    reader.onload = () => {
+      if (signal.aborted) { abort(); cleanup(); return }
+      xhr.open('POST', `/api/stories/${storyId}/images`)
+      xhr.setRequestHeader('Content-Type', 'application/json')
+      xhr.upload.onprogress = event => { if (event.lengthComputable) progress(Math.round(event.loaded / event.total * 100)) }
+      xhr.onload = () => {
+        cleanup()
+        try {
+          const result = JSON.parse(xhr.responseText)
+          if (xhr.status < 200 || xhr.status >= 300) reject(new Error(result.detail || 'Image upload failed'))
+          else resolve(result as StoryImage)
+        } catch { reject(new Error('Image upload failed. Please retry.')) }
+      }
+      xhr.onerror = () => { cleanup(); reject(new Error('Image upload failed. Please retry.')) }
+      xhr.onabort = cleanup
+      xhr.send(JSON.stringify({ ...description, upload_id: uploadId, data: String(reader.result).split(',')[1] }))
+    }
+    if (signal.aborted) { abort(); cleanup(); return }
+    reader.readAsDataURL(file)
+  })
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (isSandboxRequest(path)) return await sandboxRequest(path, init) as T
@@ -109,6 +143,9 @@ const patch = <T,>(path: string, body: unknown) =>
   request<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 
 export const api = {
+  imageLibrary: (id: string) => request<ImageLibrary>(`/api/stories/${id}/images`),
+  describeImage: (id: string, imageId: string, body: ImageDescription) => patch<StoryImage>(`/api/stories/${id}/images/${imageId}`, body),
+  removeImage: (id: string, imageId: string) => request<void>(`/api/stories/${id}/images/${imageId}`, { method: 'DELETE' }),
   searchCapabilities: (id: string) => request<S['SearchCapabilities']>(`/api/stories/${id}/search/capabilities`),
   librarySearchCapabilities: () => request<S['SearchCapabilities']>('/api/search/capabilities'),
   searchLibrary: (context: LibrarySearchContext, q: string, field: string, entity: string, mode: 'text' | 'semantic', offset: number, signal?: AbortSignal) => {
@@ -385,7 +422,7 @@ export const api = {
     }),
 
   getProgress: (storyId: string) => request<Progress>(`/api/stories/${storyId}/progress`),
-  manuscriptUrl: (storyId: string) => `/api/stories/${storyId}/manuscript`,
+  manuscriptUrl: (storyId: string) => `/api/stories/${storyId}/manuscript.zip`,
   manuscriptDocxUrl: (storyId: string) => `/api/stories/${storyId}/manuscript.docx`,
   manuscriptPdfUrl: (storyId: string, appendices = { glossary: false, timeline: false, places: false }) =>
     `/api/stories/${storyId}/manuscript.pdf?${new URLSearchParams(Object.entries(appendices).map(([key, value]) => [key, String(value)]))}`,

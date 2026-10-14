@@ -111,6 +111,7 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
                 <DeleteButton onConfirm={() => remove.mutate(location.id)} what="place" />
               </div>
               <label className="mt-1 block text-[10px] uppercase text-slate-400">Description<InlineText value={location.description} placeholder="Describe the place" onSave={(description) => update.mutateAsync({ id: location.id, body: { description } })} multiline /></label>
+              <ReferenceImages storyId={storyId} entity="location" entityId={location.id} />
               <label className="mt-1 block text-[10px] uppercase text-slate-400">Atmosphere<InlineText value={location.atmosphere_notes} placeholder="What does it feel like?" onSave={(atmosphere_notes) => update.mutateAsync({ id: location.id, body: { atmosphere_notes } })} multiline /></label>
             </li>
           )
@@ -123,3 +124,4 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
     </div>
   )
 }
+import { ReferenceImages } from './StoryImages'

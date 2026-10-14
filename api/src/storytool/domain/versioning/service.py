@@ -17,10 +17,12 @@ from storytool.domain.ai.commands import ENTITIES, LINKS, json_value, restore_va
 from storytool.domain.ai.models import AIRun, StoryObservation
 from storytool.domain.narrative.models import Annotation, SceneRevision, Suggestion
 from storytool.domain.narrative.prose import count_words
+from storytool.domain.story.image_models import StoryImage
 from storytool.domain.versioning.models import StoryVersion
 from storytool.domain.versioning.schemas import VersionChange
 
 EXTRAS: dict[str, Any] = {
+    "story_image": StoryImage.__table__,
     "annotation": Annotation.__table__,
     "scene_revision": SceneRevision.__table__,
     "suggestion": Suggestion.__table__,
@@ -65,7 +67,7 @@ async def full_state(db: AsyncSession, story_id: UUID) -> dict[str, Any]:
     for kind, table in EXTRAS.items():
         condition = (
             table.c.story_id == story_id
-            if kind == "suggestion"
+            if kind in {"suggestion", "story_image"}
             else table.c.scene_id.in_(identifiers["scene"])
         )
         rows = (
@@ -73,6 +75,13 @@ async def full_state(db: AsyncSession, story_id: UUID) -> dict[str, Any]:
         )
         state[kind] = [
             json_value({k: v for k, v in row.items() if k != "sa_orm_sentinel"}) for row in rows
+        ]
+    for image in state.get("story_image", []):
+        image["attachments"] = [
+            attachment for attachment in image.get("attachments", [])
+            if UUID(attachment["id"]) in identifiers.get(
+                "glossary_entry" if attachment["entity"] == "glossary" else attachment["entity"], []
+            )
         ]
     return state
 
@@ -242,7 +251,7 @@ async def restore_state(db: AsyncSession, story_id: UUID, state: dict[str, Any])
     for kind, table in EXTRAS.items():
         condition = (
             table.c.story_id == story_id
-            if kind == "suggestion"
+            if kind in {"suggestion", "story_image"}
             else table.c.scene_id.in_([UUID(s["id"]) for s in current["scene"]])
         )
         await db.execute(delete(table).where(condition))
@@ -300,7 +309,7 @@ async def restore_state(db: AsyncSession, story_id: UUID, state: dict[str, Any])
                 )
             )
     for kind, table in EXTRAS.items():
-        for row in state[kind]:
+        for row in state.get(kind, []):
             await db.execute(
                 insert(table).values(
                     **{key: restore_value(table.c[key], value) for key, value in row.items()}
