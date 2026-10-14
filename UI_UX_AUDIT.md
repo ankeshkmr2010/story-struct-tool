@@ -447,3 +447,5 @@ from future real feedback remain unverified. T53–T60 implementation is built, 
 - [~] Value-shift readings explain inferred safety/trust/belonging/freedom/control/understanding changes and give revision questions; scores and reader metadata move into optional details. Tentative readings are labelled, and similar conditions are not treated as proof of a flat scene. Existing scene navigation retained. Awaiting production quality/visual confirmation.
 
 - [~] Evaluate uncertain findings grouped under a collapsed Needs verification section with a count; confident findings remain visible and both groups retain bounded scrolling, evidence and all actions. Awaiting production visual confirmation.
+
+- [~] Thread names in Evaluate findings are bold accent-colored links to the associated scene, preserving existing scene/verification actions. Hint-panel movement paused without changes. Awaiting production visual confirmation.
