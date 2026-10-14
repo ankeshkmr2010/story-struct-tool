@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api, type HintReading } from '../api/client'
 import { errorText } from '../api/errors'
 import { SANDBOX_ID } from '../sandbox/storage'
+import { ReadingFeedback } from './ReadingFeedback'
 
 export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { storyId: string; sceneId: string; content: string; onParagraph: (paragraph: number) => void }) {
   const sandbox = storyId === SANDBOX_ID
@@ -40,7 +41,7 @@ export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { s
     {!content.trim() ? <p className="writer-help">Start writing to see hints.</p> : !ready ? <p className="writer-help">Loading known names… {(characters.isError || glossary.isError) && <button type="button" onClick={() => { void characters.refetch(); void glossary.refetch() }}>Retry</button>}</p> : !result ? <p role="status" className="writer-help">Reading after you pause…</p> : (result.error || result.result?.unavailable) ? <p className="writer-help">{result.error || result.result?.unavailable} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry</button></p> : hints.length === 0 ? <p className="writer-help">No hints to show. Keep writing.</p> : hints.map(hint => <div className="live-writing-hint" key={hint.code}>
       <p>{hint.message}</p>
       {hint.paragraph && <button type="button" onClick={() => onParagraph(hint.paragraph!)}>Paragraph {hint.paragraph}</button>}
-      <button type="button" onClick={() => dismiss(hint.code)} aria-label={`Dismiss: ${hint.message}`}>Dismiss</button>
+      <ReadingFeedback storyId={storyId} checkCode={`hint.${hint.code.startsWith('telling_') ? 'telling' : hint.code}`} evidenceKeys={hint.evidence_keys ?? []} probability={hint.probability} onRecorded={() => dismiss(hint.code)} />
     </div>)}
   </aside>
 }

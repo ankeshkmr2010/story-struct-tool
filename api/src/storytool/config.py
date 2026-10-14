@@ -117,10 +117,27 @@ class Settings(BaseSettings):
     decision_provider: Literal["typesafe", "local"] = "typesafe"
     decision_hint_probability: float = Field(default=0.7, ge=0.5, le=1)
     decision_nudge_probability: float = Field(default=0.8, ge=0.5, le=1)
+    decision_thresholds: dict[str, float] = Field(default_factory=dict)
+
+    @field_validator("decision_thresholds")
+    @classmethod
+    def checked_thresholds(cls, value: dict[str, float]) -> dict[str, float]:
+        if any(not 0.5 <= threshold <= 1 for threshold in value.values()):
+            raise ValueError("Decision thresholds must be between 0.5 and 1")
+        return value
+
+    def decision_threshold(
+        self, check: str, model: str, provider: str, version: str, default: float
+    ) -> float:
+        for key in (f"{provider}|{model}|{version}|{check}", f"{model}|{check}", check):
+            if key in self.decision_thresholds:
+                return self.decision_thresholds[key]
+        return default
+
     decision_endpoint: str | None = None
     decision_model: str | None = None
     decision_api_key: str | None = None
-    decision_evaluation_confidence: float = Field(default=.85, ge=.5, le=1)
+    decision_evaluation_confidence: float = Field(default=0.85, ge=0.5, le=1)
     decision_cache_days: int = Field(default=7, ge=1, le=30)
     decision_timeout_seconds: int = Field(default=20, ge=1, le=60)
     decision_user_daily_tokens: int = Field(default=2_000_000, ge=0)

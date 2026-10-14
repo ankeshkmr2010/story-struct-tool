@@ -47,7 +47,10 @@ async def rerank_related(
         reading = await service.evaluate(model=model, state=state, questions=questions)
     except DecisionUnavailable:
         return page
-    if any((answer.confidence or 0) < 0.7 for answer in reading.answers.values()):
+    threshold = get_settings().decision_threshold(
+        "search.relevance", reading.model, provider.identity, "search-v1", 0.7
+    )
+    if any((answer.confidence or 0) < threshold for answer in reading.answers.values()):
         return page
     # Reorder only this page; retain the original offset and all candidates.
     page.items = [

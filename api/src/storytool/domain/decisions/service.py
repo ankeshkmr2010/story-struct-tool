@@ -147,11 +147,27 @@ class DecisionService:
         now = datetime.now(UTC)
         async with self.sessions() as db:
             rows = await db.execute(
-                select(DecisionCache.fingerprint, DecisionCache.answer, DecisionCache.model).where(
+                select(
+                    DecisionCache.fingerprint,
+                    DecisionCache.answer,
+                    DecisionCache.model,
+                    DecisionCache.actor_key,
+                    DecisionCache.provider,
+                ).where(
                     DecisionCache.fingerprint.in_(keys.values()), DecisionCache.expires_at > now
                 )
             )
             cached = {row.fingerprint: row for row in rows}
+            legacy = [
+                row.fingerprint for row in cached.values() if not row.actor_key or not row.provider
+            ]
+            if legacy:
+                await db.execute(
+                    update(DecisionCache)
+                    .where(DecisionCache.fingerprint.in_(legacy))
+                    .values(actor_key=self.actor.key, provider=self.provider.identity)
+                )
+                await db.commit()
         answers = {}
         missing = {}
         for name, question in questions.items():
@@ -224,7 +240,11 @@ class DecisionService:
             total_tokens += result.input_tokens
             result_model = result.model
         return Result(
-            model=result_model, answers=answers, input_tokens=total_tokens, cached=cached_count
+            model=result_model,
+            answers=answers,
+            input_tokens=total_tokens,
+            cached=cached_count,
+            cache_keys=keys,
         )
 
     async def _reserve(self, tokens: int) -> date:
@@ -305,6 +325,8 @@ class DecisionService:
             for name in questions:
                 statement = insert(DecisionCache).values(
                     fingerprint=keys[name],
+                    actor_key=self.actor.key,
+                    provider=self.provider.identity,
                     user_id=self.actor.user_id,
                     answer=result.answers[name].model_dump(),
                     model=result.model,
@@ -314,6 +336,8 @@ class DecisionService:
                     statement.on_conflict_do_update(
                         index_elements=["fingerprint"],
                         set_={
+                            "actor_key": self.actor.key,
+                            "provider": self.provider.identity,
                             "answer": statement.excluded.answer,
                             "model": result.model,
                             "expires_at": statement.excluded.expires_at,

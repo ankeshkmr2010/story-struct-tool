@@ -85,6 +85,7 @@ class Result(BaseModel):
     answers: dict[str, Answer]
     input_tokens: int = Field(default=0, ge=0)
     cached: int = 0
+    cache_keys: dict[str, str] = Field(default_factory=dict)
 
     @property
     def nouls(self) -> dict[str, Answer]:

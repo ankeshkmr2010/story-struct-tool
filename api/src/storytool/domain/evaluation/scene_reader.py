@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from storytool.config import get_settings
 from storytool.domain.decisions.service import DecisionService
 from storytool.domain.decisions.types import Answer, Choice, Noul, Question, Score
 
@@ -51,6 +52,8 @@ class SceneEvidence(BaseModel):
     position: float
     content_hash: str
     answers: dict[str, Answer] = Field(default_factory=dict)
+    cache_keys: dict[str, str] = Field(default_factory=dict)
+    model: str | None = None
     unavailable: str | None = None
 
 
@@ -206,6 +209,8 @@ async def read_scenes(
                     questions=questions_for(scene, beliefs, threads, locations),
                 )
                 evidence.answers = result.answers
+                evidence.model = result.model
+                evidence.cache_keys = result.cache_keys
                 hits = result.cached
                 for key, options, instruction in [
                     (
@@ -241,6 +246,7 @@ async def read_scenes(
                             options=options,
                         )
                         evidence.answers[key] = chosen.answers["choice"]
+                        evidence.cache_keys[key] = chosen.cache_keys["choice"]
                         hits += chosen.cached
                 return evidence, hits
             except Exception:
@@ -252,7 +258,12 @@ async def read_scenes(
 
     rows = await asyncio.gather(*(read(scene, position) for scene, position in inputs))
     evidence = [row[0] for row in rows]
-    findings, spans, curves = aggregate(evidence, scenes, beliefs, threads, threshold)
+    actual_models = {row.model for row in evidence if row.model}
+    if len(actual_models) == 1:
+        model = next(iter(actual_models))
+    findings, spans, curves = aggregate(
+        evidence, scenes, beliefs, threads, threshold, model, service.provider.identity
+    )
     missing = {}
     if not beliefs:
         missing["misbelief_midpoint"] = (
@@ -283,6 +294,8 @@ def aggregate(
     beliefs: dict[str, tuple[str, str]],
     threads: dict[str, str],
     threshold: float,
+    model: str = "",
+    provider: str = "",
 ) -> tuple[list[CraftFinding], list[dict], list[dict]]:
     findings: list[CraftFinding] = []
     spans: list[dict] = []
@@ -290,6 +303,11 @@ def aggregate(
     stack: list[tuple[str, int, float]] = []
     rhythm_run: list[SceneEvidence] = []
     last_rhythm: str | None = None
+
+    def threshold_for(check: str) -> float:
+        return get_settings().decision_threshold(
+            f"evaluate.{check}", model, provider, "craft-v1", threshold
+        )
 
     def finding(check: str, code: str, message: str, ids: list[UUID], confidence: float) -> None:
         findings.append(
@@ -299,7 +317,7 @@ def aggregate(
                 message=message,
                 scene_ids=ids,
                 confidence=round(confidence, 3),
-                uncertain=confidence < threshold,
+                uncertain=confidence < threshold_for(check),
             )
         )
 
@@ -331,8 +349,6 @@ def aggregate(
                 if answer.noul is not None
                 else answer.confidence or 0
             )
-            if certainty >= threshold:
-                continue
             check = (
                 "scene_rhythm"
                 if key == "rhythm"
@@ -344,7 +360,7 @@ def aggregate(
                 if key.startswith("belief:")
                 else "continuity"
             )
-            if check not in uncertain_checks:
+            if certainty < threshold_for(check) and check not in uncertain_checks:
                 finding(
                     check,
                     "uncertain_reading",
@@ -435,7 +451,11 @@ def aggregate(
         opening, closing = answers.get("opens"), answers.get("closes")
         # Uncertain thread events are shown, but never mutate a certain stack.
         for event, answer in [("opens", opening), ("closes", closing)]:
-            if answer and answer.choice != "none" and (answer.confidence or 0) < threshold:
+            if (
+                answer
+                and answer.choice != "none"
+                and (answer.confidence or 0) < threshold_for("mice_nesting")
+            ):
                 finding(
                     "mice_nesting",
                     "uncertain_thread_event",
@@ -450,11 +470,15 @@ def aggregate(
         if (
             opening
             and opening.choice != "none"
-            and (opening.confidence or 0) >= threshold
+            and (opening.confidence or 0) >= threshold_for("mice_nesting")
             and not any(item[0] == opening.choice for item in stack)
         ):
             stack.append((opening.choice or "none", index, opening.confidence or 0))
-        if closing and closing.choice != "none" and (closing.confidence or 0) >= threshold:
+        if (
+            closing
+            and closing.choice != "none"
+            and (closing.confidence or 0) >= threshold_for("mice_nesting")
+        ):
             matches = [item for item in stack if item[0] == closing.choice]
             if not matches:
                 finding(

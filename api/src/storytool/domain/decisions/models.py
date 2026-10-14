@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,6 +19,26 @@ class DecisionCache(StoryToolBase):
     answer: Mapped[dict] = mapped_column(JSONB)
     model: Mapped[str] = mapped_column(String(100))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    actor_key: Mapped[str | None] = mapped_column(String(64), default=None)
+    provider: Mapped[str | None] = mapped_column(String(200), default=None)
+
+
+class DecisionFeedback(StoryToolBase):
+    __tablename__ = "decision_feedback"
+    __table_args__ = (
+        UniqueConstraint("actor_key", "unit", "check_code", name="one_decision_label"),
+    )
+    actor_key: Mapped[str] = mapped_column(String(64))
+    user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("app_user.id", ondelete="CASCADE"), index=True
+    )
+    unit: Mapped[str] = mapped_column(String(64))
+    check_code: Mapped[str] = mapped_column(String(100))
+    provider: Mapped[str] = mapped_column(String(200))
+    model: Mapped[str] = mapped_column(String(100))
+    rubric_version: Mapped[str] = mapped_column(String(40))
+    probability: Mapped[float] = mapped_column(Float)
+    accepted: Mapped[bool] = mapped_column(Boolean)
 
 
 class DecisionBudget(StoryToolBase):

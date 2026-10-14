@@ -32,7 +32,7 @@ export default function Privacy() {
       <section className="mt-10 space-y-3" aria-labelledby="live-hints-title">
         <h2 id="live-hints-title" className="text-xl font-semibold">Optional live writing hints</h2>
         <p className="leading-7 text-[var(--muted)]">Live hints start off. If you enable them in Write or /try, the current scene draft and known cast/glossary names are sent to StoryTool's shared reader after you pause typing. This includes unsaved edits. No other scenes are included, and hints never edit prose. The provider's data policy described above applies.</p>
-        <p className="leading-7 text-[var(--muted)]">Dismissed notes stay in your browser. The sandbox uses a server-issued cookie and temporary hashed connection identifiers to limit abuse; raw addresses are not stored in the hint database. Cached answers and usage limits follow the shared-reader policy above.</p>
+        <p className="leading-7 text-[var(--muted)]">Dismissed notes are hidden in your browser. Useful and Dismiss actions also record the check, provider/model/rubric version, confidence, outcome and a hashed answer reference for calibration. Labels contain no raw prose, prompts, comments or API keys; reports use the last 90 days and older labels are removed in bounded cleanup batches. The sandbox uses a server-issued cookie and temporary hashed connection identifiers to limit abuse; raw addresses are not stored in the hint database. Cached answers and usage limits follow the shared-reader policy above.</p>
       </section>
       <section className="mt-10 space-y-3" aria-labelledby="meaning-search-title">
         <h2 id="meaning-search-title" className="text-xl font-semibold">Meaning search and Cloudflare</h2>

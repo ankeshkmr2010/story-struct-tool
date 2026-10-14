@@ -139,7 +139,7 @@ is separate. Adding these tasks authorizes documentation only, not implementatio
 - [~] T57 Beta-comment triage: categorize and grade feedback, then summarize repeated concerns by chapter for the author.
 - [~] T58 Related-search reranking: use Jev relevance scores to reorder semantic hits; preserve Exact results and existing permissions.
 - [~] T59 Catch-up staleness: assess whether each scene still matches its outline before asking an LLM to rebuild it.
-- [ ] T60 Calibration from author feedback: record acceptance/dismissal labels, assess checks in aggregate, and tune thresholds by check and visibility.
+- [~] T60 Calibration from author feedback: record acceptance/dismissal labels, assess checks in aggregate, and tune thresholds by check and visibility.
 - [ ] T20 follow-up: make event insertion between world positions atomic so failures cannot leave partial shifts.
 - [ ] T25 Shared/showcase view counts: define unique vs repeated, signed-in vs anonymous, and story vs chapter views first.
 - [ ] T42 Evaluation overview: all-checks summary and Run all, with readiness/provider requirements defined first. Visual nesting is grouped under T54, not counted twice.
@@ -311,7 +311,7 @@ T53; they are not verified product promises. Keep existing shipped Jev Noticing 
 - [~] **T57 — Beta feedback triage (Medium; depends on T53).** Classify comments as confusion, pacing, character, typo or praise; score severity and summarize repeated concerns by chapter, such as multiple readers reporting confusion. Count distinct readers accurately, preserve original comments and their private access boundaries, and present classifications as suggestions.
 - [~] **T58 — Related-search reranking (Medium; depends on T53).** Score relevance of already-retrieved Related passages against the query. Rerank within the existing authorized result set; preserve literal matches, pagination/coverage and usable results if Jev fails. Include query/context in cache keys rather than treating this as a scene-only answer.
 - [~] **T59 — Outline mismatch detection (Medium; depends on T53).** Ask whether each outline still matches its scene before a Catch up LLM call. Mark likely stale summaries/beats with uncertainty, reuse unchanged answers, and retain the staged-proposal/author-approval flow. Include outline changes in cache invalidation.
-- [ ] **T60 — Calibration and feedback labels (Medium; depends on the relevant Jev surfaces).** Record dismissals/acceptances as labels linked to the check/model/rubric version, and tune thresholds from aggregate outcomes. Do not treat confidence as a guarantee about an individual answer. The supplied plan proposes competing thresholds (0.75 for cascade, 0.7 for hints, 0.8 for nudges, 0.85 for Evaluate); reconcile them by check and visibility, then make them configurable. Use offline/mock cases if the SDK supports them; do not bill network calls merely to unit-test threshold logic.
+- [~] **T60 — Calibration and feedback labels (Medium; depends on the relevant Jev surfaces).** Record dismissals/acceptances as labels linked to the check/model/rubric version, and tune thresholds from aggregate outcomes. Do not treat confidence as a guarantee about an individual answer. The supplied plan proposes competing thresholds (0.75 for cascade, 0.7 for hints, 0.8 for nudges, 0.85 for Evaluate); reconcile them by check and visibility, then make them configurable. Use offline/mock cases if the SDK supports them; do not bill network calls merely to unit-test threshold logic.
 
 **Suggested sequence:** T53 → T54 → T55 → T56 → T57 → T60. T58 and T59 can follow
 once T53 is ready. Validate the T52 languages before marketing multilingual Jev checks.
@@ -395,3 +395,18 @@ A confident match removes the timestamp-only catch-up reason. Full-scene status/
 prevent omitted worklist pages looking clean. Existing staged proposals and apply guards stay
 in place; read results mark concurrent changes stale. Static checks only; awaiting production
 confirmation. T60 remains.
+
+T60 built: Useful/Dismiss actions on live hints and Evaluate findings, linked to cached
+answers verified against the current user or signed sandbox session. Repeated labels upsert
+once per answer unit/check; numeric labels survive answer-cache expiry, with 90-day reports
+and bounded older-label cleanup. No prose, keys or reader-comment bodies in labels. Admin
+Feedback page aggregates by provider/model/rubric/check; suggestions need >=100 signed-in
+labels and >=5 reviewers, exclude anonymous evidence and never silently change or lower
+policy. These are preference labels, not objective correctness claims. Model/rubric-scoped
+JSON thresholds support future local models without carrying Jev calibration across them.
+Defaults reconciled: hints .7, nudges .8, craft findings .85; beta grouping .75 and Related
+scoring .7 have separate configurable checks. Rubric versions must be bumped when check
+instructions/aggregation change. Migration c4e9a1b7d602 applied on expiring test branch
+br-floral-pond-b4o21270 only; cache=11 columns, feedback=13. No production SQL, billed model
+calls, local tests/builds or manual deployment. Production UX/latency and threshold tuning
+from future real feedback remain unverified. T53–T60 implementation is built, not user-confirmed.

@@ -126,7 +126,10 @@ class BetaTriageController(Controller):
                     category=category.choice,
                     severity=severity.score,
                     confidence=confidence,
-                    uncertain=confidence < 0.75,
+                    uncertain=confidence
+                    < get_settings().decision_threshold(
+                        "beta.triage", reading.model, service.provider.identity, "beta-v1", 0.75
+                    ),
                 )
 
         readings = await asyncio.gather(*(classify(row) for row in rows))

@@ -87,8 +87,14 @@ async def read_nudges(
         result = await service.evaluate(model=model, state=state, questions=questions)
     except DecisionUnavailable:
         return levels
-    threshold = get_settings().decision_nudge_probability
     for key, (level, _, advice) in CHECKS.items():
+        threshold = get_settings().decision_threshold(
+            f"nudge.{key}",
+            result.model,
+            service.provider.identity,
+            "nudges-v1",
+            get_settings().decision_nudge_probability,
+        )
         answer = result.answers[key]
         gap = sum(answer.probabilities.get(str(index), 0) for index in (0, 1))
         ready = sum(answer.probabilities.get(str(index), 0) for index in (2, 3))

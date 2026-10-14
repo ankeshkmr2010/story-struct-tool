@@ -24,6 +24,7 @@ class WritingHint(BaseModel):
     message: str
     probability: float
     paragraph: int | None = None
+    evidence_keys: list[str] = Field(default_factory=list)
 
 
 class HintReading(BaseModel):
@@ -106,17 +107,33 @@ async def read_hints(service: DecisionService, model: str, data: HintInput) -> H
             "Your writing is saved normally."
         )
         return result
-    threshold = get_settings().decision_hint_probability
+
+    def threshold(code: str) -> float:
+        return get_settings().decision_threshold(
+            f"hint.{code}",
+            answers.model,
+            service.provider.identity,
+            "hints-v1",
+            get_settings().decision_hint_probability,
+        )
+
     for key, (_, message) in CHECKS.items():
         if key not in answers.answers:
             continue
         answer = answers.answers[key]
-        if answer.noul is not None and answer.noul >= threshold:
-            result.hints.append(WritingHint(code=key, message=message, probability=answer.noul))
+        if answer.noul is not None and answer.noul >= threshold(key):
+            result.hints.append(
+                WritingHint(
+                    code=key,
+                    message=message,
+                    probability=answer.noul,
+                    evidence_keys=[answers.cache_keys[key]],
+                )
+            )
     for index in range(len(paragraphs)):
         answer = answers.answers[f"telling_{index}"]
         probability = sum(answer.probabilities.get(str(level), 0) for level in (2, 3))
-        if probability >= threshold and (answer.confidence or 0) >= threshold:
+        if probability >= threshold("telling") and (answer.confidence or 0) >= threshold("telling"):
             level = 3 if answer.probabilities.get("3", 0) > answer.probabilities.get("2", 0) else 2
             result.hints.append(
                 WritingHint(
@@ -124,6 +141,7 @@ async def read_hints(service: DecisionService, model: str, data: HintInput) -> H
                     message=questions[f"telling_{index}"].criteria[level],
                     probability=probability,
                     paragraph=index + 1,
+                    evidence_keys=[answers.cache_keys[f"telling_{index}"]],
                 )
             )
     return result

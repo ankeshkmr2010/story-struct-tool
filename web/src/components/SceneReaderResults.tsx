@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type CraftReading } from '../api/client'
+import { ReadingFeedback } from './ReadingFeedback'
 import { errorText } from '../api/errors'
+
+type Finding = CraftReading['findings'][number]
 
 export function SceneReaderResults({ storyId, reading, check, onOpenScene }: {
   storyId: string; reading: CraftReading; check: string; onOpenScene: (id: string) => void
@@ -16,7 +19,13 @@ export function SceneReaderResults({ storyId, reading, check, onOpenScene }: {
   const threads = useQuery({ queryKey: ['threads', storyId], queryFn: () => api.listThreads(storyId), enabled: check === 'mice_nesting' || check === 'setups_payoffs' })
   const [message, setMessage] = useState('')
   const verify = useMutation({ mutationFn: (item: CraftReading['findings'][number]) => api.verifyCraftScenes(storyId, check, { connection_id: connection!.id, scene_ids: item.scene_ids.slice(0, 20), base_fingerprint: reading.base_fingerprint ?? '', thread_ids: (item.thread_ids ?? []).slice(0, 60), character_ids: (item.character_ids ?? []).slice(0, 20) }), onSuccess: () => { void qc.invalidateQueries({ queryKey: ['evaluation-reports', storyId, `reader_${check}`] }) } })
-  const findings = reading.findings.filter(item => item.check === check)
+  const hiddenKey = `storytool-craft-dismissals:${storyId}`
+  const [hidden, setHidden] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem(hiddenKey) ?? '[]') as string[] } catch { return [] } })
+  const findingKey = (item: Finding) => `${reading.base_fingerprint}:${item.check}:${item.code}:${item.scene_ids.join(',')}`
+  const evidenceKeys = (item: Finding) => reading.scenes.filter(scene => item.scene_ids.includes(scene.id)).flatMap(scene => Object.entries(scene.cache_keys ?? {}).filter(([key]) =>
+    check === 'scene_rhythm' ? key === 'rhythm' : check === 'value_shift' ? ['value', 'charge_start', 'charge_end'].includes(key) : check === 'misbelief_midpoint' ? key.startsWith('belief:') : ['mice_nesting', 'setups_payoffs'].includes(check) ? ['opens', 'closes'].includes(key) : key === 'location' || key.startsWith('present:')
+  ).map(([, value]) => value))
+  const findings = reading.findings.filter(item => item.check === check && !hidden.includes(findingKey(item)))
   const missing = reading.check_missing?.[check]
   const copy = async (item: CraftReading['findings'][number]) => {
     const ids = item.scene_ids.slice(0, 20)
@@ -47,9 +56,9 @@ export function SceneReaderResults({ storyId, reading, check, onOpenScene }: {
       return <div key={id}><h4>{points[0]?.name}: acts on misbelief</h4><svg viewBox="0 0 300 120" className="w-full max-w-lg" role="img" aria-label={`Misbelief probability through the draft for ${points[0]?.name}`}><line x1="150" y1="10" x2="150" y2="100" stroke="var(--muted)" strokeDasharray="4 4" /><polyline fill="none" stroke="var(--accent)" strokeWidth="2" points={points.map(point => `${point.position * 280 + 10},${100 - point.probability * 90}`).join(' ')} /><text x="130" y="116" fill="var(--muted)" fontSize="10">50% of draft</text></svg><p className="text-xs text-[var(--muted)]">0 = unlikely, 1 = likely. A falling curve depends on the intended arc.</p><div className="flex flex-wrap gap-2">{points.map(point => <button className="text-xs underline" key={point.scene_id} onClick={() => onOpenScene(point.scene_id)}>{Math.round(point.position * 100)}%: {point.probability.toFixed(2)}</button>)}</div></div>
     })}
     {available.length > 0 && <label className="block text-xs">Verification model <select value={connection?.id ?? ''} onChange={event => setConnectionId(event.target.value)}>{available.map(row => <option key={row.id} value={row.id}>{row.provider} · {row.model}</option>)}</select></label>}
-    {!findings.length && !missing && !reading.unavailable_count && <p>No finding from this check. This is an advisory reading, not a guarantee.</p>}
+    {!findings.length && !missing && !reading.unavailable_count && <p>{reading.findings.some(item => item.check === check) ? 'Findings dismissed for this reading.' : 'No finding from this check. This is an advisory reading, not a guarantee.'}</p>}
     <ul className="space-y-3">{findings.map((item, index) => {
-      return <li key={index} className="rounded border border-[var(--line)] p-3 text-sm"><p><strong>{item.uncertain ? 'Uncertain' : 'Consider'} · {Math.round(item.confidence * 100)}% confidence</strong></p><p>{item.message}</p><div className="mt-2 flex flex-wrap gap-3">{item.scene_ids.map(id => <button className="underline text-xs" key={id} onClick={() => onOpenScene(id)}>Open {reading.scenes.find(scene => scene.id === id)?.title || 'scene'}</button>)}</div>{item.uncertain && <div className="mt-2 flex flex-wrap gap-3">{connection && <button className="share-story-button" disabled={verify.isPending || reading.stale} onClick={() => verify.mutate(item)}>Verify with your AI</button>}<button className="underline text-xs" disabled={reading.stale} onClick={() => { void copy(item) }}>{connection ? 'Copy for another AI' : 'Verify with your AI · copy scenes'}</button>{item.scene_ids.length > 20 && <p className="writer-help">This verification includes the first 20 affected scenes.</p>}</div>}</li>
+      return <li key={index} className="rounded border border-[var(--line)] p-3 text-sm"><p><strong>{item.uncertain ? 'Uncertain' : 'Consider'} · {Math.round(item.confidence * 100)}% confidence</strong></p><p>{item.message}</p><ReadingFeedback key={findingKey(item)} storyId={storyId} checkCode={`evaluate.${check}`} evidenceKeys={evidenceKeys(item)} probability={item.confidence} disabled={reading.stale} onRecorded={outcome => { if (outcome === 'dismissed') setHidden(previous => { const next = [...previous, findingKey(item)].slice(-500); try { localStorage.setItem(hiddenKey, JSON.stringify(next)) } catch { /* Keep dismissal for this visit. */ } return next }) }} /><div className="mt-2 flex flex-wrap gap-3">{item.scene_ids.map(id => <button className="underline text-xs" key={id} onClick={() => onOpenScene(id)}>Open {reading.scenes.find(scene => scene.id === id)?.title || 'scene'}</button>)}</div>{item.uncertain && <div className="mt-2 flex flex-wrap gap-3">{connection && <button className="share-story-button" disabled={verify.isPending || reading.stale} onClick={() => verify.mutate(item)}>Verify with your AI</button>}<button className="underline text-xs" disabled={reading.stale} onClick={() => { void copy(item) }}>{connection ? 'Copy for another AI' : 'Verify with your AI · copy scenes'}</button>{item.scene_ids.length > 20 && <p className="writer-help">This verification includes the first 20 affected scenes.</p>}</div>}</li>
     })}</ul>
     {verify.isPending && <p role="status">Your AI is verifying the selected scenes…</p>}{verify.error && <p role="alert">{errorText(verify.error)}</p>}{message && <p role="status">{message}</p>}
     {reports.isError && <p role="alert">Could not load saved verifications. <button onClick={() => { void reports.refetch() }}>Retry</button></p>}

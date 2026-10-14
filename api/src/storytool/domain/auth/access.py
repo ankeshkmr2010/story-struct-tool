@@ -35,6 +35,7 @@ _STORY_PATH = re.compile(r"^/api/stories/([^/]+)(?:/|$)")
 _ARC_PATH = re.compile(r"^/api/arcs/([^/]+)(?:/|$)")
 _PUBLIC_PATHS = {
     "/api/site/try/hints",
+    "/api/site/try/hints/feedback",
     "/api/health",
     "/api/auth/config",
     "/api/auth/google",

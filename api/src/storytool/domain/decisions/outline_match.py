@@ -21,6 +21,10 @@ async def read_outline_matches(service: DecisionService | None, model: str, stat
         assigned.setdefault(str(row["scene_id"]), []).append(str(row["beat_id"]))
     gate = asyncio.Semaphore(8)
     threshold = get_settings().decision_evaluation_confidence
+    if service is not None:
+        threshold = get_settings().decision_threshold(
+            "catchup.match", model, service.provider.identity, "outline-v1", threshold
+        )
 
     async def assess(scene):
         identifier = str(scene["id"])

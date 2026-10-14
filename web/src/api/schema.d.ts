@@ -2572,6 +2572,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decisions/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record useful/dismissed feedback on this user's cached reading */
+        post: operations["ApiDecisionsFeedbackLabel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/site/try/hints/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record feedback on this sandbox session's cached hints */
+        post: operations["ApiSiteTryHintsFeedbackLabel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/decisions/calibration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aggregate reader feedback by model/check/rubric (admin only) */
+        get: operations["ApiAdminDecisionsCalibrationReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/search/capabilities": {
         parameters: {
             query?: never;
@@ -3087,6 +3138,27 @@ export interface components {
             unavailable_count: number;
             notice?: string | null;
         };
+        /** CalibrationBand */
+        CalibrationBand: {
+            lower: number;
+            labels: number;
+            accepted: number;
+        };
+        /** CalibrationOut */
+        CalibrationOut: {
+            check_code: string;
+            model: string;
+            provider: string;
+            rubric_version: string;
+            labels: number;
+            accepted: number;
+            reviewers: number;
+            anonymous_labels: number;
+            threshold: number;
+            suggested_threshold?: number | null;
+            override_key: string;
+            bands: components["schemas"]["CalibrationBand"][];
+        };
         /** ChapterBriefOut */
         ChapterBriefOut: {
             /** Format: uuid */
@@ -3317,6 +3389,14 @@ export interface components {
             check_missing?: {
                 [key: string]: string;
             };
+        };
+        /** DecisionLabelIn */
+        DecisionLabelIn: {
+            check_code: string;
+            evidence_keys: string[];
+            probability: number;
+            /** @enum {string} */
+            outcome: "accepted" | "dismissed";
         };
         /** DocxImportOut */
         DocxImportOut: {
@@ -4062,6 +4142,10 @@ export interface components {
             answers?: {
                 [key: string]: components["schemas"]["Answer"];
             };
+            cache_keys?: {
+                [key: string]: string;
+            };
+            model?: string | null;
             unavailable?: string | null;
         };
         /** SceneLineOut */
@@ -4636,6 +4720,7 @@ export interface components {
             message: string;
             probability: number;
             paragraph?: number | null;
+            evidence_keys?: string[];
         };
     };
     responses: never;
@@ -12201,6 +12286,100 @@ export interface operations {
                             [key: string]: unknown;
                         } | unknown[];
                     };
+                };
+            };
+        };
+    };
+    ApiDecisionsFeedbackLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionLabelIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSiteTryHintsFeedbackLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionLabelIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminDecisionsCalibrationReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalibrationOut"][];
                 };
             };
         };

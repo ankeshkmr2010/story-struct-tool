@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api, type ProductFeedbackInput } from '../api/client'
 import { errorText } from '../api/errors'
+import { ReaderCalibration } from '../components/ReaderCalibration'
 
 export default function Feedback() {
   const [message, setMessage] = useState('')
@@ -37,6 +38,7 @@ export default function Feedback() {
       </form>
       {admin.error && <p role="alert" className="mt-8 text-sm">Could not check admin access. <button type="button" className="underline" onClick={() => void admin.refetch()}>Try again</button></p>}
       {admin.data?.is_admin && <>
+        <ReaderCalibration />
         <section className="mt-12" aria-labelledby="funnel-title">
           <h2 id="funnel-title" className="text-xl font-semibold">Writer funnel</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Since tracking began: unique browsers, then new accounts reaching each stage. Demo scenes are excluded. AI means a provider connection saved or OAuth access granted; it can happen before the scene is created.</p>
