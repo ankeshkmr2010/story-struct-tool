@@ -45,7 +45,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
       ['Try before signing up', 'a guided writing sandbox with local search and History, plus interactive feature demos and sample downloads. Tours support Previous, Next and resume; sign in to keep your edits.'],
       ['Writing and reader guides', 'AI quickstart prompts, images and exports, plus beta rounds, private reader conversations and polls.'],
       ['Jev Noticing for everyone', 'spot sentences that do not fit, review scene craft, guide planning, group reader feedback, improve related search and flag stale outlines, with practical advice and no personal key needed.'],
-      ['Evaluate polish', 'a bounded findings scroll area with narrower, color-coded cards and plain-language scene-change interpretations, collapsed uncertain findings, icon feedback and inline actions, credited craft definitions, review dates, stale-review actions and findings and highlighted thread names that open the relevant planning item.'],
+      ['Evaluate polish', 'a bounded findings scroll area with narrower, color-coded cards and plain-language scene-change interpretations, collapsed uncertain findings, icon feedback, inline actions and right-edge live-hint overlays, credited craft definitions, review dates, stale-review actions and findings and highlighted thread names that open the relevant planning item.'],
       ['Site navigation and link previews', 'sticky navigation, a direct tour entry and custom thumbnails for Landing, Your stories, Roadmap, Shoutouts, Feedback and How to use. Enabled public showcases use their own title and first manuscript image.'],
     ],
   },

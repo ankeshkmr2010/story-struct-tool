@@ -513,8 +513,7 @@ ol.showcase-list { list-style: decimal; }
 .writer-title-input, .writer-title-input:is(input) { width: 100%; min-width: 0; padding: 6px 0; border: 0; background: transparent; color: var(--ink); font: 30px/1.3 Georgia, serif; }
 .writer-help { color: var(--muted); font-size: 12px; line-height: 1.7; margin-top: 10px; }
 .writer-passage { min-width: 0; container-type: inline-size; }
-.writer-hint-layout { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 24px; align-items: start; }
-.live-writing-hints { position: sticky; top: 80px; max-height: calc(100dvh - 96px); overflow-y: auto; overscroll-behavior-y: contain; min-width: 0; overflow-wrap: anywhere; font-size: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.live-writing-hints { position: fixed; z-index: 70; overflow-y: auto; overscroll-behavior-y: contain; min-width: 0; overflow-wrap: anywhere; font-size: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 .live-writing-hints h3 { margin: 0 0 4px; font-weight: 600; }
 .live-hints-about { color: var(--muted); font-size: 11px; line-height: 1.5; }
 .live-hints-about summary { cursor: pointer; }
@@ -526,8 +525,6 @@ ol.showcase-list { list-style: decimal; }
 .live-hint-advice { color: var(--muted); font-size: 11px; }
 .live-hint-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; margin-top: 6px; }
 .live-hint-passage-link { font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
-@container (max-width: 600px) { .writer-hint-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 35%); gap: 12px; } .live-writing-hints { padding: 8px; } }
-.writer-focus .live-writing-hints { top: 72px; max-height: calc(100dvh - 88px); }
 .writer-passage-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .writer-passage-heading > span:first-child { flex: 1; min-width: 130px; }
 .writer-passage-heading input { font-size: 12px; }

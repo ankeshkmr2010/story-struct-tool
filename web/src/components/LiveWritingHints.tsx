@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api, type HintReading } from '../api/client'
 import { errorText } from '../api/errors'
@@ -6,6 +7,24 @@ import { SANDBOX_ID } from '../sandbox/storage'
 import { ReadingFeedback } from './ReadingFeedback'
 
 export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { storyId: string; sceneId: string; content: string; onParagraph: (paragraph: number, find?: string) => void }) {
+  const anchor = useRef<HTMLSpanElement>(null)
+  const [position, setPosition] = useState<{ top: number; right: number; maxHeight: number; width: number }>()
+  useEffect(() => {
+    const writer = anchor.current?.closest('.story-writer')
+    if (!writer) return
+    const align = () => {
+      const box = writer.getBoundingClientRect()
+      const header = writer.classList.contains('writer-focus') ? writer.querySelector('.writer-toolbar') : document.querySelector('.site-header')
+      const top = Math.max(box.top + 12, (header?.getBoundingClientRect().bottom ?? 0) + 12)
+      setPosition({ top, right: Math.max(12, window.innerWidth - box.right + 12), maxHeight: Math.max(0, Math.min(window.innerHeight, box.bottom) - top - 12), width: Math.min(240, box.width - 24) })
+    }
+    align()
+    window.addEventListener('scroll', align, true)
+    window.addEventListener('resize', align)
+    const observer = new ResizeObserver(align)
+    observer.observe(writer)
+    return () => { window.removeEventListener('scroll', align, true); window.removeEventListener('resize', align); observer.disconnect() }
+  }, [])
   const sandbox = storyId === SANDBOX_ID
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId), enabled: sandbox })
   const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId), enabled: sandbox })
@@ -35,7 +54,7 @@ export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { s
     setDismissed(next)
     try { localStorage.setItem(key, JSON.stringify(next)) } catch { /* Notes can still be dismissed for this visit. */ }
   }
-  return <aside className="live-writing-hints" aria-label="Live writing hints">
+  return <><span ref={anchor} hidden />{position && createPortal(<aside className="live-writing-hints" style={{ ...position, display: position.maxHeight < 60 ? 'none' : undefined }} aria-label="Live writing hints">
     <h3>Live hints</h3>
     <details className="live-hints-about"><summary>About live hints</summary><p>Only this scene and known names go to the shared reader. Notes never change your prose.</p></details>
     {result?.result?.unavailable && <p role="status" className="writer-help">{result.result.unavailable} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry unread sections</button></p>}
@@ -47,5 +66,5 @@ export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { s
       <div className="live-hint-actions">{hint.paragraph && <button type="button" className="live-hint-passage-link" title={`Open paragraph ${hint.paragraph}`} onClick={() => onParagraph(hint.paragraph!, hint.excerpt ?? undefined)}>Open passage</button>}
       <ReadingFeedback compact storyId={storyId} checkCode={`hint.${hint.kind ?? (hint.code.startsWith('telling_') ? 'telling' : hint.code)}`} evidenceKeys={hint.evidence_keys ?? []} probability={hint.probability} rubricVersion={result?.result?.rubric_version} onRecorded={() => dismiss(hint.code)} /></div>
     </div>)}
-  </aside>
+  </aside>, document.body)}</>
 }
