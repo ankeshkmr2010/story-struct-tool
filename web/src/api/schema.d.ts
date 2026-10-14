@@ -2521,6 +2521,40 @@ export interface paths {
         patch: operations["ApiStoriesStoryIdSuggestionsSuggestionIdUpdateSuggestion"];
         trace?: never;
     };
+    "/api/stories/{story_id}/scenes/{scene_id}/hints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read the current scene draft for advisory writing hints */
+        post: operations["ApiStoriesStoryIdScenesSceneIdHintsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/site/try/hints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read an opted-in sandbox scene for advisory hints */
+        post: operations["ApiSiteTryHintsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/search/capabilities": {
         parameters: {
             query?: never;
@@ -3390,6 +3424,20 @@ export interface components {
             warning_count: number;
             info_count: number;
             findings: components["schemas"]["FindingOut"][];
+        };
+        /** HintInput */
+        HintInput: {
+            content: string;
+            known_names?: string[];
+            /** @default true */
+            known_names_complete: boolean;
+        };
+        /** HintReading */
+        HintReading: {
+            content_hash: string;
+            hints?: components["schemas"]["WritingHint"][];
+            unavailable?: string | null;
+            model?: string | null;
         };
         /** ImageAttachment */
         ImageAttachment: {
@@ -4536,6 +4584,13 @@ export interface components {
             choices?: number[];
             /** @default  */
             answer: string;
+        };
+        /** WritingHint */
+        WritingHint: {
+            code: string;
+            message: string;
+            probability: number;
+            paragraph?: number | null;
         };
     };
     responses: never;
@@ -11967,6 +12022,87 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuggestionOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdScenesSceneIdHintsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                scene_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HintInput"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HintReading"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiSiteTryHintsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HintInput"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HintReading"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

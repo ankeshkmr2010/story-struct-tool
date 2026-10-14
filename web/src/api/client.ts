@@ -48,6 +48,7 @@ export type Thread = S['ThreadOut']
 export type Evaluator = S['EvaluatorOut']
 export type Evaluation = S['EvaluationOut']
 export type CraftReading = S['CraftReading']
+export type HintReading = S['HintReading']
 export type EvaluationReport = S['ReportOut']
 export type Character = S['CharacterOut']
 export type Relationship = S['RelationshipOut']
@@ -146,6 +147,7 @@ const patch = <T,>(path: string, body: unknown) =>
   request<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 
 export const api = {
+  writingHints: (storyId: string, sceneId: string, content: string, knownNames: string[], signal: AbortSignal) => request<HintReading>(storyId === '00000000-0000-4000-8000-000000000001' ? '/api/site/try/hints' : `/api/stories/${storyId}/scenes/${sceneId}/hints`, { method: 'POST', body: JSON.stringify({ content, known_names: knownNames.slice(0, 255), known_names_complete: knownNames.length <= 255 }), signal }),
   imageLibrary: (id: string) => request<ImageLibrary>(`/api/stories/${id}/images`),
   describeImage: (id: string, imageId: string, body: ImageDescription) => patch<StoryImage>(`/api/stories/${id}/images/${imageId}`, body),
   removeImage: (id: string, imageId: string) => request<void>(`/api/stories/${id}/images/${imageId}`, { method: 'DELETE' }),

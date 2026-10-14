@@ -42,6 +42,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
       ['Jev Noticing for everyone', 'StoryTool provides a shared story reader for all users — no personal AI key needed. Choose read prose in Noticed for advisory observations; Jev never writes prose or applies changes.'],
       ['Flexible scene reader foundation', 'unchanged scene questions reuse private cached answers. Shared-reader limits and safe fallbacks control usage, while story checks stay separate from Jev or a compatible local model.'],
       ['Scene-based craft readings', 'the shared reader runs craft checks from prose, with rhythm, value movement, visual thread nesting and a midpoint curve. Setup/payoff and continuity checks join them; uncertain findings can be verified using their scenes and relevant planning context.'],
+      ['Live writing hints', 'opt in beside the active scene in Write or the signup-free sample. After a short pause, dismissible notes flag possible POV, tense, dialogue, name and scene-turn issues, with paragraph guidance; prose stays yours.'],
       ['Evaluate polish', 'credited craft definitions, review dates, stale-review actions and findings that open the relevant planning item.'],
       ['Site navigation and link previews', 'sticky navigation, a direct tour entry and custom thumbnails for Landing, Your stories, Roadmap, Shoutouts, Feedback and How to use. Enabled public showcases use their own title and first manuscript image.'],
     ],

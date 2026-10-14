@@ -26,6 +26,11 @@ export default function Privacy() {
         <p className="leading-7 text-[var(--muted)]">An external AI client can read the stories and prose you authorize through the connection's permissions. API use and chat-client use can have different retention and training settings. StoryTool's no-training statement does not override your provider's or client's policies.</p>
         <p className="leading-7 text-[var(--muted)]">Saved provider API keys are encrypted. You can disconnect a provider or revoke an external client's access in <Link to="/settings" className="underline underline-offset-4">Settings</Link>. Revoking access prevents future requests; it does not erase data already sent to another service.</p>
       </section>
+      <section className="mt-10 space-y-3" aria-labelledby="live-hints-title">
+        <h2 id="live-hints-title" className="text-xl font-semibold">Optional live writing hints</h2>
+        <p className="leading-7 text-[var(--muted)]">Live hints start off. If you enable them in Write or /try, the current scene draft and known cast/glossary names are sent to StoryTool's shared reader after you pause typing. This includes unsaved edits. No other scenes are included, and hints never edit prose. The provider's data policy described above applies.</p>
+        <p className="leading-7 text-[var(--muted)]">Dismissed notes stay in your browser. The sandbox uses a server-issued cookie and temporary hashed connection identifiers to limit abuse; raw addresses are not stored in the hint database. Cached answers and usage limits follow the shared-reader policy above.</p>
+      </section>
       <section className="mt-10 space-y-3" aria-labelledby="meaning-search-title">
         <h2 id="meaning-search-title" className="text-xl font-semibold">Meaning search and Cloudflare</h2>
         <p className="leading-7 text-[var(--muted)]">When meaning search is enabled for StoryTool, scene prose and searchable story details are sent in chunks to Cloudflare to create embeddings—numeric representations used to find related ideas. Indexing runs in the background and updates as stories change, even when you are not actively searching. Meaning-search queries are also sent to Cloudflare for an embedding.</p>

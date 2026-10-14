@@ -17,6 +17,7 @@ import { flushWriter, writerDraft, writerHasUnsaved } from './writerDraft'
 import { ImagePreview } from './StoryImages'
 import { writerImages } from './writerImages'
 import { ImageInsertionPicker } from './ImageInsertionPicker'
+import { LiveWritingHints } from './LiveWritingHints'
 
 const imageMarkdown = (image: StoryImage) => `![${image.alt.replace(/[\]\n]/g, ' ')}](storytool-image:${image.id})`
 const proseWords = (text: string) => text.replace(/!\[[^\]\n]*\]\(storytool-image:[0-9a-fA-F-]{36}\)/g, '').trim().split(/\s+/).filter(Boolean).length
@@ -36,6 +37,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
   // One right-hand panel at a time: a workspace reference panel closes Writing context, and vice versa.
   useEffect(() => { if (panelOpen) setShowContext(false) }, [panelOpen])
   const [focus, setFocus] = useState(false)
+  const [liveHints, setLiveHints] = useState(false)
   const [activeScene, setActiveScene] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -154,6 +156,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
       <button type="button" aria-expanded={showNavigation} onClick={() => { setShowNavigation(!showNavigation); setShowContext(false) }}>Chapters</button>
       <span className="writer-current-chapter">{unfiled ? 'Unfiled writing' : `Chapter ${chapter?.number ?? 1}`}</span>
       <span className="writer-toolbar-spacer" />
+      <button type="button" aria-pressed={liveHints} title="Opt in to reading the current scene with StoryTool's shared reader" onClick={() => setLiveHints(!liveHints)}>Live hints {liveHints ? 'on' : 'off'}</button>
       <button type="button" aria-pressed={focus} onClick={() => setFocus(!focus)}>{focus ? 'Exit focus' : 'Focus'}</button>
       <button type="button" className="writer-context-toggle" aria-expanded={showContext} onClick={() => { if (!showContext) onContextOpen?.(); setShowContext(!showContext); setShowNavigation(false) }}>Context</button>
     </div>
@@ -172,7 +175,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
           <p className="writer-help">Write freely. Scene names and structure can come later.</p>
         </header>
         {!unfiled && chapter && <div className="writer-chapter-extras" key={`top-${chapter.id}`}><ChapterExtra label="Epigraph" add="Add epigraph" value={chapter.epigraph} placeholder="Opening quote" onSave={async epigraph => { await api.updateChapter(storyId, chapter.id, { epigraph }); refresh() }} /><ChapterExtra label="Opening note" add="Add opening note" value={chapter.opening_note} placeholder="Opening flavour text" onSave={async opening_note => { await api.updateChapter(storyId, chapter.id, { opening_note }); refresh() }} /></div>}
-        {chapterScenes.map((scene, index) => <Passage key={scene.id} {...{ storyId, prefix, scene }} separator={index > 0} focus={focusTarget === scene.id} onFocus={() => setActiveScene(scene.id)} refresh={refresh} />)}
+        {chapterScenes.map((scene, index) => <Passage key={scene.id} {...{ storyId, prefix, scene }} liveHints={liveHints && contextScene?.id === scene.id} separator={index > 0} focus={focusTarget === scene.id} onFocus={() => setActiveScene(scene.id)} refresh={refresh} />)}
         {chapterScenes.length === 0 && <Passage key={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} {...{ storyId, prefix }} draftKey={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} focus={focusTarget === 'blank'} createScene={createScene} onCreated={onCreated} onFocus={() => {}} refresh={refresh} />}
         {!unfiled && chapter && <div className="writer-chapter-extras" key={`end-${chapter.id}`}><ChapterExtra label="Closing note" add="Add closing note" value={chapter.closing_note} placeholder="Closing flavour text" onSave={async closing_note => { await api.updateChapter(storyId, chapter.id, { closing_note }); refresh() }} /></div>}
         <div className="writer-continuation">
@@ -192,17 +195,17 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
   </div>
 }
 
-function Passage({ storyId, prefix, scene, draftKey, separator = false, focus = false, createScene, onCreated, onFocus, refresh }: {
-  storyId: string; prefix: string; scene?: Scene; draftKey?: string; separator?: boolean; focus?: boolean
+function Passage({ storyId, prefix, scene, draftKey, separator = false, focus = false, liveHints = false, createScene, onCreated, onFocus, refresh }: {
+  storyId: string; prefix: string; scene?: Scene; draftKey?: string; separator?: boolean; focus?: boolean; liveHints?: boolean
   createScene?: () => Promise<Scene>; onCreated?: (scene: Scene, content: string) => void; onFocus: () => void; refresh: () => void
 }) {
   const content = useQuery({ queryKey: ['content', storyId, scene?.id], queryFn: () => api.getContent(storyId, scene!.id), enabled: Boolean(scene) })
   if (scene && content.isPending) return <p className="writer-help">Loading passage…</p>
   if (content.isError) return <p role="alert" className="writer-error">{errorText(content.error)} <button type="button" onClick={() => { void content.refetch() }}>Retry</button></p>
-  return <PassageEditor {...{ storyId, prefix, scene, draftKey, separator, focus, createScene, onCreated, onFocus, refresh }} initial={content.data?.content ?? ''} />
+  return <PassageEditor {...{ storyId, prefix, scene, draftKey, separator, focus, liveHints, createScene, onCreated, onFocus, refresh }} initial={content.data?.content ?? ''} />
 }
 
-function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, focus, createScene, onCreated, onFocus, refresh }: Parameters<typeof Passage>[0] & { initial: string }) {
+function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, focus, liveHints, createScene, onCreated, onFocus, refresh }: Parameters<typeof Passage>[0] & { initial: string }) {
   const qc = useQueryClient()
   const { theme } = useTheme()
   const view = useRef<EditorView | null>(null)
@@ -278,6 +281,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
 
     </div>
     {state.status === 'error' && <div role="alert" className="writer-error"><p>{state.error}</p><p>Your draft is preserved in this browser tab.</p><button type="button" onClick={() => { void draft.flush() }}>Retry save</button> <button type="button" onClick={() => { void review() }}>Review latest text</button>{reviewError && <p>{reviewError}</p>}{latest !== null && <div><h3>Latest saved text</h3><pre className="writer-latest">{latest || '(Empty passage)'}</pre><button type="button" onClick={() => { if (window.confirm('Replace your local draft with the latest saved text?')) { draft.useLatest(latest); setLatest(null) } }}>Use latest text</button> <button type="button" onClick={() => { if (window.confirm('Save your draft over the latest text? A prose revision will preserve the previous text.')) { lastCheckpoint.current = 0; draft.rebase(latest); setLatest(null); void draft.flush() } }}>Keep my draft</button></div>}</div>}
+    <div className={liveHints && scene ? "writer-hint-layout" : undefined}>
     <CodeMirror value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder="Start writing your story…" onChange={(text, update) => { draft.change(text); if (storyId === SANDBOX_ID && update.transactions.some(transaction => transaction.isUserEvent('input'))) tourEvent('write') }} onCreateEditor={editor => { view.current = editor; if (focus) { if (storyId === SANDBOX_ID) editor.dispatch({ selection: { anchor: editor.state.doc.length } }); editor.focus(); editor.dom.scrollIntoView({ block: 'center' }) } }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[
       markdown(), EditorView.lineWrapping,
       writerImages(images.data?.images ?? [], setPreviewImage),
@@ -300,6 +304,16 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       } }))),
       EditorView.theme({ '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' }, '.cm-scroller': { fontFamily: 'Georgia, serif', fontSize: '18px', overflow: 'visible' }, '.cm-content': { padding: '12px 0 24px', lineHeight: '1.9' }, '.cm-focused': { outline: 'none' }, '.cm-cursor': { borderLeftColor: 'var(--accent)' } }),
     ]} basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, bracketMatching: false, closeBrackets: false, autocompletion: false }} />
+    {liveHints && scene && <LiveWritingHints key={scene.id} storyId={storyId} sceneId={scene.id} content={state.text} onParagraph={paragraph => {
+      const editor = view.current
+      if (!editor) return
+      const parts = [...editor.state.doc.toString().matchAll(/(?:^|\n\s*\n)([\s\S]*?)(?=\n\s*\n|$)/g)].filter(part => part[1].replace(/!\[[^\]\n]*\]\([^\n)]*\)/g, '').trim())
+      const part = parts[paragraph - 1]
+      if (!part) return
+      const at = part.index! + part[0].indexOf(part[1])
+      editor.dispatch({ selection: { anchor: at }, scrollIntoView: true }); editor.focus()
+    }} />}
+    </div>
     {previewImage && <ImagePreview url={previewImage.url} alt={previewImage.alt} caption={previewImage.caption} onClose={() => { setPreviewImage(null); view.current?.focus() }} />}
     {context && <div ref={menu} className="writer-context-menu" role="menu" aria-label="Writing actions" style={{ left: Math.max(8, Math.min(context.x, window.innerWidth - 208)), top: Math.max(8, Math.min(context.y, window.innerHeight - 284)) }} onKeyDown={event => {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {

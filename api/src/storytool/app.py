@@ -19,6 +19,10 @@ from storytool.domain.cast.controller import (
     CharacterController,
     RelationshipController,
 )
+from storytool.domain.decisions.hint_controller import (
+    SandboxHintsController,
+    WritingHintsController,
+)
 from storytool.domain.decisions.providers import decisions_lifespan
 from storytool.domain.evaluation.controller import EvaluationController
 from storytool.domain.glossary import GlossaryController
@@ -131,6 +135,8 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             SceneProseController,
             ManuscriptController,
             NoticingController,
+            WritingHintsController,
+            SandboxHintsController,
             SearchController,
             LibrarySearchController,
             GlossaryController,

@@ -34,6 +34,7 @@ SESSION_COOKIE = "storytool_session"
 _STORY_PATH = re.compile(r"^/api/stories/([^/]+)(?:/|$)")
 _ARC_PATH = re.compile(r"^/api/arcs/([^/]+)(?:/|$)")
 _PUBLIC_PATHS = {
+    "/api/site/try/hints",
     "/api/health",
     "/api/auth/config",
     "/api/auth/google",
@@ -408,7 +409,10 @@ class StoryAccessMiddleware:
                                     await _reject(send, 404, "Referenced item not found")
                                     return
                 if http_scope["method"] in {"POST", "PATCH", "PUT", "DELETE"} and not path.endswith(
-                    ("/ai/propose", "/notice", "/ai-review", "/scene-reader", "/reader-verify")
+                    (
+                        "/ai/propose", "/notice", "/ai-review", "/scene-reader",
+                        "/reader-verify", "/hints",
+                    )
                 ):
                     lock_story_id = story_id
             elif arc_match:
