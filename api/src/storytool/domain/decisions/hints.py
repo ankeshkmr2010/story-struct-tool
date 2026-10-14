@@ -36,12 +36,21 @@ class HintReading(BaseModel):
     hints: list[WritingHint] = Field(default_factory=list)
     unavailable: str | None = None
     model: str | None = None
-    rubric_version: Literal["hints-v2"] = "hints-v2"
+    rubric_version: Literal["hints-v3"] = "hints-v3"
     sections_read: int = 0
     sections_total: int = 0
 
 
 CHECKS = {
+    "coherence": (
+        "Does a sentence abruptly introduce an unrelated fact or topic with no "
+        "plausible connection to the scene's action, character thoughts or setting? "
+        "Assess contextual relevance, not grammar or factual truth. A true fact can "
+        "still be unrelated. Allow connected memories, metaphors, humour, character "
+        "associations and intentional digressions. A character knowing a fact alone "
+        "does not establish its relevance to the scene.",
+        "This sentence may introduce an unrelated topic and interrupt the scene.",
+    ),
     "pov": (
         "Does the narrative unintentionally slip outside its established point of "
         "view? Exclude intentional omniscience and dialogue.",
@@ -72,6 +81,10 @@ CHECKS = {
 
 
 ACTIONS = {
+    "coherence": (
+        "Connect this thought to the character's immediate concern or action, "
+        "move it to a relevant passage, or remove it if accidental."
+    ),
     "pov": (
         "Check whether this paragraph reveals thoughts or perceptions the "
         "viewpoint character cannot know."
@@ -214,7 +227,7 @@ async def read_hints(service: DecisionService, model: str, data: HintInput) -> H
                 ],
             )
         state = {
-            "rubric": "hints-v2",
+            "rubric": "hints-v3",
             "target_paragraphs": [{"number": number, "text": part} for number, part in frame],
             "opening_context": paragraphs[0][:200] if index else "",
             "previous_context": frames[index - 1][-1][1][-200:] if index else "",
@@ -232,7 +245,7 @@ async def read_hints(service: DecisionService, model: str, data: HintInput) -> H
                 f"hint.{kind}",
                 reading.model,
                 service.provider.identity,
-                "hints-v2",
+                "hints-v3",
                 get_settings().decision_hint_probability,
             )
 
@@ -246,6 +259,52 @@ async def read_hints(service: DecisionService, model: str, data: HintInput) -> H
             if where.choice not in options or where.choice in {"none", "unclear"}:
                 continue
             number = int(where.choice)
+            quoted = excerpt(by_number[number])
+            probability = min(answer.noul, where.confidence)
+            evidence_keys = [reading.cache_keys[key], reading.cache_keys[f"where_{key}"]]
+            if key == "coherence":
+                sentences = [
+                    part.strip()
+                    for part in re.findall(r"[^.!?\n]+(?:[.!?]+|$)", by_number[number])
+                    if part.strip()
+                ]
+                # Stay within the choice limit; never invent a quote from model output.
+                if not sentences or len(sentences) > 254:
+                    continue
+                try:
+                    async with gate:
+                        located = await service.evaluate(
+                            model=model,
+                            state={
+                                key: value for key, value in state.items() if key != "known_names"
+                            },
+                            questions={
+                                "coherence_sentence": Choice(
+                                    instructions=(
+                                        f"In target paragraph {number}, which supplied sentence "
+                                        "introduces an unrelated topic without a clear connection "
+                                        "to the scene? Allow connected memories, metaphors and "
+                                        "intentional digressions. Choose none without "
+                                        "clear evidence."
+                                    ),
+                                    criteria={
+                                        **{
+                                            str(index): sentence
+                                            for index, sentence in enumerate(sentences)
+                                        },
+                                        "none": "No clearly unrelated sentence.",
+                                    },
+                                )
+                            },
+                        )
+                except DecisionUnavailable:
+                    continue
+                selected = located.answers["coherence_sentence"]
+                if selected.choice == "none" or (selected.confidence or 0) < threshold(key):
+                    continue
+                quoted = excerpt(sentences[int(selected.choice)])
+                probability = min(probability, selected.confidence)
+                evidence_keys.append(located.cache_keys["coherence_sentence"])
             found.append(
                 WritingHint(
                     code=f"{key}_{number}",
@@ -253,9 +312,9 @@ async def read_hints(service: DecisionService, model: str, data: HintInput) -> H
                     message=message,
                     action=ACTIONS[key],
                     paragraph=number,
-                    excerpt=excerpt(by_number[number]),
-                    probability=min(answer.noul, where.confidence),
-                    evidence_keys=[reading.cache_keys[key], reading.cache_keys[f"where_{key}"]],
+                    excerpt=quoted,
+                    probability=probability,
+                    evidence_keys=evidence_keys,
                 )
             )
         for number, part in frame:
@@ -298,7 +357,7 @@ async def read_hints(service: DecisionService, model: str, data: HintInput) -> H
             "hint.turn",
             result.model,
             service.provider.identity,
-            "hints-v2",
+            "hints-v3",
             get_settings().decision_hint_probability,
         )
         if min(no_change, ending) >= max(0.85, threshold):

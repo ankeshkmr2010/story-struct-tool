@@ -3406,7 +3406,7 @@ export interface components {
             /** @enum {string} */
             outcome: "accepted" | "dismissed";
             /** @enum {null|string} */
-            rubric_version?: "hints-v1" | "hints-v2" | "craft-v1" | "craft-v2" | null;
+            rubric_version?: "hints-v1" | "hints-v2" | "hints-v3" | "craft-v1" | "craft-v2" | null;
         };
         /** DocxImportOut */
         DocxImportOut: {
@@ -3580,10 +3580,10 @@ export interface components {
             unavailable?: string | null;
             model?: string | null;
             /**
-             * @default hints-v2
+             * @default hints-v3
              * @constant
              */
-            rubric_version: "hints-v2";
+            rubric_version: "hints-v3";
             /** @default 0 */
             sections_read: number;
             /** @default 0 */

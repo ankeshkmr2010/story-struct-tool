@@ -424,3 +424,5 @@ from future real feedback remain unverified. T53–T60 implementation is built, 
 - [~] Evaluate findings use a keyboard-focusable vertical scroll area capped at half the viewport height; shorter lists keep their natural height. Awaiting production visual confirmation.
 
 - [~] Live hints stay sticky beside the active scene on the right, with bounded internal scrolling and a focus-mode offset. Narrow layouts retain the right column. Awaiting production visual confirmation.
+
+- [~] Live hints add contextual coherence: flag an unrelated sentence only after confident scene/paragraph and sentence selection; quote source text with an existing passage link and advice. Connected memories, metaphors and intentional digressions are allowed. Uses provider-neutral typed decisions and hints-v3 feedback. No beat/plot/arc context added. Static checks only; model quality awaits production confirmation.
