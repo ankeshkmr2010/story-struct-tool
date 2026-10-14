@@ -22,7 +22,7 @@ import { LiveWritingHints } from './LiveWritingHints'
 const imageMarkdown = (image: StoryImage) => `![${image.alt.replace(/[\]\n]/g, ' ')}](storytool-image:${image.id})`
 const proseWords = (text: string) => text.replace(/!\[[^\]\n]*\]\(storytool-image:[0-9a-fA-F-]{36}\)/g, '').trim().split(/\s+/).filter(Boolean).length
 
-export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onContextOpen }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number; find?: string; paragraph?: number } | null; panelOpen?: boolean; onContextOpen?: () => void }) {
+export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onContextOpen, initialChapter, onChapterChange }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number; find?: string; paragraph?: number } | null; panelOpen?: boolean; onContextOpen?: () => void; initialChapter?: string | null; onChapterChange?: (id: string) => void }) {
   const qc = useQueryClient()
   const me = useQuery({ queryKey: [storyId === SANDBOX_ID ? 'sandbox-me' : 'me'], queryFn: api.currentUser })
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
@@ -30,6 +30,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
   const prefix = `storytool-writer:${me.data?.id}:${storyId}:`
   const positionKey = `storytool-writing-position:${storyId}`
   const [selectedId, setSelectedId] = useState<string | null>(() => {
+    if (initialChapter) return initialChapter
     try { return localStorage.getItem(positionKey) } catch { return null }
   })
   const [showNavigation, setShowNavigation] = useState(() => window.matchMedia('(min-width: 701px)').matches)
@@ -49,6 +50,10 @@ export function StoryWriter({ storyId, registerFlush, openScene, panelOpen, onCo
   const unfiled = selectedId === 'unfiled'
   const chapterScenes = orderScenes((scenes.data ?? []).filter(scene => scene.chapter_id === (unfiled ? null : chapter?.id)))
   const contextScene = chapterScenes.find(scene => scene.id === activeScene) ?? chapterScenes[0]
+  const currentChapterId = unfiled ? 'unfiled' : chapter?.id
+  useEffect(() => {
+    if (currentChapterId) onChapterChange?.(currentChapterId)
+  }, [currentChapterId, onChapterChange])
   const brief = useQuery({ queryKey: ['brief', storyId, chapter?.id], queryFn: () => api.getBrief(storyId, chapter!.id), enabled: Boolean(chapter) })
 
   useEffect(() => {

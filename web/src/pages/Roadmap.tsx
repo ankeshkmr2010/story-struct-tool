@@ -34,6 +34,12 @@ const HERO_FEATURES = new Set(['Custom real-time writing checks', 'Jev Noticing 
 
 const DELIVERED: readonly { date: string; items: readonly (readonly [string, string])[] }[] = [
   {
+    date: '15 Oct 2026',
+    items: [
+      ['Pick up where you left off', 'reopen a story across devices in your last Write, Read or Design view, with your chapter, scene and position remembered privately.'],
+    ],
+  },
+  {
     date: '14 Oct 2026',
     items: [
       ['Custom real-time writing checks', 'build private checks without coding, try samples with character counts, and get live hints highlighting contributing sentences with your own advice; manage checks yourself or through your connected AI.'],

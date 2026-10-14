@@ -5,7 +5,8 @@ import { ImageFigure } from './StoryImages'
 
 type Row = Record<string, unknown>
 type Preferences = { layout: 'scroll' | 'pages'; size: number; font: 'serif' | 'sans'; spacing: number; width: 'narrow' | 'normal' | 'wide'; titles: boolean }
-type Position = { anchor: string; fragment: number; within: number }
+export type ReadingPosition = { anchor: string; fragment: number; within: number }
+type Position = ReadingPosition
 export type ReadingTarget = { chapterId?: string; sceneId?: string; sequence: number }
 const preferencesKey = 'storytool-reader-settings-v1'
 const defaults: Preferences = { layout: 'scroll', size: 18, font: 'serif', spacing: 1.8, width: 'normal', titles: false }
@@ -45,10 +46,11 @@ function loadPlace(key: string): Position | null {
   return null
 }
 
-export function ManuscriptReading({ structure, storyId, accountId, target, onPassage, onContext, contextLabel = "Scene context", contextAvailable = true }: {
+export function ManuscriptReading({ structure, storyId, accountId, target, onPassage, onContext, initialPosition, onPosition, contextLabel = "Scene context", contextAvailable = true }: {
   structure: Record<string, Row[]>; storyId: string; accountId: string; target?: ReadingTarget; contextLabel?: string; contextAvailable?: boolean
   onPassage: (chapterId: string, sceneId: string) => void
   onContext: (chapterId: string, sceneId: string) => void
+  initialPosition?: ReadingPosition | null; onPosition?: (position: ReadingPosition) => void
 }) {
   const [preferences, setPreferences] = useState(() => storyId === SANDBOX_ID ? { ...loadPreferences(), layout: 'pages' as const } : loadPreferences())
   const [page, setPage] = useState(0)
@@ -58,12 +60,14 @@ export function ManuscriptReading({ structure, storyId, accountId, target, onPas
   const flow = useRef<HTMLDivElement>(null)
   const appearance = useRef<HTMLDetailsElement>(null)
   const positionKey = `storytool-reading-place:${accountId}:${storyId}`
-  const initialPlace = useMemo(() => loadPlace(positionKey), [positionKey])
+  const initialPlace = useMemo(() => initialPosition ?? loadPlace(positionKey), [positionKey, initialPosition])
   const place = useRef<Position | null>(initialPlace)
   const lastTarget = useRef<number | undefined>(undefined)
   const previousPassage = useRef('')
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const callbacks = useRef({ onPassage, onContext })
+  const positionCallback = useRef(onPosition)
+  useEffect(() => { positionCallback.current = onPosition }, [onPosition])
   useEffect(() => { callbacks.current = { onPassage, onContext } }, [onPassage, onContext])
   const sections = useMemo(() => {
     const chapters = orderChapters(structure.chapter ?? [])
@@ -104,6 +108,7 @@ export function ManuscriptReading({ structure, storyId, accountId, target, onPas
       const fragment = Math.max(0, rects.findIndex(rect => rect.right > bounds.left && rect.left < bounds.right))
       const rect = rects[fragment]
       place.current = { anchor: anchor.dataset.readingAnchor!, fragment, within: rect ? bounded((bounds.top - rect.top) / Math.max(1, rect.height), 0, 1) : 0 }
+      positionCallback.current?.(place.current)
       const chapterId = anchor.dataset.chapterId ?? 'unfiled'
       const sceneId = anchor.dataset.sceneId ?? ''
       const signature = `${chapterId}:${sceneId}`

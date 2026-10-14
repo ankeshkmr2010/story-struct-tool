@@ -1,7 +1,8 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { api, type SearchContext, type SearchHit } from '../api/client'
+import { api, type SearchContext, type SearchHit, type WorkspacePlace } from '../api/client'
+import { useWorkspacePosition } from '../components/useWorkspacePosition'
 import { SearchDialog } from '../components/StorySearch'
 import { Ladder, type AuthoringMode } from '../components/Ladder'
 import { ChapterBriefCard } from '../components/ChapterBriefCard'
@@ -68,10 +69,16 @@ const REF_PANELS: [RefPanel, string][] = [['timeline', 'Timeline'], ['places', '
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
-  return <Workspace key={storyId} storyId={storyId} />
+  return <SavedWorkspace key={storyId} storyId={storyId} />
 }
 
-export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: { storyId: string; sandboxStep?: number; sandboxRun?: number; sandboxHistory?: Sandbox }) {
+function SavedWorkspace({ storyId }: { storyId: string }) {
+  const position = useQuery({ queryKey: ['workspace-position', storyId], queryFn: () => api.getWorkspacePosition(storyId), retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false, staleTime: 0, gcTime: 0 })
+  if (position.isPending) return <p className="p-6">Opening your story…</p>
+  return <><Workspace storyId={storyId} initialPosition={position.data} syncPosition={!position.isError} />{position.isError && <p role="status" className="p-4">Your synced place could not be loaded. This session will not overwrite it. Reopen the story to retry.</p>}</>
+}
+
+export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, initialPosition, syncPosition = false }: { storyId: string; sandboxStep?: number; sandboxRun?: number; sandboxHistory?: Sandbox; initialPosition?: WorkspacePlace | null; syncPosition?: boolean }) {
   const sandbox = storyId === SANDBOX_ID
   const qc = useQueryClient()
   const live = useStoryLiveUpdates(storyId)
@@ -86,7 +93,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: 
   const [savedSearchContext] = useState(() => {
     try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' ? JSON.parse(localStorage.getItem(`storytool-search-context:${storyId}`) || '{}') : {} } catch { return {} }
   })
-  const [level, setLevel] = useState(() => [1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1)
+  const [level, setLevel] = useState(() => initialPosition?.level ?? ([1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1))
   // Levels 1-8 are the Plan; ids from 104 up are full-width Design pages (Grid, History, …).
   const isView = level >= INBOX_VIEW
   const planLevel = useRef(1)
@@ -102,10 +109,12 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: 
   if (!isView) planLevel.current = level
   const [historyTab, setHistoryTab] = useState<'versions' | 'authorship'>('versions')
   const [tab, setTab] = useState<'write' | 'read' | 'design'>(() => {
+    if (initialPosition?.mode) return initialPosition.mode
     if (['write', 'read', 'design'].includes(savedSearchContext.tab)) return savedSearchContext.tab
     try { const saved = localStorage.getItem(`storytool-workspace:${storyId}`); return saved === 'write' || saved === 'read' ? saved : 'design' } catch { return 'design' }
   })
   const [writerOpened, setWriterOpened] = useState(tab === 'write')
+  const [readerResume, setReaderResume] = useState(initialPosition?.reading)
   const [tabError, setTabError] = useState<string | null>(null)
   const writerFlush = useRef<() => Promise<boolean>>(async () => true)
   const registerFlush = useCallback((flush: () => Promise<boolean>) => { writerFlush.current = flush }, [])
@@ -117,7 +126,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: 
       setWriterOpened(true)
       void qc.invalidateQueries({ queryKey: ['content', storyId] })
     }
-    if (next === 'read') void qc.invalidateQueries({ queryKey: ['reading-document', storyId] })
+    if (next === 'read') { setReaderResume(readingPosition.current); void qc.invalidateQueries({ queryKey: ['reading-document', storyId] }) }
     try { localStorage.setItem(`storytool-workspace:${storyId}`, next) } catch { /* Preference storage is optional. */ }
     return true
   }
@@ -234,7 +243,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: 
   })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
 
-  const [chapterId, setChapterId] = useState<string | null>(null)
+  const [chapterId, setChapterId] = useState<string | null>(initialPosition?.chapter_id ?? null)
   const selectedChapter = chapters.data?.find((chapter) => chapter.id === chapterId)?.id ?? chapters.data?.[0]?.id ?? null
   const chapter = chapters.data?.find((item) => item.id === selectedChapter)
   const chapterIndex = chapters.data?.findIndex((item) => item.id === selectedChapter) ?? -1
@@ -245,7 +254,11 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: 
     enabled: Boolean(selectedChapter),
   })
 
-  const [sceneId, setSceneId] = useState<string | null>(null)
+  const [sceneId, setSceneId] = useState<string | null>(initialPosition?.scene_id ?? null)
+  const savePosition = useWorkspacePosition(storyId, initialPosition, { mode: tab, level: level as WorkspacePlace['level'], chapter_id: chapterId, scene_id: sceneId }, syncPosition && !sandbox, !!searchParams.get('search_id'))
+  const readingPosition = useRef(initialPosition?.reading)
+  const rememberReading = useCallback((reading: NonNullable<WorkspacePlace['reading']>) => { readingPosition.current = reading; savePosition({ reading }) }, [savePosition])
+  const rememberChapter = useCallback((write_chapter_id: string) => { if (tab === 'write') savePosition({ write_chapter_id }) }, [tab, savePosition])
   useEffect(() => {
     const entity = searchParams.get('search_entity'), id = searchParams.get('search_id')
     const field = searchParams.get('search_field') || 'title'
@@ -393,7 +406,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: 
   }
 
   return (
-    <main className="workspace-page mx-auto max-w-[1600px] overflow-x-clip p-4 sm:p-6 lg:p-8">
+    <main data-workspace-story={storyId} data-workspace-ready={!chapters.isPending && !scenes.isPending ? true : undefined} className="workspace-page mx-auto max-w-[1600px] overflow-x-clip p-4 sm:p-6 lg:p-8">
       {sandbox ? null : <Link to="/library" className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
         ← all stories
       </Link>}
@@ -445,10 +458,10 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: 
       <div className={`workspace-body${hasPanel ? ' has-panel' : ''}`}>
       <div className="min-w-0">
       <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>
-        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} registerFlush={registerFlush} openScene={writerScene} panelOpen={hasPanel} onContextOpen={() => { setRefPanel(null); setSearchOpen(false); if (sandbox) tourEvent('context') }} /></Suspense>}
+        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} initialChapter={initialPosition?.write_chapter_id} onChapterChange={rememberChapter} registerFlush={registerFlush} openScene={writerScene} panelOpen={hasPanel} onContextOpen={() => { setRefPanel(null); setSearchOpen(false); if (sandbox) tourEvent('context') }} /></Suspense>}
       </div>
       <div id="workspace-panel-read" role="tabpanel" aria-labelledby="workspace-tab-read" hidden={tab !== 'read'}>
-        {tab === 'read' && <Suspense fallback={<p className="p-6">Loading reader…</p>}><StoryReader storyId={storyId} owned embedded openTarget={readerScene} /></Suspense>}
+        {tab === 'read' && <Suspense fallback={<p className="p-6">Loading reader…</p>}><StoryReader storyId={storyId} owned embedded initialPosition={readerResume} onPosition={rememberReading} openTarget={readerScene} /></Suspense>}
       </div>
       <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design" hidden={tab !== 'design'}>
       <nav aria-label="Design pages" className="workspace-views">
