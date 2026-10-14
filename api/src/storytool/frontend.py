@@ -3,16 +3,21 @@
 from pathlib import Path
 from uuid import UUID
 
-from litestar import Router, get
+from litestar import Request, Response, Router, get
 from litestar.handlers import HTTPRouteHandler
 from litestar.response import File
 from litestar.static_files import create_static_files_router
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from storytool.social_preview import preview_html, preview_metadata
 
 
 def frontend_router(directory: Path) -> Router:
     directory = directory.resolve()
     if not (directory / "index.html").is_file() or not (directory / "assets").is_dir():
         raise RuntimeError("Build the frontend before setting STORYTOOL_FRONTEND_DIR")
+
+    html = (directory / "index.html").read_text(encoding="utf-8")
 
     @get(
         [
@@ -41,11 +46,19 @@ def frontend_router(directory: Path) -> Router:
         ],
         include_in_schema=False,
     )
-    async def index(story_id: UUID | None = None, token: str | None = None, round_id: UUID | None = None, thread_id: UUID | None = None, feature: Path | None = None) -> File:
-        return File(
-            directory / "index.html",
+    async def index(
+        request: Request,
+        db_session: AsyncSession,
+        story_id: UUID | None = None,
+        token: str | None = None,
+        round_id: UUID | None = None,
+        thread_id: UUID | None = None,
+        feature: Path | None = None,
+    ) -> Response[str]:
+        metadata = await preview_metadata(db_session, request.url.path, token)
+        return Response(
+            preview_html(html, metadata),
             media_type="text/html",
-            content_disposition_type="inline",
             headers={"Cache-Control": "no-cache"},
         )
 

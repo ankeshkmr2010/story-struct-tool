@@ -8,7 +8,7 @@ import { flushWriter } from './writerDraft'
 
 const megabytes = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
 
-function ImagePreview({ url, alt, caption, onClose }: { url: string; alt: string; caption: string; onClose: () => void }) {
+export function ImagePreview({ url, alt, caption, onClose }: { url: string; alt: string; caption: string; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const [failed, setFailed] = useState(false)

@@ -235,3 +235,11 @@ or production visual confirmation. T20 remains open for the unfinished walkthrou
 - [~] T23 image library follow-up (2026-10-14): dedicated story Images route with All/Manuscript/Reference/Unused filters, named captioned thumbnails, editing/deletion and chapter/scene/planning usage links. Existing insertion and attachment pickers retained. Privacy explains image storage, sharing, retained history and permanent-story cleanup. Awaiting production confirmation; no tests/builds or browser checks.
 
 - [~] T23 contextual insertion follow-up: removed passage Insert image link; right-click/Shift+F10 offers insertion and Cut/Copy/Paste/Select all. Compact picker preserves the chosen position, inserts saved thumbnails directly and supports upload preview/progress/cancel/retry. Scene Design and Catch up show manuscript/reference thumbnails and scene-filtered library links. Guided-tour step 2 opens an interactive insertion sample; guide and Delivered updated. Awaiting production confirmation; no tests/builds/browser checks.
+
+- [~] T23 Write thumbnails follow-up: raw manuscript image markers now display as in-place thumbnail widgets with name/caption, enlarged preview and placement-only removal. Saving/export markers retained; duplicate previews below the passage removed. Guide and Delivered updated. Static checks only; awaiting production confirmation.
+
+- [~] Write menu: Find emojis opens https://emojidb.org/ in a new tab, with arrow-key navigation retained. Awaiting production check.
+
+- [ ] T51 Shared Jev Noticing: enable Jev-based story Noticing for all users using the owner’s shared Jev credential rather than requiring individual connections. Implementation must add a server-only Render environment variable for the owner to populate; never expose its value to clients, logs or documentation. Task recorded only; feature and Render variable not configured yet.
+
+- [~] Page link previews: server-rendered Open Graph/Twitter tags and distinct branded PNG thumbnails for Landing, Your stories/Library, Roadmap, Shoutouts, Feedback and How to use. Enabled, non-trashed public showcases use public titles/blurbs and their first valid manuscript illustration; private routes use generic Stories cards. No private metadata exposed. Awaiting production/social-client confirmation; no tests/builds/browser checks.

@@ -31,11 +31,11 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
   {
     date: '14 Oct 2026',
     items: [
-      ['Images in your story', 'illustrations, captions, reference attachments and larger reading previews. Right-click insertion keeps your writing position; Scene Design and Catch up show image thumbnails. A dedicated image page offers filters, scene usage links and safe deletion; exports preserve placement and permanent story deletion cleans up retained files.'],
+      ['Images in your story', 'illustrations and reference art with captions, inline Write thumbnails, right-click insertion, scene links and portable exports. A dedicated page manages usage and safe deletion; guided samples show the flow.'],
       ['Try before signing up', 'a guided writing sandbox with local search and History, plus interactive feature demos and sample downloads. Tours support Previous, Next and resume; sign in to keep your edits.'],
       ['Writing and reader guides', 'AI quickstart prompts, images and exports, plus beta rounds, private reader conversations and polls.'],
       ['Evaluate polish', 'credited craft definitions, review dates, stale-review actions and findings that open the relevant planning item.'],
-      ['Site navigation', 'sticky navigation and a direct homepage entry to the guided tour.'],
+      ['Site navigation and link previews', 'sticky navigation, a direct tour entry and custom thumbnails for Landing, Your stories, Roadmap, Shoutouts, Feedback and How to use. Enabled public showcases use their own title and first manuscript image.'],
     ],
   },
   {
@@ -98,7 +98,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
     date: '9 Oct 2026',
     items: [
       ['Sharing with readers', 'share a story read-only, and optionally let readers import their own copy.'],
-      ['Continuous chapter writer', 'write a whole chapter on one scrolling page, plus focused reading.'],
+      ['Continuous chapter writer', 'write a whole chapter on one scrolling page, plus focused reading and an EmojiDB shortcut in the right-click menu.'],
       ['Glossary', 'keep your story’s terms, aliases and definitions in one place.'],
       ['Connect your AI', 'sign your AI assistant in to one story or your whole library, and revoke it any time.'],
       ['Trash', 'deleted stories wait in Trash until you restore them or delete them for good.'],

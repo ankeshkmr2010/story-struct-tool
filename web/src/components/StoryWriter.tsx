@@ -14,7 +14,8 @@ import { InlineText } from './fields'
 import { useTheme } from './theme-context'
 import { SANDBOX_ID, tourEvent } from '../sandbox/storage'
 import { flushWriter, writerDraft, writerHasUnsaved } from './writerDraft'
-import { ImageFigure } from './StoryImages'
+import { ImagePreview } from './StoryImages'
+import { writerImages } from './writerImages'
 import { ImageInsertionPicker } from './ImageInsertionPicker'
 
 const imageMarkdown = (image: StoryImage) => `![${image.alt.replace(/[\]\n]/g, ' ')}](storytool-image:${image.id})`
@@ -210,6 +211,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   const lastCheckpoint = useRef(0)
   const draft = writerDraft(prefix + (scene?.id ?? draftKey!), initial)
   const state = useSyncExternalStore(draft.subscribe, draft.snapshot)
+  const [previewImage, setPreviewImage] = useState<StoryImage | null>(null)
   const [imageAnchor, setImageAnchor] = useState<{ x: number; y: number; at: number } | null>(null)
   const [context, setContext] = useState<{ x: number; y: number; at: number; hasSelection: boolean } | null>(null)
   const [clipboardError, setClipboardError] = useState('')
@@ -278,6 +280,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     {state.status === 'error' && <div role="alert" className="writer-error"><p>{state.error}</p><p>Your draft is preserved in this browser tab.</p><button type="button" onClick={() => { void draft.flush() }}>Retry save</button> <button type="button" onClick={() => { void review() }}>Review latest text</button>{reviewError && <p>{reviewError}</p>}{latest !== null && <div><h3>Latest saved text</h3><pre className="writer-latest">{latest || '(Empty passage)'}</pre><button type="button" onClick={() => { if (window.confirm('Replace your local draft with the latest saved text?')) { draft.useLatest(latest); setLatest(null) } }}>Use latest text</button> <button type="button" onClick={() => { if (window.confirm('Save your draft over the latest text? A prose revision will preserve the previous text.')) { lastCheckpoint.current = 0; draft.rebase(latest); setLatest(null); void draft.flush() } }}>Keep my draft</button></div>}</div>}
     <CodeMirror value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder="Start writing your story…" onChange={(text, update) => { draft.change(text); if (storyId === SANDBOX_ID && update.transactions.some(transaction => transaction.isUserEvent('input'))) tourEvent('write') }} onCreateEditor={editor => { view.current = editor; if (focus) { if (storyId === SANDBOX_ID) editor.dispatch({ selection: { anchor: editor.state.doc.length } }); editor.focus(); editor.dom.scrollIntoView({ block: 'center' }) } }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[
       markdown(), EditorView.lineWrapping,
+      writerImages(images.data?.images ?? [], setPreviewImage),
       EditorView.domEventHandlers({ contextmenu: (event, editor) => { event.preventDefault(); openContext(editor, event.clientX, event.clientY, true); return true } }),
       keymap.of([{ key: 'Shift-F10', run: editor => { const coords = editor.coordsAtPos(editor.state.selection.main.head); openContext(editor, coords?.left ?? 20, coords?.bottom ?? 100, false); return true } }]),
       EditorView.contentAttributes.of({ 'aria-label': scene?.title ? `Prose: ${scene.title}` : 'Story prose', spellcheck: 'true', autocapitalize: 'sentences' }),
@@ -297,15 +300,16 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       } }))),
       EditorView.theme({ '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' }, '.cm-scroller': { fontFamily: 'Georgia, serif', fontSize: '18px', overflow: 'visible' }, '.cm-content': { padding: '12px 0 24px', lineHeight: '1.9' }, '.cm-focused': { outline: 'none' }, '.cm-cursor': { borderLeftColor: 'var(--accent)' } }),
     ]} basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, bracketMatching: false, closeBrackets: false, autocompletion: false }} />
-    {Array.from(state.text.matchAll(/!\[([^\]\n]*)\]\(storytool-image:([0-9a-fA-F-]{36})\)/g)).map((match, index) => <ImageFigure key={`${match[2]}:${index}`} image={images.data?.images.find(image => image.id === match[2])} fallback={match[1]} />)}
-    {context && <div ref={menu} className="writer-context-menu" role="menu" aria-label="Writing actions" style={{ left: Math.max(8, Math.min(context.x, window.innerWidth - 208)), top: Math.max(8, Math.min(context.y, window.innerHeight - 248)) }} onKeyDown={event => {
+    {previewImage && <ImagePreview url={previewImage.url} alt={previewImage.alt} caption={previewImage.caption} onClose={() => { setPreviewImage(null); view.current?.focus() }} />}
+    {context && <div ref={menu} className="writer-context-menu" role="menu" aria-label="Writing actions" style={{ left: Math.max(8, Math.min(context.x, window.innerWidth - 208)), top: Math.max(8, Math.min(context.y, window.innerHeight - 284)) }} onKeyDown={event => {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-        event.preventDefault(); const buttons = Array.from(menu.current?.querySelectorAll<HTMLButtonElement>('button') ?? []); const index = buttons.indexOf(document.activeElement as HTMLButtonElement)
+        event.preventDefault(); const buttons = Array.from(menu.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a') ?? []); const index = buttons.indexOf(document.activeElement as HTMLElement)
         buttons[(index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length]?.focus()
       }
     }}>
       <button type="button" role="menuitem" onClick={() => { const anchor = context; setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor(anchor) }}>Insert image…</button>
       {(['cut', 'copy', 'paste', 'select'] as const).map(action => <button type="button" role="menuitem" key={action} disabled={(action === 'cut' || action === 'copy') && !context.hasSelection} onClick={() => { void editClipboard(action) }}>{({ cut: 'Cut', copy: 'Copy', paste: 'Paste', select: 'Select all' })[action]}</button>)}
+      <a role="menuitem" href="https://emojidb.org/" target="_blank" rel="noopener noreferrer" onClick={() => setContext(null)}>Find emojis ↗</a>
       {clipboardError && <p role="alert">{clipboardError}</p>}
     </div>}
     {imageAnchor && <ImageInsertionPicker storyId={storyId} anchor={imageAnchor} onClose={() => { setImageAnchor(null); view.current?.focus() }} onInsert={async image => {
