@@ -9,13 +9,16 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.config import get_settings
-from storytool.domain.decisions.hints import HintInput, WritingHint, excerpt
+from storytool.domain.decisions.hints import HintInput, WritingHint
 from storytool.domain.decisions.models import DecisionValidator
+from storytool.domain.decisions.rule_evidence import count_characters, locate_highlights
 from storytool.domain.decisions.service import DecisionService, DecisionUnavailable, canonical
 from storytool.domain.decisions.types import Answer, Question
 from storytool.domain.decisions.validators import (
     ChoiceTrigger,
+    CountRecipe,
     NoulTrigger,
+    RuleObservation,
     ScoreTrigger,
     ValidatorOut,
 )
@@ -76,12 +79,12 @@ def triggered_probability(answer: Answer, row: ValidatorOut) -> float:
 
 async def read_custom_hints(
     service: DecisionService, model: str, data: HintInput, rows: list[ValidatorOut]
-) -> tuple[list[WritingHint], list[str]]:
+) -> tuple[list[WritingHint], list[str], list[RuleObservation]]:
     text = re.sub(r"!\[[^\]\n]*\]\([^\n)]*\)", "", data.content)
     paragraphs = [part.strip() for part in re.split(r"\n\s*\n", text) if part.strip()]
     if not paragraphs:
-        return [], []
-    hints, messages = [], []
+        return [], [], []
+    hints, messages, observations = [], [], []
     if len(rows) > 20:
         messages.append(
             "Only the first 20 enabled personal checks were included. Disable some to run others."
@@ -90,7 +93,7 @@ async def read_custom_hints(
     async def read_check(row: ValidatorOut) -> None:
         definition = row.definition
         scope = definition.input_scope
-        rubric = f"hints-custom-v1-r{row.version}"
+        rubric = f"hints-custom-v2-r{row.version}"
         code = f"hint.custom.{row.id}"
         base = {
             "rubric": rubric,
@@ -98,6 +101,7 @@ async def read_custom_hints(
             "version": row.version,
             "definition_hash": row.definition_hash,
             "validator_question": definition.question.instructions,
+            "examples": [example.model_dump() for example in definition.examples],
             "input_scope": scope,
             "opening_context": paragraphs[0][:200],
         }
@@ -146,9 +150,32 @@ async def read_custom_hints(
                 ),
             )
             for unit in units:
-                probability = triggered_probability(reading.answers[unit["id"]], row)
+                answer = reading.answers[unit["id"]]
+                probability = triggered_probability(answer, row)
+                observations.append(
+                    RuleObservation(paragraph=unit["paragraph"], matched=probability >= threshold)
+                )
                 if probability < threshold:
                     continue
+                (
+                    passages,
+                    highlight_scope,
+                    location_confidence,
+                    location_keys,
+                    uncertain,
+                ) = await locate_highlights(
+                    service,
+                    model,
+                    row,
+                    base,
+                    unit,
+                    paragraphs,
+                    {
+                        "rule_answer": reading.answers[unit["id"]].model_dump(),
+                        "question": definition.question.instructions,
+                    },
+                    get_settings().decision_hint_probability,
+                )
                 hints.append(
                     WritingHint(
                         code=f"custom_{row.id}_{row.version}_{unit['id']}",
@@ -157,12 +184,77 @@ async def read_custom_hints(
                         action=definition.advice,
                         scope=scope,
                         paragraph=unit["paragraph"],
-                        excerpt=excerpt(unit["text"]) if scope != "scene" else None,
+                        excerpt=None,
+                        passages=passages,
+                        highlight_scope=highlight_scope,
+                        highlight_confidence=location_confidence,
+                        location_uncertain=uncertain,
                         probability=probability,
-                        evidence_keys=[reading.cache_keys[unit["id"]]],
+                        evidence_keys=[reading.cache_keys[unit["id"]], *location_keys],
                         rubric_version=rubric,
                     )
                 )
+
+        if isinstance(definition.recipe, CountRecipe):
+            threshold = max(
+                definition.minimum_probability, get_settings().decision_hint_probability
+            )
+            for unit in prose_units(paragraphs, scope):
+                try:
+                    probability, proof, observed, evidence, observation = await count_characters(
+                        service, model, base, unit, row, data, threshold
+                    )
+                except DecisionUnavailable:
+                    failed += 1
+                    continue
+                observations.append(observation)
+                if not observation.complete:
+                    messages.append(
+                        f"{definition.name}: some candidate names are uncertain; "
+                        "the count is a lower bound."
+                    )
+                if probability < threshold:
+                    continue
+                (
+                    passages,
+                    highlight_scope,
+                    location_confidence,
+                    location_keys,
+                    uncertain,
+                ) = await locate_highlights(
+                    service,
+                    model,
+                    row,
+                    base,
+                    unit,
+                    paragraphs,
+                    proof,
+                    get_settings().decision_hint_probability,
+                )
+                hints.append(
+                    WritingHint(
+                        code=f"custom_{row.id}_{row.version}_{unit['id']}",
+                        kind=f"custom.{row.id}",
+                        message=definition.name,
+                        action=definition.advice,
+                        scope=scope,
+                        paragraph=unit["paragraph"],
+                        probability=probability,
+                        evidence_keys=[*evidence, *location_keys],
+                        rubric_version=rubric,
+                        passages=passages,
+                        observed=observed,
+                        highlight_scope=highlight_scope,
+                        highlight_confidence=location_confidence,
+                        location_uncertain=uncertain,
+                    )
+                )
+            if failed:
+                messages.append(
+                    f"{definition.name}: {failed} units could not be counted; "
+                    "coverage is incomplete."
+                )
+            return
 
         for unit in prose_units(paragraphs, scope):
             if batch and not fits([*batch, unit]):
@@ -182,4 +274,4 @@ async def read_custom_hints(
 
     for row in rows[:20]:
         await read_check(row)
-    return hints, messages
+    return hints, messages, observations

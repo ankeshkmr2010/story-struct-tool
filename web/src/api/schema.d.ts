@@ -2660,6 +2660,23 @@ export interface paths {
         patch: operations["ApiValidatorsValidatorIdUpdateValidator"];
         trace?: never;
     };
+    "/api/validators/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Try an unsaved rule on a user-supplied sample */
+        post: operations["ApiValidatorsPreviewPreviewValidator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/search/capabilities": {
         parameters: {
             query?: never;
@@ -3309,6 +3326,11 @@ export interface components {
             relation_to_protagonist?: string | null;
             notes?: string | null;
         };
+        /** CharacterNames */
+        CharacterNames: {
+            name: string;
+            aliases?: string[];
+        };
         /** CharacterOut */
         CharacterOut: {
             /** Format: uuid */
@@ -3377,6 +3399,17 @@ export interface components {
             confidence: number;
             uncertain: boolean;
         };
+        /** ComparisonRecipe */
+        ComparisonRecipe: {
+            /**
+             * @default comparison
+             * @constant
+             */
+            type: "comparison";
+            first: string;
+            second: string;
+            relationship: string;
+        };
         /** CompletenessOut */
         CompletenessOut: {
             is_complete: boolean;
@@ -3407,6 +3440,27 @@ export interface components {
             contradiction_count: number;
             possible_count: number;
             anomalies: components["schemas"]["AnomalyOut"][];
+        };
+        /** CountRecipe */
+        CountRecipe: {
+            /**
+             * @default count
+             * @constant
+             */
+            type: "count";
+            /**
+             * @default characters
+             * @constant
+             */
+            entity: "characters";
+            /**
+             * @default present
+             * @enum {string}
+             */
+            count_when: "present" | "speaking_or_acting" | "driving_action";
+            criteria: string;
+            limit: number;
+            additional_names?: string[];
         };
         /** CraftFinding */
         CraftFinding: {
@@ -3617,6 +3671,12 @@ export interface components {
             known_names?: string[];
             /** @default true */
             known_names_complete: boolean;
+            characters?: components["schemas"]["CharacterNames"][];
+        };
+        /** HintPassage */
+        HintPassage: {
+            paragraph: number;
+            text: string;
         };
         /** HintReading */
         HintReading: {
@@ -3966,6 +4026,14 @@ export interface components {
          * @enum {string}
          */
         PovStyle: "first" | "third_limited" | "third_omniscient" | "second" | "mixed";
+        /** ProblemRecipe */
+        ProblemRecipe: {
+            /**
+             * @default problem
+             * @constant
+             */
+            type: "problem";
+        };
         /** ProductFeedbackIn */
         ProductFeedbackIn: {
             /**
@@ -4142,6 +4210,23 @@ export interface components {
             status?: "open" | "closed" | null;
             link_enabled?: boolean | null;
             auto_approve?: boolean | null;
+        };
+        /** RuleExample */
+        RuleExample: {
+            text: string;
+            should_trigger: boolean;
+        };
+        /** RuleObservation */
+        RuleObservation: {
+            paragraph: number;
+            matched: boolean | null;
+            names?: string[];
+            excluded?: string[];
+            uncertain?: string[];
+            count?: number | null;
+            limit?: number | null;
+            /** @default true */
+            complete: boolean;
         };
         /** RunOut */
         RunOut: {
@@ -4753,9 +4838,9 @@ export interface components {
         ValidatorDefinition: {
             /**
              * @default 1
-             * @constant
+             * @enum {integer}
              */
-            schema_version: 1;
+            schema_version: 1 | 2;
             name: string;
             /**
              * @default paragraph
@@ -4767,6 +4852,13 @@ export interface components {
             /** @default 0.8 */
             minimum_probability: number;
             advice: string;
+            recipe?: components["schemas"]["ProblemRecipe"] | components["schemas"]["CountRecipe"] | components["schemas"]["ComparisonRecipe"] | null;
+            /**
+             * @default sentence
+             * @enum {string}
+             */
+            highlight: "sentence" | "paragraph" | "scene";
+            examples?: components["schemas"]["RuleExample"][];
         };
         /** ValidatorOut */
         ValidatorOut: {
@@ -4786,6 +4878,17 @@ export interface components {
             items: components["schemas"]["ValidatorOut"][];
             total: number;
             next_offset: number | null;
+        };
+        /** ValidatorPreviewIn */
+        ValidatorPreviewIn: {
+            definition: components["schemas"]["ValidatorDefinition"];
+            content: string;
+        };
+        /** ValidatorPreviewOut */
+        ValidatorPreviewOut: {
+            hints: components["schemas"]["WritingHint"][];
+            observations: components["schemas"]["RuleObservation"][];
+            warnings: string[];
         };
         /** ValidatorUpdate */
         ValidatorUpdate: {
@@ -4877,6 +4980,13 @@ export interface components {
             /** @enum {null|string} */
             scope?: "sentence" | "paragraph" | "scene" | null;
             rubric_version?: string | null;
+            passages?: components["schemas"]["HintPassage"][];
+            /** @enum {null|string} */
+            highlight_scope?: "sentence" | "paragraph" | "scene" | null;
+            highlight_confidence?: number | null;
+            /** @default false */
+            location_uncertain: boolean;
+            observed?: string[];
         };
     };
     responses: never;
@@ -12717,6 +12827,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ValidatorOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiValidatorsPreviewPreviewValidator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidatorPreviewIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidatorPreviewOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

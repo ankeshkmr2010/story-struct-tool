@@ -87,6 +87,33 @@ class ValidatorDefinition(BaseModel):
     @model_validator(mode="after")
     def valid_question_and_trigger(self) -> Self:
         question, trigger = self.question, self.trigger
+        if isinstance(self.recipe, CountRecipe):
+            question = Question(
+                type="noul",
+                instructions=(
+                    f"Are there more than {self.recipe.limit} named characters meeting this "
+                    f"criterion in the target passage? {self.recipe.criteria}"
+                ),
+                criteria=question.criteria if question.type == "noul" else None,
+            )
+            self.question = question
+        elif isinstance(self.recipe, ComparisonRecipe):
+            if (
+                question.type != "noul"
+                or not isinstance(trigger, NoulTrigger)
+                or not trigger.expected
+            ):
+                raise ValueError("Comparison recipes use a Yes trigger")
+            question = Question(
+                type="noul",
+                instructions=(
+                    f"Compare {self.recipe.first} with {self.recipe.second} in the supplied "
+                    f"passage. Does it show this mismatch: {self.recipe.relationship}? "
+                    "Do not guess when either side is missing."
+                ),
+                criteria=question.criteria,
+            )
+            self.question = question
         if not question.instructions.strip():
             raise ValueError("A question is required")
         if question.type != trigger.type:

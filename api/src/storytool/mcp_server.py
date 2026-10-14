@@ -22,7 +22,11 @@ from storytool.domain.ai.patches import ListPatch, ProsePatch
 from storytool.domain.ai.schemas import Proposal
 from storytool.domain.auth.access import _reject
 from storytool.domain.auth.oauth import SCOPES, Delegation, delegated_access, issuer
-from storytool.domain.decisions.validators import ValidatorCreate, ValidatorUpdate
+from storytool.domain.decisions.validators import (
+    ValidatorCreate,
+    ValidatorPreviewIn,
+    ValidatorUpdate,
+)
 from storytool.domain.search.schemas import SearchContext
 from storytool.domain.story.schemas import StoryCreate
 
@@ -430,11 +434,23 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         return await call(ctx, f"/validators/{validator_id}")
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def preview_validator(ctx: Context, sample: ValidatorPreviewIn) -> dict[str, Any]:
+        """Try a rule on a writer-supplied sample without saving it. Requires validators:write.
+        Sends only the supplied sample, question, recipe and examples to the shared reader;
+        uses this account's reader budget. Returns counted/excluded/uncertain names and
+        contributing passages. Do not silently read or send other manuscript/planning data.
+        """
+        return await call(ctx, "/validators/preview", "POST", sample.model_dump(mode="json"))
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
     async def create_validator(ctx: Context, validator: ValidatorCreate) -> dict[str, Any]:
         """Save a private provider-neutral check. Requires validators:write.
         Question types: noul (yes/no), choice (1-255 options), score (2-10 levels).
+        Use recipe=count for named-character limits, with count_when, criteria and limit.
+        recipe=comparison records first, second and relationship; problem checks use the question.
+        Keep examples separate from advice; highlight defaults to contributing sentences.
         Trigger must match the question type. Advice is user-authored, never generated.
-        Definitions start disabled unless explicitly enabled; execution is not wired yet.
+        Definitions start disabled unless enabled; enabled checks run in saved-story hints.
         """
         return await call(ctx, "/validators", "POST", validator.model_dump(mode="json"))
 

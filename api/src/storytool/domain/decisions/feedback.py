@@ -47,7 +47,7 @@ class DecisionLabelIn(BaseModel):
             str,
             Field(
                 max_length=40,
-                pattern=r"^(?:hints-v[1-4]|craft-v[12]|hints-custom-v1-r[1-9]\d{0,9})$",
+                pattern=r"^(?:hints-v[1-4]|craft-v[12]|hints-custom-v[12]-r[1-9]\d{0,9})$",
             ),
         ]
         | None
@@ -98,7 +98,10 @@ async def save_label(db: AsyncSession, actor: Actor, data: DecisionLabelIn) -> N
             if actor.user_id
             else None
         )
-        if validator is None or data.rubric_version != f"hints-custom-v1-r{validator.version}":
+        if validator is None or data.rubric_version not in {
+            f"hints-custom-v1-r{validator.version}",
+            f"hints-custom-v2-r{validator.version}",
+        }:
             raise ClientException(
                 status_code=409,
                 detail="This personal check changed. Read again before recording feedback.",

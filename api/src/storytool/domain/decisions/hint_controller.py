@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from storytool.config import get_settings
 from storytool.domain.cast.models import Character
 from storytool.domain.decisions.custom_hints import enabled_validators, read_custom_hints, signature
-from storytool.domain.decisions.hints import HintInput, HintReading, read_hints
+from storytool.domain.decisions.hints import CharacterNames, HintInput, HintReading, read_hints
 from storytool.domain.decisions.providers import shared_provider
 from storytool.domain.decisions.service import Actor, DecisionService
 from storytool.domain.glossary import GlossaryEntry
@@ -79,7 +79,7 @@ async def hints(db: AsyncSession, actor: Actor, data: HintInput) -> HintReading:
     service = DecisionService(db, actor, provider)
     personal = await enabled_validators(db, actor.user_id) if actor.user_id else []
     await db.commit()  # Release read-only DB connection before the provider request.
-    result, (custom, messages) = await asyncio.gather(
+    result, (custom, messages, _observations) = await asyncio.gather(
         read_hints(service, model, data), read_custom_hints(service, model, data, personal)
     )
     if actor.user_id:
@@ -114,12 +114,15 @@ class WritingHintsController(Controller):
         ):
             raise NotFoundException(detail="Scene not found")
         names = []
+        data.characters = []
         for model, field in ((Character, Character.name), (GlossaryEntry, GlossaryEntry.term)):
             rows = await db_session.execute(
                 select(field, model.aliases).where(model.story_id == story_id)
             )
             for name, aliases in rows:
                 names.extend([name, *(aliases or [])])
+                if model is Character:
+                    data.characters.append(CharacterNames(name=name, aliases=aliases or []))
         # A partial glossary would produce misleading unknown-name hints.
         data.known_names = list(dict.fromkeys(names))
         if len(data.known_names) > 255:
