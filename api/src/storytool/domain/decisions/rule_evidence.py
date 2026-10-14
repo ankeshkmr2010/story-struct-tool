@@ -142,7 +142,8 @@ async def count_characters(
             instructions=(
                 f"Does the character named {aliases} meet this counting criterion in target "
                 f"{unit['id']}? {COUNT_MEANINGS[recipe.count_when]} "
-                f"Writer's criterion: {recipe.criteria}. Use the supplied examples as guidance."
+                f"Writer's criterion: {recipe.criteria}. The explicit criterion takes precedence "
+                "over the general category. Use examples as guidance, not extra characters."
             )
         )
     result = await service.evaluate(

@@ -102,6 +102,7 @@ async def read_custom_hints(
             "definition_hash": row.definition_hash,
             "validator_question": definition.question.instructions,
             "examples": [example.model_dump() for example in definition.examples],
+            "trigger": definition.trigger.model_dump(),
             "input_scope": scope,
             "opening_context": paragraphs[0][:200],
         }

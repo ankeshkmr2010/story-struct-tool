@@ -154,6 +154,7 @@ const patch = <T,>(path: string, body: unknown) =>
   request<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 
 export const api = {
+  previewValidator: (body: S['ValidatorPreviewIn']) => post<S['ValidatorPreviewOut']>('/api/validators/preview', body),
   listValidators: (offset = 0) => request<S['ValidatorPage']>(`/api/validators?offset=${offset}&limit=50`),
   getValidator: (id: string) => request<WritingValidator>(`/api/validators/${id}`),
   createValidator: (body: ValidatorCreate) => post<WritingValidator>('/api/validators', body),

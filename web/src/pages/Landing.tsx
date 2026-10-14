@@ -17,6 +17,7 @@ const craft = [
   ['03', 'Find your scene rhythm', 'Scene and sequel checks highlight long runs of action or reaction, so you can decide where the story needs room to breathe.'],
   ['04', 'Misbelief at midpoint', 'Ask an AI to review how the midpoint challenges a character’s false belief, using evidence from your story.'],
   ['05', 'Value shift versus prose', 'Compare a scene’s planned emotional change with what its prose delivers, and consider where to revise.'],
+  ['06', 'Writing checks you can shape', 'Set character limits, look for problems or compare actions and intentions. Try a sample and get your own advice beside highlighted sentences, without coding or changing your prose.'],
 ] as const
 
 export default function Landing() {

@@ -456,6 +456,13 @@ export default function HowToUse() {
                   Under Reference, give locations a description and atmosphere, then link
                   scenes to them. Places shows where each one appears and who was there.
                 </Item>
+                <Item title="Build your own writing checks">
+                  Open <strong className="font-medium">Writing checks</strong> in your account dropdown. Choose whether to find a problem, count named characters or compare two things. For a character limit, define whether presence, speaking/acting or moving the action forward counts; merely arriving may not change the plot. Set the limit and write a practical next step. Keep sample passages under Examples, separate from advice.
+                  <br /><br />
+                  Choose what to highlight: contributing sentences are the default, with paragraph and whole-scene options. Try the rule on a sample before enabling it; inspect counted, excluded and uncertain names and compare with your expectation. The trial sends your sample, rule and examples to the shared reader using your reading allowance, without saving the rule or editing prose. Enable the saved check, then switch on Live hints in Write. Adjacent contributing sentences are grouped; an uncertain location falls back to a paragraph. Checks remain private and advisory.
+                  <br /><br />
+                  Your connected AI can create, read, edit, toggle and delete checks, or try a supplied sample through MCP, with your explicit writing-check permissions. It should supply the same recipe, counting criterion, examples and highlight preference used by the form.
+                </Item>
                 <Item title="Ask the tool to read">
                   In Evaluate, Run reads saved scenes with the shared reader and combines evidence for craft checks. Uncertain findings offer Verify with your AI or a copy-scene prompt; verification includes only the selected scenes and their relevant thread or protagonist-belief context, and native reports remain available on return. Missing coverage is shown explicitly. In Noticed, choose <strong className="font-medium">read prose</strong>. When the site-provided Jev reader is available, no personal AI connection is needed. The
                   panel names the active reader; with no model configured it matches names

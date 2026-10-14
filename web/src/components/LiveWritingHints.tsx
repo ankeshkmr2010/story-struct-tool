@@ -6,7 +6,7 @@ import { errorText } from '../api/errors'
 import { SANDBOX_ID } from '../sandbox/storage'
 import { ReadingFeedback } from './ReadingFeedback'
 
-export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { storyId: string; sceneId: string; content: string; onParagraph: (paragraph: number, find?: string) => void }) {
+export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { storyId: string; sceneId: string; content: string; onParagraph: (paragraph: number, find?: string, wholeScene?: boolean) => void }) {
   const anchor = useRef<HTMLSpanElement>(null)
   const [position, setPosition] = useState<{ top: number; right: number; maxHeight: number; width: number }>()
   useEffect(() => {
@@ -59,15 +59,18 @@ export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { s
   }
   return <><span ref={anchor} hidden />{position && createPortal(<aside className="live-writing-hints" style={{ ...position, display: position.maxHeight < 60 ? 'none' : undefined }} aria-label="Live writing hints">
     <h3>Live hints</h3>
-    <details className="live-hints-about"><summary>About live hints</summary><p>This scene, known names and enabled personal check questions go to the shared reader. Notes never change your prose.</p></details>
+    <details className="live-hints-about"><summary>About live hints</summary><p>This scene, known names and enabled personal check questions and examples go to the shared reader. Notes never change your prose.</p></details>
     {result?.result?.unavailable && <p role="status" className="writer-help">{result.result.unavailable} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry unread sections</button></p>}
     {!content.trim() ? <p className="writer-help">Start writing to see hints.</p> : !ready ? <p className="writer-help">Loading known names… {(characters.isError || glossary.isError) && <button type="button" onClick={() => { void characters.refetch(); void glossary.refetch() }}>Retry</button>}</p> : !result ? <p role="status" className="writer-help">Reading after you pause…</p> : result.error ? <p className="writer-help">{result.error} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry</button></p> : hints.length === 0 ? result.result?.unavailable ? null : <p className="writer-help">No specific issue found in this reading.</p> : hints.map(hint => <div className="live-writing-hint" key={hint.code}>
       <p className="live-hint-message">{hint.message}</p>
       {hint.scope && <p className="live-hint-advice">Personal {hint.scope} check{hint.scope !== 'scene' && hint.paragraph ? ` · paragraph ${hint.paragraph}` : ''}</p>}
+      {hint.observed?.map((observation, index) => <p key={index} className="live-hint-advice">{observation}</p>)}
+      {hint.location_uncertain && <p className="live-hint-advice">Sentence location uncertain; showing the paragraph instead.</p>}
+      {hint.passages?.map((passage, index) => <div key={index}><blockquote className="live-hint-excerpt">{passage.text.length > 500 ? `${passage.text.slice(0, 500)}…` : passage.text}</blockquote><button type="button" className="live-hint-passage-link" onClick={() => onParagraph(passage.paragraph, passage.text)}>{hint.highlight_scope === 'paragraph' ? 'Highlight paragraph' : hint.passages!.length > 1 ? `Highlight sentence group ${index + 1}` : 'Highlight sentences'}</button></div>)}
       {hint.excerpt && <blockquote className="live-hint-excerpt">{hint.excerpt}</blockquote>}
       {hint.action && <p className="live-hint-advice">{hint.action}</p>}
 
-      <div className="live-hint-actions">{hint.paragraph && <button type="button" className="live-hint-passage-link" title={`Open paragraph ${hint.paragraph}`} onClick={() => onParagraph(hint.paragraph!, hint.excerpt ?? undefined)}>{hint.scope === 'scene' ? 'Open scene' : 'Open passage'}</button>}
+      <div className="live-hint-actions">{hint.paragraph && !hint.passages?.length && <button type="button" className="live-hint-passage-link" title={`Open paragraph ${hint.paragraph}`} onClick={() => onParagraph(hint.paragraph!, hint.excerpt ?? undefined, hint.highlight_scope === 'scene')}>{hint.highlight_scope === 'scene' ? 'Highlight scene' : hint.scope === 'scene' ? 'Open scene' : 'Open passage'}</button>}
       <ReadingFeedback compact storyId={storyId} checkCode={`hint.${hint.kind ?? (hint.code.startsWith('telling_') ? 'telling' : hint.code)}`} evidenceKeys={hint.evidence_keys ?? []} probability={hint.probability} rubricVersion={hint.rubric_version ?? result?.result?.rubric_version} onRecorded={() => dismiss(hint.code)} /></div>
     </div>)}
   </aside>, document.body)}</>

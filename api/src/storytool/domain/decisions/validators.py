@@ -94,7 +94,7 @@ class ValidatorDefinition(BaseModel):
                     f"Are there more than {self.recipe.limit} named characters meeting this "
                     f"criterion in the target passage? {self.recipe.criteria}"
                 ),
-                criteria=question.criteria if question.type == "noul" else None,
+                criteria=None,
             )
             self.question = question
         elif isinstance(self.recipe, ComparisonRecipe):
@@ -111,7 +111,7 @@ class ValidatorDefinition(BaseModel):
                     f"passage. Does it show this mismatch: {self.recipe.relationship}? "
                     "Do not guess when either side is missing."
                 ),
-                criteria=question.criteria,
+                criteria=None,
             )
             self.question = question
         if not question.instructions.strip():
@@ -132,6 +132,8 @@ class ValidatorDefinition(BaseModel):
             "recipe": self.recipe.model_dump() if self.recipe else None,
             "examples": [example.model_dump() for example in self.examples],
         }
+        if self.recipe is None and not self.examples:
+            details = question.model_dump()  # Preserve the original size boundary for saved rules.
         if len(canonical(details).encode()) > 24000:
             raise ValueError("Question, recipe and examples exceed the definition size limit")
         if isinstance(self.recipe, CountRecipe) and (

@@ -307,9 +307,10 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       } }))),
       EditorView.theme({ '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' }, '.cm-scroller': { fontFamily: 'Georgia, serif', fontSize: '18px', overflow: 'visible' }, '.cm-content': { padding: '12px 0 24px', lineHeight: '1.9' }, '.cm-focused': { outline: 'none' }, '.cm-cursor': { borderLeftColor: 'var(--accent)' } }),
     ]} basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, bracketMatching: false, closeBrackets: false, autocompletion: false }} />
-    {liveHints && scene && <LiveWritingHints key={scene.id} storyId={storyId} sceneId={scene.id} content={state.text} onParagraph={(paragraph, find) => {
+    {liveHints && scene && <LiveWritingHints key={scene.id} storyId={storyId} sceneId={scene.id} content={state.text} onParagraph={(paragraph, find, wholeScene) => {
       const editor = view.current
       if (!editor) return
+      if (wholeScene) { editor.dispatch({ selection: { anchor: 0, head: editor.state.doc.length }, effects: EditorView.scrollIntoView(0, { y: 'start' }) }); editor.focus(); return }
       const parts = [...editor.state.doc.toString().matchAll(/(?:^|\n\s*\n)([\s\S]*?)(?=\n\s*\n|$)/g)].filter(part => part[1].replace(/!\[[^\]\n]*\]\([^\n)]*\)/g, '').trim())
       const part = parts[paragraph - 1]
       if (!part) return
@@ -318,7 +319,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       if (match >= 0) {
         editor.dispatch({ selection: { anchor: at + match, head: at + match + find!.length }, effects: EditorView.scrollIntoView(at + match, { y: 'center' }) }); editor.focus(); return
       }
-      editor.dispatch({ selection: { anchor: at }, scrollIntoView: true }); editor.focus()
+      editor.dispatch({ selection: { anchor: at, head: find ? at + part[1].length : at }, scrollIntoView: true }); editor.focus()
     }} />}
     </div>
     {previewImage && <ImagePreview url={previewImage.url} alt={previewImage.alt} caption={previewImage.caption} onClose={() => { setPreviewImage(null); view.current?.focus() }} />}
