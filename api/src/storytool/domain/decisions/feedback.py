@@ -41,9 +41,9 @@ class DecisionLabelIn(BaseModel):
     )
     probability: float = Field(ge=0, le=1, allow_inf_nan=False)
     outcome: Literal["accepted", "dismissed"]
-    rubric_version: Literal["hints-v1", "hints-v2", "hints-v3", "craft-v1", "craft-v2"] | None = (
-        None
-    )
+    rubric_version: (
+        Literal["hints-v1", "hints-v2", "hints-v3", "hints-v4", "craft-v1", "craft-v2"] | None
+    ) = None
 
     @field_validator("check_code")
     @classmethod

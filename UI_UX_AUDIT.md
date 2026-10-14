@@ -426,3 +426,5 @@ from future real feedback remain unverified. T53–T60 implementation is built, 
 - [~] Live hints stay sticky beside the active scene on the right, with bounded internal scrolling and a focus-mode offset. Narrow layouts retain the right column. Awaiting production visual confirmation.
 
 - [~] Live hints add contextual coherence: flag an unrelated sentence only after confident scene/paragraph and sentence selection; quote source text with an existing passage link and advice. Connected memories, metaphors and intentional digressions are allowed. Uses provider-neutral typed decisions and hints-v3 feedback. No beat/plot/arc context added. Static checks only; model quality awaits production confirmation.
+
+- [~] Coherence refinement: assess each sentence against its surrounding paragraph, using scene context and allowing connected digressions; hints-v4 separates the changed rubric. Awaiting production quality confirmation.

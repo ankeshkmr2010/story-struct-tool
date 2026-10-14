@@ -36,20 +36,21 @@ class HintReading(BaseModel):
     hints: list[WritingHint] = Field(default_factory=list)
     unavailable: str | None = None
     model: str | None = None
-    rubric_version: Literal["hints-v3"] = "hints-v3"
+    rubric_version: Literal["hints-v4"] = "hints-v4"
     sections_read: int = 0
     sections_total: int = 0
 
 
 CHECKS = {
     "coherence": (
-        "Does a sentence abruptly introduce an unrelated fact or topic with no "
-        "plausible connection to the scene's action, character thoughts or setting? "
+        "Does a sentence break its surrounding paragraph's logical flow by abruptly "
+        "introducing an unrelated fact or topic? Assess each sentence against the "
+        "paragraph's surrounding sentences, using the scene as context. "
         "Assess contextual relevance, not grammar or factual truth. A true fact can "
         "still be unrelated. Allow connected memories, metaphors, humour, character "
         "associations and intentional digressions. A character knowing a fact alone "
         "does not establish its relevance to the scene.",
-        "This sentence may introduce an unrelated topic and interrupt the scene.",
+        "This sentence may introduce an unrelated topic and interrupt the paragraph.",
     ),
     "pov": (
         "Does the narrative unintentionally slip outside its established point of "
@@ -227,7 +228,7 @@ async def read_hints(service: DecisionService, model: str, data: HintInput) -> H
                 ],
             )
         state = {
-            "rubric": "hints-v3",
+            "rubric": "hints-v4",
             "target_paragraphs": [{"number": number, "text": part} for number, part in frame],
             "opening_context": paragraphs[0][:200] if index else "",
             "previous_context": frames[index - 1][-1][1][-200:] if index else "",
@@ -245,7 +246,7 @@ async def read_hints(service: DecisionService, model: str, data: HintInput) -> H
                 f"hint.{kind}",
                 reading.model,
                 service.provider.identity,
-                "hints-v3",
+                "hints-v4",
                 get_settings().decision_hint_probability,
             )
 
@@ -282,8 +283,9 @@ async def read_hints(service: DecisionService, model: str, data: HintInput) -> H
                                 "coherence_sentence": Choice(
                                     instructions=(
                                         f"In target paragraph {number}, which supplied sentence "
-                                        "introduces an unrelated topic without a clear connection "
-                                        "to the scene? Allow connected memories, metaphors and "
+                                        "breaks the paragraph's logical flow with an unrelated "
+                                        "topic? Compare surrounding sentences, using the scene "
+                                        "as context. Allow connected memories, metaphors and "
                                         "intentional digressions. Choose none without "
                                         "clear evidence."
                                     ),
@@ -357,7 +359,7 @@ async def read_hints(service: DecisionService, model: str, data: HintInput) -> H
             "hint.turn",
             result.model,
             service.provider.identity,
-            "hints-v3",
+            "hints-v4",
             get_settings().decision_hint_probability,
         )
         if min(no_change, ending) >= max(0.85, threshold):
