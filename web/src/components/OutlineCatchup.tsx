@@ -1,7 +1,7 @@
 import { SceneImages } from './StoryImages'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '../api/client'
+import { api, type OutlineMatch } from '../api/client'
 import { errorText } from '../api/errors'
 
 const reasonLabels: Record<string, string> = {
@@ -9,6 +9,8 @@ const reasonLabels: Record<string, string> = {
   prose_changed_since_summary: 'prose changed since summary',
   no_characters: 'no characters',
   no_location: 'no location',
+  outline_mismatch: 'outline may no longer match prose',
+  stale_beats: 'assigned beats may be stale',
 }
 
 // The server adds the worklist and its instructions to the context when `catchup` is set.
@@ -48,13 +50,14 @@ export function OutlineCatchup({ storyId, onOpenInbox }: { storyId: string; onOp
       </header>
       {catchup.isPending && <p className="text-sm text-slate-500 dark:text-slate-400">Checking scenes…</p>}
       {catchup.isError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(catchup.error)}</p>}
+      {data?.stale && <p role="status" className="text-sm text-amber-700 dark:text-amber-300">The story changed during the reading. <button type="button" className="underline" onClick={() => { void catchup.refetch() }}>Refresh catch-up</button></p>}
       {data && data.drafted_scenes === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">No scene has prose yet. Write some first; this works from what's on the page.</p>}
       {data && data.drafted_scenes > 0 && <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
           <h3 className="text-sm font-semibold">Scenes</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {data.pending_scenes === 0 ? `All ${data.drafted_scenes} drafted scenes have an outline that matches the prose.` : `${data.pending_scenes} of ${data.drafted_scenes} drafted scenes have an outline behind their prose.`}
+            {data.pending_scenes === 0 ? `No current catch-up flags across ${data.drafted_scenes} drafted scenes.` : `${data.pending_scenes} of ${data.drafted_scenes} drafted scenes may need outline catch-up.`}
           </p>
         </div>
         {data.pending_scenes > 0 && <>
@@ -71,13 +74,13 @@ export function OutlineCatchup({ storyId, onOpenInbox }: { storyId: string; onOp
       {run.isError && <p role="alert" className="mt-2 text-xs text-red-600 dark:text-red-300">{errorText(run.error)}</p>}
       {run.isSuccess && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{run.data.status === 'invalid' ? `The assistant's batch couldn't be validated: ${String(run.data.result?.validation_error ?? '')}` : <>The assistant's batch is ready for review. <button type="button" onClick={onOpenInbox} className="font-medium underline">Open Agent changes</button></>}</p>}
     </section>}
-      <OutlineView storyId={storyId} behind={new Map((data?.scenes ?? []).map((scene) => [scene.id, scene.reasons]))} />
+      <OutlineView storyId={storyId} readings={data?.reader_status ?? {}} behind={new Map(data?.pending_reasons ? Object.entries(data.pending_reasons) : (data?.scenes ?? []).map((scene) => [scene.id, scene.reasons]))} />
     </div>
   )
 }
 
 /** The outline the catch-up keeps in step with the prose: per chapter, each scene's summary, people, place and events. */
-function OutlineView({ storyId, behind }: { storyId: string; behind: Map<string, string[]> }) {
+function OutlineView({ storyId, behind, readings }: { storyId: string; behind: Map<string, string[]>; readings: Record<string, OutlineMatch> }) {
   const timeline = useQuery({ queryKey: ['timeline', storyId], queryFn: () => api.getTimeline(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
   if (timeline.isPending || scenes.isPending) return <p className="text-sm text-slate-500 dark:text-slate-400">Loading the outline…</p>
@@ -100,15 +103,17 @@ function OutlineView({ storyId, behind }: { storyId: string; behind: Map<string,
           <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{chapter.title}</h4>
           <ul className="space-y-2">{chapter.scenes.map((scene) => {
             const reasons = behind.get(scene.id)
+            const reading = readings[scene.id]
             const drafted = (words.get(scene.id) ?? 0) > 0
             const events = entries.filter((entry) => entry.kind === 'event' && entry.scene_id === scene.id)
             return (
               <li key={scene.id} className={`rounded-lg border p-3 ${reasons ? 'border-amber-300 bg-amber-50/40 dark:border-amber-800 dark:bg-amber-950/40' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="text-sm font-semibold">{scene.title || 'Untitled scene'}</p>
-                  <span className={`text-[11px] ${reasons ? 'font-medium text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'}`}>{reasons ? `Outline behind: ${reasons.map((reason) => reasonLabels[reason] ?? reason).join(', ')}` : drafted ? 'Matches the prose' : 'No prose yet'}</span>
+                  <span className={`text-[11px] ${reasons ? 'font-medium text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'}`}>{reasons ? `Outline behind: ${reasons.map((reason) => reasonLabels[reason] ?? reason).join(', ')}` : drafted ? reading?.status === 'match' ? 'No likely outline mismatch' : reading?.status === 'uncertain' ? 'Outline match uncertain' : 'Outline not assessed' : 'No prose yet'}</span>
                 </div>
                 <p className={`mt-1 text-sm leading-6 ${scene.summary ? 'text-slate-700 dark:text-slate-200' : 'italic text-slate-400'}`}>{scene.summary || 'No summary'}</p>
+                {Boolean(reading?.stale_beat_labels?.length) && <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">Possible stale beats: {reading.stale_beat_labels!.join(', ')}</p>}
                 <dl className="mt-2 grid gap-1 text-xs text-slate-600 sm:grid-cols-[5rem_1fr] dark:text-slate-300">
                   <dt className="text-slate-400">People</dt><dd>{scene.participants.map((person) => person.name).join(', ') || '—'}</dd>
                   <dt className="text-slate-400">Place</dt><dd>{scene.location_name || '—'}</dd>

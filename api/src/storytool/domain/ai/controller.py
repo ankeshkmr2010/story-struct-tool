@@ -76,6 +76,16 @@ def actor(request: Request) -> UUID:
     return request.scope["state"]["storytool_user_id"]
 
 
+def catchup_reader(db: AsyncSession, user_id: UUID):
+    from storytool.config import get_settings
+    from storytool.domain.decisions.providers import shared_provider
+    from storytool.domain.decisions.service import Actor, DecisionService
+    if not get_settings().shared_reader_available:
+        return None, ""
+    provider, model = shared_provider()
+    return DecisionService(db, Actor.user(user_id), provider), model
+
+
 def proposal_evidence(proposal: Proposal, context: dict[str, Any]) -> list[dict[str, Any]]:
     identifiers = {
         str(identifier)
@@ -255,8 +265,15 @@ class AIController(Controller):
     ) -> dict[str, Any]:
         await owned_story(db_session, story_id, actor(request))
         state = await snapshot(db_session, story_id)
-        worklist = await catchup_worklist(db_session, story_id, state, limit)
-        return {"base_fingerprint": fingerprint(state), **worklist}
+        reader, reader_model = catchup_reader(db_session, actor(request))
+        worklist = await catchup_worklist(db_session, story_id, state, limit, reader, reader_model)
+        stale = fingerprint(state) != fingerprint(await snapshot(db_session, story_id))
+        if stale:
+            worklist["reader_status"] = {
+                key: {"status": "uncertain", "stale_beats": []}
+                for key in worklist["reader_status"]
+            }
+        return {"base_fingerprint": fingerprint(state), "stale": stale, **worklist}
 
     @get("/stories/{story_id:uuid}/ai/runs")
     async def list_runs(
@@ -328,7 +345,10 @@ class AIController(Controller):
         context["conversation"] = conversation
         context["assistant_mode"] = data.mode
         if data.catchup:
-            context["reverse_outline"] = await catchup_worklist(db_session, story_id, state)
+            reader, reader_model = catchup_reader(db_session, user_id)
+            context["reverse_outline"] = await catchup_worklist(
+                db_session, story_id, state, reader=reader, reader_model=reader_model
+            )
         if len(json.dumps(context)) > 180000:
             raise ClientException(
                 detail="This story exceeds the current context limit. Try without prose."

@@ -10,6 +10,8 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from storytool.domain.decisions.outline_match import read_outline_matches
+from storytool.domain.decisions.service import DecisionService
 from storytool.domain.story.authorship import FieldAuthorship
 
 PROSE_LIMIT = 12000
@@ -26,7 +28,12 @@ INSTRUCTIONS = (
 
 
 async def catchup_worklist(
-    db: AsyncSession, story_id: UUID, state: dict[str, Any], limit: int = 6
+    db: AsyncSession,
+    story_id: UUID,
+    state: dict[str, Any],
+    limit: int = 6,
+    reader: DecisionService | None = None,
+    reader_model: str = "",
 ) -> dict[str, Any]:
     changed = {
         (str(entity_id), field): at
@@ -58,6 +65,9 @@ async def catchup_worklist(
         chapter = chapters.get(scene.get("chapter_id") or "")
         return (chapter["sort_key"] if chapter else float("inf"), scene["sort_key"])
 
+    if reader is not None:
+        await db.commit()  # Release snapshot locks before remote advisory reads.
+    reader_status = await read_outline_matches(reader, reader_model, state)
     pending = []
     drafted = 0
     for scene in sorted(state["scene"], key=order):
@@ -76,6 +86,13 @@ async def catchup_worklist(
             reasons.append("no_characters")
         if not scene.get("location_id"):
             reasons.append("no_location")
+        status = reader_status.get(str(scene["id"]), {})
+        if status.get("status") == "match" and "prose_changed_since_summary" in reasons:
+            reasons.remove("prose_changed_since_summary")
+        if status.get("status") == "mismatch":
+            reasons.append("outline_mismatch")
+        if status.get("stale_beats"):
+            reasons.append("stale_beats")
         if reasons:
             pending.append((scene, reasons))
 
@@ -96,12 +113,15 @@ async def catchup_worklist(
             "content_hash": hashlib.sha256(content.encode()).hexdigest(),
             "prose": content[:PROSE_LIMIT],
             "prose_truncated": len(content) > PROSE_LIMIT,
+            "reader": reader_status.get(str(scene["id"])),
         }
 
     return {
         "instructions": INSTRUCTIONS,
         "drafted_scenes": drafted,
         "pending_scenes": len(pending),
+        "reader_status": reader_status,
+        "pending_reasons": {str(scene["id"]): reasons for scene, reasons in pending},
         "scenes": [compact(scene, reasons) for scene, reasons in pending[:limit]],
         "known": {
             "character": [
