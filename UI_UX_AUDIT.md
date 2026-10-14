@@ -422,3 +422,5 @@ from future real feedback remain unverified. T53–T60 implementation is built, 
 - [~] Evaluate finding-card design: tighter spacing, inline confidence and a single wrapping action row; Useful/Dismiss use accessible icons. Existing evidence, passage links and verification actions retained. Awaiting production visual confirmation.
 
 - [~] Evaluate findings use a keyboard-focusable vertical scroll area capped at half the viewport height; shorter lists keep their natural height. Awaiting production visual confirmation.
+
+- [~] Live hints stay sticky beside the active scene on the right, with bounded internal scrolling and a focus-mode offset. Narrow layouts retain the right column. Awaiting production visual confirmation.
