@@ -116,6 +116,50 @@ coding anything vague; verify on prod with the user (Render deploy is manual).
 2026-10-14: per user, shipped work is marked done. This status does not claim local tests
 or production visual confirmation. T20 remains open for the unfinished walkthrough.
 
+## Remaining work by effort — 2026-10-14
+
+Current overview of the remaining recorded/requested scope. Effort is relative and provisional;
+items with undecided scope need clarification before implementation. Historical task records
+below retain their original IDs and statuses. Built work awaiting a production check is separate.
+
+### High effort — implementation
+
+- [ ] Scrivener import (T36 follow-up): remaining import format; Word import is already complete.
+- [ ] T44 Series bible: share characters, places and glossary across books.
+- [ ] T45 German, then Spanish: localized interface and per-story language passed through MCP. Related to T52, but localization is separate.
+- [ ] T46 Monetisation (later): early-supporter lifetime deal via Gumroad or Paddle once beta feedback settles.
+- [ ] T50 Current-manuscript authorship percentages: human / AI / unknown word attribution across edits, paste/import, AI changes, deletion, undo and restore; tracked provenance, never AI detection.
+
+### Medium effort — implementation
+
+- [ ] T20 follow-up: make inserting an event between world positions atomic, so a failed request cannot leave partial shifts.
+- [ ] T25 Shared/showcase view counts: first decide unique vs repeated, signed-in vs anonymous, and story vs chapter views.
+- [ ] T42 Visual MICE nesting: replace printed thread tags with a readable nesting diagram.
+- [ ] T42 Evaluation overview: all-checks summary and Run all, with readiness/provider requirements defined first.
+- [ ] T43 Shareable authorship disclosure: package the existing report for agents, publishers and contests. Accurate word percentages remain the separate T50 task.
+- [ ] T52 Latin-script language support: define the intended language-aware accented-text/punctuation improvements before coding; listed as Planned on the public roadmap.
+
+### Low effort — wording / decisions
+
+- [ ] Image disclaimer (earlier request): clarify whether additional wording covers allowed content and permission to use images. Format/size guidance is already shipped; the broader disclaimer was left pending clarification.
+
+### Configuration and production confirmation — built, not new coding
+
+- [~] T51 Shared Jev: replace the Render TYPESAFE_API_KEY placeholder if still needed, redeploy, and confirm Noticed → read prose uses the shared reader without a personal connection. Configuration completion has not been confirmed in this task record.
+- [~] T20 Walkthrough: Timeline, Settings and MCP setup; actual connection/copy/revocation behaviour and narrow-screen layout.
+- [~] T23 Images: manager filters and usage links, right-click picker and clipboard actions, inline thumbnails/removal, scene/Catch up thumbnails, enlarged reading previews, resizing large phone photos, alt-text nudges, all export placements, retained history and permanent-story cleanup.
+- [~] T22/T48/T49 Search: exact/related results, destination links and agent/review evidence prompts.
+- [~] T24 Beta readers: invitations/access, frozen rounds, private conversations and polls.
+- [~] T27/T32/T40/T41 Roadmap and landing follow-ups: vertical condensed Delivered, hero rings, current Upcoming cards and craft copy. T42 built polish: definitions, dates, stale-review actions, automatic refresh and item links.
+- [~] T28–T34/T47 Site copy and onboarding: privacy/pricing, hero/differentiators, AI starter/client setup and how-to guides. Recent image-insertion tour samples also await confirmation; T35's core sandbox remains marked complete per user.
+- [~] T37/T38 Funnel and feedback: account milestones, admin counts and private feedback flow.
+- [~] Page link previews: distinct cards for Landing, Your stories, Roadmap, Shoutouts, Feedback and How to use; per-story public showcase metadata/image and generic private-page previews.
+
+### Parked / superseded — do not restart automatically
+
+- [ ] T14 Generate entry points: parked under D3; interaction/provider approach remains undecided.
+- [ ] T11 First-run demo card and tab empty states: deferred/superseded by T35; only revisit if a specific onboarding gap is reported.
+
 **Decisions (blockers)**
 - D1 Grouping in §1 — **approved as proposed** (2026-10-11), plus an ASSISTANT group (D2); revisit if it feels wrong on screen.
 - D2 In-app assistant — **keep** (2026-10-11): users bring their own API key, so no cost; it serves writers without an MCP client. T18 becomes "make it discoverable".
@@ -211,7 +255,7 @@ or production visual confirmation. T20 remains open for the unfinished walkthrou
 
 **3. Roadmap — T41**
 - [x] Misbelief and Value shift added to Delivered on 2026-10-13; awaiting production confirmation.
-- [~] Updated 2026-10-14; awaiting production confirmation: remaining cards are try before signup → Scrivener support → shared-story view counts → images. DOCX import, search, beta readers/commenting and PDF export remain in Delivered; this batch added to Delivered.
+- [~] Updated 2026-10-14; awaiting production confirmation: current remaining cards are Scrivener support, Latin-script language support and shared-story view counts; sandbox and images have shipped. DOCX import, search, beta readers/commenting and PDF export remain in Delivered; this batch added to Delivered.
 
 **4. Evaluate tab polish — T42**
 - [~] Already implemented in all three input/review buttons: native tooltips explain missing provider connections or missing inputs. Retained; awaiting production confirmation.
