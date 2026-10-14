@@ -65,11 +65,6 @@ export default function UserSettings() {
       <Link to="/library" className="text-sm text-slate-500 dark:text-slate-400 hover:underline">← Your stories</Link>
       <h1 className="mt-5 text-2xl font-semibold">Your settings</h1>
       <AuthorNameSettings />
-      <section className="mt-6 rounded-xl border border-[var(--line)] p-5 sm:p-6">
-        <h2 className="text-lg font-semibold">Personal writing checks</h2>
-        <p className="mt-2 text-sm text-[var(--muted)]">Build private checks with a simple form, choose when to show advice, and manage your saved checks.</p>
-        <Link to="/checks" className="mt-3 inline-block font-medium text-[var(--accent)] underline">Manage writing checks →</Link>
-      </section>
       <section className="mt-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 sm:p-6">
         <h2 className="text-lg font-semibold">AI connections</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Connect your own account to plan stories and improve suggestions. Requests use your provider's API billing. Saved keys are encrypted and belong only to your account.</p>

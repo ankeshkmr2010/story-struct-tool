@@ -110,7 +110,7 @@ export default function WritingChecks() {
   const editorConflict = conflict && selected && (save.error || (change.error && change.variables?.row.id === selected.id))
   const when = draft.type === 'noul' ? `the answer is ${draft.expected ? 'Yes' : 'No'}` : draft.options.filter(option => option.flag).map(option => option.text || '(unnamed answer)').join(' or ') || 'you select an answer above'
   return <main className="writing-checks-page">
-    <Link to="/settings" className="checks-back">← Settings</Link>
+    <Link to="/library" className="checks-back">← Your stories</Link>
     <header className="page-heading"><div><p className="eyebrow">PRIVATE TO YOU</p><h1>Your writing checks</h1></div><button type="button" disabled={busy} onClick={() => openForm(null)}>+ New check</button></header>
     <p className="checks-intro">Ask a specific question about your writing, then choose when to show your advice. Your prose stays yours.</p>
     <p className="checks-release-note">Build and save checks now. Running custom checks in Live hints is coming next; enabled settings are saved for that update.</p>

@@ -109,7 +109,7 @@ export function AccountMenu() {
   return (
     <details ref={menu} className="account-dropdown">
       <summary aria-label="Account menu"><span className="account-avatar" aria-hidden="true">{(me.data.name ?? me.data.email).slice(0, 1).toUpperCase()}</span><span className="account-name">{me.data.name?.split(' ')[0] ?? 'Account'}</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m6 9 6 6 6-6" /></svg></summary>
-      <div className="account-popover"><div className="account-identity"><strong>{me.data.name ?? 'Your account'}</strong><span>{me.data.email}</span></div><Link to="/settings" onClick={() => { if (menu.current) menu.current.open = false }}>Settings</Link><button type="button" onClick={() => logout.mutate()} disabled={logout.isPending}>{logout.isPending ? 'Signing out…' : 'Sign out'}</button>{logout.isError && <p role="alert">Could not sign out. Try again.</p>}</div>
+      <div className="account-popover"><div className="account-identity"><strong>{me.data.name ?? 'Your account'}</strong><span>{me.data.email}</span></div><Link to="/checks" onClick={() => { if (menu.current) menu.current.open = false }}>Writing checks</Link><Link to="/settings" onClick={() => { if (menu.current) menu.current.open = false }}>Settings</Link><button type="button" onClick={() => logout.mutate()} disabled={logout.isPending}>{logout.isPending ? 'Signing out…' : 'Sign out'}</button>{logout.isError && <p role="alert">Could not sign out. Try again.</p>}</div>
     </details>
   )
 }

@@ -469,3 +469,5 @@ Ruff, TypeScript and scoped frontend lint passed. Production CRUD/consent confir
 
 
 - [~] T61.2 form builder: dedicated `/checks` page linked from Settings, saved/paginated private checks, named edit/save/delete actions and enable preferences. Yes/no, choice and rating forms preserve option identities and validate triggering answers; templates and an appearance preview help authors start. Saving uses expected versions, preserves drafts on errors/conflicts, and provides reload; unsaved edits prompt on link navigation/refresh. Direct refresh is routed by the backend. Custom execution remains explicitly pending in the UI. Static TypeScript/frontend lint/Ruff checks only; no tests/builds, model calls or migration. Awaiting production visual confirmation.
+
+- [~] Writing checks entry moved from Settings to the account dropdown; the checks page returns to Your stories. Awaiting production navigation confirmation.
