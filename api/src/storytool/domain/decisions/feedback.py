@@ -3,6 +3,7 @@
 import hashlib
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
+from uuid import UUID
 
 from litestar import Controller, Request, get, post
 from litestar.exceptions import ClientException
@@ -13,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.config import get_settings
 from storytool.domain.decisions.hint_controller import sandbox_identity
-from storytool.domain.decisions.models import DecisionCache, DecisionFeedback
+from storytool.domain.decisions.models import DecisionCache, DecisionFeedback, DecisionValidator
 from storytool.domain.decisions.service import Actor
 from storytool.domain.site.shoutouts import require_admin
 
@@ -42,14 +43,25 @@ class DecisionLabelIn(BaseModel):
     probability: float = Field(ge=0, le=1, allow_inf_nan=False)
     outcome: Literal["accepted", "dismissed"]
     rubric_version: (
-        Literal["hints-v1", "hints-v2", "hints-v3", "hints-v4", "craft-v1", "craft-v2"] | None
+        Annotated[
+            str,
+            Field(
+                max_length=40,
+                pattern=r"^(?:hints-v[1-4]|craft-v[12]|hints-custom-v1-r[1-9]\d{0,9})$",
+            ),
+        ]
+        | None
     ) = None
 
     @field_validator("check_code")
     @classmethod
     def known_check(cls, value: str) -> str:
         if value not in CHECKS:
-            raise ValueError("Unknown feedback check")
+            if not value.startswith("hint.custom."):
+                raise ValueError("Unknown feedback check")
+            identifier = value.removeprefix("hint.custom.")
+            if str(UUID(identifier)) != identifier:
+                raise ValueError("Invalid personal check ID")
         return value
 
 
@@ -75,6 +87,22 @@ class CalibrationOut(BaseModel):
 
 
 async def save_label(db: AsyncSession, actor: Actor, data: DecisionLabelIn) -> None:
+    if data.check_code.startswith("hint.custom."):
+        validator = (
+            await db.scalar(
+                select(DecisionValidator).where(
+                    DecisionValidator.id == UUID(data.check_code.removeprefix("hint.custom.")),
+                    DecisionValidator.user_id == actor.user_id,
+                )
+            )
+            if actor.user_id
+            else None
+        )
+        if validator is None or data.rubric_version != f"hints-custom-v1-r{validator.version}":
+            raise ClientException(
+                status_code=409,
+                detail="This personal check changed. Read again before recording feedback.",
+            )
     keys = sorted(set(data.evidence_keys))
     rows = (
         await db.scalars(

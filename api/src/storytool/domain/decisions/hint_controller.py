@@ -1,5 +1,6 @@
 """Opt-in writing hints, with owned-scene and bounded public-sandbox routes."""
 
+import asyncio
 import hashlib
 import hmac
 import secrets
@@ -19,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.config import get_settings
 from storytool.domain.cast.models import Character
+from storytool.domain.decisions.custom_hints import enabled_validators, read_custom_hints, signature
 from storytool.domain.decisions.hints import HintInput, HintReading, read_hints
 from storytool.domain.decisions.providers import shared_provider
 from storytool.domain.decisions.service import Actor, DecisionService
@@ -75,8 +77,22 @@ async def hints(db: AsyncSession, actor: Actor, data: HintInput) -> HintReading:
         )
     provider, model = shared_provider()
     service = DecisionService(db, actor, provider)
+    personal = await enabled_validators(db, actor.user_id) if actor.user_id else []
     await db.commit()  # Release read-only DB connection before the provider request.
-    return await read_hints(service, model, data)
+    result, (custom, messages) = await asyncio.gather(
+        read_hints(service, model, data), read_custom_hints(service, model, data, personal)
+    )
+    if actor.user_id:
+        current = await enabled_validators(db, actor.user_id)
+        if signature(current) != signature(personal):
+            custom = []
+            messages = [
+                "Your personal checks changed during this reading. Retry for the latest checks."
+            ]
+    result.hints.extend(custom)
+    if messages:
+        result.unavailable = " ".join([result.unavailable or "", *messages]).strip()
+    return result
 
 
 class WritingHintsController(Controller):

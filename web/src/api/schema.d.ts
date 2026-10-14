@@ -3451,8 +3451,7 @@ export interface components {
             probability: number;
             /** @enum {string} */
             outcome: "accepted" | "dismissed";
-            /** @enum {null|string} */
-            rubric_version?: "hints-v1" | "hints-v2" | "hints-v3" | "hints-v4" | "craft-v1" | "craft-v2" | null;
+            rubric_version?: string | null;
         };
         /** DocxImportOut */
         DocxImportOut: {
@@ -4875,6 +4874,9 @@ export interface components {
             kind?: string | null;
             excerpt?: string | null;
             action?: string | null;
+            /** @enum {null|string} */
+            scope?: "sentence" | "paragraph" | "scene" | null;
+            rubric_version?: string | null;
         };
     };
     responses: never;

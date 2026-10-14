@@ -41,7 +41,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
   {
     date: '14 Oct 2026',
     items: [
-      ['Personal writing-check builder', 'open Writing checks from your account menu to create private checks from a simple form or a template, choose when to show advice, and manage them yourself or through your connected AI. Running custom checks in Live hints is coming next.'],
+      ['Personal writing-check builder', 'open Writing checks from your account menu to create private checks from a simple form or a template, choose when to show advice, and manage them yourself or through your connected AI. Enabled sentence, paragraph and scene checks now run in saved-story Live hints with your advice and passage links.'],
       ['Images in your story', 'illustrations and reference art with captions, inline Write thumbnails, right-click insertion, scene links and portable exports. Large photos shrink before upload, with a gentle alt-text prompt. A dedicated page manages usage and safe deletion; guided samples show the flow.'],
       ['Try before signing up', 'a guided writing sandbox with local search and History, plus interactive feature demos and sample downloads. Tours support Previous, Next and resume; sign in to keep your edits.'],
       ['Writing and reader guides', 'AI quickstart prompts, images and exports, plus beta rounds, private reader conversations and polls.'],

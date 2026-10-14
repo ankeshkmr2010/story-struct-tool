@@ -29,6 +29,8 @@ class WritingHint(BaseModel):
     kind: str | None = None
     excerpt: str | None = None
     action: str | None = None
+    scope: Literal["sentence", "paragraph", "scene"] | None = None
+    rubric_version: str | None = None
 
 
 class HintReading(BaseModel):
