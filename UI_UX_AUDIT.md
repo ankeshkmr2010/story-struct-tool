@@ -118,30 +118,37 @@ or production visual confirmation. T20 remains open for the unfinished walkthrou
 
 ## Remaining work by effort — 2026-10-14
 
-Current overview of the remaining recorded/requested scope. Effort is relative and provisional;
-items with undecided scope need clarification before implementation. Historical task records
-below retain their original IDs and statuses. Built work awaiting a production check is separate.
+Complete current overview of recorded/requested work. Effort is relative and provisional;
+undecided scope needs clarification before implementation. Built work awaiting confirmation
+is separate. Adding these tasks authorizes documentation only, not implementation.
 
 ### High effort — implementation
 
-- [ ] Scrivener import (T36 follow-up): remaining import format; Word import is already complete.
+- [ ] T53 Shared Jev foundation: scene-scoped typed questions, reusable answer cache, private shared-key access, request/option limits, user and anonymous-demo rate limits, spend accounting, timeouts and safe fallback. Detailed boundaries below.
+- [ ] T54 Jev craft checks and Verify cascade: scene/sequel, value shift, MICE nesting and midpoint misbelief, plus setups/payoffs and continuity. Combine atomic answers in code; route uncertain scenes to the user's AI. Includes the pending T42 visual nesting work.
+- [ ] T55 Live Write and sandbox hints: debounce the current scene, show dismissible margin notes, and demonstrate the same behaviour in /try without a personal key. Never edit prose.
+- [ ] Scrivener import (T36 follow-up): remaining import format; Word import is complete.
 - [ ] T44 Series bible: share characters, places and glossary across books.
-- [ ] T45 German, then Spanish: localized interface and per-story language passed through MCP. Related to T52, but localization is separate.
+- [ ] T45 German, then Spanish: localized interface and per-story language through MCP. Related to T52; localization remains separate.
 - [ ] T46 Monetisation (later): early-supporter lifetime deal via Gumroad or Paddle once beta feedback settles.
 - [ ] T50 Current-manuscript authorship percentages: human / AI / unknown word attribution across edits, paste/import, AI changes, deletion, undo and restore; tracked provenance, never AI detection.
 
 ### Medium effort — implementation
 
-- [ ] T20 follow-up: make inserting an event between world positions atomic, so a failed request cannot leave partial shifts.
-- [ ] T25 Shared/showcase view counts: first decide unique vs repeated, signed-in vs anonymous, and story vs chapter views.
-- [ ] T42 Visual MICE nesting: replace printed thread tags with a readable nesting diagram.
-- [ ] T42 Evaluation overview: all-checks summary and Run all, with readiness/provider requirements defined first.
-- [ ] T43 Shareable authorship disclosure: package the existing report for agents, publishers and contests. Accurate word percentages remain the separate T50 task.
-- [ ] T52 Latin-script language support: define the intended language-aware accented-text/punctuation improvements before coding; listed as Planned on the public roadmap.
+- [ ] T56 Jev ladder nudges: score premise/stakes and other readiness gaps with Plotter/Hybrid/Pantser context; amber only for likely gaps, silence for weak evidence.
+- [ ] T57 Beta-comment triage: categorize and grade feedback, then summarize repeated concerns by chapter for the author.
+- [ ] T58 Related-search reranking: use Jev relevance scores to reorder semantic hits; preserve Exact results and existing permissions.
+- [ ] T59 Catch-up staleness: assess whether each scene still matches its outline before asking an LLM to rebuild it.
+- [ ] T60 Calibration from author feedback: record acceptance/dismissal labels, assess checks in aggregate, and tune thresholds by check and visibility.
+- [ ] T20 follow-up: make event insertion between world positions atomic so failures cannot leave partial shifts.
+- [ ] T25 Shared/showcase view counts: define unique vs repeated, signed-in vs anonymous, and story vs chapter views first.
+- [ ] T42 Evaluation overview: all-checks summary and Run all, with readiness/provider requirements defined first. Visual nesting is grouped under T54, not counted twice.
+- [ ] T43 Shareable authorship disclosure: package the existing report for agents, publishers and contests. Accurate word percentages remain T50.
+- [ ] T52 Latin-script language support: define accented-text/punctuation improvements and validate Jev on the intended v1 languages before promising language-specific checks. Planned on the public roadmap.
 
 ### Low effort — wording / decisions
 
-- [ ] Image disclaimer (earlier request): clarify whether additional wording covers allowed content and permission to use images. Format/size guidance is already shipped; the broader disclaimer was left pending clarification.
+- [ ] Image disclaimer: clarify additional allowed-content/permission wording. Format/size guidance is shipped; the broader disclaimer remains pending clarification.
 
 ### Configuration and production confirmation — built, not new coding
 
@@ -260,7 +267,7 @@ below retain their original IDs and statuses. Built work awaiting a production c
 **4. Evaluate tab polish — T42**
 - [~] Already implemented in all three input/review buttons: native tooltips explain missing provider connections or missing inputs. Retained; awaiting production confirmation.
 - [~] Built 2026-10-14; awaiting production confirmation: "Story edited since this review. Re-run?" with assistant re-run (when connected) and an agent-prompt action.
-- [ ] Draw thread nesting visually instead of printing <Idea><Event> tags.
+- [ ] Draw thread nesting visually instead of printing <Idea><Event> tags. Grouped with T54 Jev MICE evaluation; do not count as a separate implementation task.
 - [~] Built 2026-10-14; awaiting production confirmation: one-line MICE and misbelief definitions credit Orson Scott Card / Mary Robinette Kowal and Lisa Cron.
 - [~] Built 2026-10-14; awaiting production confirmation: current and historical reviews use dates such as "12 Oct 2026, 2:09 PM" in the viewer’s local time.
 - [x] (08dd32f) Refresh reports automatically: every 15 seconds while Evaluate is open, plus on window focus. Manual refresh retained (`web/src/components/StoryEvaluation.tsx:207`); awaiting production confirmation.
@@ -290,3 +297,21 @@ below retain their original IDs and statuses. Built work awaiting a production c
 
 - [~] T23 upload follow-up: shared browser preparation downsizes large JPEG/PNG/WebP files to WebP at up to 2,400 px before upload, retaining aspect ratio/orientation, retry/cancellation and the 5 MB server cap. Both upload flows accept original files above 5 MB and softly prompt for optional alt text. Awaiting production confirmation; static checks only.
 - [ ] T52 Latin-script language support: added to Upcoming per user request; improve language-aware handling of accented text and punctuation. Roadmap/task documentation only; no language feature implemented.
+
+## Jev expansion — requested tasks, not implemented (2026-10-14)
+
+These tasks are derived from the user-supplied plan. Model limits, pricing, claimed latency,
+SDK mock support and provider retention policies are planning assumptions to verify during
+T53; they are not verified product promises. Keep existing shipped Jev Noticing (T51) separate.
+
+- [ ] **T53 — Shared Jev foundation (High).** Ask one scene and many atomic typed questions per call; combine answers in code. Cache answers by scene content hash plus model, question/rubric version and relevant context/options/mode, so changed story inputs cannot reuse stale answers. Handle the proposed state/request token caps, scene chunking and choice-option ceiling; use staged scoring/selection for oversized option lists. Add shared-key spend/rate controls per user and for anonymous /try, bounded parallel calls, timeout/fallback and latency measurement from Render/India. Verify the direct TypeSafe API's retention policy before updating privacy claims; verify pricing/limits and whether the SDK's mock evaluation model supports offline threshold checks. No dependency on users supplying keys for shared features.
+- [ ] **T54 — Craft evaluation and uncertainty cascade (High; depends on T53).** Run the four existing craft checks on scene-level Jev answers: scene/sequel classification, value pairs and start/end charge, thread opens/closes, and protagonist misbelief. Aggregate runs, shifts, the MICE stack and the midpoint curve in code; add setup/payoff matching and character/place continuity. Winning option descriptions become prewritten hints, not generated prose. High-confidence findings display directly; uncertain findings offer Verify with your AI, sending only the relevant scenes/evidence to the author's Claude/ChatGPT flow. Include visual MICE nesting from T42. Findings remain advisory, not automatic story changes.
+- [ ] **T55 — Live writing hints, including /try (High; depends on T53).** About two seconds after typing stops, assess only the current scene for POV/tense slips, showing/telling, dialogue beats, unknown names and the scene's turn. Use paragraph-level scores where needed, discard stale responses after edits, and show dismissible margin notes without touching prose. Demonstrate live hints in The Last Lantern without signup or a personal key, under the anonymous limits from T53. Sub-second responses are a target to measure, not a guarantee.
+- [ ] **T56 — Mode-aware ladder nudges (Medium; depends on T53).** Use small rubrics for premise specificity, stakes/cost and readiness gaps. Include Plotter/Hybrid/Pantser in context so questions can be stricter for Plotters. Show amber only when the gap is likely; low-confidence results remain quiet, particularly in Hybrid mode. Keep nudges advisory.
+- [ ] **T57 — Beta feedback triage (Medium; depends on T53).** Classify comments as confusion, pacing, character, typo or praise; score severity and summarize repeated concerns by chapter, such as multiple readers reporting confusion. Count distinct readers accurately, preserve original comments and their private access boundaries, and present classifications as suggestions.
+- [ ] **T58 — Related-search reranking (Medium; depends on T53).** Score relevance of already-retrieved Related passages against the query. Rerank within the existing authorized result set; preserve literal matches, pagination/coverage and usable results if Jev fails. Include query/context in cache keys rather than treating this as a scene-only answer.
+- [ ] **T59 — Outline mismatch detection (Medium; depends on T53).** Ask whether each outline still matches its scene before a Catch up LLM call. Mark likely stale summaries/beats with uncertainty, reuse unchanged answers, and retain the staged-proposal/author-approval flow. Include outline changes in cache invalidation.
+- [ ] **T60 — Calibration and feedback labels (Medium; depends on the relevant Jev surfaces).** Record dismissals/acceptances as labels linked to the check/model/rubric version, and tune thresholds from aggregate outcomes. Do not treat confidence as a guarantee about an individual answer. The supplied plan proposes competing thresholds (0.75 for cascade, 0.7 for hints, 0.8 for nudges, 0.85 for Evaluate); reconcile them by check and visibility, then make them configurable. Use offline/mock cases if the SDK supports them; do not bill network calls merely to unit-test threshold logic.
+
+**Suggested sequence:** T53 → T54 → T55 → T56 → T57 → T60. T58 and T59 can follow
+once T53 is ready. Validate the T52 languages before marketing multilingual Jev checks.
