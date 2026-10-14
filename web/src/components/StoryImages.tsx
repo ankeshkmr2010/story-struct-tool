@@ -52,6 +52,7 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
   storyId: string; target?: ImageAttachment; onSelect?: (image: StoryImage) => void | Promise<void>; onClose: () => void; page?: boolean
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  const altHelpId = useId()
   const [params, setParams] = useSearchParams()
   const sceneFilter = page ? params.get("scene") : null
   const filter = page ? params.get("filter") || "all" : "all"
@@ -76,7 +77,6 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
     if (!next) return
     setError(null); setNotice('')
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(next.type)) { setError('Use a JPEG, PNG or WebP image.'); return }
-    if (next.size > (library.data?.max_image_bytes ?? 5 * 1024 * 1024)) { setError('Each image must be 5 MB or smaller.'); return }
     uploadId.current = crypto.randomUUID()
     setFile(next); setPreview(URL.createObjectURL(next)); setSelected(null); setDescription({ name: next.name.slice(0, 200), alt: '', caption: '', attachments: [] }); showEditor()
   }
@@ -106,7 +106,7 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
   const visible = active.filter(image => matches(image, filter))
   const content = <>
     <header className="story-images-head"><h2 id="story-images-title">Story images</h2>{!page && <button type="button" aria-label="Close images" onClick={onClose}>×</button>}</header>
-    <p className="writer-help">JPEG, PNG or WebP · 5 MB per image · 50 images and 100 MB per story.</p>
+    <p className="writer-help">JPEG, PNG or WebP · large photos resized locally to WebP, up to 2,400 px · 5 MB per saved image · 50 images and 100 MB per story.</p>
     {library.data && <p className="writer-help">{library.data.retained_count} / {library.data.max_images} images · {megabytes(library.data.retained_bytes)} / {megabytes(library.data.max_story_bytes)} MB. Images kept for History still count.</p>}
     {!onSelect && <p className="writer-help">Select an image to edit its description or caption, or delete its current uses.</p>}
     {error && <p role="alert" className="writer-error">{error}</p>}{notice && <p role="status">{notice}</p>}
@@ -124,9 +124,10 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
       {selected && <p className="writer-help">{selected.manuscript_uses ?? 0} manuscript placements · {selected.attachments.length} reference attachments</p>}
       {page && selected && <section aria-label="Where this image is used"><h3>Where this image is used</h3>{selected.uses?.length ? <ul>{selected.uses.map((use, index) => <li key={index}><Link to={`/stories/${storyId}?${new URLSearchParams({ search_entity: use.entity, search_id: use.id, search_field: use.kind === 'manuscript' ? 'content' : 'title', ...(use.kind === 'manuscript' ? { image_ref: selected.id } : {}) })}`}>{use.chapter ? `${use.chapter} → ` : ''}{use.title}</Link> · {use.kind === 'manuscript' ? `${use.count} manuscript placement${use.count === 1 ? '' : 's'}` : `${use.entity === 'glossary_entry' ? 'glossary' : use.entity} reference`}</li>)}</ul> : <p className="writer-help">Unused in the current story. Insert it from Write or attach it in a planning entry.</p>}</section>}
       <label>Name<input value={description.name} maxLength={200} required disabled={busy} onChange={event => setDescription({ ...description, name: event.target.value })} /></label>
-      <label>Image description (alt text)<input value={description.alt} maxLength={500} disabled={busy} onChange={event => setDescription({ ...description, alt: event.target.value })} /></label>
+      <label>Image description (alt text)<input aria-describedby={!description.alt.trim() ? altHelpId : undefined} placeholder="Describe what the image shows" value={description.alt} maxLength={500} disabled={busy} onChange={event => setDescription({ ...description, alt: event.target.value })} /></label>
+      {!description.alt.trim() && <p id={altHelpId} className="writer-help">A short description helps screen-reader users and makes your EPUB more accessible. Optional, but recommended.</p>}
       <label>Caption<textarea value={description.caption} maxLength={1000} disabled={busy} onChange={event => setDescription({ ...description, caption: event.target.value })} /></label>
-      {busy && <p role="status">{file ? progress < 100 ? `Uploading… ${progress}%` : 'Validating and saving…' : 'Saving…'} {file && <button type="button" onClick={() => upload.current?.abort()}>Cancel upload</button>}</p>}
+      {busy && <p role="status">{file ? progress < 100 ? progress === 0 ? 'Preparing image for upload…' : `Uploading… ${progress}%` : 'Validating and saving…' : 'Saving…'} {file && <button type="button" onClick={() => upload.current?.abort()}>Cancel upload</button>}</p>}
       <div className="story-images-actions"><button type="submit" className="share-story-button" disabled={busy}>{file ? 'Upload' : 'Save details'}</button>{onSelect && <button type="button" className="share-story-button" disabled={busy} onClick={() => { void save(true) }}>{target ? 'Attach image' : 'Insert image'}</button>}
       {selected && <button type="button" disabled={busy} onClick={async () => {
         setBusy(true); setError(null)

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, uploadStoryImage, type StoryImage } from '../api/client'
 import { errorText } from '../api/errors'
@@ -6,6 +6,7 @@ import { errorText } from '../api/errors'
 export function ImageInsertionPicker({ storyId, anchor, onInsert, onClose, sampleImages }: {
   storyId: string; anchor: { x: number; y: number }; onInsert: (image: StoryImage) => Promise<void>; onClose: () => void; sampleImages?: StoryImage[]
 }) {
+  const altHelpId = useId()
   const panel = useRef<HTMLDivElement>(null)
   const cancel = useRef<AbortController | null>(null)
   const uploadId = useRef('')
@@ -59,18 +60,19 @@ export function ImageInsertionPicker({ storyId, anchor, onInsert, onClose, sampl
         await insert(image)
       }).catch(error => { setError(errorText(error)); setBusy(false) }).finally(() => { cancel.current = null })
     }}>
-      <p className="writer-help">Still JPEG, PNG or WebP · up to 5 MB and 20 megapixels.</p>
+      <p className="writer-help">JPEG, PNG or WebP · large photos resized locally to WebP, up to 2,400 px and 5 MB.</p>
       <label>Image file<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={event => {
         const next = event.target.files?.[0]; if (!next) return
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(next.type) || next.size > 5 * 1024 * 1024) { setError('Choose a JPEG, PNG or WebP up to 5 MB.'); return }
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(next.type)) { setError('Choose a JPEG, PNG or WebP.'); return }
         setError(''); uploadId.current = crypto.randomUUID(); setFile(next); setName(next.name.slice(0, 200)); setPreview(URL.createObjectURL(next))
       }} /></label>
       {preview && <img className="image-upload-preview" src={preview} alt="Upload preview" />}
       <label>Name<input required maxLength={200} value={name} disabled={busy} onChange={event => setName(event.target.value)} /></label>
-      <label>Description (alt text)<input maxLength={500} value={alt} disabled={busy} onChange={event => setAlt(event.target.value)} /></label>
+      <label>Description (alt text)<input aria-describedby={!alt.trim() ? altHelpId : undefined} placeholder="Describe what the image shows" maxLength={500} value={alt} disabled={busy} onChange={event => setAlt(event.target.value)} /></label>
+      {!alt.trim() && <p id={altHelpId} className="writer-help">A short description helps screen-reader users and makes your EPUB more accessible. Optional, but recommended.</p>}
       <label>Caption<textarea maxLength={1000} value={caption} disabled={busy} onChange={event => setCaption(event.target.value)} /></label>
       <div className="story-images-actions"><button type="submit" disabled={busy || !file || !name.trim()}>Upload & insert</button><button type="button" disabled={busy} onClick={() => setUploading(false)}>Saved images</button>{busy && <button type="button" onClick={() => cancel.current?.abort()}>Cancel upload</button>}</div>
-      {busy && <p role="status">{progress < 100 ? `Uploading… ${progress}%` : 'Validating and saving…'}</p>}
+      {busy && <p role="status">{progress < 100 ? progress === 0 ? 'Preparing image for upload…' : `Uploading… ${progress}%` : 'Validating and saving…'}</p>}
     </form>}
   </div>
 }

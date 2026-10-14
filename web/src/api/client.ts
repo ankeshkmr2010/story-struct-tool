@@ -1,3 +1,4 @@
+import { prepareImage } from './prepareImage'
 import type { components, operations } from './schema'
 import { orderChapters, orderScenes } from './ordering'
 import { getVisitorId } from './visitor'
@@ -89,7 +90,8 @@ export type StoryImage = S['ImageOut']
 export type ImageLibrary = S['ImageLibrary']
 export type ImageDescription = Pick<StoryImage, 'name' | 'alt' | 'caption' | 'attachments'>
 
-export function uploadStoryImage(storyId: string, uploadId: string, file: File, description: ImageDescription, progress: (value: number) => void, signal: AbortSignal): Promise<StoryImage> {
+export async function uploadStoryImage(storyId: string, uploadId: string, file: File, description: ImageDescription, progress: (value: number) => void, signal: AbortSignal): Promise<StoryImage> {
+  const prepared = await prepareImage(file, signal)
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     const xhr = new XMLHttpRequest()
@@ -115,7 +117,7 @@ export function uploadStoryImage(storyId: string, uploadId: string, file: File, 
       xhr.send(JSON.stringify({ ...description, upload_id: uploadId, data: String(reader.result).split(',')[1] }))
     }
     if (signal.aborted) { abort(); cleanup(); return }
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(prepared)
   })
 }
 

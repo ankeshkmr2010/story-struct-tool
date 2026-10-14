@@ -18,6 +18,11 @@ const ITEMS: readonly { title: string; status: Status; description: string }[] =
       'Import a manuscript from Scrivener. Word (.docx) import is already available.',
   },
   {
+    title: 'Latin-script language support',
+    status: 'Planned',
+    description: 'Language-aware support for stories written in Latin-script languages, including accented text and punctuation.',
+  },
+  {
     title: 'View counts on shared stories',
     status: 'Exploring',
     description: 'See how many people have read the stories you share.',
@@ -31,7 +36,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
   {
     date: '14 Oct 2026',
     items: [
-      ['Images in your story', 'illustrations and reference art with captions, inline Write thumbnails, right-click insertion, scene links and portable exports. A dedicated page manages usage and safe deletion; guided samples show the flow.'],
+      ['Images in your story', 'illustrations and reference art with captions, inline Write thumbnails, right-click insertion, scene links and portable exports. Large photos shrink before upload, with a gentle alt-text prompt. A dedicated page manages usage and safe deletion; guided samples show the flow.'],
       ['Try before signing up', 'a guided writing sandbox with local search and History, plus interactive feature demos and sample downloads. Tours support Previous, Next and resume; sign in to keep your edits.'],
       ['Writing and reader guides', 'AI quickstart prompts, images and exports, plus beta rounds, private reader conversations and polls.'],
       ['Jev Noticing for everyone', 'StoryTool provides a shared story reader for all users — no personal AI key needed. Choose read prose in Noticed for advisory observations; Jev never writes prose or applies changes.'],
