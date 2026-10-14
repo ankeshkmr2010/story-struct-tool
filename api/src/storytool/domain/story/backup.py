@@ -137,10 +137,9 @@ def manuscript_docx(markdown: str, author_name: str | None = None, images: Image
     """Lay out the compiled Markdown manuscript as a plain Word document."""
     document = Document()
     document.core_properties.author = author_name or ""
-    for block in re.split(r"\n\s*\n", markdown):
-        parsed = blocks(block)
-        if len(parsed) == 1 and parsed[0].kind == "image":
-            image = (images or {}).get(parsed[0].image_id)
+    for block in blocks(markdown):
+        if block.kind == "image":
+            image = (images or {}).get(block.image_id)
             if image is None:
                 raise ClientException(detail="A manuscript image is unavailable")
             from PIL import Image
@@ -149,25 +148,19 @@ def manuscript_docx(markdown: str, author_name: str | None = None, images: Image
                 scale = min(6 / picture.width, 8 / picture.height)
                 shape = document.add_picture(io.BytesIO(image[0]), width=Inches(picture.width * scale),
                                              height=Inches(picture.height * scale))
-                shape._inline.docPr.set("descr", image[2] or parsed[0].text)
+                shape._inline.docPr.set("descr", image[2] or block.text)
             if image[3]:
                 document.add_paragraph(image[3])
             continue
-        lines = [line.rstrip() for line in block.strip().splitlines()]
-        if not lines:
-            continue
-        first = lines[0]
-        heading = re.match(r"^(#{1,4})\s+(.*)$", first)
-        if heading and len(lines) == 1:
-            level = len(heading.group(1))
-            document.add_heading(heading.group(2), 0 if level == 1 else level - 1)
-        elif all(line.startswith(">") for line in lines):
+        if block.kind == "heading":
+            document.add_heading(block.text, 0 if block.level == 1 else block.level - 1)
+        elif block.kind == "quote":
             quote = document.add_paragraph(style="Quote")
-            add_runs(quote, " ".join(line.lstrip("> ").strip() for line in lines))
-        elif lines == ["* * *"]:
+            add_runs(quote, block.text)
+        elif block.kind == "break":
             document.add_paragraph("* * *").alignment = 1  # centred scene break
         else:
-            add_runs(document.add_paragraph(), " ".join(line.strip() for line in lines))
+            add_runs(document.add_paragraph(), block.text)
     buffer = io.BytesIO()
     document.save(buffer)
     return buffer.getvalue()
@@ -272,7 +265,7 @@ class StoryBackupController(Controller):
             image = descriptions.get(match[2])
             alt = (image.alt if image else "") or match[1]
             caption = image.caption if image else ""
-            return f"[Image: {alt}]" + ("\n\n" + caption if caption else "")
+            return f"\n\n[Image: {alt}]\n\n" + (caption + "\n\n" if caption else "")
         markdown = IMAGE_REF.sub(describe_image, markdown)
         return Response(
             content=manuscript_text(markdown),
@@ -381,8 +374,14 @@ class StoryBackupController(Controller):
         if not images:
             return Response(content=markdown.encode(), media_type="text/markdown",
                             headers={"content-disposition": f'attachment; filename="{slug(title)}.md"'})
-        markdown = IMAGE_REF.sub(lambda m: f"![{m[1]}](images/{m[2]}.{images[m[2]][1].split('/')[1]})" +
-                                 ("\n\n" + images[m[2]][3] if images[m[2]][3] else ""), markdown)
+        def markdown_image(match: re.Match[str]) -> str:
+            image = images[match[2]]
+            alt = re.sub(r"[\]\n]", " ", image[2] or match[1])
+            caption = image[3]
+            return f"\n\n![{alt}](images/{match[2]}.{image[1].split('/')[1]})\n\n" + (
+                caption + "\n\n" if caption else ""
+            )
+        markdown = IMAGE_REF.sub(markdown_image, markdown)
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.writestr(f"{slug(title)}.md", markdown)

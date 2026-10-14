@@ -31,6 +31,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
     items: [
       ['Images in your story', 'insert manuscript illustrations or attach reference images to characters, places, glossary entries and scenes. Captions, private Neon storage, upload limits, reader access and portable exports keep images with your story.'],
       ['Image cleanup', 'permanently deleting a story queues its retained image files for removal, with retries if storage is temporarily unavailable. Trash and saved history keep their images.'],
+      ['Image management and previews', 'manage images from the story header, delete all current manuscript and reference uses with recoverable history, and open larger previews while reading. Manuscript exports keep illustrations at their original positions.'],
       ['Try before signing up', 'edit The Last Lantern in a browser-local sandbox with a six-step tour, local text search and History. Sign in to keep your story and edits in your library.'],
       ['Sandbox build correction', 'corrected the browser-storage lock callback’s TypeScript return type.'],
       ['Sandbox reliability corrections', 'readable Context thread labels, safe arc-stage deletion, a visible coach after resuming search, and fresh carry-over for edits made after keeping a copy.'],

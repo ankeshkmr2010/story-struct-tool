@@ -13,9 +13,17 @@ const text = (row: Row, field: string) => row[field] == null ? '' : String(row[f
 const order = (rows: Row[]) => [...rows].sort((a, b) => Number(a.sort_key ?? 0) - Number(b.sort_key ?? 0) || text(a, 'id').localeCompare(text(b, 'id')))
 const bounded = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
 function ReadingParagraph({ paragraph, images, chapterId, sceneId, part }: { paragraph: string; images: Row[]; chapterId: string; sceneId: string; part: number }) {
-  const image = /^!\[([^\]\n]*)\]\(storytool-image:([0-9a-fA-F-]{36})\)$/.exec(paragraph.trim())
   const anchor = { 'data-reading-anchor': `paragraph:${sceneId}:${part}`, 'data-chapter-id': chapterId, 'data-scene-id': sceneId }
-  return image ? <div {...anchor}><ImageFigure image={images.find(row => row.id === image[2])} fallback={image[1]} /></div> : <p className="reading-paragraph" {...anchor}>{paragraph}</p>
+  const matches = Array.from(paragraph.matchAll(/!\[([^\]\n]*)\]\(storytool-image:([0-9a-fA-F-]{36})\)/g))
+  if (!matches.length) return <p className="reading-paragraph" {...anchor}>{paragraph}</p>
+  let cursor = 0
+  const parts = matches.map((image, index) => {
+    const before = paragraph.slice(cursor, image.index)
+    cursor = image.index + image[0].length
+    return <div key={index}>{before.trim() && <p className="reading-paragraph">{before}</p>}<ImageFigure image={images.find(row => String(row.id).toLowerCase() === image[2].toLowerCase())} fallback={image[1]} /></div>
+  })
+  const after = paragraph.slice(cursor)
+  return <div {...anchor}>{parts}{after.trim() && <p className="reading-paragraph">{after}</p>}</div>
 }
 function loadPreferences(): Preferences {
   try {

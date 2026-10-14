@@ -3345,6 +3345,8 @@ export interface components {
             caption: string;
             attachments?: components["schemas"]["ImageAttachment"][];
             archived: boolean;
+            /** @default 0 */
+            manuscript_uses: number;
             /** Format: uuid */
             id: string;
             size: number;

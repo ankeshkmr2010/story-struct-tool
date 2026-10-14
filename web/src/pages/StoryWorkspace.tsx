@@ -23,6 +23,7 @@ import { StoryVersions } from '../components/StoryVersions'
 import { AuthorshipPanel } from '../components/AuthorshipPanel'
 import { StorySharing } from '../components/StorySharing'
 import { DownloadMenu } from '../components/DownloadMenu'
+import { StoryImagesButton } from '../components/StoryImages'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
 import { SANDBOX_ID, FIRST_SCENE, tourEvent, type Sandbox } from '../sandbox/storage'
@@ -412,6 +413,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: 
           {/* Export is first-class: this tool augments a writer's process, so the words
               must always be able to leave. */}
           {!sandbox && <DownloadMenu storyId={storyId} />}
+          {!sandbox && <StoryImagesButton storyId={storyId} beforeOpen={() => writerFlush.current()} />}
         </div>
       </header>
 

@@ -4,6 +4,7 @@ import base64
 import binascii
 import io
 import re
+from collections import Counter
 from typing import Any, Literal
 from uuid import UUID
 
@@ -18,6 +19,7 @@ from uuid_utils import uuid7
 from storytool.domain.cast.models import Character
 from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.narrative.models import Scene
+from storytool.domain.narrative.prose import save_scene_content
 from storytool.domain.story.image_models import ImageBlob, StoryImage
 from storytool.domain.story.image_storage import get_image, inspect_image, put_image
 from storytool.domain.world.models import Location
@@ -54,6 +56,7 @@ class ImageUpload(ImageDescription):
 
 class ImageOut(ImageDescription):
     archived: bool
+    manuscript_uses: int = 0
     id: UUID
     size: int
     width: int
@@ -133,10 +136,11 @@ async def save_blob(
     return blob
 
 
-def image_out(image: StoryImage, blob: ImageBlob) -> ImageOut:
+def image_out(image: StoryImage, blob: ImageBlob, uses: int = 0) -> ImageOut:
     return ImageOut(
         id=image.id,
-        archived=image.archived,
+        archived=image.archived and not uses and not image.attachments,
+        manuscript_uses=uses,
         name=image.name,
         alt=image.alt,
         caption=image.caption,
@@ -299,8 +303,14 @@ class StoryImagesController(Controller):
             .order_by(StoryImage.created_at)
         )
         count, size = await image_usage(db_session, story_id)
+        prose = await db_session.scalars(select(Scene.content).where(Scene.story_id == story_id))
+        uses = Counter(
+            match[1].lower() for text in prose for match in IMAGE_REF.findall(text or "")
+        )
         return ImageLibrary(
-            images=[image_out(i, b) for i, b in rows], retained_count=count, retained_bytes=size
+            images=[image_out(i, b, uses[str(i.id)]) for i, b in rows],
+            retained_count=count,
+            retained_bytes=size,
         )
 
     @post(request_max_body_size=8 * 1024 * 1024)
@@ -348,17 +358,43 @@ class StoryImagesController(Controller):
         return image_out(image, blob)
 
     @delete("/{image_id:uuid}")
-    async def remove(self, db_session: AsyncSession, story_id: UUID, image_id: UUID) -> None:
+    async def remove(
+        self, db_session: AsyncSession, request: Request, story_id: UUID, image_id: UUID
+    ) -> None:
         image = await db_session.scalar(
             select(StoryImage).where(StoryImage.id == image_id, StoryImage.story_id == story_id)
         )
         if image is None:
             raise NotFoundException(detail="Image not found")
-        scenes = await db_session.scalars(select(Scene.content).where(Scene.story_id == story_id))
-        if any(str(image_id) in {m[1] for m in IMAGE_REF.findall(s or "")} for s in scenes):
-            raise ClientException(
-                detail="Remove this image from manuscript passages "
-                "before removing it from the image library"
+        scenes = list(await db_session.scalars(select(Scene).where(Scene.story_id == story_id)))
+        affected = [
+            scene
+            for scene in scenes
+            if any(
+                match[1].lower() == str(image_id)
+                for match in IMAGE_REF.findall(scene.content or "")
+            )
+        ]
+        if image.archived and not affected and not image.attachments:
+            return
+        from storytool.domain.versioning.service import checkpoint
+
+        label = f"Before deleting image: {image.name}"[:200]
+        await checkpoint(
+            db_session,
+            story_id,
+            request.scope["state"]["storytool_user_id"],
+            label,
+            "recovery",
+            state=request.scope["state"].get("storytool_version_context", {}).get("before"),
+        )
+        for scene in affected:
+            content = IMAGE_REF.sub(
+                lambda match: "" if match[2].lower() == str(image_id) else match[0],
+                scene.content or "",
+            )
+            await save_scene_content(
+                db_session, scene, content, snapshot=True, snapshot_label=label
             )
         image.archived = True
         image.attachments = []

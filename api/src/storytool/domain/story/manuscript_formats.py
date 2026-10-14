@@ -32,14 +32,20 @@ class Block:
 def blocks(markdown: str) -> list[Block]:
     out: list[Block] = []
     for chunk in re.split(r"\n\s*\n", markdown):
+        images = list(_IMAGE.finditer(chunk))
+        if images:
+            cursor = 0
+            for image in images:
+                out.extend(blocks(chunk[cursor:image.start()]))
+                out.append(Block("image", image[1], image_id=image[2]))
+                cursor = image.end()
+            out.extend(blocks(chunk[cursor:]))
+            continue
         lines = [line.rstrip() for line in chunk.strip().splitlines()]
         if not lines:
             continue
         heading = _HEADING.match(lines[0])
-        image = _IMAGE.fullmatch(lines[0]) if len(lines) == 1 else None
-        if image:
-            out.append(Block("image", image[1], image_id=image[2]))
-        elif heading and len(lines) == 1:
+        if heading and len(lines) == 1:
             out.append(Block("heading", heading.group(2), len(heading.group(1))))
         elif all(line.startswith(">") for line in lines):
             out.append(Block("quote", " ".join(line.lstrip("> ").strip() for line in lines)))
