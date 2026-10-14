@@ -19,6 +19,7 @@ class NoticerInfoOut(BaseModel):
     model: str | None
     claude_available: bool
     jev_available: bool
+    shared: bool = False
 
 
 class PassResultOut(BaseModel):

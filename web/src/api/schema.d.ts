@@ -3520,6 +3520,8 @@ export interface components {
             model: string | null;
             claude_available: boolean;
             jev_available: boolean;
+            /** @default false */
+            shared: boolean;
         };
         /** ObservationOut */
         ObservationOut: {

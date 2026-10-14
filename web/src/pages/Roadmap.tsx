@@ -34,6 +34,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
       ['Images in your story', 'illustrations and reference art with captions, inline Write thumbnails, right-click insertion, scene links and portable exports. A dedicated page manages usage and safe deletion; guided samples show the flow.'],
       ['Try before signing up', 'a guided writing sandbox with local search and History, plus interactive feature demos and sample downloads. Tours support Previous, Next and resume; sign in to keep your edits.'],
       ['Writing and reader guides', 'AI quickstart prompts, images and exports, plus beta rounds, private reader conversations and polls.'],
+      ['Shared Jev Noticing', 'an on-demand reader provided by StoryTool, available without a personal AI key when configured; advisory findings never change prose or structure.'],
       ['Evaluate polish', 'credited craft definitions, review dates, stale-review actions and findings that open the relevant planning item.'],
       ['Site navigation and link previews', 'sticky navigation, a direct tour entry and custom thumbnails for Landing, Your stories, Roadmap, Shoutouts, Feedback and How to use. Enabled public showcases use their own title and first manuscript image.'],
     ],

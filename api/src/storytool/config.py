@@ -125,7 +125,9 @@ class Settings(BaseSettings):
 
     @property
     def jev_noticing_available(self) -> bool:
-        return bool(self.typesafe_api_key)
+        key = (self.typesafe_api_key or "").strip()
+        # Render requires a non-empty placeholder before the owner supplies the real key.
+        return bool(key and key != "REPLACE_WITH_YOUR_JEV_KEY")
 
     @property
     def resolved_noticing_backend(self) -> str:

@@ -3,12 +3,17 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from storytool.config import get_settings
 from storytool.domain.ai.credentials import decrypt_key
 from storytool.domain.ai.models import AIConnection
 from storytool.domain.noticing.factory import build_noticer, describe_noticer
 
 
 async def user_noticer(db: AsyncSession, user_id: UUID) -> tuple[object, dict[str, object]]:
+    settings = get_settings()
+    if settings.jev_noticing_available and settings.resolved_noticing_backend == "jev":
+        # Site-provided reader takes priority without changing personal authoring connections.
+        return build_noticer(), {**describe_noticer(), "shared": True}
     connections = list(
         (
             await db.execute(
