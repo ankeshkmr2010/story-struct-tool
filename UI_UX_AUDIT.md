@@ -315,3 +315,22 @@ T53; they are not verified product promises. Keep existing shipped Jev Noticing 
 
 **Suggested sequence:** T53 → T54 → T55 → T56 → T57 → T60. T58 and T59 can follow
 once T53 is ready. Validate the T52 languages before marketing multilingual Jev checks.
+
+### Jev execution plan — active
+
+- T53.1: provider-neutral question/answer validation, Jev and compatible local adapters, reusable HTTP connections. No SDK types in evaluation contracts.
+- T53.2: persistent per-question cache and independent atomic budget reservations; wire shared Noticed into the service. Hash state, context/rubrics and provider/model; no raw prose/key in cache or usage rows. Validate migration on an expiring Neon branch.
+- T54: implement scene evidence and aggregators in a separate evaluation provider; then add Evaluate display/visual MICE and the uncertain-scene Verify workflow in a second commit.
+- T55: saved-story hint API/cache and stale-response protection first; then margin UI and protected anonymous sandbox access.
+- T56: rubric scoring first, then mode-aware quiet nudges.
+- T57: private comment classification first, then distinct-reader/chapter summaries.
+- T58: bounded Related-result reranker with retrieval fallback, Exact results preserved.
+- T59: outline-aware mismatch cache and indicators, retaining staged Catch up proposals.
+- T60: acceptance/dismissal labels and configurable per-check thresholds; offline threshold verification only when allowed.
+
+T53 verification sources (2026-10-14): [official model limits/pricing](https://docs.typesafe.ai/models)
+and [direct API privacy policy](https://typesafe.ai/legal/privacy-policy). The documented 32k
+limit includes state plus the longest question; 64k includes all questions. Price is $0.042
+per million input tokens, output free. Direct API policy forbids training on Input; it does
+not promise general zero retention. [Enterprise ZDR requires account setup](https://typesafe.ai/enterprise).
+No live model calls/latency measurements or local tests/builds have been run.

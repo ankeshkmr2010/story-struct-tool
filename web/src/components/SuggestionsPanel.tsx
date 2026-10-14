@@ -47,7 +47,7 @@ export function SuggestionsPanel({ storyId }: { storyId: string }) {
         <p className="mb-2 text-[11px] text-slate-400">
           {noticer.data.noticer === 'deterministic'
             ? 'Local name matching · no semantic reader active'
-            : noticer.data.shared ? 'Jev · provided by StoryTool · noticing only, never writing' : `${noticer.data.model} — noticing only, never writing`}
+            : noticer.data.shared ? `${noticer.data.model} · provided by StoryTool · noticing only, never writing` : `${noticer.data.model} — noticing only, never writing`}
         </p>
       )}
 

@@ -11,7 +11,7 @@ from storytool.domain.noticing.factory import build_noticer, describe_noticer
 
 async def user_noticer(db: AsyncSession, user_id: UUID) -> tuple[object, dict[str, object]]:
     settings = get_settings()
-    if settings.jev_noticing_available and settings.resolved_noticing_backend == "jev":
+    if settings.shared_reader_available and settings.resolved_noticing_backend == "jev":
         # Site-provided reader takes priority without changing personal authoring connections.
         return build_noticer(), {**describe_noticer(), "shared": True}
     connections = list(
@@ -31,12 +31,15 @@ async def user_noticer(db: AsyncSession, user_id: UUID) -> tuple[object, dict[st
 
     fallback = DeterministicNoticer()
     if chosen.provider == "jev":
-        from typesafe_sdk import AsyncTypeSafeClient
-
+        from storytool.domain.decisions.providers import HTTPProvider
         from storytool.domain.noticing.jev import JevNoticer
 
         noticer: object = JevNoticer(
-            client=AsyncTypeSafeClient(api_key=decrypt_key(chosen.encrypted_key)),
+            client=HTTPProvider(
+                "https://api.typesafe.ai/v1/systemone",
+                decrypt_key(chosen.encrypted_key),
+                "typesafe",
+            ),
             model=chosen.model,
             deterministic=fallback,
         )

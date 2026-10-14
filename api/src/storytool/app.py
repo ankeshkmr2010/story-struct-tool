@@ -19,6 +19,7 @@ from storytool.domain.cast.controller import (
     CharacterController,
     RelationshipController,
 )
+from storytool.domain.decisions.providers import decisions_lifespan
 from storytool.domain.evaluation.controller import EvaluationController
 from storytool.domain.glossary import GlossaryController
 from storytool.domain.narrative.controller import ChapterController, SceneController
@@ -138,7 +139,12 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             *frontend,
         ],
         plugins=[plugin],
-        lifespan=[mcp_lifespan, search_lifespan(config), image_cleanup_lifespan(config)],
+        lifespan=[
+            decisions_lifespan,
+            mcp_lifespan,
+            search_lifespan(config),
+            image_cleanup_lifespan(config),
+        ],
         middleware=[
             DefineMiddleware(
                 StoryAccessMiddleware,

@@ -32,14 +32,9 @@ Built to the documented patterns and to Jev 1.13's documented weaknesses:
 import logging
 import re
 from dataclasses import replace
-from typing import TYPE_CHECKING
 from uuid import UUID
 
-if TYPE_CHECKING:
-    # Type-only: the runtime import stays lazy so a missing SDK degrades instead of raising
-    # at import time.
-    from typesafe_sdk import NoulCriteria
-
+from storytool.domain.decisions.types import Choice, Noul
 from storytool.domain.noticing.types import (
     Confidence,
     KnownBeat,
@@ -69,7 +64,7 @@ TURNING_POINT = (
     "Does this scene contain a change to the point-of-view character's situation or "
     "understanding that cannot be undone?"
 )
-TURNING_POINT_CRITERIA: "NoulCriteria" = {
+TURNING_POINT_CRITERIA: dict[str, str] = {
     "true": (
         "Something irreversible happens: a decision is acted on, a relationship breaks, "
         "information is learned that cannot be unlearned, or a loss occurs that cannot be "
@@ -95,7 +90,7 @@ BEAT_QUESTION = (
     "page rather than what might happen later?"
 )
 
-ELEMENT_QUESTIONS: dict[str, tuple[str, "NoulCriteria"]] = {
+ELEMENT_QUESTIONS: dict[str, tuple[str, dict[str, str]]] = {
     "goal": (
         "Does the point-of-view character want something specific in this scene?",
         {
@@ -196,12 +191,6 @@ class JevNoticer:
         if not prose.strip():
             return replace(base, noticed_by=self.name)
 
-        try:
-            from typesafe_sdk import Choice, Noul
-        except ImportError:  # pragma: no cover -- dependency is declared
-            logger.warning("typesafe-sdk unavailable; deterministic noticing only")
-            return base
-
         beats = known_beats[:MAX_CHOICE_OPTIONS]
         options = {_slug(beat.label, index): beat for index, beat in enumerate(beats)}
         places = known_locations[:MAX_CHOICE_OPTIONS]
@@ -234,7 +223,7 @@ class JevNoticer:
             )
 
         try:
-            response = await self._client.system_one(  # type: ignore[attr-defined]
+            response = await self._client.evaluate(  # type: ignore[attr-defined]
                 model=self._model,
                 # Only the prose. Jev degrades on irrelevant context ("context rot"), so no
                 # other story state is sent.

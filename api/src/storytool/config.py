@@ -7,7 +7,7 @@ same image runs unchanged as a dev container or a deployed service.
 import ssl
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import certifi
 from pydantic import Field, field_validator
@@ -113,7 +113,17 @@ class Settings(BaseSettings):
     # Jev (TypeSafe System One). Returns typed values and probabilities, never text, which
     # suits noticing better than a text model -- see DESIGN.md section 7b.
     typesafe_api_key: str | None = Field(default=None, validation_alias="TYPESAFE_API_KEY")
-    jev_model: str = "jev-latest"
+    jev_model: str = "jev-1.13.0"
+    decision_provider: Literal["typesafe", "local"] = "typesafe"
+    decision_endpoint: str | None = None
+    decision_model: str | None = None
+    decision_api_key: str | None = None
+
+    @property
+    def shared_reader_available(self) -> bool:
+        if self.decision_provider == "local":
+            return bool(self.decision_endpoint and self.decision_model)
+        return self.jev_noticing_available
 
     # auto | deterministic | claude | jev
     # "auto" prefers Jev (graded answers, no text output), then Claude, then deterministic.
@@ -136,10 +146,10 @@ class Settings(BaseSettings):
         if requested == "deterministic":
             return "deterministic"
         if requested == "jev":
-            return "jev" if self.jev_noticing_available else "deterministic"
+            return "jev" if self.shared_reader_available else "deterministic"
         if requested == "claude":
             return "claude" if self.claude_noticing_available else "deterministic"
-        if self.jev_noticing_available:
+        if self.shared_reader_available:
             return "jev"
         if self.claude_noticing_available:
             return "claude"

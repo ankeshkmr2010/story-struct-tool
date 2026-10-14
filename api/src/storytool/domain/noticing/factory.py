@@ -19,18 +19,11 @@ def build_noticer() -> object:
     backend = settings.resolved_noticing_backend
 
     if backend == "jev":
-        try:
-            from typesafe_sdk import AsyncTypeSafeClient
+        from storytool.domain.decisions.providers import shared_provider
+        from storytool.domain.noticing.jev import JevNoticer
 
-            from storytool.domain.noticing.jev import JevNoticer
-        except ImportError:
-            logger.warning("typesafe-sdk unavailable; using deterministic noticing")
-            return deterministic
-        return JevNoticer(
-            client=AsyncTypeSafeClient(api_key=settings.typesafe_api_key),
-            model=settings.jev_model,
-            deterministic=deterministic,
-        )
+        provider, model = shared_provider()
+        return JevNoticer(client=provider, model=model, deterministic=deterministic)
 
     if backend == "claude":
         try:
@@ -55,7 +48,7 @@ def describe_noticer() -> dict[str, object]:
     settings = get_settings()
     backend = settings.resolved_noticing_backend
     model = {
-        "jev": settings.jev_model,
+        "jev": settings.decision_model or settings.jev_model,
         "claude": settings.noticing_model,
         "deterministic": None,
     }[backend]
@@ -63,5 +56,5 @@ def describe_noticer() -> dict[str, object]:
         "noticer": backend,
         "model": model,
         "claude_available": settings.claude_noticing_available,
-        "jev_available": settings.jev_noticing_available,
+        "jev_available": settings.shared_reader_available,
     }
