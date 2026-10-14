@@ -29,6 +29,7 @@ const SECTIONS = [
   ['time', 'Story time and flashbacks'],
   ['feedback', 'What the tool tells you'],
   ['writing', 'Write, Focus, and exporting'],
+  ['images', 'Images and illustrations'],
   ['sharing', 'Sharing and reading stories'],
   ['beta-readers', 'Beta readers, feedback and polls'],
 ] as const
@@ -469,8 +470,11 @@ export default function HowToUse() {
                   EPUB, HTML, plain text or submission PDF. PDF uses double-spaced manuscript pages
                   and offers optional glossary, timeline and places appendices; it may reject characters
                   its fonts cannot display. Set your author name in Settings for the export byline.
+                  Illustrations stay at their manuscript positions in Word, PDF, EPUB and HTML.
+                  Markdown downloads a ZIP with the manuscript and image files when needed;
+                  plain text keeps image descriptions and captions in place.
                   <strong className="font-medium"> Backup</strong> downloads
-                  everything, including notes and scene revisions; use Restore backup in your library to bring
+                  everything, including image files, notes and scene revisions; use Restore backup in your library to bring
                   it back as a new story.
                 </Item>
                 <Item title="Bring in existing prose">
@@ -479,6 +483,16 @@ export default function HowToUse() {
                   chapters/scenes or populate story components while preserving your prose.
                   Imported stories keep an <strong className="font-medium">Import prompts</strong> entry.
                 </Item>
+              </div>
+            </Section>
+            <Section id="images" eyebrow="IMAGES" title="Illustrations and reference images">
+              <div className="space-y-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                <Item title="Upload and manage images">Open Images in the story header from Write, Read or Design. Upload a JPEG, PNG or WebP, give it a name, and add an image description (alt text) and optional caption. The picker shows a preview, upload progress and saved images you can reuse. Limits are 5 MB per image, 50 images and 100 MB per story; still images must be no larger than 20 megapixels.</Item>
+                <Item title="Insert an illustration">In Write, place the cursor where the image belongs and choose Insert image on the passage. Upload or select a saved image, then choose Insert image. The editor keeps an image marker in the prose; Read and manuscript exports display the illustration at that position.</Item>
+                <Item title="Keep reference art with your plan">Choose Add reference image on a character, place, glossary entry or scene. Select or upload an image, then choose Attach image. Reference attachments appear beside that item and stay outside manuscript exports unless you also insert the image into prose. Detach image removes only that attachment.</Item>
+                <Item title="Preview while reading">Click an image in Read to open a larger preview with its caption. Close it with Close, Escape or the backdrop, or use Open original image to view the file separately. Images follow the story’s sharing permissions; beta rounds preserve the illustrations and captions published with that draft.</Item>
+                <Item title="Delete current uses safely">In Images, select an image and choose Delete image. The confirmation shows how many manuscript placements and reference attachments will be removed. Pending writing saves first. Scene revisions and a recovery version preserve the previous state; historical files and existing beta rounds keep the image. Files kept for history still count toward the story’s limits. Permanently deleting the story queues its retained files for storage cleanup.</Item>
+                <Item title="Try the image flow">Open Discover more in the demo and choose Images to edit a sample caption, preview the illustration, and try delete/restore. The sample HTML download includes the illustration in place; the text download keeps its description and caption.</Item>
               </div>
             </Section>
           </div>

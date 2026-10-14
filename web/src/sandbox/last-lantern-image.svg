@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" role="img" aria-labelledby="title desc">
+  <title id="title">The Last Lantern</title>
+  <desc id="desc">A glowing brass lantern beside a lighthouse window, with waves outside.</desc>
+  <rect width="720" height="420" rx="18" fill="#142c35"/>
+  <rect x="400" y="42" width="250" height="290" rx="120" fill="#294b5a"/>
+  <path d="M400 260q62-30 125 0t125 0M400 292q62-30 125 0t125 0" fill="none" stroke="#8bb9be" stroke-width="5"/>
+  <path d="M525 44v285M402 166h246" fill="none" stroke="#142c35" stroke-width="12"/>
+  <circle cx="250" cy="225" r="120" fill="#eab561" opacity=".12"/>
+  <path d="M205 110v-20a45 45 0 0 1 90 0v20" fill="none" stroke="#d5ac6d" stroke-width="12"/>
+  <path d="M195 115h110l-8 35h-94zM203 310h94l15 35H188z" fill="#d5ac6d"/>
+  <rect x="204" y="150" width="92" height="160" rx="12" fill="#ffdb84" opacity=".2"/>
+  <path d="M211 150v160M289 150v160" fill="none" stroke="#d5ac6d" stroke-width="9"/>
+  <path d="M250 192c30 35 36 68 0 78-36-10-30-43 0-78" fill="#ffcc65"/>
+  <path d="M250 220c14 20 18 36 0 42-18-6-14-22 0-42" fill="#fff4c9"/>
+  <path d="M165 350h190" stroke="#d5ac6d" stroke-width="9" stroke-linecap="round"/>
+  <text x="525" y="376" text-anchor="middle" font-family="Georgia,serif" font-size="24" fill="#d5dde0">The Last Lantern</text>
+</svg>
