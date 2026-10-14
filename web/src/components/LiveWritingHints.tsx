@@ -37,15 +37,15 @@ export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { s
   }
   return <aside className="live-writing-hints" aria-label="Live writing hints">
     <h3>Live hints</h3>
-    <p className="writer-help">Only this scene and known names go to the shared reader. Notes never change your prose.</p>
+    <details className="live-hints-about"><summary>About live hints</summary><p>Only this scene and known names go to the shared reader. Notes never change your prose.</p></details>
     {result?.result?.unavailable && <p role="status" className="writer-help">{result.result.unavailable} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry unread sections</button></p>}
     {!content.trim() ? <p className="writer-help">Start writing to see hints.</p> : !ready ? <p className="writer-help">Loading known names… {(characters.isError || glossary.isError) && <button type="button" onClick={() => { void characters.refetch(); void glossary.refetch() }}>Retry</button>}</p> : !result ? <p role="status" className="writer-help">Reading after you pause…</p> : result.error ? <p className="writer-help">{result.error} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry</button></p> : hints.length === 0 ? result.result?.unavailable ? null : <p className="writer-help">No specific issue found in this reading.</p> : hints.map(hint => <div className="live-writing-hint" key={hint.code}>
-      <p>{hint.message}</p>
-      {hint.excerpt && <blockquote className="my-2 border-l-2 border-[var(--line)] pl-2 text-[var(--muted)]">{hint.excerpt}</blockquote>}
-      {hint.action && <p>{hint.action}</p>}
+      <p className="live-hint-message">{hint.message}</p>
+      {hint.excerpt && <blockquote className="live-hint-excerpt">{hint.excerpt}</blockquote>}
+      {hint.action && <p className="live-hint-advice">{hint.action}</p>}
 
-      {hint.paragraph && <button type="button" onClick={() => onParagraph(hint.paragraph!, hint.excerpt ?? undefined)}>Open paragraph {hint.paragraph}</button>}
-      <ReadingFeedback storyId={storyId} checkCode={`hint.${hint.kind ?? (hint.code.startsWith('telling_') ? 'telling' : hint.code)}`} evidenceKeys={hint.evidence_keys ?? []} probability={hint.probability} rubricVersion={result?.result?.rubric_version} onRecorded={() => dismiss(hint.code)} />
+      <div className="live-hint-actions">{hint.paragraph && <button type="button" className="live-hint-passage-link" title={`Open paragraph ${hint.paragraph}`} onClick={() => onParagraph(hint.paragraph!, hint.excerpt ?? undefined)}>Open passage</button>}
+      <ReadingFeedback compact storyId={storyId} checkCode={`hint.${hint.kind ?? (hint.code.startsWith('telling_') ? 'telling' : hint.code)}`} evidenceKeys={hint.evidence_keys ?? []} probability={hint.probability} rubricVersion={result?.result?.rubric_version} onRecorded={() => dismiss(hint.code)} /></div>
     </div>)}
   </aside>
 }

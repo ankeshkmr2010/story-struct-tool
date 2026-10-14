@@ -439,3 +439,5 @@ from future real feedback remain unverified. T53–T60 implementation is built, 
 - Definition edits invalidate cached answers by version/hash; changing an enabled validator must not reuse old findings. Built-in templates retain stable identities; personal edits use private copies.
 - Acceptance: a nontechnical user and an MCP client can both manage a validator; only its owner can edit it; disabling it prevents further runs; a custom check shows source evidence without editing prose; migrated built-ins retain existing behavior.
 - Current state: typed questions, provider adapters, caching and feedback exist under `api/src/storytool/domain/decisions/`; the user-facing builder, saved custom definitions and validator MCP CRUD are not built. This entry authorizes documentation only.
+
+- [~] Live-hint card design: disclosure under About live hints, highlighted source passage, quieter advice and one wrapping row for the passage link plus Useful/Dismiss icons. Reading/error/retry and feedback behavior retained. User screenshot confirms the apple sentence was detected and highlighted; new design awaits production confirmation.
