@@ -14,8 +14,9 @@ export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { s
     if (!writer) return
     const align = () => {
       const box = writer.getBoundingClientRect()
-      const header = writer.classList.contains('writer-focus') ? writer.querySelector('.writer-toolbar') : document.querySelector('.site-header')
-      const top = Math.max(box.top + 12, (header?.getBoundingClientRect().bottom ?? 0) + 12)
+      const toolbarBottom = writer.querySelector('.writer-toolbar')?.getBoundingClientRect().bottom ?? box.top
+      const headerBottom = writer.classList.contains('writer-focus') ? 0 : document.querySelector('.site-header')?.getBoundingClientRect().bottom ?? 0
+      const top = Math.max(toolbarBottom, headerBottom) + 12
       setPosition({ top, right: Math.max(12, window.innerWidth - box.right + 12), maxHeight: Math.max(0, Math.min(window.innerHeight, box.bottom) - top - 12), width: Math.min(240, box.width - 24) })
     }
     align()

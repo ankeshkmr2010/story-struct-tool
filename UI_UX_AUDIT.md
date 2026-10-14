@@ -451,3 +451,5 @@ from future real feedback remain unverified. T53–T60 implementation is built, 
 - [~] Thread names in Evaluate findings are bold accent-colored links to the associated scene, preserving existing scene/verification actions. Hint-panel movement paused without changes. Awaiting production visual confirmation.
 
 - [~] Live hints use a fixed overlay aligned 12px inside the writer outer right edge, including focus mode; prose no longer reserves a hint column. The overlay tracks scroll/resize, stays below navigation and scrolls internally. Existing reading, feedback and passage actions retained. Awaiting production visual confirmation.
+
+- [~] Live-hint overlay clears the Write toolbar, placing it below the Live hints button while retaining right-edge alignment and scroll behavior. Awaiting production visual confirmation.
