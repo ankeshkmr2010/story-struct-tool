@@ -31,6 +31,7 @@ def frontend_router(directory: Path) -> Router:
             "/oauth/consent",
             "/stories/{story_id:uuid}",
             "/shared/{story_id:uuid}",
+            "/stories/{story_id:uuid}/images",
             "/stories/{story_id:uuid}/beta",
             "/stories/{story_id:uuid}/polls",
             "/beta/join/{token:str}",

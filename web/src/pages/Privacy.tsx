@@ -5,13 +5,19 @@ export default function Privacy() {
     <main className="mx-auto max-w-3xl px-5 py-12 text-[var(--ink)] sm:px-8">
       <header>
         <p className="eyebrow">PRIVACY</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight">Your manuscript and AI.</h1>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight">Your manuscript, images and AI.</h1>
         <p className="mt-5 text-lg leading-8 text-[var(--muted)]">StoryTool does not use your manuscript to train AI. Connected AI services have their own data policies.</p>
       </header>
       <section className="mt-10 space-y-3" aria-labelledby="stored-data-title">
         <h2 id="stored-data-title" className="text-xl font-semibold">What StoryTool stores</h2>
         <p className="leading-7 text-[var(--muted)]">Google sign-in supplies your email and basic profile to identify your account. StoryTool stores your manuscript, story structure, notes, revisions, versions and authorship history so you can write, recover drafts and see what changed.</p>
-        <p className="leading-7 text-[var(--muted)]">AI prompts, replies, proposed changes, review reports and usage details are stored to support conversations, review and history. Operational logs can include AI response summaries and error details. StoryTool is hosted on Render and uses Neon for its database.</p>
+        <p className="leading-7 text-[var(--muted)]">AI prompts, replies, proposed changes, review reports and usage details are stored to support conversations, review and history. Operational logs can include AI response summaries and error details. StoryTool is hosted on Render and uses Neon for its database and private image storage.</p>
+      </section>
+      <section className="mt-10 space-y-3" aria-labelledby="image-data-title">
+        <h2 id="image-data-title" className="text-xl font-semibold">Images and their history</h2>
+        <p className="leading-7 text-[var(--muted)]">Uploaded illustrations and reference images are stored in private Neon object storage. StoryTool stores their names, descriptions, captions and links to your manuscript or planning entries. Image access follows the story’s permissions: authorized private readers can view shared images, and images used in a public showcase can be viewed through its public link. Admitted beta readers can view the images in their frozen reading round.</p>
+        <p className="leading-7 text-[var(--muted)]">Deleting an image removes its current manuscript placements and reference attachments. Its file remains available to saved revisions, story versions and existing frozen beta rounds, and still counts toward upload limits. Trash also retains image files. Permanently deleting the story queues its retained image files for removal from storage; failed removals are retried, so cleanup may not be immediate.</p>
+        <p className="leading-7 text-[var(--muted)]">Manuscript downloads and full backups can contain images. Copies downloaded or imported by readers are independent; revoking access or deleting the original cannot recall them. Hosting backups may retain copies separately.</p>
       </section>
       <section className="mt-10 space-y-3" aria-labelledby="ai-data-title">
         <h2 id="ai-data-title" className="text-xl font-semibold">When you choose to use AI</h2>

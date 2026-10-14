@@ -3347,6 +3347,7 @@ export interface components {
             archived: boolean;
             /** @default 0 */
             manuscript_uses: number;
+            uses?: components["schemas"]["ImageUse"][];
             /** Format: uuid */
             id: string;
             size: number;
@@ -3365,6 +3366,19 @@ export interface components {
             /** Format: uuid */
             upload_id: string;
             data: string;
+        };
+        /** ImageUse */
+        ImageUse: {
+            /** @enum {string} */
+            kind: "manuscript" | "reference";
+            /** @enum {string} */
+            entity: "scene" | "character" | "location" | "glossary_entry";
+            /** Format: uuid */
+            id: string;
+            title: string;
+            chapter?: string | null;
+            /** @default 1 */
+            count: number;
         };
         /** InviteOut */
         InviteOut: {

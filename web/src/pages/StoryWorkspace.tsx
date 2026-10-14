@@ -165,9 +165,9 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: 
     document.querySelector<HTMLDialogElement>('dialog.story-search-dialog')?.close()
     const narrow = window.matchMedia('(max-width: 1100px)').matches
     if (hit.matches.some(match => match.field === 'content')) {
-      if (tab === 'read') setReaderScene({ sceneId: hit.id, sequence: Date.now() })
+      if (tab === 'read' && !searchParams.get('image_ref')) setReaderScene({ sceneId: hit.id, sequence: Date.now() })
       else if (await changeTab('write')) {
-        let find: string | undefined
+        let find: string | undefined = searchParams.get('image_ref') || undefined
         if (sandbox) { try { find = JSON.parse(localStorage.getItem(`storytool-search:${storyId}:${searchContext}`) || '{}').q } catch { /* Selection remains optional. */ } }
         setWriterScene({ id: hit.id, at: Date.now(), find })
       }

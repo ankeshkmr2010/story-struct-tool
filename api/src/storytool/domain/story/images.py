@@ -18,7 +18,7 @@ from uuid_utils import uuid7
 
 from storytool.domain.cast.models import Character
 from storytool.domain.glossary import GlossaryEntry
-from storytool.domain.narrative.models import Scene
+from storytool.domain.narrative.models import Chapter, Scene
 from storytool.domain.narrative.prose import save_scene_content
 from storytool.domain.story.image_models import ImageBlob, StoryImage
 from storytool.domain.story.image_storage import get_image, inspect_image, put_image
@@ -54,9 +54,19 @@ class ImageUpload(ImageDescription):
     data: str = Field(max_length=4 * ((MAX_IMAGE_BYTES + 2) // 3))
 
 
+class ImageUse(BaseModel):
+    kind: Literal["manuscript", "reference"]
+    entity: Literal["scene", "character", "location", "glossary_entry"]
+    id: UUID
+    title: str
+    chapter: str | None = None
+    count: int = 1
+
+
 class ImageOut(ImageDescription):
     archived: bool
     manuscript_uses: int = 0
+    uses: list[ImageUse] = Field(default_factory=list)
     id: UUID
     size: int
     width: int
@@ -303,15 +313,65 @@ class StoryImagesController(Controller):
             .order_by(StoryImage.created_at)
         )
         count, size = await image_usage(db_session, story_id)
-        prose = await db_session.scalars(select(Scene.content).where(Scene.story_id == story_id))
-        uses = Counter(
-            match[1].lower() for text in prose for match in IMAGE_REF.findall(text or "")
+        scenes = list(
+            await db_session.execute(
+                select(Scene.id, Scene.title, Scene.content, Chapter.title, Chapter.number)
+                .outerjoin(Chapter, Scene.chapter_id == Chapter.id)
+                .where(Scene.story_id == story_id)
+                .order_by(Chapter.sort_key, Chapter.number, Chapter.id, Scene.sort_key, Scene.id)
+            )
         )
-        return ImageLibrary(
-            images=[image_out(i, b, uses[str(i.id)]) for i, b in rows],
-            retained_count=count,
-            retained_bytes=size,
-        )
+        placements: dict[str, list[ImageUse]] = {}
+        references: dict[tuple[str, str], ImageUse] = {}
+        for scene_id, title, content, chapter_title, chapter_number in scenes:
+            chapter = (
+                (f"Chapter {chapter_number}" + (f": {chapter_title}" if chapter_title else ""))
+                if chapter_number is not None
+                else "Unassigned chapter"
+            )
+            references[("scene", str(scene_id))] = ImageUse(
+                kind="reference",
+                entity="scene",
+                id=scene_id,
+                title=title or "Untitled scene",
+                chapter=chapter,
+            )
+            for image_id, occurrences in Counter(
+                match[1].lower() for match in IMAGE_REF.findall(content or "")
+            ).items():
+                placements.setdefault(image_id, []).append(
+                    ImageUse(
+                        kind="manuscript",
+                        entity="scene",
+                        id=scene_id,
+                        title=title or "Untitled scene",
+                        chapter=chapter,
+                        count=occurrences,
+                    )
+                )
+        for entity, model, label in [
+            ("character", Character, Character.name),
+            ("location", Location, Location.name),
+            ("glossary_entry", GlossaryEntry, GlossaryEntry.term),
+        ]:
+            for entity_id, title in await db_session.execute(
+                select(model.id, label).where(model.story_id == story_id)
+            ):
+                references[(entity, str(entity_id))] = ImageUse(
+                    kind="reference", entity=entity, id=entity_id, title=title
+                )
+        images = []
+        for image, blob in rows:
+            uses = list(placements.get(str(image.id), []))
+            output = image_out(image, blob, sum(use.count for use in uses))
+            for attachment in image.attachments:
+                entity = TARGET_STATE[attachment["entity"]]
+                reference = references.get((entity, str(attachment["id"])))
+                if reference:
+                    uses.append(reference)
+            output.uses = uses
+            images.append(output)
+        return ImageLibrary(images=images, retained_count=count, retained_bytes=size)
 
     @post(request_max_body_size=8 * 1024 * 1024)
     async def upload(self, db_session: AsyncSession, story_id: UUID, data: ImageUpload) -> ImageOut:

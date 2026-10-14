@@ -5,6 +5,7 @@ import { ThemeProvider, ThemeToggle } from './components/Theme'
 import { AccountMenu, AuthGate } from './components/AuthGate'
 import StoryList from './pages/StoryList'
 import StoryWorkspace from './pages/StoryWorkspace'
+import StoryImagesPage from './pages/StoryImagesPage'
 const SharedStoryReader = lazy(() => import('./pages/SharedStoryReader'))
 const StoryShowcase = lazy(() => import('./pages/StoryShowcase'))
 import HowToUse from './pages/HowToUse'
@@ -71,6 +72,7 @@ export default function App() {
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/stories/:storyId" element={<StoryWorkspace />} />
+        <Route path="/stories/:storyId/images" element={<StoryImagesPage />} />
         <Route path="/stories/:storyId/beta" element={<BetaOwner />} />
         <Route path="/stories/:storyId/polls" element={<BetaPolls />} />
         <Route path="/shared/:storyId" element={<Suspense fallback={<p className="p-8">Loading reader…</p>}><SharedStoryReader /></Suspense>} />

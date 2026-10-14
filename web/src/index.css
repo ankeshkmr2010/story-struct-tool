@@ -682,3 +682,13 @@ ol.showcase-list { list-style: decimal; }
 .story-image-preview-caption{white-space:pre-wrap;margin:1rem 0}
 .story-images-dialog .story-image-figure img{max-height:240px}
 .reference-images{margin:.6rem 0}.reference-images-list{display:flex;gap:1rem;flex-wrap:wrap}.reference-images-list>div{max-width:180px}.reference-images-list img{max-height:140px}
+
+.story-images-page .story-images-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.story-images-page .story-images-grid img{height:150px}
+.story-images-page .story-images-grid small{color:var(--muted);overflow-wrap:anywhere}
+.story-images-page form{scroll-margin-top:5rem;margin-top:1.5rem;padding:1rem;border:1px solid var(--line);border-radius:8px}
+.story-images-page form>label{display:flex;flex-direction:column;gap:.3rem;margin:.8rem 0}
+.story-images-page input:not([type=file]),.story-images-page textarea{padding:.5rem;border:1px solid var(--line);border-radius:5px;background:var(--page);color:var(--ink);width:100%}
+.story-images-page nav button[aria-pressed=true]{outline:2px solid var(--accent)}
+.story-images-page form a{text-decoration:underline;text-underline-offset:3px}
+.story-images-page form li{margin:.5rem 0}
