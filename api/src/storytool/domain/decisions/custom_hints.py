@@ -97,6 +97,7 @@ async def read_custom_hints(
         code = f"hint.custom.{row.id}"
         base = {
             "rubric": rubric,
+            "reader_revision": "character-evidence-v3",
             "validator_id": str(row.id),
             "version": row.version,
             "definition_hash": row.definition_hash,
