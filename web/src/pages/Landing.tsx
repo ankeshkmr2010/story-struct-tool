@@ -13,9 +13,9 @@ const plan = [
 
 const craft = [
   ['01', 'Know who wrote what', 'Your words and AI changes have a record. See who changed each field in History, review proposed edits, and choose what to keep.'],
-  ['02', 'Keep your threads connected', 'MICE thread nesting shows where each storyline opens and closes, and flags threads that resolve out of order. Ask an AI to review the promises and payoffs.'],
+  ['02', 'Keep your threads connected', 'MICE thread nesting shows where each storyline opens and closes, and flags threads that resolve out of order. The built-in reader checks your prose, with no AI key needed.'],
   ['03', 'Find your scene rhythm', 'Scene and sequel checks highlight long runs of action or reaction, so you can decide where the story needs room to breathe.'],
-  ['04', 'Misbelief at midpoint', 'Ask an AI to review how the midpoint challenges a character’s false belief, using evidence from your story.'],
+  ['04', 'Misbelief at midpoint', 'Check how the midpoint challenges a character’s false belief, using evidence read from your scenes. No AI key needed.'],
   ['05', 'Value shift versus prose', 'Compare a scene’s planned emotional change with what its prose delivers, and consider where to revise.'],
   ['06', 'Writing checks you can shape', 'Set character limits, look for problems or compare actions and intentions. Try a sample and get your own advice beside highlighted sentences, without coding or changing your prose.'],
 ] as const
@@ -27,13 +27,13 @@ export default function Landing() {
         <p className="eyebrow"><span /> A workspace for novel writers</p>
         <h1 id="landing-title">Plan, write, and keep<br /><em>your novel consistent.</em></h1>
         <p className="hero-description">With the AI you already use or none at all. Your manuscript, its structure and its timeline in one place; every change is yours to keep or undo.</p>
-        <div className="hero-actions"><Link to="/try" className="landing-primary">Try the guided tour <span aria-hidden="true">→</span></Link><Link to="/library" className="landing-secondary">Start your story <span aria-hidden="true">↗</span></Link></div>
+        <div className="hero-actions"><Link to="/try" className="landing-primary">Try the guided tour <span aria-hidden="true">→</span></Link><Link to="/library" className="landing-secondary">Start your story <span aria-hidden="true">→</span></Link></div>
         <p className="hero-footnote">Explore a real story in three minutes. No account needed.</p>
         <div className="hero-assurances">
           <Link to="/pricing"><strong>Free during beta</strong><span>No StoryTool subscription charge. Pricing details →</span></Link>
           <Link to="/privacy"><strong>StoryTool doesn't train AI on your manuscript.</strong><span>Connected AI services have their own policies. Privacy details →</span></Link>
         </div>
-        <p className="hero-footnote">New here? <Link to="/how-to-use">See how it works →</Link> · <Link to={SHOWCASE}>See a finished story →</Link> · <Link to="/roadmap">On the horizon →</Link></p>
+        <p className="hero-footnote">New here? <Link to="/how-to-use">See how it works →</Link> · <Link to={SHOWCASE}>See a finished story →</Link></p>
       </div>
       <div className="story-preview" aria-label="Illustrative story outline showing linked beats, timeline events, and a character arc">
         <div className="preview-top"><img src="/branding/storytool.svg" width="32" height="32" alt="" /><span>The Last Lantern <small>A glimpse of your workspace</small></span><span className="preview-draft">Draft</span></div>

@@ -121,6 +121,7 @@ function MiceInputs({ storyId, onOpenInbox }: { storyId: string; onOpenInbox: ()
         <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? 'Copied' : 'Copy prompt for your agent'}</button>
         <button type="button" disabled={!connection || ask.isPending} title={connection ? undefined : 'Connect Claude or OpenAI in the assistant first'} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? 'Asking the assistant…' : 'Ask the assistant'}</button>
       </div>
+      {!connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.</p>}
       {ask.isSuccess && <p className="mt-2 text-xs">Proposal ready. <button type="button" className="underline" onClick={onOpenInbox}>Review it in Agent changes →</button></p>}
       {(ask.error || save.error) && <p role="alert" className="mt-2 text-xs text-rose-700 dark:text-rose-300">{errorText(ask.error ?? save.error)}</p>}
     </div>
@@ -185,6 +186,7 @@ function ReviewInputs({ storyId, evaluatorId, ready, onOpenInbox }: {
         <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? 'Copied' : 'Copy prompt for your agent'}</button>
         <button type="button" disabled={!connection || ask.isPending} title={connection ? undefined : 'Connect Claude or OpenAI in the assistant first'} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? 'Asking the assistant…' : 'Ask the assistant'}</button>
       </div>
+      {!connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.</p>}
       {ask.isSuccess && <p className="mt-2 text-xs">Proposal ready. <button type="button" className="underline" onClick={onOpenInbox}>Review it in Agent changes →</button></p>}
       {ask.error && <p role="alert" className="mt-2 text-xs text-rose-700 dark:text-rose-300">{errorText(ask.error)}</p>}
     </div>
@@ -259,6 +261,7 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
         <button type="button" disabled={!ready || !connection || ask.isPending} title={!ready ? 'Fill in the missing inputs above first' : connection ? undefined : 'Connect Claude or OpenAI in the assistant first'} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? 'Reviewing…' : 'Ask the assistant'}</button>
         <button type="button" onClick={() => void reports.refetch()} className="rounded-md px-3 py-1.5 text-xs underline">Check for new reports</button>
       </div>
+      {ready && !connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.</p>}
       {ask.error && <p role="alert" className="text-xs text-rose-700 dark:text-rose-300">{errorText(ask.error)}</p>}
       {reports.data?.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">No reviews yet.</p>}
 
@@ -383,14 +386,14 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
           )}
           {selected.id === 'mice_nesting' && <MiceInputs storyId={storyId} onOpenInbox={onOpenInbox} />}
           {(selected.id === 'value_shift' || selected.id === 'misbelief_midpoint') && <ReviewInputs key={selected.id} storyId={storyId} evaluatorId={selected.id} ready={selected.ready} onOpenInbox={onOpenInbox} />}
-          {usesReader && <><p className="writer-help">Run reads saved scene prose with the shared reader; no personal AI key is needed. Outline inputs below remain useful for deeper reviews.</p><button type="button" className="share-story-button" disabled={reader.isPending || !noticer.data?.shared || !scenes.data?.some(scene => scene.word_count > 0)} onClick={() => reader.mutate()}>{reader.isPending ? 'Reading scene evidence…' : reader.data ? 'Run again' : 'Run'}</button></>}
+          {usesReader && <><p className="writer-help">Run reads saved scene prose with the shared reader; no personal AI key is needed. Outline inputs below remain useful for deeper reviews.</p><button type="button" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950" disabled={reader.isPending || !noticer.data?.shared || !scenes.data?.some(scene => scene.word_count > 0)} onClick={() => reader.mutate()}>{reader.isPending ? 'Reading scene evidence…' : reader.data ? 'Run again' : 'Run'}</button></>}
           {usesReader && !noticer.isPending && !noticer.data?.shared && <p className="writer-help">The shared scene reader is not configured yet. Available outline checks and your own AI reviews remain below.</p>}
           {reader.error && <p role="alert">{errorText(reader.error)}</p>}
           {selected.kind === 'deterministic' && <button
             type="button"
             disabled={!selected.ready || run.isPending}
             onClick={() => run.mutate(selected.id)}
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950"
+            className={usesReader ? 'share-story-button' : 'rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950'}
           >
             {run.isPending ? 'Running…' : usesReader ? 'Run outline-only check' : shown ? 'Run again' : 'Run'}
           </button>}

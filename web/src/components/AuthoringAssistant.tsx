@@ -67,6 +67,7 @@ export function AuthoringAssistant({ storyId }: { storyId: string }) {
         <li>Add it in Settings. It's used only for your account.</li>
       </ol>
       <Link to="/settings" className="inline-block rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-950 dark:hover:bg-slate-300">Add your API key →</Link>
+      <p className="text-sm text-slate-700 dark:text-slate-200">Already write with Claude or ChatGPT? Connect it to StoryTool instead; no API key needed. <a href="/#mcp" className="underline">How to connect →</a></p>
     </div>
   )
   return (

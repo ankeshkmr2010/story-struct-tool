@@ -67,6 +67,7 @@ export default function WritingChecks() {
   const [draft, setDraft] = useState<Draft>(blankDraft)
   const [baseline, setBaseline] = useState(() => JSON.stringify(blankDraft()))
   const [message, setMessage] = useState('')
+  const [confirmReset, setConfirmReset] = useState(false)
   const [sample, setSample] = useState('')
   const [sampleExpected, setSampleExpected] = useState<boolean | null>(null)
   const preview = useMutation({ mutationFn: () => api.previewValidator({ definition: toDefinition(draft, true), content: sample }) })
@@ -114,8 +115,9 @@ export default function WritingChecks() {
     window.addEventListener('beforeunload', beforeUnload); document.addEventListener('click', leave, true)
     return () => { window.removeEventListener('beforeunload', beforeUnload); document.removeEventListener('click', leave, true) }
   }, [dirty])
-  const openForm = (row: WritingValidator | null, template?: typeof templates[number]) => {
-    if (busy || (dirty && !window.confirm('Discard unsaved changes to this check?'))) return
+  const openForm = (row: WritingValidator | null, template?: typeof templates[number], discard = false) => {
+    if (busy || (dirty && !discard && !window.confirm('Discard unsaved changes to this check?'))) return
+    setConfirmReset(false)
     const next = row ? toDraft(row) : { ...blankDraft(), ...template }
     setSelected(row); setDraft(next); setBaseline(JSON.stringify(row || !template ? next : blankDraft())); setMessage(''); save.reset(); change.reset(); latest.reset(); preview.reset()
     window.requestAnimationFrame(() => document.getElementById('check-name')?.focus())
@@ -166,7 +168,9 @@ export default function WritingChecks() {
           <section className="checks-trial"><h3>Try on a passage</h3><p className="checks-muted">This sends your sample, rule and examples to the shared reader and uses your normal reading allowance. It does not save the rule or edit prose.</p><label>Sample passage<textarea rows={4} maxLength={30000} value={sample} onChange={event => { setSample(event.target.value); preview.reset() }} /></label><label>Your expectation<select value={sampleExpected == null ? '' : sampleExpected ? 'yes' : 'no'} onChange={event => setSampleExpected(event.target.value === '' ? null : event.target.value === 'yes')}><option value="">Not sure yet</option><option value="yes">Should show advice</option><option value="no">Should not show advice</option></select></label><button type="button" disabled={!sample.trim() || busy} onClick={() => preview.mutate()}>{preview.isPending ? 'Reading sample…' : 'Try this rule'}</button>
           {preview.data && <div role="status" className="checks-trial-results">{preview.data.warnings.map((warning, index) => <p key={index}>{warning}</p>)}{sampleExpected != null && <p>{(!preview.data.observations.length || preview.data.warnings.length > 0 || preview.data.observations.some(item => item.matched == null)) ? 'Some results are uncertain; inspect the reading below.' : (preview.data.hints.length > 0) === sampleExpected ? 'The reading matches your expectation.' : 'The reading differs from your expectation. Refine the criterion or examples before enabling.'}</p>}{preview.data.observations.map((observation, index) => <article key={index}><strong>Paragraph {observation.paragraph}: {observation.matched == null ? 'Uncertain' : observation.matched ? 'Would show advice' : 'No advice triggered'}</strong>{observation.count != null && <p>{observation.complete ? '' : 'At least '}{observation.count} named characters; limit {observation.limit}.</p>}{!!observation.names.length && <p>Counted: {observation.names.join(', ')}</p>}{!!observation.excluded.length && <p>Not counted: {observation.excluded.join(', ')}</p>}{!!observation.uncertain.length && <p>Uncertain: {observation.uncertain.join(', ')}</p>}</article>)}{preview.data.hints.map(hint => <article key={hint.code}><strong>{hint.message}</strong>{hint.location_uncertain && <p>Sentence location uncertain; paragraph shown instead.</p>}{hint.passages?.map((passage, index) => <blockquote key={index} className="live-hint-excerpt">{passage.text}</blockquote>)}<p>{hint.action}</p></article>)}</div>}</section>
           <aside className="checks-preview" aria-label="Hint preview"><p className="eyebrow">HINT PREVIEW</p><h3>{draft.name || 'Your check'}</h3><p>{draft.advice || 'Your saved advice will appear here.'}</p><p className="checks-muted">Shown when {when}, at {draft.certainty}% certainty or higher. Appearance preview only; no passage has been checked.</p></aside>
-          <div className="checks-form-actions"><button type="submit" className="checks-primary" disabled={!dirty}>{save.isPending ? 'Saving…' : selected ? 'Save changes' : 'Create check'}</button><button type="button" onClick={() => openForm(selected)}>Reset form</button>{dirty && <span className="checks-muted">Unsaved changes</span>}</div>
+          <div className="checks-form-actions"><button type="submit" className="checks-primary" disabled={!dirty}>{save.isPending ? 'Saving…' : selected ? 'Save changes' : 'Create check'}</button>{confirmReset && dirty
+            ? <><span className="checks-muted">Discard unsaved changes?</span><button type="button" onClick={() => openForm(selected, undefined, true)}>Discard</button><button type="button" onClick={() => setConfirmReset(false)}>Keep editing</button></>
+            : <><button type="button" onClick={() => dirty ? setConfirmReset(true) : openForm(selected)}>Reset form</button>{dirty && <span className="checks-muted">Unsaved changes</span>}</>}</div>
         </fieldset></form>
       </section>
     </div>

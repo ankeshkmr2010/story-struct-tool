@@ -188,7 +188,7 @@ button:not(:disabled), summary { cursor: pointer; }
 .mcp-prompt-heading { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
 .mcp-next blockquote { margin-top: 12px; padding: 20px; border-radius: 9px; background: var(--accent-soft); color: var(--muted); font: 14px/1.9 Georgia, serif; }
 .mcp-copy-status { min-height: 18px; margin-top: 14px; font-size: 11px; color: var(--accent); }
-.mcp-footnote { color: var(--muted); font-size: 10px; line-height: 1.8; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+.mcp-footnote { color: var(--muted); font-size: 13px; line-height: 1.7; max-width: 72ch; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
 @media (max-width: 640px) { .mcp-setup { padding-top: 44px; } .mcp-intro { align-items: flex-start; gap: 12px; } .mcp-intro img { width: 40px; height: 40px; } .mcp-intro h2 { font-size: 30px; } .mcp-endpoint { flex-wrap: wrap; padding: 16px; } .mcp-panel { padding: 22px 18px; } .mcp-steps, .mcp-next { grid-template-columns: 1fr; gap: 20px; } .mcp-tabs button { padding: 13px 12px; } .mcp-panel h3 { font-size: 18px; } .mcp-code pre { font-size: 11px; } }
 
 /* Shared writing-workspace design: warm paper, forest green, quiet borders. */
