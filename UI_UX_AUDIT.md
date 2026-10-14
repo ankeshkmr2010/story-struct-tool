@@ -445,3 +445,5 @@ from future real feedback remain unverified. T53–T60 implementation is built, 
 - [~] Evaluate visual refinement: findings capped at 56rem width/45vh height, surface-filled cards with colored status borders/badges, separated action footer and accented scene links. Redundant nesting verification sentence is represented by the Verify badge/actions. Awaiting production visual confirmation.
 
 - [~] Value-shift readings explain inferred safety/trust/belonging/freedom/control/understanding changes and give revision questions; scores and reader metadata move into optional details. Tentative readings are labelled, and similar conditions are not treated as proof of a flat scene. Existing scene navigation retained. Awaiting production quality/visual confirmation.
+
+- [~] Evaluate uncertain findings grouped under a collapsed Needs verification section with a count; confident findings remain visible and both groups retain bounded scrolling, evidence and all actions. Awaiting production visual confirmation.
