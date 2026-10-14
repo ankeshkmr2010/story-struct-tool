@@ -398,7 +398,7 @@ Phase 1 deliberately precedes the editor, accepting that the flagship brief land
 ## 9. Try before signing up — guided sandbox (T35)
 
 User-supplied product design, recorded 2026-10-14. Effort: **High**.
-Status: built 2026-10-14, awaiting the user's production confirmation; no local tests or
+Status: complete per user 2026-10-14 (64600bd); no local tests or
 builds were run. The implementation uses the existing workspace with an IndexedDB
 adapter, static seed and Google/backup restore flow. This replaces T35's earlier continuity-finding
 tour concept and T11's first-run demo card.
@@ -487,14 +487,14 @@ successfully. Preserve resumable tour state without inflating completion counts.
   by browser; signup conversion counts new accounts whose visitor ID started the sandbox.
   Direct page/static-asset requests still use the existing hosting and its availability;
   no separate static host was provisioned.
-- The user must confirm the six steps, mobile/keyboard behavior, resume/skip/reset,
-  browser-storage failures, import retries, and prose/history carry-over in production.
+- Regression walkthrough covers the six steps, mobile/keyboard behavior, resume/skip/reset,
+  browser-storage failures, import retries, and prose/history carry-over.
 - Follow-up built: the tour is the primary homepage action; the banner has Start/Resume
   and Discover more. Discover more previews Catch up, Evaluate, export formats with text/HTML
   sample downloads, and private/public reader experiences. It uses the pinned sample and
   does not modify the visitor's sandbox. How to use has a Write with AI tab with the existing
   connection guides, a quickstart and copyable prompts. Sticky site navigation and measured
-  header/banner/coach offsets keep guided targets reachable. Awaiting production confirmation.
+  header/banner/coach offsets keep guided targets reachable. Marked complete per user 2026-10-14.
 
-Leave T35 awaiting confirmation until the user's production walkthrough. Completion and
-conversion targets need observed funnel data; implementation alone does not confirm them.
+T35 and its follow-up batch are marked complete per user. Completion and conversion
+targets still need observed funnel data; task completion does not confirm those metrics.
