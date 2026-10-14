@@ -1,5 +1,29 @@
 # StoryTool session entry point
 
+## Required scope checkpoint — before investigation
+
+This applies at session start, after compaction, and when the task changes.
+Before task-specific tool calls, state in one short user-visible sentence:
+**Task: <requested outcome>. Inspect: <specific area>. Stop: <completion condition>.**
+This states already-authorized work; do not ask again for permission to do it.
+
+- Start with the directly named files/functions. Do not inventory the repository,
+  inspect adjacent subsystems, research alternatives or query production data merely
+  because they might be useful.
+- Limit the first investigation to three targeted read/search calls. If the cause or
+  implementation path is still unclear, report the concrete missing fact and ask the
+  user before further investigation. Do not silently reset this limit or use a large
+  batch/full-file dump to evade it.
+- Before reading a new subsystem or adding an adjacent change, ask a concise scope
+  question and wait for the answer. A discovered dependency is a reason to ask, not
+  automatic authorization to explore it. Necessary type generation is already allowed.
+- Once the named change is implemented, run only the permitted scoped checks, review
+  its diff, commit/push and stop. Do not research or fix unrelated findings.
+- After compaction, recover the authorized task, completed work and remaining step;
+  do not restart investigation. Restate only the remaining step before the next tool.
+- If the user challenges delay or scope, answer with the actual calls/areas investigated.
+  Do not substitute another promise for an account of what happened.
+
 At the start of a new session, read `MEMORY.md`, then `SESSION_HANDOFF.md`.
 Read `CLAUDE.md` and follow its working rules; the user's current instructions take precedence.
 For further context, read only the relevant sections of `.claude/context.md` and `UI_UX_AUDIT.md`.
