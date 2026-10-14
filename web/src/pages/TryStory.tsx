@@ -12,7 +12,7 @@ import { DiscoverTour } from '../sandbox/DiscoverTour'
 
 const instructions = [
   "This is Maya's story. Turn a page.",
-  'Add a sentence: what does Maya see?',
+  'Add a sentence: what does Maya see? Right-click the prose for editing actions and image insertion.',
   "Every scene knows its beat, its POV and Maya's arc. Open Context.",
   'The harbor secret happened years earlier. Readers just learn it later. Flip World time ↔ Reading order.',
   'Jump straight to any line. Open an Exact result for lantern.',
@@ -45,6 +45,11 @@ export default function TryStory() {
   const [tourRun, setTourRun] = useState(0)
   const [tourMoving, setTourMoving] = useState(false)
   const [discoverOpen, setDiscoverOpen] = useState(false)
+  useEffect(() => {
+    const showImages = () => setDiscoverOpen(true)
+    window.addEventListener('storytool-try-images', showImages)
+    return () => window.removeEventListener('storytool-try-images', showImages)
+  }, [])
   const bannerRef = useRef<HTMLDivElement>(null)
   const coachRef = useRef<HTMLElement>(null)
   const qc = useQueryClient()
@@ -157,6 +162,7 @@ export default function TryStory() {
   const coach = !state.skipped && <aside ref={coachRef} id="try-tour" className="try-coach" aria-label="Guided sandbox tour">
       <div className="try-progress"><span>{state.step} of 6</span><span aria-hidden="true">{events.map((_, i) => <i key={i} className={i < state.step ? 'filled' : ''} />)}</span><button onClick={() => { void transact(value => { value.skipped = true; value.events.push('try_skip') }).then(() => { void query.refetch(); void flushEvents() }).catch(e => setError(String(e))) }}>Skip tour</button></div>
       <p>{state.completed ? 'Every change is on record. Keep this story and everything you wrote.' : instructions[state.step - 1]}</p>
+      {state.step === 2 && !state.completed && <button className="share-story-button" onClick={() => window.dispatchEvent(new Event('storytool-try-images'))}>Try inserting an image →</button>}
       {state.step === 6 && !state.completed && <button className="sharing-primary" onClick={() => window.dispatchEvent(new Event('storytool-try-history'))}>Open History</button>}
       {!state.completed && <div className="try-tour-navigation"><button disabled={tourMoving || state.step === 1} onClick={() => void moveTour(-1)}>← Previous</button><span>{doneSteps(state).includes(state.step) ? 'Ready when you are' : 'Complete the action above'}</span><button className="sharing-primary" disabled={tourMoving || !doneSteps(state).includes(state.step)} onClick={() => void moveTour(1)}>{state.step === 6 ? 'Finish tour' : 'Next →'}</button></div>}
       {state.completed && <div className="flex flex-wrap gap-3"><button className="sharing-primary" disabled={keeping} onClick={() => void keep()}>Keep this story, sign in with Google</button><button onClick={() => { void transact(value => { value.skipped = true }).then(() => query.refetch()) }}>Keep exploring</button></div>}

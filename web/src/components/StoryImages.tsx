@@ -53,6 +53,7 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const [params, setParams] = useSearchParams()
+  const sceneFilter = page ? params.get("scene") : null
   const filter = page ? params.get("filter") || "all" : "all"
   const editor = useRef<HTMLFormElement>(null)
   const showEditor = () => { if (page) requestAnimationFrame(() => editor.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })) }
@@ -100,7 +101,7 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
     } catch (error) { setError(errorText(error)); await refresh() }
     finally { setBusy(false); upload.current = null }
   }
-  const active = library.data?.images.filter(image => !image.archived) ?? []
+  const active = library.data?.images.filter(image => !image.archived && (!sceneFilter || image.uses?.some(use => use.entity === 'scene' && use.id === sceneFilter))) ?? []
   const matches = (image: StoryImage, value: string) => value === 'manuscript' ? image.manuscript_uses > 0 : value === 'reference' ? image.attachments.length > 0 : value === 'unused' ? !image.manuscript_uses && !image.attachments.length : true
   const visible = active.filter(image => matches(image, filter))
   const content = <>
@@ -111,9 +112,10 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
     {error && <p role="alert" className="writer-error">{error}</p>}{notice && <p role="status">{notice}</p>}
     {library.isPending && <p role="status">Loading images…</p>}
     {library.isError && <p role="alert">{errorText(library.error)} <button type="button" onClick={() => { void library.refetch() }}>Retry</button></p>}
-    {page && <nav aria-label="Filter images" className="story-images-actions">{[['all', 'All images'], ['manuscript', 'Manuscript'], ['reference', 'Reference'], ['unused', 'Unused']].map(([value, label]) => <button type="button" className="share-story-button" key={value} aria-pressed={filter === value} onClick={() => setParams(value === 'all' ? {} : { filter: value })}>{label} ({active.filter(image => matches(image, value)).length})</button>)}</nav>}
+    {sceneFilter && <p className="writer-help">Showing images used in this scene. <Link to={`/stories/${storyId}/images`}>Show every image →</Link></p>}
+    {page && <nav aria-label="Filter images" className="story-images-actions">{[['all', 'All images'], ['manuscript', 'Manuscript'], ['reference', 'Reference'], ['unused', 'Unused']].map(([value, label]) => <button type="button" className="share-story-button" key={value} aria-pressed={filter === value} onClick={() => { const next = new URLSearchParams(params); if (value === 'all') next.delete('filter'); else next.set('filter', value); setParams(next) }}>{label} ({active.filter(image => matches(image, value)).length})</button>)}</nav>}
     <div className="story-images-grid">{visible.map(image => <button type="button" key={image.id} disabled={busy} aria-pressed={selected?.id === image.id} onClick={() => { setSelected(image); setFile(null); setPreview(''); setDescription(image); setError(null); setNotice(''); showEditor() }}><img src={image.url} alt={image.alt || image.name} loading="lazy" /><span>{image.name}</span>{page && <><small>{image.caption || "No caption"}</small><small>{image.manuscript_uses} placements · {image.attachments.length} references</small><span>Edit details & uses →</span></>}</button>)}</div>
-    {library.data && !library.data.images.some(image => !image.archived) && <p className="writer-help">No images yet. Upload an illustration, map or reference image.</p>}
+    {library.data && !active.length && <p className="writer-help">{sceneFilter ? 'No images used in this scene yet. Insert one in Write or attach a reference in Scene Design.' : 'No images yet. Upload an illustration, map or reference image.'}</p>}
     {page && library.data && active.length > 0 && visible.length === 0 && <p role="status">No images in this filter. Choose All images to see your library.</p>}
     <label className="story-image-upload">Upload an image<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || !library.data || library.data.retained_count >= library.data.max_images || library.data.retained_bytes >= library.data.max_story_bytes} onChange={event => { chooseFile(event.target.files?.[0]); event.target.value = '' }} /></label>
     {(selected || file) && <form ref={editor} onSubmit={event => { event.preventDefault(); void save(false) }}>
@@ -143,16 +145,17 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
   return page ? <section className="story-images-page" aria-labelledby="story-images-title">{content}</section> : <dialog ref={dialog} className="story-images-dialog" aria-labelledby="story-images-title" onCancel={onClose} onClose={onClose}>{content}</dialog>
 }
 
-export function ReferenceImages({ storyId, entity, entityId }: { storyId: string; entity: ImageAttachment['entity']; entityId: string }) {
+export function ReferenceImages({ storyId, entity, entityId, hideGallery = false }: { storyId: string; entity: ImageAttachment['entity']; entityId: string; hideGallery?: boolean }) {
   const [open, setOpen] = useState(false)
   const qc = useQueryClient()
   const library = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: storyId !== SANDBOX_ID })
   if (storyId === SANDBOX_ID) return null
   const images = library.data?.images.filter(image => !image.archived && image.attachments.some(a => a.entity === entity && a.id === entityId)) ?? []
   return <div className="reference-images">
-    <div className="reference-images-list">{images.map(image => <div key={image.id}><ImageFigure image={image} /><button type="button" onClick={async () => {
+    <div className="reference-images-list">{!hideGallery && images.map(image => <div key={image.id}><ImageFigure image={image} /><button type="button" onClick={async () => {
       try { await api.describeImage(storyId, image.id, { ...image, attachments: image.attachments.filter(a => a.entity !== entity || a.id !== entityId) }); await qc.invalidateQueries({ queryKey: ['images', storyId] }) } catch (error) { window.alert(errorText(error)) }
     }}>Detach image</button></div>)}</div>
+    {hideGallery && images.map(image => <button key={image.id} type="button" className="writer-extra-add" onClick={async () => { try { await api.describeImage(storyId, image.id, { ...image, attachments: image.attachments.filter(a => a.entity !== entity || a.id !== entityId) }); await qc.invalidateQueries({ queryKey: ['images', storyId] }) } catch (error) { window.alert(errorText(error)) } }}>Detach {image.name}</button>)}
     <button type="button" className="writer-extra-add" onClick={() => setOpen(true)}>+ Add reference image</button>
     {open && <StoryImagePicker storyId={storyId} target={{ entity, id: entityId }} onSelect={() => {}} onClose={() => setOpen(false)} />}
   </div>
@@ -160,4 +163,15 @@ export function ReferenceImages({ storyId, entity, entityId }: { storyId: string
 
 export function ReadOnlyReferenceImages({ images, entity, entityId }: { images: Record<string, unknown>[]; entity: ImageAttachment['entity']; entityId: string }) {
   return <div className="reference-images-list">{images.filter(image => (image.attachments as ImageAttachment[] | undefined)?.some(a => a.entity === entity && a.id === entityId)).map(image => <ImageFigure key={String(image.id)} image={image} />)}</div>
+}
+
+export function SceneImages({ storyId, sceneId }: { storyId: string; sceneId: string }) {
+  const library = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: storyId !== SANDBOX_ID })
+  if (storyId === SANDBOX_ID) return null
+  const images = library.data?.images.filter(image => !image.archived && image.uses.some(use => use.entity === 'scene' && use.id === sceneId)) ?? []
+  return <section className="scene-images" aria-label="Scene images">
+    <Link to={`/stories/${storyId}/images?scene=${sceneId}`} className="underline underline-offset-4">Images for this scene{library.data ? ` (${images.length})` : ''} →</Link>
+    {library.isError && <p role="alert">Could not load images. <button type="button" onClick={() => { void library.refetch() }}>Retry</button></p>}
+    <div className="scene-image-thumbnails">{images.map(image => <div key={image.id}><ImageFigure image={image} /><p>{image.name}</p><small>{image.uses.filter(use => use.entity === 'scene' && use.id === sceneId).map(use => use.kind === 'manuscript' ? 'Manuscript' : 'Reference').join(' · ')}</small></div>)}</div>
+  </section>
 }

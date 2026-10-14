@@ -31,7 +31,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
   {
     date: '14 Oct 2026',
     items: [
-      ['Images in your story', 'illustrations, captions, reference attachments and larger reading previews. A dedicated image page offers filters, usage links and safe deletion; exports preserve placement and permanent story deletion cleans up retained files.'],
+      ['Images in your story', 'illustrations, captions, reference attachments and larger reading previews. Right-click insertion keeps your writing position; Scene Design and Catch up show image thumbnails. A dedicated image page offers filters, scene usage links and safe deletion; exports preserve placement and permanent story deletion cleans up retained files.'],
       ['Try before signing up', 'a guided writing sandbox with local search and History, plus interactive feature demos and sample downloads. Tours support Previous, Next and resume; sign in to keep your edits.'],
       ['Writing and reader guides', 'AI quickstart prompts, images and exports, plus beta rounds, private reader conversations and polls.'],
       ['Evaluate polish', 'credited craft definitions, review dates, stale-review actions and findings that open the relevant planning item.'],

@@ -1,3 +1,4 @@
+import { SceneImages } from './StoryImages'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
@@ -113,6 +114,7 @@ function OutlineView({ storyId, behind }: { storyId: string; behind: Map<string,
                   <dt className="text-slate-400">Place</dt><dd>{scene.location_name || '—'}</dd>
                   <dt className="text-slate-400">Events</dt><dd>{events.map((event) => event.title).join(' · ') || '—'}</dd>
                 </dl>
+                <SceneImages storyId={storyId} sceneId={scene.id} />
               </li>
             )
           })}</ul>
