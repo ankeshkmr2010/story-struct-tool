@@ -124,7 +124,7 @@ is separate. Adding these tasks authorizes documentation only, not implementatio
 
 ### High effort — implementation
 
-- [ ] T53 Shared Jev foundation: scene-scoped typed questions, reusable answer cache, private shared-key access, request/option limits, user and anonymous-demo rate limits, spend accounting, timeouts and safe fallback. Detailed boundaries below.
+- [~] T53 Shared Jev foundation (built foundation; awaiting production confirmation): scene-scoped typed questions, reusable answer cache, private shared-key access, request/option limits, user and anonymous-demo rate limits, spend accounting, timeouts and safe fallback. Detailed boundaries below.
 - [ ] T54 Jev craft checks and Verify cascade: scene/sequel, value shift, MICE nesting and midpoint misbelief, plus setups/payoffs and continuity. Combine atomic answers in code; route uncertain scenes to the user's AI. Includes the pending T42 visual nesting work.
 - [ ] T55 Live Write and sandbox hints: debounce the current scene, show dismissible margin notes, and demonstrate the same behaviour in /try without a personal key. Never edit prose.
 - [ ] Scrivener import (T36 follow-up): remaining import format; Word import is complete.
@@ -334,3 +334,18 @@ limit includes state plus the longest question; 64k includes all questions. Pric
 per million input tokens, output free. Direct API policy forbids training on Input; it does
 not promise general zero retention. [Enterprise ZDR requires account setup](https://typesafe.ai/enterprise).
 No live model calls/latency measurements or local tests/builds have been run.
+
+T53.1 pushed as `88000fd`. T53.2 adds persistent per-question cache and atomic user/global
+budget reservations in separate transactions, independent of author writes/checkpoints.
+Cache includes actor/provider/model/state/rubric; alias requests have a short TTL. Network
+responses are validated against closed options and bounded probabilities. Oversized states
+fail safely rather than silently truncating prose; request packing uses conservative byte
+ceilings below documented token limits. Large choice sets can score candidates before a
+bounded final choice. Shared Noticed uses the service; compatible local models use the same
+contract. Anonymous actor controls are ready for T55's protected sandbox endpoint, which is
+not yet implemented. Actual tokens, failures and round-trip duration are recorded without
+raw prose/keys; no billed latency measurements were made during development.
+Migration `b2f7d4c9e503` applied and column counts verified on expiring branch
+`br-floral-pond-b4o21270` (expires 2026-10-14 13:09 UTC), never production. Static checks only;
+no local tests/builds or manual deployment. T54–T60 remain pending. Each UI task needs the
+user's production confirmation.

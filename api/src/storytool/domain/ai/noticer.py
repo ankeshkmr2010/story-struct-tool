@@ -13,7 +13,20 @@ async def user_noticer(db: AsyncSession, user_id: UUID) -> tuple[object, dict[st
     settings = get_settings()
     if settings.shared_reader_available and settings.resolved_noticing_backend == "jev":
         # Site-provided reader takes priority without changing personal authoring connections.
-        return build_noticer(), {**describe_noticer(), "shared": True}
+        from storytool.domain.decisions.providers import shared_provider
+        from storytool.domain.decisions.service import Actor, DecisionService
+        from storytool.domain.noticing.deterministic import DeterministicNoticer
+        from storytool.domain.noticing.jev import JevNoticer
+
+        provider, model = shared_provider()
+        reader = JevNoticer(
+            client=DecisionService(db, Actor.user(user_id), provider),
+            model=model,
+            deterministic=DeterministicNoticer(),
+        )
+        if settings.decision_provider == "local":
+            reader.name = "local"
+        return reader, {**describe_noticer(), "shared": True}
     connections = list(
         (
             await db.execute(

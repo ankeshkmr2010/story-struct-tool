@@ -53,7 +53,9 @@ def describe_noticer() -> dict[str, object]:
         "deterministic": None,
     }[backend]
     return {
-        "noticer": backend,
+        "noticer": "local"
+        if backend == "jev" and settings.decision_provider == "local"
+        else backend,
         "model": model,
         "claude_available": settings.claude_noticing_available,
         "jev_available": settings.shared_reader_available,

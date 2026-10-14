@@ -118,6 +118,13 @@ class Settings(BaseSettings):
     decision_endpoint: str | None = None
     decision_model: str | None = None
     decision_api_key: str | None = None
+    decision_cache_days: int = Field(default=7, ge=1, le=30)
+    decision_timeout_seconds: int = Field(default=20, ge=1, le=60)
+    decision_user_daily_tokens: int = Field(default=2_000_000, ge=0)
+    decision_anonymous_daily_tokens: int = Field(default=100_000, ge=0)
+    decision_global_daily_tokens: int = Field(default=20_000_000, ge=0)
+    decision_user_calls_per_minute: int = Field(default=300, ge=1)
+    decision_anonymous_calls_per_minute: int = Field(default=20, ge=1)
 
     @property
     def shared_reader_available(self) -> bool:
