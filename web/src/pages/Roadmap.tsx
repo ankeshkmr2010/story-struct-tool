@@ -12,11 +12,6 @@ const BADGE: Record<Status, string> = {
 
 const ITEMS: readonly { title: string; status: Status; description: string }[] = [
   {
-    title: 'Writing checks you can make your own',
-    status: 'In progress',
-    description: 'Build your own checks with a simple form—no coding needed. Choose what to look for, such as stray sentences, modern slang or breaks in character voice, and turn checks on or off for your writing. See flagged passages with your chosen advice; your prose stays yours. Your connected AI can help create and manage checks too.',
-  },
-  {
     title: 'Scrivener support',
     status: 'Planned',
     description:
