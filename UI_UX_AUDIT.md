@@ -124,6 +124,7 @@ is separate. Adding these tasks authorizes documentation only, not implementatio
 
 ### High effort — implementation
 
+- [ ] T61 User-built typed validators (High): simple form builder, personal enable/disable settings and MCP CRUD; iteration 1 adds custom checks and migrates all current Jev checks to a common provider-neutral definition format. Scope below.
 - [~] T53 Shared Jev foundation (built foundation; awaiting production confirmation): scene-scoped typed questions, reusable answer cache, private shared-key access, request/option limits, user and anonymous-demo rate limits, spend accounting, timeouts and safe fallback. Detailed boundaries below.
 - [~] T54 Jev craft checks and Verify cascade (built; awaiting production confirmation): scene/sequel, value shift, MICE nesting and midpoint misbelief, plus setups/payoffs and continuity. Combine atomic answers in code; route uncertain scenes to the user's AI. Includes the pending T42 visual nesting work.
 - [~] T55 Live Write and sandbox hints: opt-in panel beside the active scene, two-second debounce, stale-response protection and dismissible notes in Write and /try. Built; awaiting production confirmation. Never edits prose.
@@ -428,3 +429,13 @@ from future real feedback remain unverified. T53–T60 implementation is built, 
 - [~] Live hints add contextual coherence: flag an unrelated sentence only after confident scene/paragraph and sentence selection; quote source text with an existing passage link and advice. Connected memories, metaphors and intentional digressions are allowed. Uses provider-neutral typed decisions and hints-v3 feedback. No beat/plot/arc context added. Static checks only; model quality awaits production confirmation.
 
 - [~] Coherence refinement: assess each sentence against its surrounding paragraph, using scene context and allowing connected digressions; hints-v4 separates the changed rubric. Awaiting production quality confirmation.
+
+## T61 — User-built typed validators (High; task only)
+
+- Goal: any signed-in user can build private advisory checks without writing code, and enable or disable them for themselves. Use the existing provider-neutral reader so Jev can later be replaced by a compatible local model.
+- Simple form builder: name, question, input scope (sentence/paragraph/scene or explicitly selected planning context), answer type (yes/no probability, choice or rubric score), option/level descriptions, finding condition and confidence threshold, advice, and enabled state. Offer templates and a sample preview before saving; no prose rewriting.
+- Validator CRUD: persisted, owned, versioned definitions and per-user enablement; expose create/list/get/update/delete through the API and MCP tools with existing ownership and scope protections. Validate bounded questions/options/rubrics and allowed input fields; no executable user code or arbitrary data access.
+- Iteration 1: author and run custom coherence checks using current-scene text, supporting passage links, saved advice and Useful/Dismiss feedback. Then convert all current Jev-backed checks (Noticing, Evaluate, live hints, ladder, beta triage, Related reranking and Catch up) to the same definition format as built-in templates. Preserve each surface's behavior, permissions, approved context, budgets, cache and feedback; keep cross-scene aggregation such as MICE stacks in application code.
+- Definition edits invalidate cached answers by version/hash; changing an enabled validator must not reuse old findings. Built-in templates retain stable identities; personal edits use private copies.
+- Acceptance: a nontechnical user and an MCP client can both manage a validator; only its owner can edit it; disabling it prevents further runs; a custom check shows source evidence without editing prose; migrated built-ins retain existing behavior.
+- Current state: typed questions, provider adapters, caching and feedback exist under `api/src/storytool/domain/decisions/`; the user-facing builder, saved custom definitions and validator MCP CRUD are not built. This entry authorizes documentation only.
