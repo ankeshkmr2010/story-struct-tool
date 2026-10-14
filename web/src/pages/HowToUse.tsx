@@ -457,7 +457,7 @@ export default function HowToUse() {
                   scenes to them. Places shows where each one appears and who was there.
                 </Item>
                 <Item title="Ask the tool to read">
-                  In Noticed, choose <strong className="font-medium">read prose</strong>. When the site-provided Jev reader is available, no personal AI connection is needed. The
+                  In Evaluate, Run reads saved scenes with the shared reader and combines evidence for craft checks. Uncertain findings offer Verify with your AI or a copy-scene prompt; verification includes only the selected scenes and their relevant thread or protagonist-belief context, and native reports remain available on return. Missing coverage is shown explicitly. In Noticed, choose <strong className="font-medium">read prose</strong>. When the site-provided Jev reader is available, no personal AI connection is needed. The
                   panel names the active reader; with no model configured it matches names
                   only. Observations you dismiss stay dismissed.
                 </Item>

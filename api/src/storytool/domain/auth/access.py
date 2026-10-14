@@ -258,7 +258,11 @@ class StoryAccessMiddleware:
                         and http_scope["method"] == "GET"
                     )
                     or suffix.startswith(
-                        ("/evaluations/value_shift/", "/evaluations/misbelief_midpoint/")
+                        (
+                            "/evaluations/value_shift/",
+                            "/evaluations/misbelief_midpoint/",
+                            "/evaluations/scene-reader",
+                        )
                     )
                 ):
                     needed.add("prose:read")
@@ -404,7 +408,7 @@ class StoryAccessMiddleware:
                                     await _reject(send, 404, "Referenced item not found")
                                     return
                 if http_scope["method"] in {"POST", "PATCH", "PUT", "DELETE"} and not path.endswith(
-                    ("/ai/propose", "/notice", "/ai-review")
+                    ("/ai/propose", "/notice", "/ai-review", "/scene-reader", "/reader-verify")
                 ):
                     lock_story_id = story_id
             elif arc_match:

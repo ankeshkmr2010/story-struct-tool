@@ -47,6 +47,7 @@ export type Beat = S['BeatOut']
 export type Thread = S['ThreadOut']
 export type Evaluator = S['EvaluatorOut']
 export type Evaluation = S['EvaluationOut']
+export type CraftReading = S['CraftReading']
 export type EvaluationReport = S['ReportOut']
 export type Character = S['CharacterOut']
 export type Relationship = S['RelationshipOut']
@@ -330,6 +331,8 @@ export const api = {
     request<void>(`/api/stories/${storyId}/beats/${beatId}`, { method: 'DELETE' }),
 
   listThreads: (id: string) => request<Thread[]>(`/api/stories/${id}/threads`).then(orderScenes),
+  readCraftScenes: (storyId: string) => post<CraftReading>(`/api/stories/${storyId}/evaluations/scene-reader`),
+  verifyCraftScenes: (storyId: string, check: string, body: { connection_id: string; scene_ids: string[]; base_fingerprint: string; thread_ids: string[]; character_ids: string[] }) => post<EvaluationReport>(`/api/stories/${storyId}/evaluations/${check}/reader-verify`, body),
   listEvaluators: (id: string) => request<Evaluator[]>(`/api/stories/${id}/evaluations`),
   runEvaluator: (id: string, evaluatorId: string) => request<Evaluation>(`/api/stories/${id}/evaluations/${evaluatorId}`),
   listEvaluationReports: (id: string, evaluatorId: string) => request<EvaluationReport[]>(`/api/stories/${id}/evaluations/${evaluatorId}/reports`),

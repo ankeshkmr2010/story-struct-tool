@@ -118,6 +118,7 @@ class Settings(BaseSettings):
     decision_endpoint: str | None = None
     decision_model: str | None = None
     decision_api_key: str | None = None
+    decision_evaluation_confidence: float = Field(default=.85, ge=.5, le=1)
     decision_cache_days: int = Field(default=7, ge=1, le=30)
     decision_timeout_seconds: int = Field(default=20, ge=1, le=60)
     decision_user_daily_tokens: int = Field(default=2_000_000, ge=0)

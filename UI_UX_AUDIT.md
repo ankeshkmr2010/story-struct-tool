@@ -125,7 +125,7 @@ is separate. Adding these tasks authorizes documentation only, not implementatio
 ### High effort — implementation
 
 - [~] T53 Shared Jev foundation (built foundation; awaiting production confirmation): scene-scoped typed questions, reusable answer cache, private shared-key access, request/option limits, user and anonymous-demo rate limits, spend accounting, timeouts and safe fallback. Detailed boundaries below.
-- [ ] T54 Jev craft checks and Verify cascade: scene/sequel, value shift, MICE nesting and midpoint misbelief, plus setups/payoffs and continuity. Combine atomic answers in code; route uncertain scenes to the user's AI. Includes the pending T42 visual nesting work.
+- [~] T54 Jev craft checks and Verify cascade (built; awaiting production confirmation): scene/sequel, value shift, MICE nesting and midpoint misbelief, plus setups/payoffs and continuity. Combine atomic answers in code; route uncertain scenes to the user's AI. Includes the pending T42 visual nesting work.
 - [ ] T55 Live Write and sandbox hints: debounce the current scene, show dismissible margin notes, and demonstrate the same behaviour in /try without a personal key. Never edit prose.
 - [ ] Scrivener import (T36 follow-up): remaining import format; Word import is complete.
 - [ ] T44 Series bible: share characters, places and glossary across books.
@@ -349,3 +349,13 @@ Migration `b2f7d4c9e503` applied and column counts verified on expiring branch
 `br-floral-pond-b4o21270` (expires 2026-10-14 13:09 UTC), never production. Static checks only;
 no local tests/builds or manual deployment. T54–T60 remain pending. Each UI task needs the
 user's production confirmation.
+
+T54: shared typed reader is primary Run for four craft checks; outline checks and deep-review
+packages retained. Added authored-thread setups/payoffs and cast/place continuity. Atomic
+scene answers drive rhythm runs, value charge, certain MICE stack/spans and word-positioned
+misbelief curves. Missing metadata/coverage and uncertainty are explicit. Native verification
+uses selected scenes (up to 20) and implicated thread/protagonist-belief subjects only; the
+user explicitly approved this extra context after automatic review rejected a broader payload.
+Foreign IDs/changed stories are rejected; reports are saved for re-entry. Copy prompts support
+external clients. No author locks held across calls. Static checks only; no tests/builds, billed
+calls or manual deployment. T55 onward remain pending.

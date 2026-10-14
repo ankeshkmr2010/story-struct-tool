@@ -1485,6 +1485,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/evaluations/{evaluator_id}/reader-verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify only the selected scenes with your AI */
+        post: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdReaderVerifyReaderVerify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/evaluations/{evaluator_id}": {
         parameters: {
             query?: never;
@@ -1496,6 +1513,23 @@ export interface paths {
         get: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdRunEvaluator"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/evaluations/scene-reader": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read cached scene evidence for craft checks */
+        post: operations["ApiStoriesStoryIdEvaluationsSceneReaderSceneReader"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2780,6 +2814,18 @@ export interface components {
             event_id: string | null;
             confidence: number | null;
         };
+        /** Answer */
+        Answer: {
+            /** @enum {string} */
+            type: "noul" | "choice" | "score";
+            noul?: number | null;
+            choice?: string | null;
+            score?: number | null;
+            confidence?: number | null;
+            probabilities?: {
+                [key: string]: number;
+            };
+        };
         /** ApplyRequest */
         ApplyRequest: {
             operations?: number[] | null;
@@ -2930,6 +2976,15 @@ export interface components {
             act_id?: string | null;
             framework_position?: string | null;
             sort_key?: number | null;
+        };
+        /** BeliefPoint */
+        BeliefPoint: {
+            character_id: string;
+            name: string;
+            /** Format: uuid */
+            scene_id: string;
+            position: number;
+            probability: number;
         };
         /** BetaDocumentOut */
         BetaDocumentOut: {
@@ -3157,6 +3212,34 @@ export interface components {
             contradiction_count: number;
             possible_count: number;
             anomalies: components["schemas"]["AnomalyOut"][];
+        };
+        /** CraftFinding */
+        CraftFinding: {
+            check: string;
+            code: string;
+            message: string;
+            scene_ids: string[];
+            confidence: number;
+            uncertain: boolean;
+            thread_ids?: string[];
+            character_ids?: string[];
+        };
+        /** CraftReading */
+        CraftReading: {
+            model: string;
+            scenes: components["schemas"]["SceneEvidence"][];
+            findings: components["schemas"]["CraftFinding"][];
+            spans: components["schemas"]["ThreadSpan"][];
+            curves: components["schemas"]["BeliefPoint"][];
+            cache_hits: number;
+            unavailable_count: number;
+            /** @default  */
+            base_fingerprint: string;
+            /** @default false */
+            stale: boolean;
+            check_missing?: {
+                [key: string]: string;
+            };
         };
         /** DocxImportOut */
         DocxImportOut: {
@@ -3679,6 +3762,15 @@ export interface components {
             operations?: components["schemas"]["Operation"][];
             base_fingerprint?: string | null;
         };
+        /** ReaderVerifyRequest */
+        ReaderVerifyRequest: {
+            /** Format: uuid */
+            connection_id: string;
+            scene_ids: string[];
+            base_fingerprint: string;
+            thread_ids?: string[];
+            character_ids?: string[];
+        };
         /** ReadinessOut */
         ReadinessOut: {
             level: number;
@@ -3866,6 +3958,18 @@ export interface components {
             status?: components["schemas"]["DraftStatus"];
             /** @default 0 */
             sort_key: number;
+        };
+        /** SceneEvidence */
+        SceneEvidence: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            position: number;
+            content_hash: string;
+            answers?: {
+                [key: string]: components["schemas"]["Answer"];
+            };
+            unavailable?: string | null;
         };
         /** SceneLineOut */
         SceneLineOut: {
@@ -4266,6 +4370,13 @@ export interface components {
             owner_character_id: string | null;
             mice: string | null;
             sort_key: number;
+        };
+        /** ThreadSpan */
+        ThreadSpan: {
+            thread_id: string;
+            title: string;
+            open: number;
+            close: number;
         };
         /**
          * ThreadType
@@ -8360,6 +8471,48 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdEvaluationsEvaluatorIdReaderVerifyReaderVerify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                evaluator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReaderVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdEvaluationsEvaluatorIdRunEvaluator: {
         parameters: {
             query?: never;
@@ -8379,6 +8532,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvaluationOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdEvaluationsSceneReaderSceneReader: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CraftReading"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

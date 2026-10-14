@@ -1,3 +1,4 @@
+import { SceneReaderResults } from './SceneReaderResults'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type Evaluation } from '../api/client'
@@ -324,10 +325,13 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
 }) {
   const evaluators = useQuery({ queryKey: ['evaluators', storyId], queryFn: () => api.listEvaluators(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
+  const noticer = useQuery({ queryKey: ['noticer'], queryFn: api.noticerInfo })
+  const reader = useMutation({ mutationFn: () => api.readCraftScenes(storyId) })
   const [chosen, setChosen] = useState<string | null>(null)
   const [result, setResult] = useState<Evaluation | null>(null)
   const selected = evaluators.data?.find((item) => item.id === chosen) ?? evaluators.data?.[0]
   const run = useMutation({ mutationFn: (id: string) => api.runEvaluator(storyId, id), onSuccess: setResult })
+  const usesReader = selected && ['scene_rhythm', 'value_shift', 'mice_nesting', 'misbelief_midpoint', 'setups_payoffs', 'continuity'].includes(selected.id)
   const shown = result && result.evaluator_id === selected?.id ? result : null
 
   const openEntity = (type: string | null | undefined, id: string | null | undefined) => {
@@ -378,17 +382,21 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
           )}
           {selected.id === 'mice_nesting' && <MiceInputs storyId={storyId} onOpenInbox={onOpenInbox} />}
           {(selected.id === 'value_shift' || selected.id === 'misbelief_midpoint') && <ReviewInputs key={selected.id} storyId={storyId} evaluatorId={selected.id} ready={selected.ready} onOpenInbox={onOpenInbox} />}
-          {selected.kind !== 'llm' && <button
+          {usesReader && <><p className="writer-help">Run reads saved scene prose with the shared reader; no personal AI key is needed. Outline inputs below remain useful for deeper reviews.</p><button type="button" className="share-story-button" disabled={reader.isPending || !noticer.data?.shared || !scenes.data?.some(scene => scene.word_count > 0)} onClick={() => reader.mutate()}>{reader.isPending ? 'Reading scene evidence…' : reader.data ? 'Run again' : 'Run'}</button></>}
+          {usesReader && !noticer.isPending && !noticer.data?.shared && <p className="writer-help">The shared scene reader is not configured yet. Available outline checks and your own AI reviews remain below.</p>}
+          {reader.error && <p role="alert">{errorText(reader.error)}</p>}
+          {selected.kind === 'deterministic' && <button
             type="button"
             disabled={!selected.ready || run.isPending}
             onClick={() => run.mutate(selected.id)}
             className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950"
           >
-            {run.isPending ? 'Running…' : shown ? 'Run again' : 'Run'}
+            {run.isPending ? 'Running…' : usesReader ? 'Run outline-only check' : shown ? 'Run again' : 'Run'}
           </button>}
           {run.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(run.error)}</p>}
         </section>
 
+        {reader.data && selected && usesReader && <SceneReaderResults key={selected.id} storyId={storyId} reading={reader.data} check={selected.id} onOpenScene={id => { const scene = scenes.data?.find(scene => scene.id === id); if (scene) onOpenScene({ id, chapter_id: scene.chapter_id ?? null }) }} />}
         {shown && (
           <section className="space-y-4" aria-label="Results">
             <h3 className="text-lg font-semibold">Results</h3>
