@@ -16,6 +16,7 @@ import Privacy from './pages/Privacy'
 import Feedback from './pages/Feedback'
 import { api } from './api/client'
 import UserSettings from './pages/UserSettings'
+import WritingChecks from './pages/WritingChecks'
 import OAuthConsent from './pages/OAuthConsent'
 import BetaOwner from './pages/BetaOwner'
 import BetaPolls from './pages/BetaPolls'
@@ -69,6 +70,7 @@ export default function App() {
       <Route element={<AuthGate><Outlet /></AuthGate>}>
         <Route path="/library" element={<StoryList />} />
         <Route path="/settings" element={<UserSettings />} />
+        <Route path="/checks" element={<WritingChecks />} />
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/stories/:storyId" element={<StoryWorkspace />} />

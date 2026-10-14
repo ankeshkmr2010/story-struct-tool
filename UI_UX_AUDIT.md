@@ -124,7 +124,7 @@ is separate. Adding these tasks authorizes documentation only, not implementatio
 
 ### High effort — implementation
 
-- [~] T61 User-built typed validators (High; definition/API/MCP foundation built): simple form builder, personal enable/disable settings and MCP CRUD; iteration 1 adds custom checks and migrates all current Jev checks to a common provider-neutral definition format. Scope below.
+- [~] T61 User-built typed validators (High; builder and definition/API/MCP foundation built): simple form builder, personal enable/disable settings and MCP CRUD; iteration 1 adds custom checks and migrates all current Jev checks to a common provider-neutral definition format. Scope below.
 - [~] T53 Shared Jev foundation (built foundation; awaiting production confirmation): scene-scoped typed questions, reusable answer cache, private shared-key access, request/option limits, user and anonymous-demo rate limits, spend accounting, timeouts and safe fallback. Detailed boundaries below.
 - [~] T54 Jev craft checks and Verify cascade (built; awaiting production confirmation): scene/sequel, value shift, MICE nesting and midpoint misbelief, plus setups/payoffs and continuity. Combine atomic answers in code; route uncertain scenes to the user's AI. Includes the pending T42 visual nesting work.
 - [~] T55 Live Write and sandbox hints: opt-in panel beside the active scene, two-second debounce, stale-response protection and dismissible notes in Write and /try. Built; awaiting production confirmation. Never edits prose.
@@ -438,7 +438,7 @@ from future real feedback remain unverified. T53–T60 implementation is built, 
 - Iteration 1: author and run custom coherence checks using current-scene text, supporting passage links, saved advice and Useful/Dismiss feedback. Then convert all current Jev-backed checks (Noticing, Evaluate, live hints, ladder, beta triage, Related reranking and Catch up) to the same definition format as built-in templates. Preserve each surface's behavior, permissions, approved context, budgets, cache and feedback; keep cross-scene aggregation such as MICE stacks in application code.
 - Definition edits invalidate cached answers by version/hash; changing an enabled validator must not reuse old findings. Built-in templates retain stable identities; personal edits use private copies.
 - Acceptance: a nontechnical user and an MCP client can both manage a validator; only its owner can edit it; disabling it prevents further runs; a custom check shows source evidence without editing prose; migrated built-ins retain existing behavior.
-- Current state: private saved definitions and API/MCP CRUD are built. The user-facing builder, execution of custom checks and migration of existing checks remain pending; current checks retain their existing behavior.
+- Current state: private saved definitions, API/MCP CRUD and the simple form builder are built. Execution of custom checks and migration of existing checks remain pending; current checks retain their existing behavior.
 
 - [~] Live-hint card design: disclosure under About live hints, highlighted source passage, quieter advice and one wrapping row for the passage link plus Useful/Dismiss icons. Reading/error/retry and feedback behavior retained. User screenshot confirms the apple sentence was detected and highlighted; new design awaits production confirmation.
 
@@ -466,3 +466,6 @@ Migration d7a2c9e5f103 creates the indexed nine-column table; migration-generate
 successfully only on temporary Neon branch br-orange-haze-b49hmvy8, expiring 2026-10-14 16:00 UTC.
 No production SQL, local tests/builds, billed model calls or manual deployment. App/OpenAPI import,
 Ruff, TypeScript and scoped frontend lint passed. Production CRUD/consent confirmation pending.
+
+
+- [~] T61.2 form builder: dedicated `/checks` page linked from Settings, saved/paginated private checks, named edit/save/delete actions and enable preferences. Yes/no, choice and rating forms preserve option identities and validate triggering answers; templates and an appearance preview help authors start. Saving uses expected versions, preserves drafts on errors/conflicts, and provides reload; unsaved edits prompt on link navigation/refresh. Direct refresh is routed by the backend. Custom execution remains explicitly pending in the UI. Static TypeScript/frontend lint/Ruff checks only; no tests/builds, model calls or migration. Awaiting production visual confirmation.
