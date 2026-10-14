@@ -514,9 +514,9 @@ ol.showcase-list { list-style: decimal; }
 .writer-help { color: var(--muted); font-size: 12px; line-height: 1.7; margin-top: 10px; }
 .writer-passage { min-width: 0; container-type: inline-size; }
 .writer-hint-layout { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 24px; align-items: start; }
-.live-writing-hints { font-size: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.live-writing-hints { font-size: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 .live-writing-hints h3 { margin: 0 0 8px; font-weight: 600; }
-.live-writing-hint { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.live-writing-hint { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 .live-writing-hint p { margin-bottom: 8px; line-height: 1.6; }
 .live-writing-hint button { margin-right: 8px; text-decoration: underline; }
 @container (max-width: 600px) { .writer-hint-layout { grid-template-columns: minmax(0, 1fr); gap: 12px; } }

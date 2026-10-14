@@ -45,6 +45,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
       ['Live writing hints', 'opt in beside the active scene in Write or the signup-free sample. After a short pause, dismissible notes flag possible POV, tense, dialogue, name and scene-turn issues, with paragraph guidance; prose stays yours.'],
       ['Mode-aware planning nudges', 'readiness advice considers your premise and outline in Plotter or Hybrid mode, shows likely gaps and stays quiet on weak evidence. Pantser keeps guidance out of the way; every level stays open.'],
       ['Grouped beta feedback', 'the shared reader categorises submitted comments and scores severity. Code builds chapter/category counts of distinct readers, with filters back to the conversations and uncertainty shown explicitly.'],
+      ['Refined Related search', 'relevance scoring refines each page of related results using short excerpts. Exact search remains literal; uncertain or unavailable scoring keeps the original result order.'],
       ['Evaluate polish', 'credited craft definitions, review dates, stale-review actions and findings that open the relevant planning item.'],
       ['Site navigation and link previews', 'sticky navigation, a direct tour entry and custom thumbnails for Landing, Your stories, Roadmap, Shoutouts, Feedback and How to use. Enabled public showcases use their own title and first manuscript image.'],
     ],

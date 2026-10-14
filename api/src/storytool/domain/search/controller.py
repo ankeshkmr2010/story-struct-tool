@@ -31,6 +31,7 @@ class SearchController(Controller):
     async def search(
         self,
         db_session: AsyncSession,
+        request: Request,
         story_id: UUID,
         context: SearchContext,
         q: str,
@@ -53,8 +54,14 @@ class SearchController(Controller):
                 raise ClientException(status_code=503, detail="Meaning search is not enabled yet")
             from storytool.domain.search.semantic import semantic_search
 
-            return await semantic_search(
+            page = await semantic_search(
                 db_session, story_id, context, q, field, offset, limit, entity
+            )
+            from storytool.domain.decisions.rerank import rerank_related
+            from storytool.domain.decisions.service import Actor
+
+            return await rerank_related(
+                db_session, Actor.user(request.scope["state"]["storytool_user_id"]), q, page
             )
         result = await text_search(db_session, story_id, context, q, field, offset, limit, entity)
         result.semantic_available = get_settings().semantic_search_available
@@ -124,9 +131,13 @@ class LibrarySearchController(Controller):
                 raise ClientException(status_code=503, detail="Meaning search is not enabled yet")
             from storytool.domain.search.semantic import semantic_search
 
-            return await semantic_search(
+            page = await semantic_search(
                 db_session, stories, context, q, field, offset, limit, entity
             )
+            from storytool.domain.decisions.rerank import rerank_related
+            from storytool.domain.decisions.service import Actor
+
+            return await rerank_related(db_session, Actor.user(user_id), q, page)
         page = await text_search(db_session, stories, context, q, field, offset, limit, entity)
         page.semantic_available = get_settings().semantic_search_available
         return page

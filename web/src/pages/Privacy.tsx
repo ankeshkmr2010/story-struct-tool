@@ -35,6 +35,7 @@ export default function Privacy() {
       </section>
       <section className="mt-10 space-y-3" aria-labelledby="meaning-search-title">
         <h2 id="meaning-search-title" className="text-xl font-semibold">Meaning search and Cloudflare</h2>
+        <p className="leading-7 text-[var(--muted)]">When the shared reader is available, Related search also sends your query, result titles and short matching excerpts to it for relevance scores. It refines the current result page without sending full manuscripts. Exact search does not make these scoring calls.</p>
         <p className="leading-7 text-[var(--muted)]">When meaning search is enabled for StoryTool, scene prose and searchable story details are sent in chunks to Cloudflare to create embeddings—numeric representations used to find related ideas. Indexing runs in the background and updates as stories change, even when you are not actively searching. Meaning-search queries are also sent to Cloudflare for an embedding.</p>
         <p className="leading-7 text-[var(--muted)]">When meaning search is disabled, StoryTool makes no embedding requests. Text search runs in StoryTool's database and does not itself send text to Cloudflare. Cloudflare's own data policies apply to embedding requests; StoryTool's no-training statement does not override them.</p>
       </section>
