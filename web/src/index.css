@@ -584,6 +584,7 @@ ol.showcase-list { list-style: decimal; }
 .workspace-search-entry { min-width: 0; width: 100%; }
 .search-launcher { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--muted); text-align: left; font-size: 14px; }
 .search-launcher:hover { border-color: var(--accent); color: var(--ink); }
+.search-launcher:disabled { opacity: .5; cursor: not-allowed; border-color: var(--line); color: var(--muted); }
 .search-launcher svg { flex-shrink: 0; }
 .workspace-reference-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
 .workspace-bar .story-workspace-tabs { margin: 0; }

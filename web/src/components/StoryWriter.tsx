@@ -307,7 +307,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       } }))),
       EditorView.theme({ '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' }, '.cm-scroller': { fontFamily: 'Georgia, serif', fontSize: '18px', overflow: 'visible' }, '.cm-content': { padding: '12px 0 24px', lineHeight: '1.9' }, '.cm-focused': { outline: 'none' }, '.cm-cursor': { borderLeftColor: 'var(--accent)' } }),
     ]} basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, bracketMatching: false, closeBrackets: false, autocompletion: false }} />
-    {liveHints && scene && <LiveWritingHints key={scene.id} storyId={storyId} sceneId={scene.id} content={state.text} onParagraph={(paragraph, find, wholeScene) => {
+    {liveHints && scene && <LiveWritingHints key={scene.id} storyId={storyId} sceneId={scene.id} sceneTitle={scene.title} content={state.text} onParagraph={(paragraph, find, wholeScene) => {
       const editor = view.current
       if (!editor) return
       if (wholeScene) { editor.dispatch({ selection: { anchor: 0, head: editor.state.doc.length }, effects: EditorView.scrollIntoView(0, { y: 'start' }) }); editor.focus(); return }

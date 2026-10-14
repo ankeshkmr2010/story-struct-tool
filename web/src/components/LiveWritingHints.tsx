@@ -6,7 +6,7 @@ import { errorText } from '../api/errors'
 import { SANDBOX_ID } from '../sandbox/storage'
 import { ReadingFeedback } from './ReadingFeedback'
 
-export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { storyId: string; sceneId: string; content: string; onParagraph: (paragraph: number, find?: string, wholeScene?: boolean) => void }) {
+export function LiveWritingHints({ storyId, sceneId, sceneTitle, content, onParagraph }: { storyId: string; sceneId: string; sceneTitle?: string | null; content: string; onParagraph: (paragraph: number, find?: string, wholeScene?: boolean) => void }) {
   const anchor = useRef<HTMLSpanElement>(null)
   const [position, setPosition] = useState<{ top: number; right: number; maxHeight: number; width: number }>()
   useEffect(() => {
@@ -31,6 +31,7 @@ export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { s
   const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId), enabled: sandbox })
   const personalChecks = useQuery({ queryKey: ['validators', 0], queryFn: () => api.listValidators(0), enabled: !sandbox })
   const checksRevision = sandbox ? 0 : personalChecks.dataUpdatedAt
+  const enabledChecks = Math.min(20, personalChecks.data?.items.filter(item => item.enabled).length ?? 0)
   const names = JSON.stringify([...new Set([...(characters.data ?? []).flatMap(item => [item.name, ...(item.aliases ?? [])]), ...(glossary.data ?? []).flatMap(item => [item.term, ...(item.aliases ?? [])])])])
   const [reading, setReading] = useState<{ text: string; checksRevision: number; result?: HintReading; error?: string }>()
   const [retry, setRetry] = useState(0)
@@ -61,6 +62,7 @@ export function LiveWritingHints({ storyId, sceneId, content, onParagraph }: { s
     <h3>Live hints</h3>
     <details className="live-hints-about"><summary>About live hints</summary><p>This scene, known names and enabled personal check questions and examples go to the shared reader. Notes never change your prose.</p></details>
     {result?.result?.unavailable && <p role="status" className="writer-help">{result.result.unavailable} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry unread sections</button></p>}
+    {result?.result && <p className="live-hint-advice">Read {sceneTitle || 'this scene'}{result.result.sections_total > 1 ? ` · ${result.result.sections_read} of ${result.result.sections_total} sections` : ''}{sandbox ? '' : ` · ${enabledChecks} personal check${enabledChecks === 1 ? '' : 's'}`}</p>}
     {!content.trim() ? <p className="writer-help">Start writing to see hints.</p> : !ready ? <p className="writer-help">Loading known names… {(characters.isError || glossary.isError) && <button type="button" onClick={() => { void characters.refetch(); void glossary.refetch() }}>Retry</button>}</p> : !result ? <p role="status" className="writer-help">Reading after you pause…</p> : result.error ? <p className="writer-help">{result.error} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry</button></p> : hints.length === 0 ? result.result?.unavailable ? null : <p className="writer-help">No specific issue found in this reading.</p> : hints.map(hint => <div className="live-writing-hint" key={hint.code}>
       <p className="live-hint-message">{hint.message}</p>
       {hint.scope && <p className="live-hint-advice">Personal {hint.scope} check{hint.scope !== 'scene' && hint.paragraph ? ` · paragraph ${hint.paragraph}` : ''}</p>}

@@ -135,7 +135,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory }: 
   const searchContext: SearchContext | null = refPanel === 'places' ? 'location'
     : refPanel === 'glossary' ? 'glossary_entry' : refPanel === 'timeline' ? 'timeline'
     : refPanel === 'assistant' ? null : tab !== 'design' ? 'prose'
-    : ({ 1: 'story', 2: 'event', 3: 'character', 4: 'act', 5: 'beat', 6: 'thread', 7: 'chapter', 8: 'scene', [GRID_VIEW]: 'scene' } as Record<number, SearchContext>)[level] ?? null
+    // Views without their own entity search the manuscript, so the launcher is never inert.
+    : ({ 1: 'story', 2: 'event', 3: 'character', 4: 'act', 5: 'beat', 6: 'thread', 7: 'chapter', 8: 'scene', [GRID_VIEW]: 'scene' } as Record<number, SearchContext>)[level] ?? 'prose'
   useEffect(() => {
     try { localStorage.setItem(`storytool-search-open:${storyId}`, String(searchOpen)) } catch { /* Optional browser storage. */ }
   }, [storyId, searchOpen])
