@@ -6,7 +6,7 @@ import { errorText } from '../api/errors'
 import { SANDBOX_ID } from '../sandbox/storage'
 import { ReadingFeedback } from './ReadingFeedback'
 
-export function LiveWritingHints({ storyId, sceneId, sceneTitle, content, onParagraph }: { storyId: string; sceneId: string; sceneTitle?: string | null; content: string; onParagraph: (paragraph: number, find?: string, wholeScene?: boolean) => void }) {
+export function LiveWritingHints({ storyId, sceneId, sceneTitle, content, currentParagraph = 1, onParagraph }: { storyId: string; sceneId: string; sceneTitle?: string | null; content: string; currentParagraph?: number; onParagraph: (paragraph: number, find?: string, wholeScene?: boolean) => void }) {
   const anchor = useRef<HTMLSpanElement>(null)
   const [position, setPosition] = useState<{ top: number; right: number; maxHeight: number; width: number }>()
   useEffect(() => {
@@ -52,20 +52,24 @@ export function LiveWritingHints({ storyId, sceneId, sceneTitle, content, onPara
     return () => { current = false; window.clearTimeout(timer); controller.abort() }
   }, [storyId, sceneId, content, names, ready, retry, checksRevision])
   const result = reading?.text === content && reading?.checksRevision === checksRevision ? reading : undefined
-  const hints = (result?.result?.hints ?? []).filter(hint => !dismissed.includes(`${result?.result?.content_hash}:${hint.code}`))
+  const hints = (result?.result?.hints ?? []).filter(hint => !dismissed.includes(`${result?.result?.content_hash}:${hint.code}`)).sort((a, b) => {
+    const atCursor = (hint: typeof a) => hint.paragraph === currentParagraph || hint.passages?.some(passage => passage.paragraph === currentParagraph)
+    return Number(atCursor(b)) - Number(atCursor(a)) || Number(a.kind?.startsWith('custom_uncertain.') ?? false) - Number(b.kind?.startsWith('custom_uncertain.') ?? false) || (a.paragraph ?? Infinity) - (b.paragraph ?? Infinity)
+  })
   const dismiss = (code: string) => {
-    const next = [...dismissed, `${result?.result?.content_hash}:${code}`].slice(-500)
-    setDismissed(next)
-    try { localStorage.setItem(key, JSON.stringify(next)) } catch { /* Notes can still be dismissed for this visit. */ }
+    setDismissed(previous => {
+      const next = [...new Set([...previous, `${result?.result?.content_hash}:${code}`])].slice(-500)
+      try { localStorage.setItem(key, JSON.stringify(next)) } catch { /* Notes can still be dismissed for this visit. */ }
+      return next
+    })
   }
   return <><span ref={anchor} hidden />{position && createPortal(<aside className="live-writing-hints" style={{ ...position, display: position.maxHeight < 60 ? 'none' : undefined }} aria-label="Live writing hints">
     <h3>Live hints</h3>
     <details className="live-hints-about"><summary>About live hints</summary><p>This scene, known names and enabled personal check questions and examples go to the shared reader. Notes never change your prose.</p></details>
-    {result?.result?.unavailable && <p role="status" className="writer-help">{result.result.unavailable} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry unread sections</button></p>}
     {result?.result && <p className="live-hint-advice">Read {sceneTitle || 'this scene'}{result.result.sections_total > 1 ? ` · ${result.result.sections_read} of ${result.result.sections_total} sections` : ''}{sandbox ? '' : ` · ${enabledChecks} personal check${enabledChecks === 1 ? '' : 's'}`}</p>}
     {!content.trim() ? <p className="writer-help">Start writing to see hints.</p> : !ready ? <p className="writer-help">Loading known names… {(characters.isError || glossary.isError) && <button type="button" onClick={() => { void characters.refetch(); void glossary.refetch() }}>Retry</button>}</p> : !result ? <p role="status" className="writer-help">Reading after you pause…</p> : result.error ? <p className="writer-help">{result.error} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry</button></p> : hints.length === 0 ? result.result?.unavailable ? null : <p className="writer-help">No specific issue found in this reading.</p> : hints.map(hint => <div className="live-writing-hint" key={hint.code}>
       <p className="live-hint-message">{hint.message}</p>
-      {hint.scope && <p className="live-hint-advice">Personal {hint.scope} check{hint.scope !== 'scene' && hint.paragraph ? ` · paragraph ${hint.paragraph}` : ''}</p>}
+      <p className="live-hint-advice">{hint.paragraph === currentParagraph || hint.passages?.some(passage => passage.paragraph === currentParagraph) ? 'Current paragraph' : hint.paragraph ? `Paragraph ${hint.paragraph}` : 'Scene'}{hint.scope ? ` · Personal ${hint.scope} check` : ''}</p>
       {hint.observed?.map((observation, index) => <p key={index} className="live-hint-advice">{observation}</p>)}
       {hint.location_uncertain && <p className="live-hint-advice">Sentence location uncertain; showing the paragraph instead.</p>}
       {hint.passages?.map((passage, index) => <div key={index}><blockquote className="live-hint-excerpt">{passage.text.length > 500 ? `${passage.text.slice(0, 500)}…` : passage.text}</blockquote><button type="button" className="live-hint-passage-link" onClick={() => onParagraph(passage.paragraph, passage.text)}>{hint.highlight_scope === 'paragraph' ? 'Highlight paragraph' : hint.passages!.length > 1 ? `Highlight sentence group ${index + 1}` : 'Highlight sentences'}</button></div>)}
@@ -73,7 +77,8 @@ export function LiveWritingHints({ storyId, sceneId, sceneTitle, content, onPara
       {hint.action && <p className="live-hint-advice">{hint.action}</p>}
 
       <div className="live-hint-actions">{hint.paragraph && !hint.passages?.length && <button type="button" className="live-hint-passage-link" title={`Open paragraph ${hint.paragraph}`} onClick={() => onParagraph(hint.paragraph!, hint.excerpt ?? undefined, hint.highlight_scope === 'scene')}>{hint.highlight_scope === 'scene' ? 'Highlight scene' : hint.scope === 'scene' ? 'Open scene' : 'Open passage'}</button>}
-      <ReadingFeedback compact storyId={storyId} checkCode={`hint.${hint.kind ?? (hint.code.startsWith('telling_') ? 'telling' : hint.code)}`} evidenceKeys={hint.evidence_keys ?? []} probability={hint.probability} rubricVersion={hint.rubric_version ?? result?.result?.rubric_version} onRecorded={() => dismiss(hint.code)} /></div>
+      {hint.evidence_keys?.length ? <ReadingFeedback compact storyId={storyId} checkCode={`hint.${hint.kind ?? (hint.code.startsWith('telling_') ? 'telling' : hint.code)}`} evidenceKeys={hint.evidence_keys} probability={hint.probability} rubricVersion={hint.rubric_version ?? result?.result?.rubric_version} onDismiss={() => dismiss(hint.code)} onRecorded={outcome => { if (outcome === 'accepted') dismiss(hint.code) }} /> : <button type="button" className="live-hint-dismiss" aria-label="Dismiss" title="Dismiss" onClick={() => dismiss(hint.code)}>×</button>}</div>
     </div>)}
+    {result?.result?.unavailable && !dismissed.includes(`${result.result.content_hash}:notice`) && <div role="status" className="live-writing-hint"><p className="live-hint-message">Some checks could not finish</p><p className="live-hint-advice">{result.result.unavailable}</p><div className="live-hint-actions"><button type="button" onClick={() => setRetry(value => value + 1)}>Retry unread sections</button><button type="button" className="live-hint-dismiss" aria-label="Dismiss" title="Dismiss" onClick={() => dismiss('notice')}>×</button></div></div>}
   </aside>, document.body)}</>
 }

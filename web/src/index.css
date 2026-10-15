@@ -518,7 +518,8 @@ ol.showcase-list { list-style: decimal; }
 .live-hints-about { color: var(--muted); font-size: 11px; line-height: 1.5; }
 .live-hints-about summary { cursor: pointer; }
 .live-hints-about p { margin-top: 6px; }
-.live-writing-hint { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.live-writing-hint { margin-top: 10px; padding: 10px; border: 1px solid var(--line); border-left: 2px solid var(--accent); border-radius: 8px; }
+.live-hint-dismiss { padding: 2px 6px; border-radius: 4px; font-size: 18px; line-height: 1; }
 .live-writing-hint p { margin-bottom: 6px; line-height: 1.5; }
 .live-hint-message { font-weight: 600; }
 .live-hint-excerpt { margin: 8px 0; padding: 6px 8px; border-left: 2px solid var(--accent); background: var(--accent-soft); line-height: 1.5; }

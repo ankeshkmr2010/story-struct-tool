@@ -91,7 +91,7 @@ async def hints(db: AsyncSession, actor: Actor, data: HintInput) -> HintReading:
             ]
     result.hints.extend(custom)
     if messages:
-        result.unavailable = " ".join([result.unavailable or "", *messages]).strip()
+        result.unavailable = " ".join(dict.fromkeys([result.unavailable or "", *messages])).strip()
     return result
 
 

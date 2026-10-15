@@ -210,10 +210,29 @@ async def read_custom_hints(
                     failed += 1
                     continue
                 observations.append(observation)
-                if not observation.complete:
-                    messages.append(
-                        f"{definition.name}: some candidate names are uncertain; "
-                        "the count is a lower bound."
+                if not observation.complete and probability < threshold:
+                    details = [*observed]
+                    if observation.excluded:
+                        details.append("Not counted: " + ", ".join(observation.excluded))
+                    if observation.uncertain:
+                        details.append("Needs review: " + ", ".join(observation.uncertain))
+                    else:
+                        details.append("The candidate scan reached its limit.")
+                    hints.append(
+                        WritingHint(
+                            code=f"custom_uncertain_{row.id}_{row.version}_{unit['id']}",
+                            kind=f"custom_uncertain.{row.id}",
+                            message=f"{definition.name}: count needs review",
+                            action=(
+                                "Review whether the uncertain names meet your counting criterion. "
+                                "This is an incomplete count, not a confirmed limit violation."
+                            ),
+                            scope=scope,
+                            paragraph=unit["paragraph"],
+                            probability=0,
+                            observed=details,
+                            rubric_version=rubric,
+                        )
                     )
                 if probability < threshold:
                     continue

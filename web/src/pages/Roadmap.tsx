@@ -42,7 +42,7 @@ const DELIVERED: readonly { date: string; items: readonly (readonly [string, str
   {
     date: '14 Oct 2026',
     items: [
-      ['Custom real-time writing checks', 'build private checks without coding, try samples with character counts, and get live hints highlighting contributing sentences with your own advice; manage checks yourself or through your connected AI.'],
+      ['Custom real-time writing checks', 'build private checks without coding, try samples with character counts, and get dismissible live-hint cards with your current paragraph first, contributing sentences and clear count-review details; manage checks yourself or through your connected AI.'],
       ['Images in your story', 'illustrations and reference art with captions, inline Write thumbnails, right-click insertion, scene links and portable exports. Large photos shrink before upload, with a gentle alt-text prompt. A dedicated page manages usage and safe deletion; guided samples show the flow.'],
       ['Try before signing up', 'a guided writing sandbox with local search and History, plus interactive feature demos and sample downloads. Tours support Previous, Next and resume; sign in to keep your edits.'],
       ['Writing and reader guides', 'AI quickstart prompts, images and exports, plus beta rounds, private reader conversations and polls.'],

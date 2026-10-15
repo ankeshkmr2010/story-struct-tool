@@ -223,6 +223,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   const draft = writerDraft(prefix + (scene?.id ?? draftKey!), initial)
   const state = useSyncExternalStore(draft.subscribe, draft.snapshot)
   const [previewImage, setPreviewImage] = useState<StoryImage | null>(null)
+  const [hintParagraph, setHintParagraph] = useState(1)
   const [imageAnchor, setImageAnchor] = useState<{ x: number; y: number; at: number } | null>(null)
   const [context, setContext] = useState<{ x: number; y: number; at: number; hasSelection: boolean } | null>(null)
   const [clipboardError, setClipboardError] = useState('')
@@ -290,7 +291,13 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     </div>
     {state.status === 'error' && <div role="alert" className="writer-error"><p>{state.error}</p><p>Your draft is preserved in this browser tab.</p><button type="button" onClick={() => { void draft.flush() }}>Retry save</button> <button type="button" onClick={() => { void review() }}>Review latest text</button>{reviewError && <p>{reviewError}</p>}{latest !== null && <div><h3>Latest saved text</h3><pre className="writer-latest">{latest || '(Empty passage)'}</pre><button type="button" onClick={() => { if (window.confirm('Replace your local draft with the latest saved text?')) { draft.useLatest(latest); setLatest(null) } }}>Use latest text</button> <button type="button" onClick={() => { if (window.confirm('Save your draft over the latest text? A prose revision will preserve the previous text.')) { lastCheckpoint.current = 0; draft.rebase(latest); setLatest(null); void draft.flush() } }}>Keep my draft</button></div>}</div>}
     <div className={liveHints && scene ? "writer-hint-layout" : undefined}>
-    <CodeMirror value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder="Start writing your story…" onChange={(text, update) => { draft.change(text); if (storyId === SANDBOX_ID && update.transactions.some(transaction => transaction.isUserEvent('input'))) tourEvent('write') }} onCreateEditor={editor => { view.current = editor; if (focus) { if (storyId === SANDBOX_ID) editor.dispatch({ selection: { anchor: editor.state.doc.length } }); editor.focus(); editor.dom.scrollIntoView({ block: 'center' }) } }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[
+    <CodeMirror onUpdate={update => {
+      if (!liveHints || (!update.selectionSet && !update.docChanged && !update.focusChanged)) return
+      const cursor = update.state.selection.main.head
+      const parts = [...update.state.doc.toString().matchAll(/(?:^|\n\s*\n)([\s\S]*?)(?=\n\s*\n|$)/g)].filter(part => part[1].replace(/!\[[^\]\n]*\]\([^\n)]*\)/g, '').trim())
+      const index = parts.findIndex(part => cursor <= part.index! + part[0].length)
+      setHintParagraph(index >= 0 ? index + 1 : Math.max(1, parts.length))
+    }} value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder="Start writing your story…" onChange={(text, update) => { draft.change(text); if (storyId === SANDBOX_ID && update.transactions.some(transaction => transaction.isUserEvent('input'))) tourEvent('write') }} onCreateEditor={editor => { view.current = editor; if (focus) { if (storyId === SANDBOX_ID) editor.dispatch({ selection: { anchor: editor.state.doc.length } }); editor.focus(); editor.dom.scrollIntoView({ block: 'center' }) } }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[
       markdown(), EditorView.lineWrapping,
       writerImages(images.data?.images ?? [], setPreviewImage),
       EditorView.domEventHandlers({ contextmenu: (event, editor) => { event.preventDefault(); openContext(editor, event.clientX, event.clientY, true); return true } }),
@@ -312,7 +319,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       } }))),
       EditorView.theme({ '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' }, '.cm-scroller': { fontFamily: 'Georgia, serif', fontSize: '18px', overflow: 'visible' }, '.cm-content': { padding: '12px 0 24px', lineHeight: '1.9' }, '.cm-focused': { outline: 'none' }, '.cm-cursor': { borderLeftColor: 'var(--accent)' } }),
     ]} basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, bracketMatching: false, closeBrackets: false, autocompletion: false }} />
-    {liveHints && scene && <LiveWritingHints key={scene.id} storyId={storyId} sceneId={scene.id} sceneTitle={scene.title} content={state.text} onParagraph={(paragraph, find, wholeScene) => {
+    {liveHints && scene && <LiveWritingHints key={scene.id} storyId={storyId} sceneId={scene.id} sceneTitle={scene.title} content={state.text} currentParagraph={hintParagraph} onParagraph={(paragraph, find, wholeScene) => {
       const editor = view.current
       if (!editor) return
       if (wholeScene) { editor.dispatch({ selection: { anchor: 0, head: editor.state.doc.length }, effects: EditorView.scrollIntoView(0, { y: 'start' }) }); editor.focus(); return }
