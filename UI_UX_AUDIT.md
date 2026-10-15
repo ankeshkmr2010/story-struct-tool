@@ -481,3 +481,22 @@ Ruff, TypeScript and scoped frontend lint passed. Production CRUD/consent confir
 - [~] Cross-device workspace resume (2026-10-15): private per-user/story position API and cascade-deleted storage; restores Write chapter/scene-relative scroll, Read paragraph bookmark, and Design view/chapter/scene/document position. Explicit passage links take priority; user interaction cancels delayed restoration. Debounced, serial saves flush on exit and retry failures without changing manuscript history. Migration e8b3d0a6f214 pending deployment; no local tests/builds or production/database checks. Awaiting user production confirmation.
 
 - [~] Cream light mode and admin roadmap (2026-10-15): warmer page/panel/Tailwind white surfaces; dark palette retained. Roadmap API uses RoadmapStatus enum (exploring/planned/in_progress/delivered), existing server admin guard, add/edit/status/date/hero controls and inline save/cancel/retry. Migration f9c4e1b7a325 seeds all 43 existing/current-release entries and hero flags; vertical delivered timeline retained. Static checks only; no tests/builds or database migration run. Awaiting production confirmation.
+
+## Production pass, fixes and redesign — 2026-10-14 to 2026-10-16
+
+Marked done at the user's request (2026-10-16). Builds/typecheck/lint passed; visual production confirmation of the redesign is still pending (Chrome screenshots timed out in-session).
+
+- [x] Tiny fixes T1–T8 (`30b24a4`): demo seed blurb escapes; Evaluate shared-reader Run is primary and Ask-the-assistant shows why it is unavailable; Writing checks Reset uses an in-page confirm; Assistant panel points to connecting Claude/ChatGPT; landing craft copy, duplicate roadmap hero link and ↗ arrow; readable MCP footnotes.
+- [x] Medium fixes M2/M3/M5 (`eb06948`): Design-page search falls back to prose; Live hints show scene read, section coverage and personal-check count; Settings groups repeated OAuth grants (Revoke all) and lists MCP before API keys. M4 needed no change (hints already re-read on scene change).
+- [x] Redesign phase 0 (`7a2345e`): tokens (spacing, radius, type, fonts, bar height, danger/warning) and `web/src/ui/` (Menu, Dialog, Tabs, Button, IconButton, Card, EmptyState, ConfirmInline); Export, library ▾/⋯ menus (fixes L3) and checks reset adopt them.
+- [x] Redesign phases 1–5 (`51e5c02`): one sticky workspace bar (Share ▾ with Beta readers/Images, Export, Ctrl+K search); one docked tabbed side panel (Context/Hints in Write, Insights in Design, Timeline/Places/Glossary/Assistant); Design rail (Plan levels, Grid, Agent changes, Catch up, Evaluate, History); Evaluate checks beside results with "?" help and no nested scroll (L7); chapter rail hide/reopen and Escape no longer hides it (L2); library card grid with top search; Settings section nav; wider Images/Trash with styled upload/filters (L1); landing Images/Search/Share consistency (L13); sandbox tour label, keep wording, added-text History, stable Discover dialog (L5/L6); docked panel removes overlaps (L4); mobile stacking and bottom-sheet panel; PDF appendix checkbox names.
+- [x] Panel polish (`a39bd34`): panel open by default (closed on phones/sandbox), one-row tabs, icon search, no nested borders, wider panel and manuscript.
+
+Open / not done:
+- [ ] H1 Evaluate MICE contradictions (scene both opens and closes a thread; reader vs saved AI review disagree). High.
+- [ ] M1 Share possibly needing two clicks: Export fixed by the shared Menu; Share waits for the writer flush before opening and was not re-verified.
+- [ ] L8 search excerpts cut mid-word · L9 AI review text shows raw `\"` and backticks · L10 per-page browser tab titles · L11 warn when a writing-check rule is phrased as a norm · L12 show certainty in "Try this rule" · L14 sandbox hint limits key on the proxy IP (uvicorn has no forwarded-allow-ips; verify Render first).
+- [ ] T9 two "Last Lantern" stories (tutorial heroine Mara vs sandbox Maya) — awaiting the user's choice. T10 user's saved character-limit check is norm-worded and its Advice holds an example — user data, not changed.
+- [ ] Existing prod demo copies still show the old `\"` blurb; only new seeds are fixed.
+- [ ] Cleanup: retire now-unused CSS/components (`.story-card-menu`, `.download-menu`, `.workspace-bar`, `.workspace-views`, `.workspace-ref-toggles`, `.writer-with-context`, `StoryImagesButton`) after the redesign is confirmed.
+- Mockup: claude.ai artifact https://claude.ai/artifact/BJJhkvMA1Lt83FeJA5MW6p (source in untracked `.claude/redesign-mockup/`).
