@@ -40,8 +40,8 @@
 }
 
 :root {
-  --page: #faf8f4; --surface: #fffefa; --ink: #242a29; --muted: #636d67; --line: #dedfd6; --accent: #315c4b; --accent-soft: #edf1e9; --button-ink: #ffffff;
-  --slate-50: #faf8f4; --slate-100: #f0eee7; --slate-200: #dedfd6; --slate-300: #c1c9be; --slate-400: #8f9b90; --slate-500: #6a786d;
+  --page: #f2e8d5; --surface: #f8f0e1; --ink: #2f302b; --muted: #676359; --line: #d9ccb4; --accent: #315c4b; --accent-soft: #e4e8d8; --button-ink: #ffffff;
+  --slate-50: #f2e8d5; --slate-100: #e9dec8; --slate-200: #d9ccb4; --slate-300: #c6b99f; --slate-400: #978d79; --slate-500: #6a786d;
   --slate-600: #526456; --slate-700: #3b5143; --slate-800: #283a2e; --slate-900: #1a2920; --slate-950: #101c15;
   --green-50: #eef4ec; --green-100: #dde9d8; --green-200: #c3d9b8; --green-300: #a7c79a; --green-400: #84ad78; --green-500: #5f8f5c;
   --green-600: #46774c; --green-700: #315c4b; --green-800: #284a3d; --green-900: #1f3a30; --green-950: #152820;
@@ -52,6 +52,7 @@
   --slate-600: #4f5257; --slate-700: #3a3c40; --slate-800: #2a2c2f; --slate-900: #1e1f22; --slate-950: #151618;
 }
 body { margin: 0; background: var(--page); color: var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+:root:not([data-theme=dark]) .bg-white { background-color: var(--surface); }
 html { scroll-padding-top: calc(var(--site-header-height, 73px) + 16px); }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button:not(:disabled), summary { cursor: pointer; }
