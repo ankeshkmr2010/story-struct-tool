@@ -45,7 +45,7 @@ export default function App() {
   }, [location.pathname, location.hash])
   return (
     <ThemeProvider>
-      <header ref={header} className="site-header">
+      <header ref={header} className={`site-header${location.pathname.startsWith('/stories/') || sandbox ? ' is-compact' : ''}`}>
         <Link to="/" className="site-brand"><img src="/branding/storytool.svg" alt="" width="32" height="32" />StoryTool</Link>
         {!sandbox && <nav aria-label="Main navigation">
           <NavLink to="/library" className={`site-nav-link ${location.pathname.startsWith('/stories/') ? 'is-active' : ''}`}>Your stories</NavLink>

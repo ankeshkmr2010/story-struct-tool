@@ -56,7 +56,7 @@ export function SceneReaderResults({ storyId, reading, check, onOpenScene, onOpe
     const pattern = new RegExp(`(${names.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g')
     return message.split(pattern).map((part, index) => names.includes(part) ? <button type="button" key={index} className="font-semibold text-[var(--accent)] underline decoration-[var(--accent)]/40 underline-offset-2 hover:decoration-current" title={`Open scene: ${reading.scenes.find(scene => scene.id === sceneId)?.title ?? 'scene'}`} onClick={() => onOpenScene(sceneId)}>{part}</button> : part)
   }
-  const renderFindings = (items: Finding[], label: string) => <ul aria-label={label} tabIndex={0} className="max-h-[45vh] max-w-4xl space-y-2 overflow-y-auto overscroll-y-contain pr-2">{items.map((item, index) => {
+  const renderFindings = (items: Finding[], label: string) => <ul aria-label={label} className="max-w-4xl space-y-2">{items.map((item, index) => {
       return <li key={index} className={`rounded-lg border border-[var(--line)] border-l-[3px] bg-[var(--surface)] px-3 py-2.5 text-sm ${item.uncertain ? 'border-l-amber-500/60' : 'border-l-[var(--accent)]'}`}><div className="flex items-start justify-between gap-3"><p className="font-medium leading-snug">{findingMessage(item)}</p><span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${item.uncertain ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300' : 'bg-[var(--accent-soft)] text-[var(--accent)]'}`}>{item.uncertain ? 'Verify' : 'Observation'} · {Math.round(item.confidence * 100)}%</span></div>
       {!!item.observed?.length && <ul className="my-2 text-xs text-[var(--muted)]">{item.observed.map(value => <li key={value}>{value}</li>)}</ul>}
       {item.passages?.map(passage => <div key={`${passage.scene_id}:${passage.paragraph}:${passage.label}`} className="my-2"><p className="text-xs text-[var(--muted)]">{passage.label} · paragraph {passage.paragraph}</p><blockquote className="border-l-2 border-[var(--line)] pl-3">{passage.text}</blockquote>{onOpenPassage && <button type="button" className="mt-1 text-xs underline" onClick={() => onOpenPassage(passage.scene_id, passage.text, passage.paragraph)}>Open passage in Write</button>}</div>)}
@@ -71,7 +71,7 @@ export function SceneReaderResults({ storyId, reading, check, onOpenScene, onOpe
     {check === 'scene_rhythm' && <div className="flex flex-wrap gap-2">{reading.scenes.map(scene => <button key={scene.id} className="rounded border border-[var(--line)] p-2 text-xs" onClick={() => onOpenScene(scene.id)}>{scene.title}: {scene.unavailable ? 'Unread' : scene.answers?.rhythm?.choice || 'Unknown'}</button>)}</div>}
     {check === 'value_shift' && <div className="max-w-4xl space-y-2">
       <p className="text-xs text-[var(--muted)]">This reading suggests how the character's situation changes. A quiet scene can still move the story through a discovery or decision.</p>
-      <ul aria-label="Scene value readings" tabIndex={0} className="max-h-[45vh] space-y-2 overflow-y-auto overscroll-y-contain pr-2">{reading.scenes.filter(scene => !scene.unavailable).map(scene => {
+      <ul aria-label="Scene value readings" className="space-y-2">{reading.scenes.filter(scene => !scene.unavailable).map(scene => {
         const value = VALUE_READINGS[scene.answers?.value?.choice ?? '']
         const start = scene.answers?.charge_start?.score
         const end = scene.answers?.charge_end?.score

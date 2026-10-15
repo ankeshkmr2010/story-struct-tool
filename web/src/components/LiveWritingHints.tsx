@@ -6,10 +6,13 @@ import { errorText } from '../api/errors'
 import { SANDBOX_ID } from '../sandbox/storage'
 import { ReadingFeedback } from './ReadingFeedback'
 
-export function LiveWritingHints({ storyId, sceneId, sceneTitle, content, currentParagraph = 1, onParagraph }: { storyId: string; sceneId: string; sceneTitle?: string | null; content: string; currentParagraph?: number; onParagraph: (paragraph: number, find?: string, wholeScene?: boolean) => void }) {
+export function LiveWritingHints({ storyId, sceneId, sceneTitle, content, currentParagraph = 1, onParagraph, slot }: { storyId: string; sceneId: string; sceneTitle?: string | null; content: string; slot?: HTMLElement | null; currentParagraph?: number; onParagraph: (paragraph: number, find?: string, wholeScene?: boolean) => void }) {
   const anchor = useRef<HTMLSpanElement>(null)
   const [position, setPosition] = useState<{ top: number; right: number; maxHeight: number; width: number }>()
+  // Docked: the workspace side panel supplies the slot, so nothing floats over the prose.
+  const docked = slot !== undefined
   useEffect(() => {
+    if (docked) return
     const writer = anchor.current?.closest('.story-writer')
     if (!writer) return
     const align = () => {
@@ -25,7 +28,7 @@ export function LiveWritingHints({ storyId, sceneId, sceneTitle, content, curren
     const observer = new ResizeObserver(align)
     observer.observe(writer)
     return () => { window.removeEventListener('scroll', align, true); window.removeEventListener('resize', align); observer.disconnect() }
-  }, [])
+  }, [docked])
   const sandbox = storyId === SANDBOX_ID
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId), enabled: sandbox })
   const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId), enabled: sandbox })
@@ -63,7 +66,7 @@ export function LiveWritingHints({ storyId, sceneId, sceneTitle, content, curren
       return next
     })
   }
-  return <><span ref={anchor} hidden />{position && createPortal(<aside className="live-writing-hints" style={{ ...position, display: position.maxHeight < 60 ? 'none' : undefined }} aria-label="Live writing hints">
+  return <><span ref={anchor} hidden />{(docked ? slot : position) && createPortal(<aside className={docked ? 'live-writing-hints is-docked' : 'live-writing-hints'} style={docked || !position ? undefined : { ...position, display: position.maxHeight < 60 ? 'none' : undefined }} aria-label="Live writing hints">
     <h3>Live hints</h3>
     <details className="live-hints-about"><summary>About live hints</summary><p>This scene, known names and enabled personal check questions and examples go to the shared reader. Notes never change your prose.</p></details>
     {result?.result && <p className="live-hint-advice">Read {sceneTitle || 'this scene'}{result.result.sections_total > 1 ? ` · ${result.result.sections_read} of ${result.result.sections_total} sections` : ''}{sandbox ? '' : ` · ${enabledChecks} personal check${enabledChecks === 1 ? '' : 's'}`}</p>}
@@ -80,5 +83,5 @@ export function LiveWritingHints({ storyId, sceneId, sceneTitle, content, curren
       {hint.evidence_keys?.length ? <ReadingFeedback compact storyId={storyId} checkCode={`hint.${hint.kind ?? (hint.code.startsWith('telling_') ? 'telling' : hint.code)}`} evidenceKeys={hint.evidence_keys} probability={hint.probability} rubricVersion={hint.rubric_version ?? result?.result?.rubric_version} onDismiss={() => dismiss(hint.code)} onRecorded={outcome => { if (outcome === 'accepted') dismiss(hint.code) }} /> : <button type="button" className="live-hint-dismiss" aria-label="Dismiss" title="Dismiss" onClick={() => dismiss(hint.code)}>×</button>}</div>
     </div>)}
     {result?.result?.unavailable && !dismissed.includes(`${result.result.content_hash}:notice`) && <div role="status" className="live-writing-hint"><p className="live-hint-message">Some checks could not finish</p><p className="live-hint-advice">{result.result.unavailable}</p><div className="live-hint-actions"><button type="button" onClick={() => setRetry(value => value + 1)}>Retry unread sections</button><button type="button" className="live-hint-dismiss" aria-label="Dismiss" title="Dismiss" onClick={() => dismiss('notice')}>×</button></div></div>}
-  </aside>, document.body)}</>
+  </aside>, docked && slot ? slot : document.body)}</>
 }

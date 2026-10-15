@@ -13,7 +13,7 @@ function AuthorNameSettings() {
     mutationFn: () => api.saveAuthorName({ author_name: value.trim() || null }),
     onSuccess: (user) => { qc.setQueryData(['me'], user); setDraft(null) },
   })
-  return <section className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6">
+  return <section id="profile" className="scroll-mt-24 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6">
     <h2 className="text-lg font-semibold">Author name</h2>
     <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Your writing name or pen name, used as the byline in manuscript exports. Leave it blank to omit the byline. Your Google profile name stays separate.</p>
     <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate() }}>
@@ -67,11 +67,14 @@ export default function UserSettings() {
     }
   }
   return (
-    <main className="mx-auto max-w-3xl px-5 py-8 sm:px-8">
+    <main className="mx-auto max-w-[1200px] px-5 py-8 sm:px-8">
       <Link to="/library" className="text-sm text-slate-500 dark:text-slate-400 hover:underline">← Your stories</Link>
       <h1 className="mt-5 text-2xl font-semibold">Your settings</h1>
+      <div className="settings-layout">
+        <nav className="settings-nav" aria-label="Settings sections"><a href="#profile">Profile</a><a href="#ai-clients">AI clients</a><a href="#api-keys">API keys</a><Link to="/checks">Writing checks</Link></nav>
+        <div className="min-w-0">
       <AuthorNameSettings />
-      <section className="mt-6 rounded-xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6">
+      <section id="ai-clients" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6">
         <h2 className="text-lg font-semibold">Connect an AI client · MCP</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Connect Claude or ChatGPT through browser sign-in, then choose the stories and permissions it can use. Your client supplies the model; no provider API key or token copying is needed here. <Link to="/#mcp" className="underline">Open the connection guides →</Link></p>
         <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-xs leading-5">
@@ -105,7 +108,7 @@ export default function UserSettings() {
         <ul className="mt-4 space-y-2">{tokens.data?.map((token) => <li key={token.id} className="flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400"><span>{stories.data?.find((story) => story.id === token.story_id)?.title ?? 'Story'} · expires {new Date(token.expires_at).toLocaleDateString()}</span><button type="button" disabled={revoke.isPending} onClick={() => revoke.mutate(token.id)} className="text-red-600 dark:text-red-300">Revoke</button></li>)}</ul>
         </details>
       </section>
-      <section className="mt-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 sm:p-6">
+      <section id="api-keys" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 sm:p-6">
         <h2 className="text-lg font-semibold">AI connections</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Connect your own account to plan stories and improve suggestions. Requests use your provider's API billing. Saved keys are encrypted and belong only to your account.</p>
         <form className="mt-5 space-y-4" onSubmit={(event) => { event.preventDefault(); setTested(null); save.mutate() }}>
@@ -128,6 +131,8 @@ export default function UserSettings() {
           <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Claude, OpenAI, and OpenRouter chat and propose changes. Jev reads scenes and supplies observations. The Jev connection test makes a small API request; authoring requests share story structure and any prose excerpts you select.</p>
         </div>
       </section>
+        </div>
+      </div>
     </main>
   )
 }

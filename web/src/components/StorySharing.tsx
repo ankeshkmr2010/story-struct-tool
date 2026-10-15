@@ -3,8 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { errorText } from '../api/errors'
 import { useNavigate } from 'react-router-dom'
+import type { ReactNode } from 'react'
+import { Menu, MenuItem } from '../ui/Menu'
 
-export function StorySharing({ storyId, title, blurb, beforeOpen }: { storyId: string; title: string; blurb?: string | null; beforeOpen?: () => Promise<boolean> }) {
+export function StorySharing({ storyId, title, blurb, beforeOpen, menu = false, extraItems }: { storyId: string; title: string; blurb?: string | null; beforeOpen?: () => Promise<boolean>; menu?: boolean; extraItems?: ReactNode }) {
   const qc = useQueryClient()
   const navigate = useNavigate()
   const dialog = useRef<HTMLDialogElement>(null)
@@ -23,9 +25,17 @@ export function StorySharing({ storyId, title, blurb, beforeOpen }: { storyId: s
     try { await navigator.clipboard.writeText(`${location.origin}/shared/${storyId}`); setMessage('Reader link copied. Only the accounts you authorize can open it.') }
     catch { setMessage(`Copy this reader link: ${location.origin}/shared/${storyId}`) }
   }
+  const openShare = async () => { setOpenError(''); if (beforeOpen && !await beforeOpen()) { setOpenError('Save your writing before sharing this story.'); return }; save.reset(); revoke.reset(); setMessage(''); setOpen(true) }
+  const openBeta = async () => { setOpenError(''); if (beforeOpen && !await beforeOpen()) { setOpenError('Save your writing before opening beta readers.'); return }; navigate(`/stories/${storyId}/beta`) }
   return <>
-    <button type="button" className="share-story-button" aria-label={`Share ${title}`} onClick={async () => { setOpenError(''); if (beforeOpen && !await beforeOpen()) { setOpenError('Save your writing before sharing this story.'); return }; save.reset(); revoke.reset(); setMessage(''); setOpen(true) }}>Share</button>
-    <button type="button" className="share-story-button" aria-label={`Beta readers for ${title}`} onClick={async () => { setOpenError(''); if (beforeOpen && !await beforeOpen()) { setOpenError('Save your writing before opening beta readers.'); return }; navigate(`/stories/${storyId}/beta`) }}>Beta readers</button>
+    {menu ? <Menu label="Share ▾" ariaLabel={`Share options for ${title}`} triggerClassName="ui-btn ui-btn-primary">
+      <MenuItem onSelect={() => { void openShare() }}>Share with readers…</MenuItem>
+      <MenuItem onSelect={() => { void openBeta() }}>Beta readers</MenuItem>
+      {extraItems}
+    </Menu> : <>
+    <button type="button" className="share-story-button" aria-label={`Share ${title}`} onClick={() => { void openShare() }}>Share</button>
+    <button type="button" className="share-story-button" aria-label={`Beta readers for ${title}`} onClick={() => { void openBeta() }}>Beta readers</button>
+    </>}
     {openError && <p role="alert" className="writer-error">{openError}</p>}
     <dialog ref={dialog} className="story-sharing-dialog" aria-labelledby={`share-title-${storyId}`} onClose={() => setOpen(false)}>
       <div className="sharing-heading"><h2 id={`share-title-${storyId}`}>Share story</h2><button type="button" className="share-story-button" onClick={() => setOpen(false)}>Close</button></div>

@@ -351,16 +351,16 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
 
   return (
     <div className="space-y-5">
-      <header>
+      <header className="eval-header">
         <h2 className="text-2xl font-semibold">Evaluate</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Run a craft check when you want one. Results are suggestions to consider, never rules, and nothing here changes your story unless you fill in an input.</p>
+        <details className="ws-help"><summary aria-label="About Evaluate">?</summary><p>Run a craft check when you want one. Results are suggestions to consider, never rules, and nothing here changes your story unless you fill in an input.</p></details>
       </header>
 
       {evaluators.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(evaluators.error)}</p>}
       {!evaluators.data && !evaluators.error && <p className="text-sm text-slate-500 dark:text-slate-400">Loading evaluators…</p>}
 
-      {evaluators.data && selected && <>
-        <div role="tablist" aria-label="Evaluators" className="flex flex-wrap gap-2">
+      {evaluators.data && selected && <div className="eval-layout">
+        <div role="tablist" aria-label="Evaluators" className="eval-checks">
           {evaluators.data.map((item) => (
             <button
               key={item.id}
@@ -368,13 +368,13 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
               role="tab"
               aria-selected={item.id === selected.id}
               onClick={() => setChosen(item.id)}
-              className={`rounded-full border px-3 py-1.5 text-sm ${item.id === selected.id ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-200 dark:text-slate-950' : 'border-slate-300 dark:border-slate-600'}`}
+              className="eval-check"
             >
-              {item.name}
+              <span>{item.name}</span>{item.missing.length > 0 && <small>Needs inputs</small>}
             </button>
           ))}
         </div>
-
+        <div className="eval-main">
         <section className="space-y-4 rounded-lg border border-slate-200 p-5 dark:border-slate-700">
           <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{selected.description}</p>
           {selected.id === 'mice_nesting' && <p className="text-xs text-slate-500 dark:text-slate-400">MICE means Milieu, Idea, Character and Event: four kinds of story thread, from Orson Scott Card and taught by Mary Robinette Kowal.</p>}
@@ -424,7 +424,8 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
           </section>
         )}
         {selected.has_review && <AIReview key={selected.id} storyId={storyId} evaluatorId={selected.id} evaluatorName={selected.name} ready={selected.ready} onOpenScene={onOpenScene} onOpenThreads={onOpenThreads} onOpenCharacters={onOpenCharacters} />}
-      </>}
+        </div>
+      </div>}
     </div>
   )
 }

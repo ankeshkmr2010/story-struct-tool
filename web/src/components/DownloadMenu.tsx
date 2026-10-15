@@ -17,7 +17,7 @@ export function DownloadMenu({ storyId }: { storyId: string }) {
   return <Menu label="Export ▾" triggerClassName="share-story-button" panelClassName="download-menu-panel">
     {ITEMS.map(item => <MenuLink key={item.label} href={item.href === api.manuscriptPdfUrl ? api.manuscriptPdfUrl(storyId, appendices) : item.href(storyId)}><strong>{item.label}</strong><span>{item.help}</span></MenuLink>)}
     <fieldset className="border-t border-[var(--line)] p-3 text-xs"><legend className="px-1">PDF appendices (optional)</legend>
-      {(['glossary', 'timeline', 'places'] as const).map((key) => <label key={key} className="mr-3 inline-flex items-center gap-1.5"><input type="checkbox" checked={appendices[key]} onChange={(event) => setAppendices({ ...appendices, [key]: event.target.checked })} />{key[0].toUpperCase() + key.slice(1)}</label>)}
+      {(['glossary', 'timeline', 'places'] as const).map((key) => <label key={key} className="mr-3 inline-flex items-center gap-1.5"><input type="checkbox" aria-label={`Include ${key} appendix in PDF`} checked={appendices[key]} onChange={(event) => setAppendices({ ...appendices, [key]: event.target.checked })} />{key[0].toUpperCase() + key.slice(1)}</label>)}
     </fieldset>
   </Menu>
 }

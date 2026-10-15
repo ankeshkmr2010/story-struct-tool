@@ -83,7 +83,7 @@ export default function Landing() {
       </div>
     </section>
     <section className="landing-writing" aria-labelledby="search-title">
-      <article className="section-intro rounded-xl border border-[var(--line)] bg-[var(--surface)] p-6 sm:p-8"><p className="eyebrow">FIND YOUR WORDS</p><h2 id="search-title">Find any line, or any idea,<br />across your library.</h2><p>Search prose and story details, narrow results by type or field, and jump to the matching passage. Text search finds names and phrases; meaning search finds related ideas when enabled.</p><Link to="/how-to-use#search" className="landing-secondary">How search works →</Link></article>
+      <div className="section-intro"><p className="eyebrow">FIND YOUR WORDS</p><h2 id="search-title">Find any line, or any idea,<br />across your library.</h2><p>Search prose and story details, narrow results by type or field, and jump to the matching passage. Text search finds names and phrases; meaning search finds related ideas when enabled.</p><Link to="/how-to-use#search" className="landing-secondary">How search works →</Link></div>
     </section>
     <MCPSetup />
 

@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, type SearchContext, type SearchHit, type WorkspacePlace } from '../api/client'
 import { useWorkspacePosition } from '../components/useWorkspacePosition'
 import { SearchDialog } from '../components/StorySearch'
@@ -24,7 +24,9 @@ import { StoryVersions } from '../components/StoryVersions'
 import { AuthorshipPanel } from '../components/AuthorshipPanel'
 import { StorySharing } from '../components/StorySharing'
 import { DownloadMenu } from '../components/DownloadMenu'
-import { StoryImagesButton } from '../components/StoryImages'
+import { Tabs } from '../ui/Tabs'
+import { IconButton } from '../ui/primitives'
+import { MenuItem } from '../ui/Menu'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
 import { SANDBOX_ID, FIRST_SCENE, tourEvent, type Sandbox } from '../sandbox/storage'
@@ -64,8 +66,9 @@ const CATCHUP_VIEW = 106
 const HISTORY_VIEW = 107
 const EVALUATE_VIEW = 108
 
-type RefPanel = 'timeline' | 'places' | 'glossary' | 'assistant'
-const REF_PANELS: [RefPanel, string][] = [['timeline', 'Timeline'], ['places', 'Places'], ['glossary', 'Glossary'], ['assistant', 'Assistant']]
+// One docked side panel; which tabs it offers depends on the mode (Context and Hints belong to Write).
+type RefPanel = 'context' | 'hints' | 'insights' | 'timeline' | 'places' | 'glossary' | 'assistant'
+const REF_PANELS: [RefPanel, string][] = [['context', 'Context'], ['hints', 'Hints'], ['insights', 'Insights'], ['timeline', 'Timeline'], ['places', 'Places'], ['glossary', 'Glossary'], ['assistant', 'Assistant']]
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
@@ -134,16 +137,31 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const openView = async (view: number) => { if (await changeTab('design')) setLevel(view) }
   const viewItem = (view: number, label: ReactNode) => <button type="button" aria-current={level === view ? 'page' : undefined} onClick={() => { setLevel(view); if (sandbox && view === HISTORY_VIEW) tourEvent('history') }}>{label}</button>
   // Reference panels sit beside the text in every tab, so looking something up never leaves the page.
-  const [refPanel, setRefPanel] = useState<RefPanel | null>(() => REF_PANELS.some(([key]) => key === savedSearchContext.refPanel) ? savedSearchContext.refPanel : null)
+  const [refPanel, setRefPanel] = useState<RefPanel | null>(() => REF_PANELS.some(([key]) => key === savedSearchContext.refPanel) ? savedSearchContext.refPanel : tab === 'design' && !sandbox ? 'insights' : null)
   const [searchOpen, setSearchOpen] = useState(() => {
     try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' } catch { return false }
   })
   const [searchParams] = useSearchParams()
   const handledSearchTarget = useRef('')
-  const hasPanel = Boolean(refPanel)
-  const searchContext: SearchContext | null = refPanel === 'places' ? 'location'
-    : refPanel === 'glossary' ? 'glossary_entry' : refPanel === 'timeline' ? 'timeline'
-    : refPanel === 'assistant' ? null : tab !== 'design' ? 'prose'
+  const navigate = useNavigate()
+  const panelTabs = REF_PANELS.filter(([key]) => key === 'context' || key === 'hints' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' ? !sandbox : true)
+  const activePanel = panelTabs.some(([key]) => key === refPanel) ? refPanel : null
+  const hasPanel = Boolean(activePanel)
+  const [writerFocus, setWriterFocus] = useState(false)
+  const [liveHints, setLiveHints] = useState(false)
+  const [contextSlot, setContextSlot] = useState<HTMLElement | null>(null)
+  const [hintsSlot, setHintsSlot] = useState<HTMLElement | null>(null)
+  const selectPanel = (key: RefPanel) => { setRefPanel(key); if (key === 'context') { setSearchOpen(false); if (sandbox) tourEvent('context') } }
+  const togglePanel = () => { if (hasPanel) setRefPanel(null); else selectPanel(tab === 'write' ? 'context' : tab === 'design' && !sandbox ? 'insights' : 'timeline') }
+  const openImages = async () => { if (!await writerFlush.current()) { setTabError('Save your writing before managing images.'); return } navigate(`/stories/${storyId}/images`) }
+  useEffect(() => {
+    const open = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setSearchOpen(true) } }
+    window.addEventListener('keydown', open)
+    return () => window.removeEventListener('keydown', open)
+  }, [])
+  const searchContext: SearchContext | null = activePanel === 'places' ? 'location'
+    : activePanel === 'glossary' ? 'glossary_entry' : activePanel === 'timeline' ? 'timeline'
+    : activePanel === 'assistant' ? null : tab !== 'design' ? 'prose'
     // Views without their own entity search the manuscript, so the launcher is never inert.
     : ({ 1: 'story', 2: 'event', 3: 'character', 4: 'act', 5: 'beat', 6: 'thread', 7: 'chapter', 8: 'scene', [GRID_VIEW]: 'scene' } as Record<number, SearchContext>)[level] ?? 'prose'
   useEffect(() => {
@@ -406,32 +424,11 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   }
 
   return (
-    <main data-workspace-story={storyId} data-workspace-ready={!chapters.isPending && !scenes.isPending ? true : undefined} className="workspace-page mx-auto max-w-[1600px] overflow-x-clip p-4 sm:p-6 lg:p-8">
-      {sandbox ? null : <Link to="/library" className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
-        ← all stories
-      </Link>}
+    <main data-workspace-story={storyId} data-workspace-ready={!chapters.isPending && !scenes.isPending ? true : undefined} className="workspace-page ws-page">
       {searchParams.get('sandbox_saved') === '1' && <p role="status" className="try-saved">Your Last Lantern is saved. <Link to="/library">Start your own story →</Link></p>}
-
-      <header className="mt-2 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900 sm:text-2xl dark:text-slate-100">{story.data.title}</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {progress.data && (
-            <span className="hidden text-xs text-slate-500 sm:inline dark:text-slate-400">
-              {progress.data.word_count.toLocaleString()} words ·{' '}
-              {progress.data.drafted_scene_count}/{progress.data.scene_count} scenes drafted
-            </span>
-          )}
-          {!sandbox && <StorySharing storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} />}
-          {/* Export is first-class: this tool augments a writer's process, so the words
-              must always be able to leave. */}
-          {!sandbox && <DownloadMenu storyId={storyId} />}
-          {!sandbox && <StoryImagesButton storyId={storyId} beforeOpen={() => writerFlush.current()} />}
-        </div>
-      </header>
-
-      <div className="workspace-bar">
+      <header className="ws-bar">
+        {!sandbox && <Link to="/library" className="ws-back" aria-label="All stories" title="All stories">‹</Link>}
+        <div className="ws-title"><h1>{story.data.title}</h1>{progress.data && <span>{progress.data.word_count.toLocaleString()} words · {progress.data.drafted_scene_count}/{progress.data.scene_count} scenes drafted</span>}</div>
       <div className="story-workspace-tabs" role="tablist" aria-label="Story workspace" onKeyDown={event => {
         if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
           event.preventDefault()
@@ -446,50 +443,39 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         <button id="story-search-toggle" type="button" className="workspace-search-entry search-launcher" aria-haspopup="dialog" onClick={() => setSearchOpen(true)} disabled={!searchContext}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg><span>Search this section…</span>
         </button>
-        <div className="workspace-reference-controls">
         <p className={`live-update-status in-bar${live.activity.isError ? ' is-paused' : ''}`} role="status">{live.activity.isError ? <>Live updates paused.<button type="button" onClick={() => { void live.activity.refetch() }}>Retry</button></> : <><span className="group relative inline-flex cursor-help items-center p-1.5 -m-1.5" tabIndex={0} aria-label="Live updates on"><span className="live-dot" /><span role="tooltip" className="pointer-events-none absolute left-0 top-6 z-30 hidden w-64 rounded-md border border-slate-200 bg-white p-2 text-xs leading-5 text-slate-700 shadow-lg group-hover:block group-focus:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">Live: changes from agents and other tabs appear here on their own. No need to refresh.</span></span>{justUpdated && <span className="live-updated">Updated just now</span>}</>}</p>
-        <div className="workspace-ref-toggles" role="group" aria-label="Reference panels">
           {pendingRuns > 0 && <button type="button" className="workspace-ref-alert" onClick={() => { void openView(INBOX_VIEW) }}>Agent changes<span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span></button>}
-          {REF_PANELS.filter(([key]) => !sandbox || key !== 'assistant').map(([key, label]) => <button key={key} type="button" aria-pressed={refPanel === key} onClick={() => setRefPanel(refPanel === key ? null : key)}>{label}</button>)}
+        <div className="ws-bar-actions">
+          {tab === 'write' && <IconButton label="Focus mode" onClick={() => setWriterFocus(true)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></IconButton>}
+          <IconButton label={hasPanel ? 'Hide side panel' : tab === 'write' ? 'Show context and side panel' : 'Show side panel'} aria-pressed={hasPanel} className={tab === 'write' && !hasPanel ? 'writer-context-toggle' : ''} onClick={togglePanel}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg></IconButton>
+          {!sandbox && <StorySharing menu storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>Images</MenuItem>} />}
+          {/* Export is first-class: the words must always be able to leave. */}
+          {!sandbox && <DownloadMenu storyId={storyId} />}
         </div>
-        </div>
-      </div>
+      </header>
       {tabError && <p role="alert" className="writer-error">{tabError}</p>}
-      <div className={`workspace-body${hasPanel ? ' has-panel' : ''}`}>
+      <div className={`ws-body${hasPanel ? ' has-panel' : ''}`}>
       <div className="min-w-0">
       <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>
-        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} initialChapter={initialPosition?.write_chapter_id} onChapterChange={rememberChapter} registerFlush={registerFlush} openScene={writerScene} panelOpen={hasPanel} onContextOpen={() => { setRefPanel(null); setSearchOpen(false); if (sandbox) tourEvent('context') }} /></Suspense>}
+        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} focus={writerFocus} onFocusChange={setWriterFocus} liveHints={liveHints} contextSlot={activePanel === 'context' ? contextSlot : null} hintsSlot={activePanel === 'hints' ? hintsSlot : null} initialChapter={initialPosition?.write_chapter_id} onChapterChange={rememberChapter} registerFlush={registerFlush} openScene={writerScene} /></Suspense>}
       </div>
       <div id="workspace-panel-read" role="tabpanel" aria-labelledby="workspace-tab-read" hidden={tab !== 'read'}>
         {tab === 'read' && <Suspense fallback={<p className="p-6">Loading reader…</p>}><StoryReader storyId={storyId} owned embedded initialPosition={readerResume} onPosition={rememberReading} openTarget={readerScene} /></Suspense>}
       </div>
       <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design" hidden={tab !== 'design'}>
-      <nav aria-label="Design pages" className="workspace-views">
-        <div><button type="button" aria-current={!isView ? 'page' : undefined} onClick={() => setLevel(planLevel.current)}>Plan</button>{viewItem(GRID_VIEW, 'Grid')}</div>
-        <div>
+      <div className="ws-design">
+        <nav aria-label="Story design" className="workspace-nav ws-rail">
+          <h2>Plan</h2>
+          {ladder.data && <Ladder ladder={ladder.data} mode={story.data.authoring_mode as AuthoringMode} activeLevel={level} onSelect={selectLevel} />}
+          {viewItem(GRID_VIEW, 'Grid')}
+          <h2>Review</h2>
           {!sandbox && viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
-          {viewItem(HISTORY_VIEW, 'History')}
           {!sandbox && viewItem(CATCHUP_VIEW, 'Catch up')}
           {!sandbox && viewItem(EVALUATE_VIEW, 'Evaluate')}
-        </div>
-      </nav>
-
+          {viewItem(HISTORY_VIEW, 'History')}
+        </nav>
+        <div className="min-w-0">
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setRefPanel('timeline')} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
-      <div className={`mt-6 grid grid-cols-1 gap-5 ${isView ? '' : hasPanel ? 'md:grid-cols-[170px_minmax(0,1fr)]' : 'md:grid-cols-[170px_minmax(0,1fr)] xl:grid-cols-[180px_minmax(0,1fr)_260px]'}`}>
-        {!isView && <aside className="min-w-0 xl:sticky xl:top-6 xl:self-start">
-          <nav aria-label="Story design" className="workspace-nav">
-            <h2>Plan</h2>
-            {ladder.data && (
-              <Ladder
-                ladder={ladder.data}
-                mode={story.data.authoring_mode as AuthoringMode}
-                activeLevel={level}
-                onSelect={selectLevel}
-              />
-            )}
-          </nav>
-        </aside>}
-
         <section ref={levelSection} id="story-search-design-section" className="min-w-0 scroll-mt-4">
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
@@ -652,19 +638,26 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
             </Panel>
           )}
         </section>
-
-        {!isView && !hasPanel && <aside className="min-w-0 md:col-start-2 xl:col-start-auto xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
-          {!sandbox && <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, rung.label]))} onOpenLevel={selectLevel} />}
-        </aside>}
+        </div>
       </div>
       </div>
       </div>
-      <aside hidden={!hasPanel} className="workspace-ref-panel" aria-label={REF_PANELS.find(([key]) => key === refPanel)?.[1]}>
-        <div className="workspace-ref-head"><h2>{REF_PANELS.find(([key]) => key === refPanel)?.[1]}</h2><div><button type="button" onClick={() => setSearchOpen(true)} disabled={!searchContext}>Search</button><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div></div>
-        {refPanel === 'timeline' && <StoryTimeline storyId={storyId} compact allowInsert={tab !== 'read'} onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
-        {refPanel === 'places' && <PlacesPanel storyId={storyId} />}
-        {refPanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
-        {refPanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
+      <aside hidden={!hasPanel} className="workspace-ref-panel ws-panel" aria-label="Side panel">
+        <div className="workspace-ref-head">
+          <Tabs label="Side panel" value={activePanel ?? panelTabs[0][0]} onChange={selectPanel} items={panelTabs.map(([key, label]) => ({ id: key, label, className: key === 'context' ? 'writer-context-toggle' : undefined }))} />
+          <div><button type="button" onClick={() => setSearchOpen(true)} disabled={!searchContext}>Search</button><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div>
+        </div>
+        {activePanel === 'context' && <div ref={setContextSlot} />}
+        {activePanel === 'hints' && <div className="ws-hints">
+          <label className="ws-hints-toggle"><input type="checkbox" checked={liveHints} onChange={event => setLiveHints(event.target.checked)} /> Live hints for the scene you are writing</label>
+          <p className="writer-help">The shared reader reads only the current scene, about two seconds after you stop typing. Hints never change your prose.</p>
+          <div ref={setHintsSlot} />
+        </div>}
+        {activePanel === 'insights' && <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, rung.label]))} onOpenLevel={selectLevel} />}
+        {activePanel === 'timeline' && <StoryTimeline storyId={storyId} compact allowInsert={tab !== 'read'} onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
+        {activePanel === 'places' && <PlacesPanel storyId={storyId} />}
+        {activePanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
+        {activePanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
       </aside>
       </div>
       <SearchDialog storyId={storyId} initialQuery={sandboxStep === 5 ? 'lantern' : undefined} context={searchContext} active={searchOpen} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={async hit => { await openSearchHit(hit); if (sandbox) tourEvent('search') }} />

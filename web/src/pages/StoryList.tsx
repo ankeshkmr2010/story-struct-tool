@@ -110,7 +110,7 @@ export default function StoryList() {
   } })
 
   return (
-    <main className={`mx-auto ${showTrash ? 'max-w-3xl' : 'max-w-[1200px]'} p-5 sm:p-8`}>
+    <main className="mx-auto max-w-[1200px] p-5 sm:p-8">
       <div className={showTrash ? '' : 'library-with-search'}>
       {!showTrash && <aside className="library-search" aria-label="Search your stories"><h2>Search your stories</h2><button type="button" className="search-launcher" aria-haspopup="dialog" onClick={() => setSearchOpen(true)}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg><span>Find a name, phrase or idea…</span></button></aside>}
       {me.data && <SearchDialog storyId="" accountId={me.data.id} context="all" active={searchOpen && !showTrash} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={async hit => {
