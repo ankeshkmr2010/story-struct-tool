@@ -51,6 +51,7 @@ export default function StoryList() {
   }, [pendingPurge])
 
   const stories = useQuery({ queryKey: ['stories'], queryFn: api.listStories, refetchInterval: 30_000, refetchOnWindowFocus: true })
+  const lastPlace = useQuery({ queryKey: ['workspace-position', 'latest'], queryFn: api.getLatestWorkspacePosition, refetchOnWindowFocus: true })
   const trash = useQuery({ queryKey: ['trashed-stories'], queryFn: api.listTrashedStories })
   const shared = useQuery({ queryKey: ['shared-stories'], queryFn: api.listSharedStories, refetchInterval: 30_000, refetchOnWindowFocus: true })
   const refresh = () => {
@@ -130,6 +131,10 @@ export default function StoryList() {
       <p className="mt-2 text-xs leading-5 text-slate-400">
         Your library includes editable study examples and an original timeline-and-arc tutorial. Each account has its own copies.
       </p>
+      {lastPlace.data && <div className="ui-card mt-4 flex flex-wrap items-center justify-between gap-3" role="status">
+        <div className="min-w-0"><p className="text-sm font-semibold">Pick up where you left off</p><p className="truncate text-sm text-slate-500 dark:text-slate-400">{lastPlace.data.title} · {{ write: 'Writing', read: 'Reading', design: 'Designing' }[lastPlace.data.position.mode ?? 'design']}</p></div>
+        <Link to={`/stories/${lastPlace.data.story_id}`} className="ui-btn ui-btn-primary">Resume</Link>
+      </div>}
       {stories.data?.find((story) => story.genre === 'Tutorial · timelines and arcs') && <Link to={`/stories/${stories.data.find((story) => story.genre === 'Tutorial · timelines and arcs')!.id}`} className="mt-4 inline-block rounded-lg border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950 px-4 py-2 text-sm text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-950">Learn timelines and arcs with The Last Lantern →</Link>}
 
       <form

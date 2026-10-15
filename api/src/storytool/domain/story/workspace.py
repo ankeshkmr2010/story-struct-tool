@@ -45,6 +45,45 @@ class WorkspacePlace(BaseModel):
     reading: ReadingPlace | None = None
 
 
+class LatestPlace(BaseModel):
+    story_id: UUID
+    title: str
+    position: WorkspacePlace
+    updated_at: datetime
+
+
+@get("/api/workspace-position/latest")
+async def latest_position(request: Request, db_session: AsyncSession) -> LatestPlace | None:
+    """The author's most recently left story, for the library's resume prompt."""
+    user_id = request.scope["state"]["storytool_user_id"]
+    row = (
+        await db_session.execute(
+            select(
+                WorkspacePosition.story_id,
+                Story.title,
+                WorkspacePosition.position,
+                WorkspacePosition.updated_at,
+            )
+            .join(Story, Story.id == WorkspacePosition.story_id)
+            .where(
+                WorkspacePosition.user_id == user_id,
+                Story.user_id == user_id,
+                Story.deleted_at.is_(None),
+            )
+            .order_by(WorkspacePosition.updated_at.desc())
+            .limit(1)
+        )
+    ).first()
+    if row is None:
+        return None
+    return LatestPlace(
+        story_id=row.story_id,
+        title=row.title,
+        position=WorkspacePlace.model_validate(row.position),
+        updated_at=row.updated_at,
+    )
+
+
 class WorkspaceController(Controller):
     path = "/api/workspace-position/{story_id:uuid}"
 

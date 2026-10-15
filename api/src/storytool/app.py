@@ -65,7 +65,7 @@ from storytool.domain.story.sharing import (
 )
 from storytool.domain.story.showcase import PublicShowcaseController, StoryShowcaseController
 from storytool.domain.story.timeline_controller import TimelineController
-from storytool.domain.story.workspace import WorkspaceController
+from storytool.domain.story.workspace import WorkspaceController, latest_position
 from storytool.domain.structure.controller import (
     ActController,
     BeatController,
@@ -107,6 +107,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             StoryVersionController,
             StoryController,
             WorkspaceController,
+            latest_position,
             StoryImagesController,
             SharedImagesController,
             ShowcaseImagesController,
