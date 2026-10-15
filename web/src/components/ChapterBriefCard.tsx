@@ -30,7 +30,7 @@ const Unset = ({ children }: { children: React.ReactNode }) => (
 
 export function ChapterBriefCard({ brief }: { brief: ChapterBrief }) {
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+    <div className="brief-card rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
       <div className="flex items-baseline justify-between">
         <h3 className="section-title">
           Chapter {brief.number}

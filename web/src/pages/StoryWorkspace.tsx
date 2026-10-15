@@ -137,7 +137,10 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const openView = async (view: number) => { if (await changeTab('design')) setLevel(view) }
   const viewItem = (view: number, label: ReactNode) => <button type="button" aria-current={level === view ? 'page' : undefined} onClick={() => { setLevel(view); if (sandbox && view === HISTORY_VIEW) tourEvent('history') }}>{label}</button>
   // Reference panels sit beside the text in every tab, so looking something up never leaves the page.
-  const [refPanel, setRefPanel] = useState<RefPanel | null>(() => REF_PANELS.some(([key]) => key === savedSearchContext.refPanel) ? savedSearchContext.refPanel : tab === 'design' && !sandbox ? 'insights' : null)
+  // The panel opens by default (Context in Write, Insights in Design); closing it is remembered for the visit.
+  const [refPanel, setRefPanelPref] = useState<RefPanel | null>(() => REF_PANELS.some(([key]) => key === savedSearchContext.refPanel) ? savedSearchContext.refPanel : null)
+  const [panelHidden, setPanelHidden] = useState(() => sandbox || window.matchMedia('(max-width: 1100px)').matches)
+  const setRefPanel = (key: RefPanel | null) => { if (key) { setRefPanelPref(key); setPanelHidden(false) } else setPanelHidden(true) }
   const [searchOpen, setSearchOpen] = useState(() => {
     try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' } catch { return false }
   })
@@ -145,14 +148,16 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const handledSearchTarget = useRef('')
   const navigate = useNavigate()
   const panelTabs = REF_PANELS.filter(([key]) => key === 'context' || key === 'hints' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' ? !sandbox : true)
-  const activePanel = panelTabs.some(([key]) => key === refPanel) ? refPanel : null
+  const modePanel: RefPanel | null = tab === 'write' ? 'context' : tab === 'design' && !sandbox ? 'insights' : null
+  const preferredPanel = panelTabs.some(([key]) => key === refPanel) ? refPanel : modePanel
+  const activePanel = panelHidden ? null : preferredPanel
   const hasPanel = Boolean(activePanel)
   const [writerFocus, setWriterFocus] = useState(false)
   const [liveHints, setLiveHints] = useState(false)
   const [contextSlot, setContextSlot] = useState<HTMLElement | null>(null)
   const [hintsSlot, setHintsSlot] = useState<HTMLElement | null>(null)
   const selectPanel = (key: RefPanel) => { setRefPanel(key); if (key === 'context') { setSearchOpen(false); if (sandbox) tourEvent('context') } }
-  const togglePanel = () => { if (hasPanel) setRefPanel(null); else selectPanel(tab === 'write' ? 'context' : tab === 'design' && !sandbox ? 'insights' : 'timeline') }
+  const togglePanel = () => { if (hasPanel) setRefPanel(null); else selectPanel(preferredPanel ?? 'timeline') }
   const openImages = async () => { if (!await writerFlush.current()) { setTabError('Save your writing before managing images.'); return } navigate(`/stories/${storyId}/images`) }
   useEffect(() => {
     const open = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setSearchOpen(true) } }
@@ -645,7 +650,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       <aside hidden={!hasPanel} className="workspace-ref-panel ws-panel" aria-label="Side panel">
         <div className="workspace-ref-head">
           <Tabs label="Side panel" value={activePanel ?? panelTabs[0][0]} onChange={selectPanel} items={panelTabs.map(([key, label]) => ({ id: key, label, className: key === 'context' ? 'writer-context-toggle' : undefined }))} />
-          <div><button type="button" onClick={() => setSearchOpen(true)} disabled={!searchContext}>Search</button><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div>
+          <div><button type="button" aria-label="Search this panel" title="Search this panel" onClick={() => setSearchOpen(true)} disabled={!searchContext}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></button><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div>
         </div>
         {activePanel === 'context' && <div ref={setContextSlot} />}
         {activePanel === 'hints' && <div className="ws-hints">
