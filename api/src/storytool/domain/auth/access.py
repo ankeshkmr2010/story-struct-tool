@@ -40,6 +40,7 @@ _PUBLIC_PATHS = {
     "/api/auth/config",
     "/api/auth/google",
     "/api/shoutouts",
+    "/api/roadmap",
     "/api/site/visit",
     "/api/site/try",
 }

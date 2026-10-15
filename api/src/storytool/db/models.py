@@ -31,6 +31,7 @@ from storytool.domain.narrative.models import (
 from storytool.domain.search.models import SearchChunk, SearchIndex
 from storytool.domain.site.feedback import ProductFeedback
 from storytool.domain.site.funnel import FunnelEvent
+from storytool.domain.site.roadmap import RoadmapItem
 from storytool.domain.site.shoutouts import Shoutout
 from storytool.domain.story.authorship import FieldAuthorship
 from storytool.domain.story.beta import (
@@ -85,6 +86,7 @@ __all__ = (
     "MCPToken",
     "ProductFeedback",
     "Relationship",
+    "RoadmapItem",
     "Scene",
     "SceneCharacterMention",
     "SceneRevision",

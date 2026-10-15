@@ -1588,6 +1588,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/roadmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ListRoadmap */
+        get: operations["ApiRoadmapListRoadmap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/roadmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** CreateItem */
+        post: operations["ApiAdminRoadmapCreateItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/roadmap/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** UpdateItem */
+        patch: operations["ApiAdminRoadmapItemIdUpdateItem"];
+        trace?: never;
+    };
     "/api/admin/shoutouts": {
         parameters: {
             query?: never;
@@ -4204,6 +4255,33 @@ export interface components {
             created_at: string;
             stale: boolean;
         };
+        /** RoadmapInput */
+        RoadmapInput: {
+            title: string;
+            description: string;
+            status?: components["schemas"]["RoadmapStatus"];
+            /** @default false */
+            hero: boolean;
+            delivered_on?: string | null;
+        };
+        /** RoadmapOut */
+        RoadmapOut: {
+            title: string;
+            description: string;
+            status?: components["schemas"]["RoadmapStatus"];
+            /** @default false */
+            hero: boolean;
+            delivered_on?: string | null;
+            /** Format: uuid */
+            id: string;
+            sort_key: number;
+        };
+        /**
+         * RoadmapStatus
+         * @default planned
+         * @enum {string}
+         */
+        RoadmapStatus: "exploring" | "planned" | "in_progress" | "delivered";
         /** RoundIn */
         RoundIn: {
             title: string;
@@ -9219,6 +9297,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ShoutoutOut"][];
+                };
+            };
+        };
+    };
+    ApiRoadmapListRoadmap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoadmapOut"][];
+                };
+            };
+        };
+    };
+    ApiAdminRoadmapCreateItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoadmapInput"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoadmapOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminRoadmapItemIdUpdateItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoadmapInput"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoadmapOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
                 };
             };
         };

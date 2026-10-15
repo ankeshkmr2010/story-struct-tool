@@ -8,6 +8,13 @@ vocabularies that will grow (new frameworks, new character roles).
 from enum import IntEnum, StrEnum
 
 
+class RoadmapStatus(StrEnum):
+    EXPLORING = "exploring"
+    PLANNED = "planned"
+    IN_PROGRESS = "in_progress"
+    DELIVERED = "delivered"
+
+
 class AuthoringMode(StrEnum):
     PLOTTER = "plotter"
     PANTSER = "pantser"

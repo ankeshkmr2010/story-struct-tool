@@ -21,6 +21,8 @@ export type ShowcaseDocument = S['ShowcaseDocumentOut']
 export type Authorship = S['AuthorshipOut']
 export type StoryActivity = S['StoryActivityOut']
 export type WorkspacePlace = S['WorkspacePlace']
+export type RoadmapItem = S['RoadmapOut']
+export type RoadmapInput = S['RoadmapInput']
 export type AuthUser = S['UserOut']
 export type AuthConfig = S['AuthConfigOut']
 export type ProductFeedback = S['ProductFeedbackOut']
@@ -155,6 +157,9 @@ const patch = <T,>(path: string, body: unknown) =>
   request<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 
 export const api = {
+  listRoadmap: () => request<RoadmapItem[]>('/api/roadmap'),
+  createRoadmapItem: (body: RoadmapInput) => post<RoadmapItem>('/api/admin/roadmap', body),
+  updateRoadmapItem: (id: string, body: RoadmapInput) => patch<RoadmapItem>(`/api/admin/roadmap/${id}`, body),
   getWorkspacePosition: (storyId: string) => request<WorkspacePlace | null>(`/api/workspace-position/${storyId}`),
   saveWorkspacePosition: (storyId: string, position: WorkspacePlace) => request<WorkspacePlace>(`/api/workspace-position/${storyId}`, { method: 'PUT', body: JSON.stringify(position), keepalive: true }),
   previewValidator: (body: S['ValidatorPreviewIn']) => post<S['ValidatorPreviewOut']>('/api/validators/preview', body),
