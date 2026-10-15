@@ -6,6 +6,7 @@ import { errorText } from '../api/errors'
 import { StorySharing } from '../components/StorySharing'
 import { WordImportDialog } from '../components/WordImportDialog'
 import { SearchDialog } from '../components/StorySearch'
+import { Menu, MenuItem } from '../ui/Menu'
 
 // Library cards show when a story was last touched rather than a completeness bar.
 function editedLabel(iso: string) {
@@ -152,21 +153,10 @@ export default function StoryList() {
           Create
         </button>
         {/* Other ways to start a story live behind ▾ beside Create. */}
-        <details className="story-card-menu library-create-more">
-          <summary aria-label="More ways to start a story">{importBackup.isPending || importOpen ? '…' : '▾'}</summary>
-          <div>
-            <button
-              type="button"
-              disabled={importBackup.isPending || importOpen}
-              onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); backupInput.current?.click() }}
-              title="Restore a StoryTool backup file as a new story"
-              className="w-full rounded px-2 py-1.5 text-left text-sm hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-800"
-            >
-              From backup…
-            </button>
-            <button type="button" disabled={importBackup.isPending || importOpen} onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); setPromptStory(null); setImportOpen(true) }} title="Import body prose; Heading 1 starts each chapter" className="w-full rounded px-2 py-1.5 text-left text-sm hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-800">From Word (.docx)…</button>
-          </div>
-        </details>
+        <Menu label={importBackup.isPending || importOpen ? '…' : '▾'} ariaLabel="More ways to start a story" className="library-create-more" triggerClassName="ui-btn ui-btn-secondary">
+          <MenuItem disabled={importBackup.isPending || importOpen} title="Restore a StoryTool backup file as a new story" onSelect={() => backupInput.current?.click()}>From backup…</MenuItem>
+          <MenuItem disabled={importBackup.isPending || importOpen} title="Import body prose; Heading 1 starts each chapter" onSelect={() => { setPromptStory(null); setImportOpen(true) }}>From Word (.docx)…</MenuItem>
+        </Menu>
         <input
           ref={backupInput}
           type="file"
@@ -212,14 +202,7 @@ export default function StoryList() {
               <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{story.word_count.toLocaleString()} words · {editedLabel(story.updated_at)}</p>
               {!showTrash && story.prose_imported && <button type="button" className="mt-2 text-xs text-[var(--accent)] underline" onClick={() => { setPromptStory(story); setImportOpen(true) }}>Import prompts →</button>}
             </div>
-            {showTrash ? <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => restore.mutate(story.id)} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm disabled:opacity-50">Restore</button><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => { purge.reset(); setPurgeConfirmation(''); setPendingPurge(story) }} className="text-xs text-red-700 dark:text-red-300">Delete permanently</button></div> : <div className="story-card-actions"><StorySharing storyId={story.id} title={story.title} blurb={story.blurb} />{/* Delete stays one step away so it is not as prominent as Share. */}<details className="story-card-menu"><summary aria-label={`More actions for ${story.title}`}>⋯</summary><div><button
-              type="button"
-              aria-label={`Delete ${story.title}`}
-              onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open'); remove.reset(); setPendingDelete(story) }}
-              className="story-delete-button"
-            >
-              Delete
-            </button></div></details></div>}
+            {showTrash ? <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => restore.mutate(story.id)} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm disabled:opacity-50">Restore</button><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => { purge.reset(); setPurgeConfirmation(''); setPendingPurge(story) }} className="text-xs text-red-700 dark:text-red-300">Delete permanently</button></div> : <div className="story-card-actions"><StorySharing storyId={story.id} title={story.title} blurb={story.blurb} />{/* Delete stays one step away so it is not as prominent as Share. */}<Menu label="⋯" ariaLabel={`More actions for ${story.title}`} triggerClassName="ui-btn ui-btn-ghost ui-btn-sm"><MenuItem className="is-danger" onSelect={() => { remove.reset(); setPendingDelete(story) }}>Delete</MenuItem></Menu></div>}
           </li>
         ))}
       </ul>

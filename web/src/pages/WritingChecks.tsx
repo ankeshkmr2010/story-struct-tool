@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api, type ValidatorDefinition, type WritingValidator } from '../api/client'
 import { errorText } from '../api/errors'
+import { ConfirmInline } from '../ui/primitives'
 
 type AnswerType = ValidatorDefinition['question']['type']
 type Option = { id: string; text: string; flag: boolean }
@@ -169,7 +170,7 @@ export default function WritingChecks() {
           {preview.data && <div role="status" className="checks-trial-results">{preview.data.warnings.map((warning, index) => <p key={index}>{warning}</p>)}{sampleExpected != null && <p>{(!preview.data.observations.length || preview.data.warnings.length > 0 || preview.data.observations.some(item => item.matched == null)) ? 'Some results are uncertain; inspect the reading below.' : (preview.data.hints.length > 0) === sampleExpected ? 'The reading matches your expectation.' : 'The reading differs from your expectation. Refine the criterion or examples before enabling.'}</p>}{preview.data.observations.map((observation, index) => <article key={index}><strong>Paragraph {observation.paragraph}: {observation.matched == null ? 'Uncertain' : observation.matched ? 'Would show advice' : 'No advice triggered'}</strong>{observation.count != null && <p>{observation.complete ? '' : 'At least '}{observation.count} named characters; limit {observation.limit}.</p>}{!!observation.names.length && <p>Counted: {observation.names.join(', ')}</p>}{!!observation.excluded.length && <p>Not counted: {observation.excluded.join(', ')}</p>}{!!observation.uncertain.length && <p>Uncertain: {observation.uncertain.join(', ')}</p>}</article>)}{preview.data.hints.map(hint => <article key={hint.code}><strong>{hint.message}</strong>{hint.location_uncertain && <p>Sentence location uncertain; paragraph shown instead.</p>}{hint.passages?.map((passage, index) => <blockquote key={index} className="live-hint-excerpt">{passage.text}</blockquote>)}<p>{hint.action}</p></article>)}</div>}</section>
           <aside className="checks-preview" aria-label="Hint preview"><p className="eyebrow">HINT PREVIEW</p><h3>{draft.name || 'Your check'}</h3><p>{draft.advice || 'Your saved advice will appear here.'}</p><p className="checks-muted">Shown when {when}, at {draft.certainty}% certainty or higher. Appearance preview only; no passage has been checked.</p></aside>
           <div className="checks-form-actions"><button type="submit" className="checks-primary" disabled={!dirty}>{save.isPending ? 'Saving…' : selected ? 'Save changes' : 'Create check'}</button>{confirmReset && dirty
-            ? <><span className="checks-muted">Discard unsaved changes?</span><button type="button" onClick={() => openForm(selected, undefined, true)}>Discard</button><button type="button" onClick={() => setConfirmReset(false)}>Keep editing</button></>
+            ? <ConfirmInline message="Discard unsaved changes?" confirmLabel="Discard" cancelLabel="Keep editing" danger onConfirm={() => openForm(selected, undefined, true)} onCancel={() => setConfirmReset(false)} />
             : <><button type="button" onClick={() => dirty ? setConfirmReset(true) : openForm(selected)}>Reset form</button>{dirty && <span className="checks-muted">Unsaved changes</span>}</>}</div>
         </fieldset></form>
       </section>
