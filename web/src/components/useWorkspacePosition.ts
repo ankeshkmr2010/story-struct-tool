@@ -62,6 +62,11 @@ export function useWorkspacePosition(storyId: string, initial: WorkspacePlace | 
     window.addEventListener('touchstart', stopRestore, { passive: true })
     window.addEventListener('keydown', stopRestore)
     window.addEventListener('pointerdown', stopRestore)
+    // Write: once the scene exists, keep re-aligning to it while the passages above finish
+    // loading and grow; finish when the layout has been still for a moment.
+    let anchored = false
+    let settle: ReturnType<typeof setTimeout> | undefined
+    const finish = () => { restored.current = true; observer.disconnect(); resize.disconnect() }
     const restore = () => {
       if (stopped || restored.current) return
       if (initial.mode === 'write') {
@@ -69,7 +74,8 @@ export function useWorkspacePosition(storyId: string, initial: WorkspacePlace | 
         const target = scenes.find(element => element.dataset.writingScene === initial.write_scene_id)
         if (target && target.querySelector('.cm-editor')) {
           window.scrollTo(0, window.scrollY + target.getBoundingClientRect().top + (initial.write_within ?? 0) * target.offsetHeight - 100)
-          restored.current = true
+          anchored = true
+          clearTimeout(fallback); clearTimeout(settle); settle = setTimeout(finish, 1500)
         }
       } else if (document.querySelector('[data-workspace-ready]')) {
         window.scrollTo(0, (initial.scroll_fraction ?? 0) * Math.max(0, document.documentElement.scrollHeight - window.innerHeight))
@@ -84,17 +90,20 @@ export function useWorkspacePosition(storyId: string, initial: WorkspacePlace | 
         window.scrollTo(0, (initial.scroll_fraction ?? 0) * Math.max(0, document.documentElement.scrollHeight - window.innerHeight))
         restored.current = true
       }
-      observer.disconnect()
+      observer.disconnect(); resize.disconnect()
     }
     const loaded = () => !!document.querySelector('[data-workspace-ready]') && (initial.mode !== 'write' || !!document.querySelector('[data-writing-scene] .cm-editor'))
-    const armFallback = () => { if (loaded()) { clearTimeout(fallback); fallback = setTimeout(fallBack, 1500) } }
+    const armFallback = () => { if (!anchored && loaded()) { clearTimeout(fallback); fallback = setTimeout(fallBack, 1500) } }
     const observer = new MutationObserver(() => { restore(); if (!restored.current) armFallback() })
     observer.observe(document.body, { childList: true, subtree: true })
+    // Editors grow by measuring, which need not add nodes; size changes also re-align.
+    const resize = new ResizeObserver(() => { if (anchored) restore() })
+    resize.observe(document.body)
     void document.fonts.ready.then(() => { if (!stopped) requestAnimationFrame(restore) })
     armFallback()
-    const deadline = setTimeout(fallBack, 30000)
+    const deadline = setTimeout(() => { if (anchored) finish(); else fallBack() }, 30000)
     return () => {
-      stopped = true; observer.disconnect(); clearTimeout(fallback); clearTimeout(deadline)
+      stopped = true; observer.disconnect(); resize.disconnect(); clearTimeout(fallback); clearTimeout(settle); clearTimeout(deadline)
       window.removeEventListener('wheel', stopRestore); window.removeEventListener('touchstart', stopRestore); window.removeEventListener('keydown', stopRestore)
       window.removeEventListener('pointerdown', stopRestore)
     }
