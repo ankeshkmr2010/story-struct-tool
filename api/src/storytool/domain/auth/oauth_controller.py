@@ -10,14 +10,14 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from storytool.domain.auth.oauth import complete_consent, consent_record
+from storytool.domain.auth.oauth import SCOPES, complete_consent, consent_record
 from storytool.domain.auth.oauth_models import MCPClient, MCPGrant
 from storytool.domain.story.models import Story
 
 
 class ConsentDecision(BaseModel):
     story_id: UUID | None = None
-    scopes: list[str] = Field(default_factory=list, max_length=6)
+    scopes: list[str] = Field(default_factory=list, max_length=len(SCOPES))
     deny: bool = False
 
 
