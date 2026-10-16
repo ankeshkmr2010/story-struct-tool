@@ -19,6 +19,10 @@ export default function BetaThreadPage() {
   if (item.scene_id) params.set('scene', item.scene_id)
   if (item.chapter_id) params.set('chapter', item.chapter_id)
   return <main className="mx-auto max-w-3xl px-5 py-8 text-[var(--ink)]">
+    {doc.data!.is_owner && <nav className="mb-4 flex flex-wrap gap-2" aria-label="Back to your story">
+      <Link className="ui-btn ui-btn-secondary" to={`/stories/${doc.data!.share.story_id}`}>← Back to story</Link>
+      <Link className="ui-btn ui-btn-secondary" to={`/stories/${doc.data!.share.story_id}/beta`}>Beta readers</Link>
+    </nav>}
     <Link className="underline" to={`/beta/rounds/${roundId}?${params}`}>← Read the reviewed passage</Link>
     <h1 className="mt-5 text-2xl font-semibold">Conversation · {doc.data!.round.title}</h1>
     <p className="mt-2 text-sm text-[var(--muted)]">{scene ? String(scene.title || 'Scene feedback') : item.chapter_id ? 'Chapter feedback' : 'Whole-story feedback'} · {item.resolved ? 'Resolved' : 'Open'}{!item.submitted && ' · Private draft'}</p>
