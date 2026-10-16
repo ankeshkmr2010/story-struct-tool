@@ -1,7 +1,7 @@
 import { SceneReaderResults } from './SceneReaderResults'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, type Evaluation } from '../api/client'
+import { api, type CraftReading, type Evaluation, type Evaluator } from '../api/client'
 import { errorText } from '../api/errors'
 
 /**
@@ -319,6 +319,45 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
   )
 }
 
+const READER_CHECKS = ['scene_rhythm', 'value_shift', 'mice_nesting', 'misbelief_midpoint', 'setups_payoffs', 'continuity']
+
+/** One row per check: what it needs, and what the latest Run all found. */
+function EvaluationOverview({ evaluators, results, reading, readerShared, running, onRunAll, onOpen, error }: {
+  evaluators: Evaluator[]; results: Record<string, Evaluation>; reading?: CraftReading; readerShared: boolean
+  running: boolean; onRunAll: () => void; onOpen: (id: string) => void; error: unknown
+}) {
+  const status = (item: Evaluator) => {
+    const outline = results[item.id]
+    const certain = reading?.findings.filter((finding) => finding.check === item.id && !finding.uncertain).length ?? 0
+    const uncertain = reading?.findings.filter((finding) => finding.check === item.id && finding.uncertain).length ?? 0
+    const parts: string[] = []
+    if (item.missing.length) parts.push('Needs inputs')
+    if (reading?.check_missing[item.id]) parts.push(reading.check_missing[item.id])
+    if (outline) parts.push(outline.findings.length ? `${outline.findings.length} outline ${outline.findings.length === 1 ? 'note' : 'notes'}` : 'Outline: nothing to flag')
+    if (reading && READER_CHECKS.includes(item.id)) parts.push(certain ? `${certain} from the prose` : 'Prose: nothing confident to flag')
+    if (uncertain) parts.push(`${uncertain} uncertain`)
+    if (!parts.length) parts.push(item.kind === 'deterministic' || READER_CHECKS.includes(item.id) ? 'Not run yet' : 'AI review only')
+    const attention = (outline?.findings.some((finding) => finding.severity === 'warning') ?? false) || certain > 0
+    return { text: parts.join(' · '), attention }
+  }
+  return <section className="space-y-4 rounded-lg border border-slate-200 p-5 dark:border-slate-700" aria-label="All checks">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p className="text-sm text-slate-600 dark:text-slate-300">Run every ready check at once{readerShared ? ', including one shared read of your saved prose' : ''}. Open a check for details, inputs and AI reviews.</p>
+      <button type="button" className="ui-btn ui-btn-primary" disabled={running} onClick={onRunAll}>{running ? 'Running all…' : 'Run all'}</button>
+    </div>
+    {error != null && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(error)}</p>}
+    <ul className="divide-y divide-[var(--line)]">
+      {evaluators.map((item) => {
+        const { text, attention } = status(item)
+        return <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+          <div className="min-w-0"><p className="text-sm font-medium">{attention && <span className="mr-1 text-amber-600" aria-label="Has findings">●</span>}{item.name}</p><p className="text-xs text-slate-500 dark:text-slate-400">{text}</p></div>
+          <button type="button" className="ui-btn ui-btn-secondary" onClick={() => onOpen(item.id)}>Open</button>
+        </li>
+      })}
+    </ul>
+  </section>
+}
+
 export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters, onOpenStory, onOpenPassage }: {
   storyId: string
   onOpenInbox: () => void
@@ -333,11 +372,23 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
   const noticer = useQuery({ queryKey: ['noticer'], queryFn: api.noticerInfo })
   const reader = useMutation({ mutationFn: () => api.readCraftScenes(storyId) })
   const [chosen, setChosen] = useState<string | null>(null)
-  const [result, setResult] = useState<Evaluation | null>(null)
-  const selected = evaluators.data?.find((item) => item.id === chosen) ?? evaluators.data?.[0]
-  const run = useMutation({ mutationFn: (id: string) => api.runEvaluator(storyId, id), onSuccess: setResult })
-  const usesReader = selected && ['scene_rhythm', 'value_shift', 'mice_nesting', 'misbelief_midpoint', 'setups_payoffs', 'continuity'].includes(selected.id)
-  const shown = result && result.evaluator_id === selected?.id ? result : null
+  const [results, setResults] = useState<Record<string, Evaluation>>({})
+  const overview = !chosen
+  const selected = overview ? undefined : evaluators.data?.find((item) => item.id === chosen) ?? evaluators.data?.[0]
+  const run = useMutation({ mutationFn: (id: string) => api.runEvaluator(storyId, id), onSuccess: (result) => setResults((current) => ({ ...current, [result.evaluator_id]: result })) })
+  const usesReader = selected && READER_CHECKS.includes(selected.id)
+  const shown = selected ? results[selected.id] ?? null : null
+  // Run all: every ready outline check, plus one shared-reader pass that serves all prose checks.
+  const runAll = useMutation({
+    mutationFn: async () => {
+      const ready = (evaluators.data ?? []).filter((item) => item.kind === 'deterministic' && item.ready)
+      const [outline] = await Promise.all([
+        Promise.all(ready.map((item) => api.runEvaluator(storyId, item.id))),
+        noticer.data?.shared ? reader.mutateAsync().catch(() => null) : null,
+      ])
+      setResults(Object.fromEntries(outline.map((result) => [result.evaluator_id, result])))
+    },
+  })
 
   const openEntity = (type: string | null | undefined, id: string | null | undefined) => {
     if (!id) return null
@@ -360,14 +411,15 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
       {evaluators.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(evaluators.error)}</p>}
       {!evaluators.data && !evaluators.error && <p className="text-sm text-slate-500 dark:text-slate-400">Loading evaluators…</p>}
 
-      {evaluators.data && selected && <div className="eval-layout">
+      {evaluators.data && <div className="eval-layout">
         <div role="tablist" aria-label="Evaluators" className="eval-checks">
+          <button type="button" role="tab" aria-selected={overview} onClick={() => setChosen(null)} className="eval-check"><span>Overview</span><small>All checks</small></button>
           {evaluators.data.map((item) => (
             <button
               key={item.id}
               type="button"
               role="tab"
-              aria-selected={item.id === selected.id}
+              aria-selected={item.id === selected?.id}
               onClick={() => setChosen(item.id)}
               className="eval-check"
             >
@@ -376,6 +428,8 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
           ))}
         </div>
         <div className="eval-main">
+        {overview && <EvaluationOverview evaluators={evaluators.data} results={results} reading={reader.data} readerShared={!!noticer.data?.shared} running={runAll.isPending} onRunAll={() => runAll.mutate()} onOpen={setChosen} error={runAll.error ?? reader.error} />}
+        {selected && <>
         <section className="space-y-4 rounded-lg border border-slate-200 p-5 dark:border-slate-700">
           <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{selected.description}</p>
           {selected.id === 'mice_nesting' && <p className="text-xs text-slate-500 dark:text-slate-400">MICE means Milieu, Idea, Character and Event: four kinds of story thread, from Orson Scott Card and taught by Mary Robinette Kowal.</p>}
@@ -425,6 +479,7 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
           </section>
         )}
         {selected.has_review && <AIReview key={selected.id} storyId={storyId} evaluatorId={selected.id} evaluatorName={selected.name} ready={selected.ready} onOpenScene={onOpenScene} onOpenThreads={onOpenThreads} onOpenCharacters={onOpenCharacters} />}
+        </>}
         </div>
       </div>}
     </div>
