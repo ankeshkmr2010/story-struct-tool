@@ -26,8 +26,20 @@ const TryStory = lazy(() => import('./pages/TryStory'))
 const TryKeep = lazy(() => import('./pages/TryStory').then(m => ({ default: m.TryKeep })))
 const TryLocked = lazy(() => import('./pages/TryStory').then(m => ({ default: m.TryLocked })))
 
+// Browser tab titles by route; story pages refine theirs once the story's title loads.
+const PAGE_TITLES: [RegExp, string][] = [
+  [/^\/$/, 'StoryTool — From idea to story'], [/^\/try/, 'Try StoryTool'], [/^\/how-to-use/, 'How to use · StoryTool'],
+  [/^\/roadmap/, 'Roadmap · StoryTool'], [/^\/thanks/, 'Shoutouts · StoryTool'], [/^\/pricing/, 'Pricing · StoryTool'],
+  [/^\/privacy/, 'Privacy · StoryTool'], [/^\/library/, 'Your stories · StoryTool'], [/^\/settings/, 'Settings · StoryTool'],
+  [/^\/checks/, 'Writing checks · StoryTool'], [/^\/feedback/, 'Feedback · StoryTool'], [/^\/oauth/, 'Connect AI · StoryTool'],
+  [/^\/stories\/[^/]+\/images/, 'Images · StoryTool'], [/^\/stories\/[^/]+\/beta/, 'Beta readers · StoryTool'],
+  [/^\/stories\/[^/]+\/polls/, 'Reader polls · StoryTool'], [/^\/stories\//, 'Story · StoryTool'], [/^\/shared\//, 'Shared story · StoryTool'],
+  [/^\/beta\//, 'Beta manuscript · StoryTool'], [/^\/showcase\//, 'Showcase · StoryTool'],
+]
+
 export default function App() {
   const location = useLocation()
+  useLayoutEffect(() => { document.title = PAGE_TITLES.find(([pattern]) => pattern.test(location.pathname))?.[1] ?? 'StoryTool' }, [location.pathname])
   const header = useRef<HTMLElement>(null)
   useLayoutEffect(() => {
     const element = header.current

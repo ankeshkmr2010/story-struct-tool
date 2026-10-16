@@ -144,6 +144,19 @@ def allowed_fields(context: str) -> set[str]:
     )
 
 
+def tidy_excerpt(text: str, cut_start: bool, cut_end: bool) -> str:
+    """Trim a window's partial first/last words and mark the cuts with ellipses."""
+    if cut_start:
+        space = next((i for i, ch in enumerate(text[:25]) if ch.isspace()), -1)
+        text = "…" + (text[space + 1 :] if space >= 0 else text).lstrip()
+    if cut_end:
+        space = max(
+            (i for i, ch in enumerate(text) if ch.isspace() and i >= len(text) - 25), default=-1
+        )
+        text = (text[:space] if space > 0 else text).rstrip() + "…"
+    return text
+
+
 def literal_pattern(query: str) -> str:
     return "%" + query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
 
@@ -163,7 +176,8 @@ async def text_search(
         source = select(source).where(source.c.entity == entity).cte("restricted_fields")
     c = source.c
     start = func.greatest(1, func.strpos(func.lower(c.value), query.lower()) - 65)
-    excerpt = func.substring(c.value, start, len(query) + 150)
+    window = len(query) + 150
+    excerpt = func.substring(c.value, start, window)
     rank = case(
         (c.field.in_(TITLE_FIELDS) & (func.lower(c.value) == query.lower()), 0),
         (c.field.in_(TITLE_FIELDS), 1),
@@ -182,7 +196,18 @@ async def text_search(
         c.chapter_tie,
         c.sort,
     ]
-    matches = func.jsonb_agg(func.jsonb_build_object("field", c.field, "excerpt", excerpt))
+    matches = func.jsonb_agg(
+        func.jsonb_build_object(
+            "field",
+            c.field,
+            "excerpt",
+            excerpt,
+            "cut_start",
+            start > 1,
+            "cut_end",
+            start + window <= func.length(c.value),
+        )
+    )
     results = await db.execute(
         select(*columns, matches.label("matches"), func.min(rank).label("rank"))
         .where(c.value.ilike(literal_pattern(query), escape="\\"))
@@ -204,7 +229,15 @@ async def text_search(
                 title=row["title"],
                 chapter_id=row["chapter_id"],
                 chapter_title=row["chapter_title"],
-                matches=[SearchMatch(**match) for match in row["matches"]],
+                matches=[
+                    SearchMatch(
+                        field=match["field"],
+                        excerpt=tidy_excerpt(
+                            match["excerpt"], match["cut_start"], match["cut_end"]
+                        ),
+                    )
+                    for match in row["matches"]
+                ],
             )
             for row in rows[:limit]
         ],

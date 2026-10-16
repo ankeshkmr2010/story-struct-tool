@@ -257,6 +257,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   }
 
   const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
+  useEffect(() => { if (story.data?.title) document.title = `${story.data.title} · StoryTool` }, [story.data?.title])
   const ladder = useQuery({ queryKey: ['ladder', storyId], queryFn: () => api.getLadder(storyId) })
   const pending = useQuery({ queryKey: ['ai-runs', storyId, 'pending'], queryFn: () => api.listAIRuns(storyId, 'proposed', 200) })
   const pendingRuns = pending.data?.length ?? 0

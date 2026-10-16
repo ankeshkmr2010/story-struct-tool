@@ -16,7 +16,7 @@ from sqlalchemy import cast, delete, func, or_, select, text
 from storytool.config import get_settings
 from storytool.domain.search.models import SearchChunk, SearchIndex
 from storytool.domain.search.schemas import SearchHit, SearchMatch, SearchPage
-from storytool.domain.search.service import CONTEXTS, fields_query
+from storytool.domain.search.service import CONTEXTS, fields_query, tidy_excerpt
 from storytool.domain.story.models import Story
 
 log = logging.getLogger("storytool.search")
@@ -363,7 +363,14 @@ async def semantic_search(
                     title=info["title"],
                     chapter_id=info["chapter_id"],
                     chapter_title=info["chapter_title"],
-                    matches=[SearchMatch(field=row["field"], excerpt=row["content"][:300])],
+                    matches=[
+                        SearchMatch(
+                            field=row["field"],
+                            excerpt=tidy_excerpt(
+                                row["content"][:300], False, len(row["content"]) > 300
+                            ),
+                        )
+                    ],
                 )
             )
     return SearchPage(

@@ -278,7 +278,7 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
               <button type="button" onClick={() => void copy()} className="underline">{copied ? 'Copied' : 'Copy re-run prompt for your agent'}</button>
             </div>
           </div>}
-          <p className="text-sm leading-6">{report.summary}</p>
+          <p className="text-sm leading-6"><ReviewText text={report.summary} /></p>
           <ul className="space-y-2">
             {report.verdicts.map((item) => {
               const verdict = VERDICT[String(item.verdict)] ?? VERDICT.consider
@@ -287,8 +287,8 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
               return (
                 <li key={String(item.entity_id)} className={`rounded-md border-l-4 bg-white p-3 text-sm dark:bg-slate-900 ${verdict.border}`}>
                   <p className="font-semibold"><span aria-hidden="true">{verdict.icon}</span> {verdict.label}: {subjectLink(String(item.entity_type), String(item.entity_id))}</p>
-                  <p className="mt-1 leading-6">{String(item.evidence)}</p>
-                  {fixes.length > 0 && <ul className="mt-2 list-disc pl-5">{fixes.map((fix) => <li key={fix}>{fix}</li>)}</ul>}
+                  <p className="mt-1 leading-6"><ReviewText text={String(item.evidence)} /></p>
+                  {fixes.length > 0 && <ul className="mt-2 list-disc pl-5">{fixes.map((fix) => <li key={fix}><ReviewText text={fix} /></li>)}</ul>}
                   {sceneIds.length > 0 && (
                     <p className="mt-2 flex flex-wrap gap-x-3 text-xs">
                       {sceneIds.map((id) => { const scene = sceneOf(id); return scene ? <button key={id} type="button" className="underline" onClick={() => onOpenScene({ id: scene.id, chapter_id: scene.chapter_id ?? null })}>{scene.title || 'Untitled scene'} →</button> : null })}
@@ -317,6 +317,12 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
       )}
     </section>
   )
+}
+
+/** Agent-written review text: unescape JSON-style quotes and show `code` spans as code. */
+function ReviewText({ text }: { text: string }) {
+  const clean = text.replace(/\\(["'])/g, '$1').replace(/\\n/g, '\n')
+  return <>{clean.split(/`([^`\n]+)`/).map((part, index) => index % 2 ? <code key={index} className="rounded bg-slate-100 px-1 text-[0.9em] dark:bg-slate-800">{part}</code> : part)}</>
 }
 
 const READER_CHECKS = ['scene_rhythm', 'value_shift', 'mice_nesting', 'misbelief_midpoint', 'setups_payoffs', 'continuity']
