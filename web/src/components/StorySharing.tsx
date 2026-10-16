@@ -28,11 +28,12 @@ export function StorySharing({ storyId, title, blurb, beforeOpen, menu = false, 
   const openShare = async () => { setOpenError(''); if (beforeOpen && !await beforeOpen()) { setOpenError('Save your writing before sharing this story.'); return }; save.reset(); revoke.reset(); setMessage(''); setOpen(true) }
   const openBeta = async () => { setOpenError(''); if (beforeOpen && !await beforeOpen()) { setOpenError('Save your writing before opening beta readers.'); return }; navigate(`/stories/${storyId}/beta`) }
   return <>
-    {menu ? <Menu label="Share ▾" ariaLabel={`Share options for ${title}`} triggerClassName="ui-btn ui-btn-primary">
+    {menu ? <><Menu label="Share ▾" ariaLabel={`Share options for ${title}`} triggerClassName="ui-btn ui-btn-primary">
       <MenuItem onSelect={() => { void openShare() }}>Share with readers…</MenuItem>
-      <MenuItem onSelect={() => { void openBeta() }}>Beta readers</MenuItem>
       {extraItems}
-    </Menu> : <>
+    </Menu>
+    <button type="button" className="ui-btn ui-btn-secondary" aria-label={`Beta readers for ${title}`} onClick={() => { void openBeta() }}>Beta readers</button>
+    </> : <>
     <button type="button" className="share-story-button" aria-label={`Share ${title}`} onClick={() => { void openShare() }}>Share</button>
     <button type="button" className="share-story-button" aria-label={`Beta readers for ${title}`} onClick={() => { void openBeta() }}>Beta readers</button>
     </>}
