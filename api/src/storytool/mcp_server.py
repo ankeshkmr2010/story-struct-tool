@@ -945,20 +945,32 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         """Beta readers' submitted feedback on this story: chapter/scene ids, the quoted passage
         and the conversation. Quotes come from the frozen beta draft and may differ from the
         current prose; locate them with search_story. Requires prose:read. Readers are shown as
-        Reader A, B, ... Stage fixes only when the author asks; only the author marks feedback
-        addressed."""
+        stable anonymous labels (Reader 3F2A) that match get_beta_rounds. Stage fixes only when
+        the author asks; only the author marks feedback addressed."""
         status = "all" if include_resolved else "open"
         threads = await call(ctx, f"/beta-feedback?status={status}", story_id=story_id)
-        aliases: dict[str, str] = {}
         for thread in threads:
             for message in thread["messages"]:
-                if message["author"]:
-                    message["name"] = "Author"
-                    continue
-                if message["name"] not in aliases:
-                    aliases[message["name"]] = f"Reader {chr(65 + len(aliases) % 26)}"
-                message["name"] = aliases[message["name"]]
+                reader = f"Reader {message['reader'] or '?'}"
+                message["name"] = "Author" if message["author"] else reader
+                del message["reader"]
         return {"threads": threads, "count": len(threads)}
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_beta_rounds(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
+        """Beta-reading rounds for this story, newest first: brief, deadline, status, each
+        reader's progress (chapters read, finished or stopped and why), published poll results
+        with answers, and open/total feedback counts. Readers appear as the same anonymous
+        labels used by get_beta_feedback; anonymous polls carry no labels. Requires prose:read.
+        Read-only: it never invites readers, votes or replies."""
+        rounds = await call(ctx, "/beta-status", story_id=story_id)
+        for round_ in rounds:
+            for reader in round_["readers"]:
+                reader["reader"] = f"Reader {reader['reader']}"
+            for poll in round_["polls"]:
+                for answer in poll["answers"]:
+                    answer["reader"] = f"Reader {answer['reader']}" if answer["reader"] else None
+        return {"rounds": rounds, "count": len(rounds)}
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_evaluation_package(

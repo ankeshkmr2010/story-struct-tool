@@ -737,8 +737,16 @@ class BetaReaderController(Controller):
         return await poll_out(db_session, request, poll, False)
 
 
+def reader_key(story_id: UUID, user_id: UUID | None) -> str | None:
+    """A stable, anonymous reader label per story, shared by every agent-facing beta view."""
+    if user_id is None:
+        return None
+    return hashlib.sha256(f"{story_id}:{user_id}".encode()).hexdigest()[:4].upper()
+
+
 class FeedbackMessageOut(BaseModel):
     author: bool
+    reader: str | None = None
     name: str
     body: str
     created_at: datetime
@@ -792,7 +800,11 @@ class BetaFeedbackController(Controller):
             for post in posts:
                 messages.setdefault(post.thread_id, []).append(
                     FeedbackMessageOut(
-                        author=post.user_id == actor(request), name=post.name, body=post.body, created_at=post.created_at
+                        author=post.user_id == actor(request),
+                        reader=None if post.user_id == actor(request) else reader_key(story_id, post.user_id),
+                        name=post.name,
+                        body=post.body,
+                        created_at=post.created_at,
                     )
                 )
         return [
@@ -822,3 +834,112 @@ async def feedback_counts(request: Request, db_session: AsyncSession) -> dict[st
         .group_by(Story.id)
     )
     return {str(story_id): count for story_id, count in rows}
+
+
+class ReaderStatusOut(BaseModel):
+    reader: str
+    membership: str
+    reading_status: str
+    read_chapter_ids: list[str]
+    stopped_reason: str | None
+
+
+class PollAnswerOut(BaseModel):
+    reader: str | None
+    choices: list[int]
+    answer: str
+
+
+class PollStatusOut(BaseModel):
+    id: UUID
+    chapter_id: UUID | None
+    question: str
+    kind: str
+    options: list[str]
+    status: str
+    anonymous: bool
+    total: int
+    counts: list[int]
+    answers: list[PollAnswerOut]
+
+
+class RoundStatusOut(BaseModel):
+    id: UUID
+    title: str
+    brief: str
+    deadline: datetime | None
+    status: str
+    created_at: datetime
+    chapter_count: int
+    readers: list[ReaderStatusOut]
+    polls: list[PollStatusOut]
+    open_feedback: int
+    total_feedback: int
+
+
+class BetaStatusController(Controller):
+    """Beta rounds, reader progress and poll results for the author and their agents.
+
+    Readers appear only as stable anonymous keys: no names, emails or invitation links.
+    """
+
+    path = "/api/stories/{story_id:uuid}/beta-status"
+    tags = ["beta"]  # noqa: RUF012
+    signature_namespace = {"AsyncSession": AsyncSession}  # noqa: RUF012
+
+    @get()
+    async def status(self, request: Request, db_session: AsyncSession, story_id: UUID) -> list[RoundStatusOut]:
+        await owned_story(db_session, story_id, actor(request))
+        rounds = (
+            await db_session.scalars(
+                select(BetaRound).where(BetaRound.story_id == story_id).order_by(BetaRound.created_at.desc())
+            )
+        ).all()
+        out: list[RoundStatusOut] = []
+        for row in rounds:
+            members = await db_session.scalars(
+                select(BetaMember).where(BetaMember.round_id == row.id).order_by(BetaMember.created_at)
+            )
+            polls = []
+            for poll in await db_session.scalars(
+                select(BetaPoll)
+                .where(BetaPoll.round_id == row.id, BetaPoll.status != "draft")
+                .order_by(BetaPoll.created_at)
+            ):
+                votes = (await db_session.scalars(select(BetaVote).where(BetaVote.poll_id == poll.id))).all()
+                polls.append(
+                    PollStatusOut(
+                        id=poll.id, chapter_id=poll.chapter_id, question=poll.question, kind=poll.kind,
+                        options=poll.options, status=poll.status, anonymous=poll.anonymous, total=len(votes),
+                        counts=[sum(i in vote.choices for vote in votes) for i in range(len(poll.options))],
+                        answers=[
+                            PollAnswerOut(
+                                reader=None if poll.anonymous else reader_key(story_id, vote.user_id),
+                                choices=vote.choices,
+                                answer=vote.answer,
+                            )
+                            for vote in votes
+                        ],
+                    )
+                )
+            submitted = (BetaThread.round_id == row.id, BetaThread.submitted.is_(True))
+            total = await db_session.scalar(select(func.count()).select_from(BetaThread).where(*submitted))
+            open_ = await db_session.scalar(
+                select(func.count()).select_from(BetaThread).where(*submitted, BetaThread.resolved.is_(False))
+            )
+            out.append(
+                RoundStatusOut(
+                    id=row.id, title=row.title, brief=row.brief, deadline=row.deadline, status=row.status,
+                    created_at=row.created_at, chapter_count=len(row.snapshot["structure"].get("chapter") or []),
+                    readers=[
+                        ReaderStatusOut(
+                            reader=reader_key(story_id, member.user_id) or "?", membership=member.status,
+                            reading_status=member.reading_status, read_chapter_ids=member.read_chapters,
+                            stopped_reason=member.stopped_reason,
+                        )
+                        for member in members
+                    ],
+                    polls=polls, open_feedback=open_ or 0, total_feedback=total or 0,
+                )
+            )
+        return out

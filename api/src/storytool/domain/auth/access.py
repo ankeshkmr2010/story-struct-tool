@@ -265,6 +265,7 @@ class StoryAccessMiddleware:
                             "/manuscript.epub",
                             "/manuscript.zip",
                             "/beta-feedback",
+                            "/beta-status",
                             "/backup",
                             "/file",
                         )

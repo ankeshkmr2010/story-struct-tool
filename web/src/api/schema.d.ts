@@ -1076,6 +1076,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/beta-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["ApiStoriesStoryIdBetaStatusStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/beta/feedback-counts": {
         parameters: {
             query?: never;
@@ -3738,6 +3755,7 @@ export interface components {
         /** FeedbackMessageOut */
         FeedbackMessageOut: {
             author: boolean;
+            reader?: string | null;
             name: string;
             body: string;
             /** Format: date-time */
@@ -4123,6 +4141,12 @@ export interface components {
             turning_points_flagged: number;
             suggestions_added: number;
         };
+        /** PollAnswerOut */
+        PollAnswerOut: {
+            reader: string | null;
+            choices: number[];
+            answer: string;
+        };
         /** PollIn */
         PollIn: {
             /** Format: uuid */
@@ -4174,6 +4198,20 @@ export interface components {
             total: number;
             counts: number[];
             responses?: components["schemas"]["PollResponseOut"][] | null;
+        };
+        /** PollStatusOut */
+        PollStatusOut: {
+            /** Format: uuid */
+            id: string;
+            chapter_id: string | null;
+            question: string;
+            kind: string;
+            options: string[];
+            status: string;
+            anonymous: boolean;
+            total: number;
+            counts: number[];
+            answers: components["schemas"]["PollAnswerOut"][];
         };
         /**
          * PovStyle
@@ -4245,6 +4283,14 @@ export interface components {
             criteria?: {
                 [key: string]: string;
             } | string[] | null;
+        };
+        /** ReaderStatusOut */
+        ReaderStatusOut: {
+            reader: string;
+            membership: string;
+            reading_status: string;
+            read_chapter_ids: string[];
+            stopped_reason: string | null;
         };
         /** ReaderVerifyRequest */
         ReaderVerifyRequest: {
@@ -4392,6 +4438,22 @@ export interface components {
             auto_approve: boolean;
             link_enabled: boolean;
             join_path?: string | null;
+        };
+        /** RoundStatusOut */
+        RoundStatusOut: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            brief: string;
+            deadline: string | null;
+            status: string;
+            /** Format: date-time */
+            created_at: string;
+            chapter_count: number;
+            readers: components["schemas"]["ReaderStatusOut"][];
+            polls: components["schemas"]["PollStatusOut"][];
+            open_feedback: number;
+            total_feedback: number;
         };
         /** RoundUpdate */
         RoundUpdate: {
@@ -8133,6 +8195,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BetaFeedbackOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdBetaStatusStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoundStatusOut"][];
                 };
             };
             /** @description Bad request syntax or unsupported method */

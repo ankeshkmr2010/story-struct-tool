@@ -52,6 +52,7 @@ from storytool.domain.story.beta import (
     BetaFeedbackController,
     BetaOwnerController,
     BetaReaderController,
+    BetaStatusController,
     feedback_counts,
 )
 from storytool.domain.story.controller import StoryController
@@ -123,6 +124,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             BetaTriageController,
             BetaReaderController,
             BetaFeedbackController,
+            BetaStatusController,
             feedback_counts,
             SharedStoriesController,
             StoryShowcaseController,
