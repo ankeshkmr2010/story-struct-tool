@@ -38,10 +38,11 @@ export default function BetaReaderPage() {
   const scene = params.get('scene')
   const chapter = params.get('chapter')
   const target = scene ? { sceneId: scene, sequence: 1 } : chapter ? { chapterId: chapter, sequence: 1 } : undefined
+  const canComment = !data.is_owner && data.round.status === 'open'
   const selection = () => {
     const selected = window.getSelection()
     if (!selected || selected.isCollapsed) { setSelectionError('Select a passage within one scene first.'); return }
-    const element = (node: Node | null) => (node instanceof Element ? node : node?.parentElement)?.closest<HTMLElement>('.reading-paragraph')
+    const element = paragraphOf
     const start = element(selected.anchorNode), end = element(selected.focusNode)
     if (!start?.dataset.sceneId || start.dataset.sceneId !== end?.dataset.sceneId) { setSelectionError('Select text within a single scene.'); return }
     const quote = selected.toString().trim()
@@ -50,8 +51,13 @@ export default function BetaReaderPage() {
     setSeed({ scene_id: start.dataset.sceneId, chapter_id: start.dataset.chapterId, quote, paragraph: start === end ? Number(start.dataset.readingAnchor?.split(':').pop()) : null })
   }
   return <>
-    <div className="mx-auto max-w-5xl px-5 pt-6 text-[var(--ink)]"><p className="eyebrow">FROZEN BETA DRAFT · {data.round.status}</p><h2 className="mt-2 text-xl font-semibold">{data.round.title}</h2>{data.round.brief && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{data.round.brief}</p>}{data.round.deadline && <p className="mt-2 text-xs text-[var(--muted)]">Requested by {new Date(data.round.deadline).toLocaleDateString()}</p>}
-      <div className="mt-4 flex flex-wrap gap-3"><button className="share-story-button" aria-expanded={panel} onClick={() => setPanel(!panel)}>{panel ? 'Hide feedback and polls' : 'My feedback and polls'}</button>{!data.is_owner && data.round.status === 'open' && <><button className="share-story-button" onClick={() => setSeed({})}>Leave feedback</button><button className="share-story-button" onMouseDown={e => e.preventDefault()} onClick={selection}>Comment on selected text</button></>}{data.is_owner && <Link className="share-story-button" to={`/stories/${data.share.story_id}/beta`}>Manage readers</Link>}</div>
+    <div className="mx-auto max-w-5xl px-5 pt-6 text-[var(--ink)]">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0"><p className="eyebrow">FROZEN BETA DRAFT · {data.round.status}</p><h2 className="mt-1 text-xl font-semibold">{data.round.title}</h2></div>
+        <div className="flex flex-wrap gap-2"><button className="ui-btn ui-btn-secondary" aria-expanded={panel} onClick={() => setPanel(!panel)}>{panel ? 'Hide feedback and polls' : 'My feedback and polls'}</button>{canComment && <button className="ui-btn ui-btn-primary" onClick={() => setSeed({})}>Leave feedback</button>}{data.is_owner && <Link className="ui-btn ui-btn-secondary" to={`/stories/${data.share.story_id}/beta`}>Manage readers</Link>}</div>
+      </div>
+      {data.round.brief && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{data.round.brief}</p>}{data.round.deadline && <p className="mt-2 text-xs text-[var(--muted)]">Requested by {new Date(data.round.deadline).toLocaleDateString()}</p>}
+      {canComment && <p className="mt-2 text-xs text-[var(--muted)]">To comment on a passage, select it and click the comment icon, or right-click a paragraph.</p>}
       {selectionError && <p role="alert" className="writer-error mt-3">{selectionError}</p>}
       {panel && <section className="mt-5 space-y-5 rounded-xl border border-[var(--line)] p-5" aria-label="Beta feedback and polls">
         {!data.is_owner && <ReadingProgress key={data.read_chapters.join(',') + data.reading_status} doc={data} refresh={refresh} />}
@@ -60,9 +66,61 @@ export default function BetaReaderPage() {
         {(threads.error || polls.error) && <p role="alert" className="writer-error">{errorText(threads.error ?? polls.error)}</p>}
       </section>}
     </div>
-    <StoryReader storyId={data.share.story_id} betaRoundId={roundId} openTarget={target} onBetaFeedback={!data.is_owner && data.round.status === 'open' ? (chapterId, sceneId) => setSeed({ chapter_id: chapterId, scene_id: sceneId }) : undefined} />
+    <StoryReader storyId={data.share.story_id} betaRoundId={roundId} openTarget={target} onBetaFeedback={canComment ? (chapterId, sceneId) => setSeed({ chapter_id: chapterId, scene_id: sceneId }) : undefined} />
+    {canComment && <PassageComment onSelection={selection} onScene={(chapterId, sceneId) => setSeed({ chapter_id: chapterId, scene_id: sceneId })} />}
     <CommentComposer doc={data} seed={seed} onClose={() => setSeed(null)} onSaved={() => { setSeed(null); setPanel(true); refresh() }} />
   </>
+}
+
+type Pin = { x: number; y: number; menu: boolean; chapterId?: string; sceneId?: string }
+// Paragraph anchors carry scene and chapter ids, including paragraphs that wrap an image.
+const paragraphOf = (node: Node | null) => (node instanceof Element ? node : node?.parentElement)?.closest<HTMLElement>('[data-reading-anchor^="paragraph:"]') ?? null
+
+/** A small comment icon beside selected text, and a right-click menu on paragraphs. */
+function PassageComment({ onSelection, onScene }: { onSelection: () => void; onScene: (chapterId: string, sceneId: string) => void }) {
+  const [pin, setPin] = useState<Pin | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const place = () => setPin(current => {
+      if (current?.menu) return current
+      const selected = window.getSelection()
+      if (!selected || selected.isCollapsed || !selected.rangeCount || !paragraphOf(selected.anchorNode) || !paragraphOf(selected.focusNode)) return null
+      const rect = selected.getRangeAt(0).getBoundingClientRect()
+      return { x: Math.min(rect.right + 6, window.innerWidth - 40), y: Math.max(rect.top - 38, 8), menu: false }
+    })
+    const context = (event: MouseEvent) => {
+      const paragraph = paragraphOf(event.target as Node)
+      if (!paragraph?.dataset.sceneId) return
+      event.preventDefault()
+      setPin({ x: Math.min(event.clientX, window.innerWidth - 230), y: Math.min(event.clientY, window.innerHeight - 100), menu: true, chapterId: paragraph.dataset.chapterId, sceneId: paragraph.dataset.sceneId })
+    }
+    const scrolled = () => setPin(current => current?.menu ? null : current)
+    document.addEventListener('selectionchange', place)
+    document.addEventListener('contextmenu', context)
+    window.addEventListener('scroll', place, { passive: true })
+    window.addEventListener('scroll', scrolled, { passive: true })
+    return () => {
+      document.removeEventListener('selectionchange', place); document.removeEventListener('contextmenu', context)
+      window.removeEventListener('scroll', place); window.removeEventListener('scroll', scrolled)
+    }
+  }, [])
+  useEffect(() => {
+    if (!pin?.menu) return
+    menuRef.current?.querySelector('button')?.focus()
+    const close = (event: Event) => { if (!menuRef.current?.contains(event.target as Node)) setPin(null) }
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setPin(null) }
+    document.addEventListener('pointerdown', close); document.addEventListener('keydown', escape)
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', escape) }
+  }, [pin?.menu])
+  if (!pin) return null
+  const hasSelection = !window.getSelection()?.isCollapsed
+  if (!pin.menu) return <button type="button" className="ui-icon-btn beta-comment-pin" style={{ left: pin.x, top: pin.y }} aria-label="Comment on selected text" title="Comment on selected text" onMouseDown={event => event.preventDefault()} onClick={() => { setPin(null); onSelection() }}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+  </button>
+  return <div ref={menuRef} role="menu" className="ui-menu-panel beta-comment-menu" style={{ left: pin.x, top: pin.y }}>
+    {hasSelection && <button type="button" role="menuitem" className="ui-menu-item" onMouseDown={event => event.preventDefault()} onClick={() => { setPin(null); onSelection() }}>Comment on selected text</button>}
+    <button type="button" role="menuitem" className="ui-menu-item" onClick={() => { setPin(null); if (pin.chapterId && pin.sceneId) onScene(pin.chapterId, pin.sceneId) }}>Comment on this scene</button>
+  </div>
 }
 
 function ReadingProgress({ doc, refresh }: { doc: BetaDocument; refresh: () => void }) {

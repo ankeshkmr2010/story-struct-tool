@@ -923,3 +923,5 @@ ol.showcase-list { list-style: decimal; }
 .ws-panel .writer-context { padding: 0; border: 0; }
 .ws-panel .brief-card { padding: 0; border: 0; background: transparent; }
 .ws-page .writer-manuscript { max-width: 880px; padding: 32px 40px; }
+.beta-comment-pin { position: fixed; z-index: 50; width: 32px; height: 32px; background: var(--surface); box-shadow: var(--shadow-pop); }
+.beta-comment-menu { position: fixed; top: auto; z-index: 50; }
