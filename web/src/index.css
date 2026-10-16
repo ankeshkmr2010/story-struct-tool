@@ -927,3 +927,5 @@ ol.showcase-list { list-style: decimal; }
 .beta-comment-menu { position: fixed; top: auto; z-index: 50; }
 ::highlight(beta-quote) { background-color: var(--accent-soft); color: inherit; text-decoration: underline 2px var(--accent); }
 .beta-drawer { position: fixed; top: 70px; right: 0; bottom: 0; z-index: 45; width: min(400px, 100%); overflow-y: auto; padding: var(--space-4); border-left: 1px solid var(--line); background: var(--page); box-shadow: var(--shadow-pop); }
+.writer-reader-comment { display: inline-grid; margin-right: 6px; vertical-align: 0.1em; place-items: center; min-width: 14px; height: 14px; padding: 0 3px; border: 0; border-radius: 999px; background: var(--accent); color: var(--button-ink); font: 600 9px/1 Arial, sans-serif; cursor: pointer; }
+.feedback-focused { outline: 2px solid var(--accent); }

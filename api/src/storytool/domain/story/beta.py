@@ -735,3 +735,90 @@ class BetaReaderController(Controller):
             db_session.add(BetaVote(poll_id=poll.id, user_id=actor(request), choices=data.choices, answer=data.answer.strip()))
         await db_session.flush()
         return await poll_out(db_session, request, poll, False)
+
+
+class FeedbackMessageOut(BaseModel):
+    author: bool
+    name: str
+    body: str
+    created_at: datetime
+
+
+class BetaFeedbackOut(BaseModel):
+    id: UUID
+    round_id: UUID
+    round_title: str
+    chapter_id: UUID | None
+    scene_id: UUID | None
+    quote: str | None
+    paragraph: int | None
+    resolved: bool
+    created_at: datetime
+    url: str
+    messages: list[FeedbackMessageOut]
+
+
+class BetaFeedbackController(Controller):
+    """Submitted reader feedback across every round of one story, for its author and agents."""
+
+    path = "/api/stories/{story_id:uuid}/beta-feedback"
+    tags = ["beta"]  # noqa: RUF012
+    signature_namespace = {"AsyncSession": AsyncSession}  # noqa: RUF012
+
+    @get()
+    async def feedback(
+        self, request: Request, db_session: AsyncSession, story_id: UUID, status: Literal["open", "all"] = "open"
+    ) -> list[BetaFeedbackOut]:
+        await owned_story(db_session, story_id, actor(request))
+        query = (
+            select(BetaThread, BetaRound.title)
+            .join(BetaRound, BetaRound.id == BetaThread.round_id)
+            .where(BetaRound.story_id == story_id, BetaThread.submitted.is_(True))
+        )
+        if status == "open":
+            query = query.where(BetaThread.resolved.is_(False))
+        rows = (await db_session.execute(query.order_by(BetaThread.updated_at.desc()))).all()
+        messages: dict[UUID, list[FeedbackMessageOut]] = {}
+        if rows:
+            posts = await db_session.scalars(
+                select(BetaMessage)
+                .where(
+                    BetaMessage.thread_id.in_([thread.id for thread, _ in rows]),
+                    BetaMessage.submitted.is_(True),
+                    BetaMessage.deleted.is_(False),
+                )
+                .order_by(BetaMessage.created_at, BetaMessage.id)
+            )
+            for post in posts:
+                messages.setdefault(post.thread_id, []).append(
+                    FeedbackMessageOut(
+                        author=post.user_id == actor(request), name=post.name, body=post.body, created_at=post.created_at
+                    )
+                )
+        return [
+            BetaFeedbackOut(
+                id=thread.id, round_id=thread.round_id, round_title=title, chapter_id=thread.chapter_id,
+                scene_id=thread.scene_id, quote=thread.quote, paragraph=thread.paragraph, resolved=thread.resolved,
+                created_at=thread.created_at, url=f"/beta/rounds/{thread.round_id}/threads/{thread.id}",
+                messages=messages.get(thread.id, []),
+            )
+            for thread, title in rows
+        ]
+
+
+@get("/api/beta/feedback-counts", tags=["beta"])
+async def feedback_counts(request: Request, db_session: AsyncSession) -> dict[str, int]:
+    """Open submitted feedback per owned story, for library badges."""
+    rows = await db_session.execute(
+        select(Story.id, func.count(BetaThread.id))
+        .join(BetaRound, BetaRound.story_id == Story.id)
+        .join(BetaThread, BetaThread.round_id == BetaRound.id)
+        .where(
+            Story.user_id == actor(request),
+            Story.deleted_at.is_(None),
+            BetaThread.submitted.is_(True),
+            BetaThread.resolved.is_(False),
+        )
+        .group_by(Story.id)
+    )
+    return {str(story_id): count for story_id, count in rows}

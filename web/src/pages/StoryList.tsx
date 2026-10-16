@@ -51,6 +51,7 @@ export default function StoryList() {
   }, [pendingPurge])
 
   const stories = useQuery({ queryKey: ['stories'], queryFn: api.listStories, refetchInterval: 30_000, refetchOnWindowFocus: true })
+  const feedbackCounts = useQuery({ queryKey: ['beta-feedback-counts'], queryFn: api.betaFeedbackCounts, refetchInterval: 60_000, refetchOnWindowFocus: true })
   const lastPlace = useQuery({ queryKey: ['workspace-position', 'latest'], queryFn: api.getLatestWorkspacePosition, refetchOnWindowFocus: true })
   const trash = useQuery({ queryKey: ['trashed-stories'], queryFn: api.listTrashedStories })
   const shared = useQuery({ queryKey: ['shared-stories'], queryFn: api.listSharedStories, refetchInterval: 30_000, refetchOnWindowFocus: true })
@@ -207,7 +208,7 @@ export default function StoryList() {
               <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{story.word_count.toLocaleString()} words · {editedLabel(story.updated_at)}</p>
               {!showTrash && story.prose_imported && <button type="button" className="mt-2 text-xs text-[var(--accent)] underline" onClick={() => { setPromptStory(story); setImportOpen(true) }}>Import prompts →</button>}
             </div>
-            {showTrash ? <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => restore.mutate(story.id)} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm disabled:opacity-50">Restore</button><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => { purge.reset(); setPurgeConfirmation(''); setPendingPurge(story) }} className="text-xs text-red-700 dark:text-red-300">Delete permanently</button></div> : <div className="story-card-actions"><StorySharing storyId={story.id} title={story.title} blurb={story.blurb} />{/* Delete stays one step away so it is not as prominent as Share. */}<Menu label="⋯" ariaLabel={`More actions for ${story.title}`} triggerClassName="ui-btn ui-btn-ghost ui-btn-sm"><MenuItem className="is-danger" onSelect={() => { remove.reset(); setPendingDelete(story) }}>Delete</MenuItem></Menu></div>}
+            {showTrash ? <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => restore.mutate(story.id)} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm disabled:opacity-50">Restore</button><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => { purge.reset(); setPurgeConfirmation(''); setPendingPurge(story) }} className="text-xs text-red-700 dark:text-red-300">Delete permanently</button></div> : <div className="story-card-actions"><StorySharing storyId={story.id} title={story.title} blurb={story.blurb} betaOpen={feedbackCounts.data?.[story.id] ?? 0} />{/* Delete stays one step away so it is not as prominent as Share. */}<Menu label="⋯" ariaLabel={`More actions for ${story.title}`} triggerClassName="ui-btn ui-btn-ghost ui-btn-sm"><MenuItem className="is-danger" onSelect={() => { remove.reset(); setPendingDelete(story) }}>Delete</MenuItem></Menu></div>}
           </li>
         ))}
       </ul>

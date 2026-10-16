@@ -19,6 +19,7 @@ import { ImagePreview } from './StoryImages'
 import { writerImages } from './writerImages'
 import { ImageInsertionPicker } from './ImageInsertionPicker'
 import { LiveWritingHints } from './LiveWritingHints'
+import { readerComments } from './readerComments'
 
 const imageMarkdown = (image: StoryImage) => `![${image.alt.replace(/[\]\n]/g, ' ')}](storytool-image:${image.id})`
 const proseWords = (text: string) => text.replace(/!\[[^\]\n]*\]\(storytool-image:[0-9a-fA-F-]{36}\)/g, '').trim().split(/\s+/).filter(Boolean).length
@@ -212,6 +213,8 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   const createdAnnounced = useRef(Boolean(scene))
   const lastCheckpoint = useRef(0)
   const draft = writerDraft(prefix + (scene?.id ?? draftKey!), initial)
+  const feedback = useQuery({ queryKey: ['beta-feedback', storyId, 'open'], queryFn: () => api.betaFeedback(storyId), enabled: storyId !== SANDBOX_ID && !!scene, staleTime: 60_000 })
+  const comments = (feedback.data ?? []).filter(item => item.scene_id === scene?.id && item.quote).map(item => ({ id: item.id, quote: item.quote! }))
   const state = useSyncExternalStore(draft.subscribe, draft.snapshot)
   const [previewImage, setPreviewImage] = useState<StoryImage | null>(null)
   const [hintParagraph, setHintParagraph] = useState(1)
@@ -291,6 +294,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     }} value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder="Start writing your story…" onChange={(text, update) => { draft.change(text); if (storyId === SANDBOX_ID && update.transactions.some(transaction => transaction.isUserEvent('input'))) tourEvent('write') }} onCreateEditor={editor => { view.current = editor; if (focus) { if (storyId === SANDBOX_ID) editor.dispatch({ selection: { anchor: editor.state.doc.length } }); editor.focus(); editor.dom.scrollIntoView({ block: 'center' }) } }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[
       markdown(), EditorView.lineWrapping,
       writerImages(images.data?.images ?? [], setPreviewImage),
+      readerComments(comments),
       EditorView.domEventHandlers({ contextmenu: (event, editor) => { event.preventDefault(); openContext(editor, event.clientX, event.clientY, true); return true } }),
       keymap.of([{ key: 'Shift-F10', run: editor => { const coords = editor.coordsAtPos(editor.state.selection.main.head); openContext(editor, coords?.left ?? 20, coords?.bottom ?? 100, false); return true } }]),
       EditorView.contentAttributes.of({ 'aria-label': scene?.title ? `Prose: ${scene.title}` : 'Story prose', spellcheck: 'true', autocapitalize: 'sentences' }),

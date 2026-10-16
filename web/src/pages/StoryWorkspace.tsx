@@ -9,6 +9,8 @@ import { ChapterBriefCard } from '../components/ChapterBriefCard'
 import { InsightsPanel } from '../components/InsightsPanel'
 import { PlacesPanel } from '../components/PlacesPanel'
 import { GlossaryPanel } from '../components/GlossaryPanel'
+import { BetaFeedbackPanel } from '../components/BetaFeedbackPanel'
+import { OPEN_FEEDBACK_EVENT } from '../components/readerComments'
 import { CharactersPanel } from '../components/CharactersPanel'
 import { ActsPanel, BeatsPanel, EventsPanel, ThreadsPanel } from '../components/StructurePanels'
 import { AddForm, Chip, DeleteButton, InlineNumber, InlineSelect, InlineText } from '../components/fields'
@@ -67,8 +69,8 @@ const HISTORY_VIEW = 107
 const EVALUATE_VIEW = 108
 
 // One docked side panel; which tabs it offers depends on the mode (Context and Hints belong to Write).
-type RefPanel = 'context' | 'hints' | 'insights' | 'timeline' | 'places' | 'glossary' | 'assistant'
-const REF_PANELS: [RefPanel, string][] = [['context', 'Context'], ['hints', 'Hints'], ['insights', 'Insights'], ['timeline', 'Timeline'], ['places', 'Places'], ['glossary', 'Glossary'], ['assistant', 'Assistant']]
+type RefPanel = 'context' | 'hints' | 'insights' | 'feedback' | 'timeline' | 'places' | 'glossary' | 'assistant'
+const REF_PANELS: [RefPanel, string][] = [['context', 'Context'], ['hints', 'Hints'], ['insights', 'Insights'], ['feedback', 'Feedback'], ['timeline', 'Timeline'], ['places', 'Places'], ['glossary', 'Glossary'], ['assistant', 'Assistant']]
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
@@ -83,6 +85,8 @@ function SavedWorkspace({ storyId }: { storyId: string }) {
 
 export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, initialPosition, syncPosition = false }: { storyId: string; sandboxStep?: number; sandboxRun?: number; sandboxHistory?: Sandbox; initialPosition?: WorkspacePlace | null; syncPosition?: boolean }) {
   const sandbox = storyId === SANDBOX_ID
+  const openFeedback = useQuery({ queryKey: ['beta-feedback', storyId, 'open'], queryFn: () => api.betaFeedback(storyId), enabled: !sandbox, refetchInterval: 60_000 })
+  const [feedbackFocus, setFeedbackFocus] = useState<string | null>(null)
   const qc = useQueryClient()
   const live = useStoryLiveUpdates(storyId)
   // The live line stays a quiet dot and only speaks for a few seconds after the story changes.
@@ -141,13 +145,19 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [refPanel, setRefPanelPref] = useState<RefPanel | null>(() => REF_PANELS.some(([key]) => key === savedSearchContext.refPanel) ? savedSearchContext.refPanel : null)
   const [panelHidden, setPanelHidden] = useState(() => sandbox || window.matchMedia('(max-width: 1100px)').matches)
   const setRefPanel = (key: RefPanel | null) => { if (key) { setRefPanelPref(key); setPanelHidden(false) } else setPanelHidden(true) }
+  // Write's reader-comment markers open the matching card in the Feedback panel.
+  useEffect(() => {
+    const open = (event: Event) => { setFeedbackFocus((event as CustomEvent<string>).detail); setRefPanelPref('feedback'); setPanelHidden(false) }
+    window.addEventListener(OPEN_FEEDBACK_EVENT, open)
+    return () => window.removeEventListener(OPEN_FEEDBACK_EVENT, open)
+  }, [])
   const [searchOpen, setSearchOpen] = useState(() => {
     try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' } catch { return false }
   })
   const [searchParams] = useSearchParams()
   const handledSearchTarget = useRef('')
   const navigate = useNavigate()
-  const panelTabs = REF_PANELS.filter(([key]) => key === 'context' || key === 'hints' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' ? !sandbox : true)
+  const panelTabs = REF_PANELS.filter(([key]) => key === 'context' || key === 'hints' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' || key === 'feedback' ? !sandbox : true)
   const modePanel: RefPanel | null = tab === 'write' ? 'context' : tab === 'design' && !sandbox ? 'insights' : null
   const preferredPanel = panelTabs.some(([key]) => key === refPanel) ? refPanel : modePanel
   const activePanel = panelHidden ? null : preferredPanel
@@ -453,7 +463,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         <div className="ws-bar-actions">
           {tab === 'write' && <IconButton label="Focus mode" onClick={() => setWriterFocus(true)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></IconButton>}
           <IconButton label={hasPanel ? 'Hide side panel' : tab === 'write' ? 'Show context and side panel' : 'Show side panel'} aria-pressed={hasPanel} className={tab === 'write' && !hasPanel ? 'writer-context-toggle' : ''} onClick={togglePanel}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg></IconButton>
-          {!sandbox && <StorySharing menu storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>Images</MenuItem>} />}
+          {!sandbox && <StorySharing menu betaOpen={openFeedback.data?.length ?? 0} storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>Images</MenuItem>} />}
           {/* Export is first-class: the words must always be able to leave. */}
           {!sandbox && <DownloadMenu storyId={storyId} />}
         </div>
@@ -649,7 +659,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       </div>
       <aside hidden={!hasPanel} className="workspace-ref-panel ws-panel" aria-label="Side panel">
         <div className="workspace-ref-head">
-          <Tabs label="Side panel" value={activePanel ?? panelTabs[0][0]} onChange={selectPanel} items={panelTabs.map(([key, label]) => ({ id: key, label, className: key === 'context' ? 'writer-context-toggle' : undefined }))} />
+          <Tabs label="Side panel" value={activePanel ?? panelTabs[0][0]} onChange={selectPanel} items={panelTabs.map(([key, label]) => ({ id: key, label: key === 'feedback' && openFeedback.data?.length ? `${label} (${openFeedback.data.length})` : label, className: key === 'context' ? 'writer-context-toggle' : undefined }))} />
           <div><button type="button" aria-label="Search this panel" title="Search this panel" onClick={() => setSearchOpen(true)} disabled={!searchContext}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></button><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div>
         </div>
         {activePanel === 'context' && <div ref={setContextSlot} />}
@@ -661,6 +671,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         {activePanel === 'insights' && <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, rung.label]))} onOpenLevel={selectLevel} />}
         {activePanel === 'timeline' && <StoryTimeline storyId={storyId} compact allowInsert={tab !== 'read'} onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
         {activePanel === 'places' && <PlacesPanel storyId={storyId} />}
+        {activePanel === 'feedback' && <BetaFeedbackPanel storyId={storyId} focusId={feedbackFocus} onShowInWrite={(id, find) => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id, at: Date.now(), find: find || undefined }) }) }} />}
         {activePanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
         {activePanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
       </aside>

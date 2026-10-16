@@ -33,6 +33,7 @@ export type BetaRound = S['RoundOut']
 export type BetaTriage = S['BetaTriageOut']
 export type BetaDocument = S['BetaDocumentOut']
 export type BetaThread = S['BetaThreadOut']
+export type BetaFeedback = S['BetaFeedbackOut']
 export type BetaPoll = S['PollOut']
 export type BetaPollInput = S['PollIn']
 export type SearchHit = S['SearchHit']
@@ -245,6 +246,8 @@ export const api = {
   readBetaRound: (id: string) => request<BetaDocument>(`/api/beta/rounds/${id}`),
   betaProgress: (id: string, body: S['ProgressIn']) => patch<void>(`/api/beta/rounds/${id}/progress`, body),
   betaThreads: (id: string) => request<BetaThread[]>(`/api/beta/rounds/${id}/threads`),
+  betaFeedback: (storyId: string, status: 'open' | 'all' = 'open') => request<BetaFeedback[]>(`/api/stories/${storyId}/beta-feedback?status=${status}`),
+  betaFeedbackCounts: () => request<Record<string, number>>('/api/beta/feedback-counts'),
   createBetaThread: (id: string, body: S['ThreadIn']) => post<BetaThread>(`/api/beta/rounds/${id}/threads`, body),
   betaThread: (id: string) => request<BetaThread>(`/api/beta/threads/${id}`),
   updateBetaThread: (id: string, body: S['BetaThreadUpdate']) => patch<BetaThread>(`/api/beta/threads/${id}`, body),

@@ -6,7 +6,8 @@ import { useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { Menu, MenuItem } from '../ui/Menu'
 
-export function StorySharing({ storyId, title, blurb, beforeOpen, menu = false, extraItems }: { storyId: string; title: string; blurb?: string | null; beforeOpen?: () => Promise<boolean>; menu?: boolean; extraItems?: ReactNode }) {
+export function StorySharing({ storyId, title, blurb, beforeOpen, menu = false, extraItems, betaOpen = 0 }: { storyId: string; title: string; blurb?: string | null; beforeOpen?: () => Promise<boolean>; menu?: boolean; extraItems?: ReactNode; betaOpen?: number }) {
+  const betaLabel = <>Beta readers{betaOpen > 0 && <span className="workspace-nav-badge ml-1" title={`${betaOpen} open reader comments`}>{betaOpen}</span>}</>
   const qc = useQueryClient()
   const navigate = useNavigate()
   const dialog = useRef<HTMLDialogElement>(null)
@@ -32,10 +33,10 @@ export function StorySharing({ storyId, title, blurb, beforeOpen, menu = false, 
       <MenuItem onSelect={() => { void openShare() }}>Share with readers…</MenuItem>
       {extraItems}
     </Menu>
-    <button type="button" className="ui-btn ui-btn-secondary" aria-label={`Beta readers for ${title}`} onClick={() => { void openBeta() }}>Beta readers</button>
+    <button type="button" className="ui-btn ui-btn-secondary" aria-label={`Beta readers for ${title}${betaOpen ? `, ${betaOpen} open comments` : ''}`} onClick={() => { void openBeta() }}>{betaLabel}</button>
     </> : <>
     <button type="button" className="share-story-button" aria-label={`Share ${title}`} onClick={() => { void openShare() }}>Share</button>
-    <button type="button" className="share-story-button" aria-label={`Beta readers for ${title}`} onClick={() => { void openBeta() }}>Beta readers</button>
+    <button type="button" className="share-story-button" aria-label={`Beta readers for ${title}${betaOpen ? `, ${betaOpen} open comments` : ''}`} onClick={() => { void openBeta() }}>{betaLabel}</button>
     </>}
     {openError && <p role="alert" className="writer-error">{openError}</p>}
     <dialog ref={dialog} className="story-sharing-dialog" aria-labelledby={`share-title-${storyId}`} onClose={() => setOpen(false)}>

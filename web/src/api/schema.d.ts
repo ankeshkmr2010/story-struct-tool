@@ -590,6 +590,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspace-position/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** LatestPosition */
+        get: operations["ApiWorkspacePositionLatestLatestPosition"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/images/{image_id}": {
         parameters: {
             query?: never;
@@ -1036,6 +1053,40 @@ export interface paths {
         put?: never;
         /** Vote */
         post: operations["ApiBetaPollsPollIdVoteVote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/beta-feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Feedback */
+        get: operations["ApiStoriesStoryIdBetaFeedbackFeedback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/beta/feedback-counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** FeedbackCounts */
+        get: operations["ApiBetaFeedbackCountsFeedbackCounts"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3228,6 +3279,23 @@ export interface components {
             reading_status: string;
             stopped_reason: string | null;
         };
+        /** BetaFeedbackOut */
+        BetaFeedbackOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            round_id: string;
+            round_title: string;
+            chapter_id: string | null;
+            scene_id: string | null;
+            quote: string | null;
+            paragraph: number | null;
+            resolved: boolean;
+            /** Format: date-time */
+            created_at: string;
+            url: string;
+            messages: components["schemas"]["FeedbackMessageOut"][];
+        };
         /** BetaThreadOut */
         BetaThreadOut: {
             /** Format: uuid */
@@ -3667,6 +3735,14 @@ export interface components {
             scene_id?: string | null;
             location_id?: string | null;
         };
+        /** FeedbackMessageOut */
+        FeedbackMessageOut: {
+            author: boolean;
+            name: string;
+            body: string;
+            /** Format: date-time */
+            created_at: string;
+        };
         /** FindingOut */
         FindingOut: {
             code: string;
@@ -3848,6 +3924,15 @@ export interface components {
             furthest_ready_level: number;
             levels: components["schemas"]["ReadinessOut"][];
             snapshot: components["schemas"]["SnapshotOut"];
+        };
+        /** LatestPlace */
+        LatestPlace: {
+            /** Format: uuid */
+            story_id: string;
+            title: string;
+            position: components["schemas"]["WorkspacePlace"];
+            /** Format: date-time */
+            updated_at: string;
         };
         /** LinksOut */
         LinksOut: {
@@ -6615,6 +6700,26 @@ export interface operations {
             };
         };
     };
+    ApiWorkspacePositionLatestLatestPosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LatestPlace"] | null;
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdImagesImageIdRemove: {
         parameters: {
             query?: never;
@@ -8003,6 +8108,67 @@ export interface operations {
                         extra?: null | {
                             [key: string]: unknown;
                         } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdBetaFeedbackFeedback: {
+        parameters: {
+            query?: {
+                status?: "open" | "all";
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BetaFeedbackOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiBetaFeedbackCountsFeedbackCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
                     };
                 };
             };

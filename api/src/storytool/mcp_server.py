@@ -939,6 +939,28 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         return await call(ctx, f"/ai/catchup?limit={limit}", story_id=story_id)
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_beta_feedback(
+        ctx: Context, story_id: UUID | None = None, include_resolved: bool = False
+    ) -> dict[str, Any]:
+        """Beta readers' submitted feedback on this story: chapter/scene ids, the quoted passage
+        and the conversation. Quotes come from the frozen beta draft and may differ from the
+        current prose; locate them with search_story. Requires prose:read. Readers are shown as
+        Reader A, B, ... Stage fixes only when the author asks; only the author marks feedback
+        addressed."""
+        status = "all" if include_resolved else "open"
+        threads = await call(ctx, f"/beta-feedback?status={status}", story_id=story_id)
+        aliases: dict[str, str] = {}
+        for thread in threads:
+            for message in thread["messages"]:
+                if message["author"]:
+                    message["name"] = "Author"
+                    continue
+                if message["name"] not in aliases:
+                    aliases[message["name"]] = f"Reader {chr(65 + len(aliases) % 26)}"
+                message["name"] = aliases[message["name"]]
+        return {"threads": threads, "count": len(threads)}
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_evaluation_package(
         ctx: Context,
         evaluator_id: Literal["mice_nesting", "value_shift", "misbelief_midpoint"] = "mice_nesting",
