@@ -7,7 +7,7 @@ type Row = Record<string, unknown>
 type Preferences = { layout: 'scroll' | 'pages'; size: number; font: 'serif' | 'sans'; spacing: number; width: 'narrow' | 'normal' | 'wide'; titles: boolean }
 export type ReadingPosition = { anchor: string; fragment: number; within: number }
 type Position = ReadingPosition
-export type ReadingTarget = { chapterId?: string; sceneId?: string; sequence: number }
+export type ReadingTarget = { chapterId?: string; sceneId?: string; paragraph?: number; sequence: number }
 const preferencesKey = 'storytool-reader-settings-v1'
 const defaults: Preferences = { layout: 'scroll', size: 18, font: 'serif', spacing: 1.8, width: 'normal', titles: false }
 const text = (row: Row, field: string) => row[field] == null ? '' : String(row[field])
@@ -156,10 +156,15 @@ export function ManuscriptReading({ structure, storyId, accountId, target, onPas
     if (!target || lastTarget.current === target.sequence) return
     lastTarget.current = target.sequence
     const section = sections.find(item => item.id === target.chapterId)
-    const anchor = target.sceneId ? `scene:${target.sceneId}` : `chapter:${section?.id ?? 'unfiled'}`
+    const sceneAnchor = target.sceneId ? `scene:${target.sceneId}` : `chapter:${section?.id ?? 'unfiled'}`
+    const paragraphAnchor = target.sceneId && target.paragraph != null ? `paragraph:${target.sceneId}:${target.paragraph}` : ''
+    const anchor = paragraphAnchor && anchorElement(paragraphAnchor) ? paragraphAnchor : sceneAnchor
     place.current = { anchor, fragment: 0, within: 0 }
     measure()
-  }, [target, sections, measure])
+    // Bring the reader itself into view; the target only moves the reader's own scroll area.
+    const paper = viewport.current?.closest('.reading-paper')
+    if (paper && paper.getBoundingClientRect().top > window.innerHeight * 0.4) paper.scrollIntoView({ block: 'start' })
+  }, [target, sections, measure, anchorElement])
 
   const turnPage = (destination: number) => {
     const port = viewport.current

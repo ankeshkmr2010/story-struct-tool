@@ -32,12 +32,15 @@ export default function BetaReaderPage() {
   const [selectionError, setSelectionError] = useState('')
   const [panel, setPanel] = useState(false)
   const refresh = () => { void threads.refetch(); void polls.refetch(); void qc.invalidateQueries({ queryKey: ['beta-document', roundId] }) }
+  const quote = threads.data?.find(thread => thread.id === params.get('thread'))?.quote
+  useEffect(() => highlightQuote(params.get('scene'), quote), [params, quote])
   if (doc.isPending) return <p className="p-8">Loading beta manuscript…</p>
   if (doc.error) return <p role="alert" className="writer-error p-8">{errorText(doc.error)}</p>
   const data = doc.data!
   const scene = params.get('scene')
   const chapter = params.get('chapter')
-  const target = scene ? { sceneId: scene, sequence: 1 } : chapter ? { chapterId: chapter, sequence: 1 } : undefined
+  const paragraph = params.get('paragraph')
+  const target = scene ? { sceneId: scene, paragraph: paragraph ? Number(paragraph) : undefined, sequence: 1 } : chapter ? { chapterId: chapter, sequence: 1 } : undefined
   const canComment = !data.is_owner && data.round.status === 'open'
   const selection = () => {
     const selected = window.getSelection()
@@ -50,26 +53,64 @@ export default function BetaReaderPage() {
     setSelectionError('')
     setSeed({ scene_id: start.dataset.sceneId, chapter_id: start.dataset.chapterId, quote, paragraph: start === end ? Number(start.dataset.readingAnchor?.split(':').pop()) : null })
   }
+  const details = <div className="mt-3 text-sm">
+    <p><strong>{data.round.title}</strong> · {data.round.status}{data.round.deadline && ` · Requested by ${new Date(data.round.deadline).toLocaleDateString()}`}</p>
+    {data.round.brief && <p className="mt-2 whitespace-pre-wrap leading-6">{data.round.brief}</p>}
+    {canComment && <p className="mt-2 text-xs text-[var(--muted)]">To comment on a passage, select it and click the comment icon, or right-click a paragraph.</p>}
+    {selectionError && <p role="alert" className="writer-error mt-2">{selectionError}</p>}
+  </div>
+  const actions = <>
+    <button className="ui-btn ui-btn-secondary" aria-expanded={panel} onClick={() => setPanel(!panel)}>{data.is_owner ? 'Feedback and polls' : 'My feedback and polls'}</button>
+    {canComment && <button className="ui-btn ui-btn-primary" onClick={() => setSeed({})}>Leave feedback</button>}
+    {data.is_owner && <Link className="ui-btn ui-btn-secondary" to={`/stories/${data.share.story_id}/beta`}>Manage readers</Link>}
+  </>
+  const back = data.is_owner ? { to: `/stories/${data.share.story_id}`, label: '← Back to story' } : { to: '/library', label: '← Your stories' }
   return <>
-    <div className="mx-auto max-w-5xl px-5 pt-6 text-[var(--ink)]">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0"><p className="eyebrow">FROZEN BETA DRAFT · {data.round.status}</p><h2 className="mt-1 text-xl font-semibold">{data.round.title}</h2></div>
-        <div className="flex flex-wrap gap-2"><button className="ui-btn ui-btn-secondary" aria-expanded={panel} onClick={() => setPanel(!panel)}>{panel ? 'Hide feedback and polls' : 'My feedback and polls'}</button>{canComment && <button className="ui-btn ui-btn-primary" onClick={() => setSeed({})}>Leave feedback</button>}{data.is_owner && <Link className="ui-btn ui-btn-secondary" to={`/stories/${data.share.story_id}/beta`}>Manage readers</Link>}</div>
-      </div>
-      {data.round.brief && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{data.round.brief}</p>}{data.round.deadline && <p className="mt-2 text-xs text-[var(--muted)]">Requested by {new Date(data.round.deadline).toLocaleDateString()}</p>}
-      {canComment && <p className="mt-2 text-xs text-[var(--muted)]">To comment on a passage, select it and click the comment icon, or right-click a paragraph.</p>}
-      {selectionError && <p role="alert" className="writer-error mt-3">{selectionError}</p>}
-      {panel && <section className="mt-5 space-y-5 rounded-xl border border-[var(--line)] p-5" aria-label="Beta feedback and polls">
+    <StoryReader storyId={data.share.story_id} betaRoundId={roundId} openTarget={target} beta={{ back, details, actions }} onBetaFeedback={canComment ? (chapterId, sceneId) => setSeed({ chapter_id: chapterId, scene_id: sceneId }) : undefined} />
+    {panel && <aside className="beta-drawer text-[var(--ink)]" aria-label="Beta feedback and polls">
+      <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">{data.is_owner ? 'Feedback and polls' : 'My feedback and polls'}</h2><button type="button" className="ui-icon-btn" aria-label="Close feedback and polls" onClick={() => setPanel(false)}>×</button></div>
+      <div className="mt-4 space-y-5">
         {!data.is_owner && <ReadingProgress key={data.read_chapters.join(',') + data.reading_status} doc={data} refresh={refresh} />}
         <h3 className="font-semibold">{data.is_owner ? 'Submitted reader conversations' : 'Your conversations and drafts'}</h3>{threads.data?.length === 0 && <p className="text-sm">No feedback yet.</p>}{threads.data?.map(thread => <Link key={thread.id} to={thread.url} className="block rounded border border-[var(--line)] p-3 text-sm"><p className="line-clamp-2">{thread.quote || thread.messages[0]?.body || 'Conversation'}</p><span className="text-xs text-[var(--muted)]">{thread.submitted ? thread.resolved ? 'Resolved' : 'Open' : 'Private draft'} · {thread.message_count} messages →</span></Link>)}
         <h3 className="font-semibold">Reader polls</h3>{polls.data?.length === 0 && <p className="text-sm">No polls published yet.</p>}{polls.data?.map(poll => <BetaPollCard key={poll.id + JSON.stringify(poll.my_response)} poll={poll} owner={data.is_owner} roundOpen={data.round.status === 'open'} refresh={refresh} />)}
         {(threads.error || polls.error) && <p role="alert" className="writer-error">{errorText(threads.error ?? polls.error)}</p>}
-      </section>}
-    </div>
-    <StoryReader storyId={data.share.story_id} betaRoundId={roundId} openTarget={target} onBetaFeedback={canComment ? (chapterId, sceneId) => setSeed({ chapter_id: chapterId, scene_id: sceneId }) : undefined} />
+      </div>
+    </aside>}
     {canComment && <PassageComment onSelection={selection} onScene={(chapterId, sceneId) => setSeed({ chapter_id: chapterId, scene_id: sceneId })} />}
     <CommentComposer doc={data} seed={seed} onClose={() => setSeed(null)} onSaved={() => { setSeed(null); setPanel(true); refresh() }} />
   </>
+}
+
+/** Marks a thread's quoted text in its scene with the CSS highlight API; the DOM is not changed. */
+function highlightQuote(sceneId: string | null, quote: string | null | undefined) {
+  const registry = (CSS as unknown as { highlights?: Map<string, unknown> }).highlights
+  const needle = quote?.split('\n').map(line => line.trim()).find(Boolean)
+  if (!registry || !sceneId || !needle || typeof Highlight === 'undefined') return
+  let attempts = 0
+  const find = () => {
+    for (const paragraph of Array.from(document.querySelectorAll<HTMLElement>(`[data-reading-anchor^="paragraph:${sceneId}:"]`))) {
+      const nodes: Text[] = []
+      const walker = document.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT)
+      while (walker.nextNode()) nodes.push(walker.currentNode as Text)
+      const text = nodes.map(node => node.data).join('')
+      const start = text.indexOf(needle)
+      if (start < 0) continue
+      const range = document.createRange()
+      let offset = 0
+      for (const node of nodes) {
+        const end = offset + node.data.length
+        if (start >= offset && start <= end) range.setStart(node, start - offset)
+        if (start + needle.length >= offset && start + needle.length <= end) { range.setEnd(node, start + needle.length - offset); break }
+        offset = end
+      }
+      registry.set('beta-quote', new Highlight(range))
+      return true
+    }
+    return false
+  }
+  // The manuscript renders after the thread list arrives, so retry briefly.
+  const timer = setInterval(() => { if (find() || ++attempts > 20) clearInterval(timer) }, 250)
+  return () => { clearInterval(timer); registry.delete('beta-quote') }
 }
 
 type Pin = { x: number; y: number; menu: boolean; chapterId?: string; sceneId?: string }

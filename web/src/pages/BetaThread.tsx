@@ -18,6 +18,8 @@ export default function BetaThreadPage() {
   const params = new URLSearchParams()
   if (item.scene_id) params.set('scene', item.scene_id)
   if (item.chapter_id) params.set('chapter', item.chapter_id)
+  if (item.scene_id && item.paragraph != null) params.set('paragraph', String(item.paragraph))
+  if (item.quote) params.set('thread', item.id)
   return <main className="mx-auto max-w-3xl px-5 py-8 text-[var(--ink)]">
     {doc.data!.is_owner && <nav className="mb-4 flex flex-wrap gap-2" aria-label="Back to your story">
       <Link className="ui-btn ui-btn-secondary" to={`/stories/${doc.data!.share.story_id}`}>← Back to story</Link>

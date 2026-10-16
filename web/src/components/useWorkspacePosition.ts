@@ -76,19 +76,25 @@ export function useWorkspacePosition(storyId: string, initial: WorkspacePlace | 
         restored.current = true
       }
     }
-    const observer = new MutationObserver(restore)
-    observer.observe(document.body, { childList: true, subtree: true })
-    void document.fonts.ready.then(() => { if (!stopped) requestAnimationFrame(restore) })
-    // Deleted passages or changed outlines have a safe document-position fallback.
-    const fallback = setTimeout(() => {
+    // Deleted passages or changed outlines have a safe document-position fallback. It waits until
+    // the content has loaded and stopped changing, so a slow load cannot scroll a half-built page.
+    let fallback: ReturnType<typeof setTimeout> | undefined
+    const fallBack = () => {
       if (!restored.current && !stopped) {
         window.scrollTo(0, (initial.scroll_fraction ?? 0) * Math.max(0, document.documentElement.scrollHeight - window.innerHeight))
         restored.current = true
       }
       observer.disconnect()
-    }, 5000)
+    }
+    const loaded = () => !!document.querySelector('[data-workspace-ready]') && (initial.mode !== 'write' || !!document.querySelector('[data-writing-scene] .cm-editor'))
+    const armFallback = () => { if (loaded()) { clearTimeout(fallback); fallback = setTimeout(fallBack, 1500) } }
+    const observer = new MutationObserver(() => { restore(); if (!restored.current) armFallback() })
+    observer.observe(document.body, { childList: true, subtree: true })
+    void document.fonts.ready.then(() => { if (!stopped) requestAnimationFrame(restore) })
+    armFallback()
+    const deadline = setTimeout(fallBack, 30000)
     return () => {
-      stopped = true; observer.disconnect(); clearTimeout(fallback)
+      stopped = true; observer.disconnect(); clearTimeout(fallback); clearTimeout(deadline)
       window.removeEventListener('wheel', stopRestore); window.removeEventListener('touchstart', stopRestore); window.removeEventListener('keydown', stopRestore)
       window.removeEventListener('pointerdown', stopRestore)
     }

@@ -925,3 +925,5 @@ ol.showcase-list { list-style: decimal; }
 .ws-page .writer-manuscript { max-width: 880px; padding: 32px 40px; }
 .beta-comment-pin { position: fixed; z-index: 50; width: 32px; height: 32px; background: var(--surface); box-shadow: var(--shadow-pop); }
 .beta-comment-menu { position: fixed; top: auto; z-index: 50; }
+::highlight(beta-quote) { background-color: var(--accent-soft); color: inherit; text-decoration: underline 2px var(--accent); }
+.beta-drawer { position: fixed; top: 70px; right: 0; bottom: 0; z-index: 45; width: min(400px, 100%); overflow-y: auto; padding: var(--space-4); border-left: 1px solid var(--line); background: var(--page); box-shadow: var(--shadow-pop); }

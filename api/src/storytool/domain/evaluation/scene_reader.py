@@ -520,6 +520,24 @@ def aggregate(
                 location.confidence or 0,
             )
         opening, closing = answers.get("opens"), answers.get("closes")
+        # One scene cannot first open and resolve the same thread: an already-open thread
+        # closes here; otherwise count the opening only and ask the author to verify.
+        if opening and closing and opening.choice == closing.choice and opening.choice != "none":
+            if any(item[0] == opening.choice for item in stack):
+                opening = None
+            else:
+                finding(
+                    "mice_nesting",
+                    "open_and_close_same_scene",
+                    (
+                        f"The reader saw thread {threads.get(opening.choice or '', 'unknown')} "
+                        "both open and resolve in this scene. It is counted as opening here; "
+                        "verify where it resolves."
+                    ),
+                    [row.id],
+                    min(opening.confidence or 0, closing.confidence or 0),
+                )
+                closing = None
         # Uncertain thread events are shown, but never mutate a certain stack.
         for event, answer in [("opens", opening), ("closes", closing)]:
             if (

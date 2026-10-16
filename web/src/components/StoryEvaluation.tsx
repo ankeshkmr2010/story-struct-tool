@@ -255,6 +255,7 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
       <div>
         <h3 className="text-lg font-semibold">AI review</h3>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">An AI reviews the supplied story material and says what works, what to consider, and what needs to change. Nothing in your story is edited.</p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">This is a separate second opinion. It reads the story independently of the check above, so the two can disagree; where they do, read the cited scenes and decide.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? 'Copied' : 'Copy prompt for your agent'}</button>
