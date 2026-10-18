@@ -351,3 +351,32 @@ def test_epub_reads_spine_order_headings_and_refuses_drm() -> None:
     assert story.chapters[0].scenes[0].prose.startswith("Maya lit the lamp.")
     with pytest.raises(ValueError, match="DRM"):
         epub_blocks(epub_bytes(drm=True))
+
+
+async def test_markdown_and_epub_uploads_preview_and_import(client) -> None:
+    markdown = b"# One\n\nMaya lit the lamp.\n\n***\n\nMorning came.\n\n# Two\n\nThe boat rocked."
+    for fmt, content, chapters, scenes in [
+        ("text", markdown, 2, 3),
+        ("epub", epub_bytes(), 2, 2),
+    ]:
+        created = await client.post(
+            f"/api/imports/{fmt}/uploads?filename=book.{fmt}",
+            content=content,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        assert created.status_code == 201, (fmt, created.text)
+        upload = created.json()
+        plan = upload["inspection"]["recommended"]
+        preview = await client.post(
+            f"/api/imports/uploads/{upload['id']}/preview", json={"plan": plan}
+        )
+        assert preview.status_code == 200, (fmt, preview.text)
+        assert (preview.json()["chapter_count"], preview.json()["scene_count"]) == (
+            chapters,
+            scenes,
+        ), fmt
+        done = await client.post(
+            f"/api/imports/uploads/{upload['id']}/import", json={"title": fmt, "plan": plan}
+        )
+        assert done.status_code == 201, (fmt, done.text)
+        assert done.json()["chapter_count"] == chapters
