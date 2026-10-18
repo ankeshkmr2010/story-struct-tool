@@ -56,7 +56,6 @@ from storytool.domain.story.beta import (
     feedback_counts,
 )
 from storytool.domain.story.controller import StoryController
-from storytool.domain.story.docx_import import DocxImportController
 from storytool.domain.story.image_cleanup import image_cleanup_lifespan
 from storytool.domain.story.images import (
     BetaImagesController,
@@ -70,6 +69,7 @@ from storytool.domain.story.sharing import (
     StoryShareController,
 )
 from storytool.domain.story.showcase import PublicShowcaseController, StoryShowcaseController
+from storytool.domain.story.story_import import StoryImportController
 from storytool.domain.story.timeline_controller import TimelineController
 from storytool.domain.story.workspace import WorkspaceController, latest_position
 from storytool.domain.structure.controller import (
@@ -131,7 +131,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             PublicShowcaseController,
             StoryBackupController,
             BackupImportController,
-            DocxImportController,
+            StoryImportController,
             StoryReaderController,
             TimelineController,
             StoryAnalysisController,

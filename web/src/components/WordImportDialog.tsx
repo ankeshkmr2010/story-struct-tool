@@ -1,17 +1,33 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { api, type DocxImport, type Story } from '../api/client'
+import { api, type DocxImport, type ImportFormat, type Story } from '../api/client'
 import { errorText } from '../api/errors'
 import { importedStoryPrompt } from './importPrompts'
 
-export function WordImportDialog({ open, story, defaultTitle, onClose, onImported }: {
+// Each format is a server-side adapter; the dialog only needs its file rules and wording.
+const FORMATS: Record<ImportFormat, { heading: string; fileLabel: string; accept: string; extension: RegExp; maxMb: number; help: string }> = {
+  docx: {
+    heading: 'Import a Word manuscript', fileLabel: 'Word document', extension: /\.docx$/i, maxMb: 10,
+    accept: '.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    help: 'Up to 10 MB. Heading 1 starts each chapter, with one prose scene per chapter. Body text uses simplified formatting; images, comments, headers and footers are excluded.',
+  },
+  scrivener: {
+    heading: 'Import a Scrivener project', fileLabel: 'Zipped Scrivener project (.zip)', extension: /\.zip$/i, maxMb: 40,
+    accept: '.zip,application/zip',
+    help: 'Up to 40 MB. Zip your whole .scriv project folder first (on a Mac, right-click it and choose Compress). Folders in Draft or Manuscript become chapters, their documents become scenes, and synopses become scene summaries. Research, notes, comments and documents excluded from compile are left out.',
+  },
+}
+
+export function WordImportDialog({ open, format = 'docx', story, defaultTitle, onClose, onImported }: {
   open: boolean
+  format?: ImportFormat
   story: Story | null
   defaultTitle: string
   onClose: () => void
   onImported: (result: DocxImport) => void
 }) {
+  const rules = FORMATS[format]
   const dialog = useRef<HTMLDialogElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
@@ -22,9 +38,9 @@ export function WordImportDialog({ open, story, defaultTitle, onClose, onImporte
   const [copyError, setCopyError] = useState(false)
   const upload = useMutation({
     mutationFn: ({ file, title }: { file: File; title: string }) => {
-      if (!file.name.toLowerCase().endsWith('.docx')) throw new Error('Choose a .docx document.')
-      if (file.size > 10 * 1024 * 1024) throw new Error('Choose a Word document up to 10 MB.')
-      return api.importDocx(file, title.trim())
+      if (!rules.extension.test(file.name)) throw new Error(`Choose a ${rules.fileLabel.toLowerCase()}.`)
+      if (file.size > rules.maxMb * 1024 * 1024) throw new Error(`Choose a file up to ${rules.maxMb} MB.`)
+      return api.importStory(format, file, title.trim())
     },
     onSuccess: (result) => {
       setSelectedStory({ ...result.story, word_count: result.word_count })
@@ -47,20 +63,20 @@ export function WordImportDialog({ open, story, defaultTitle, onClose, onImporte
     event.preventDefault(); if (!upload.isPending) onClose()
   }} className="fixed inset-0 m-auto max-h-[85dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--page)] p-6 text-[var(--ink)] shadow-xl backdrop:bg-black/60">
     <div className="flex items-start justify-between gap-4">
-      <h2 id="word-import-title" className="break-words text-2xl font-semibold">{selectedStory ? selectedStory.title : 'Import a Word manuscript'}</h2>
+      <h2 id="word-import-title" className="break-words text-2xl font-semibold">{selectedStory ? selectedStory.title : rules.heading}</h2>
       <button type="button" disabled={upload.isPending} onClick={onClose} aria-label="Close import dialog" className="rounded border border-[var(--line)] px-3 py-1.5 disabled:opacity-40">Close</button>
     </div>
     {!selectedStory ? <form className="mt-5 space-y-4" onSubmit={(event) => {
       event.preventDefault(); if (file) upload.mutate({ file, title })
     }}>
       <p className="text-sm leading-6 text-[var(--muted)]">Import your prose into a new story, then choose prompts to organize it or build its story components.</p>
-      <label className="block text-sm">Word document<input ref={fileInput} type="file" required disabled={upload.isPending} accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => {
+      <label className="block text-sm">{rules.fileLabel}<input ref={fileInput} type="file" required disabled={upload.isPending} accept={rules.accept} onChange={(event) => {
         const chosen = event.target.files?.[0] ?? null
         setFile(chosen); resetUpload()
-        if (chosen && !title.trim()) setTitle(chosen.name.replace(/\.docx$/i, '').slice(0, 200))
+        if (chosen && !title.trim()) setTitle(chosen.name.replace(rules.extension, '').replace(/\.scriv$/i, '').slice(0, 200))
       }} className="mt-2 block w-full text-sm" /></label>
       <label className="block text-sm">Story title<input required maxLength={200} disabled={upload.isPending} value={title} onChange={(event) => setTitle(event.target.value)} className="mt-2 block w-full rounded border border-[var(--line)] bg-[var(--surface)] p-3" /></label>
-      <p className="text-xs leading-5 text-[var(--muted)]">Up to 10 MB. Heading 1 starts each chapter, with one prose scene per chapter. Body text uses simplified formatting; images, comments, headers and footers are excluded.</p>
+      <p className="text-xs leading-5 text-[var(--muted)]">{rules.help}</p>
       <button type="submit" disabled={!file || !title.trim() || upload.isPending} className="landing-primary disabled:opacity-40">{upload.isPending ? 'Importing manuscript…' : 'Import prose'}</button>
       {upload.isPending && <p role="status" className="text-sm">Keep this window open. Your story and prompt options will appear here when import finishes.</p>}
       {upload.error && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(upload.error)}</p>}

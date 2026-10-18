@@ -31,12 +31,26 @@ TEST_DB = "storytool_test"
 # The local Docker Postgres does not use TLS. Avoid asyncpg's opportunistic TLS
 # negotiation, which intermittently resets Windows sockets in long test runs.
 TEST_URL = f"{PG_BASE}/{TEST_DB}?ssl=disable"
+# Optional: a throwaway database elsewhere (e.g. an expiring Neon branch) when no local Docker
+# Postgres is available. Its public schema is dropped and rebuilt, so never point this at a
+# database with data you need. Use the SQLAlchemy asyncpg form with `?ssl=require`.
+TEST_URL = os.environ.get("STORYTOOL_TEST_DATABASE_URL") or TEST_URL
 
 API_ROOT = Path(__file__).resolve().parent.parent
 
 
 async def _recreate_database() -> None:
     """Drop and recreate the public schema so migrations always run from nothing."""
+    if os.environ.get("STORYTOOL_TEST_DATABASE_URL"):
+        dsn = TEST_URL.replace("postgresql+asyncpg://", "postgresql://").replace(
+            "ssl=require", "sslmode=require"
+        )
+        db = await asyncpg.connect(dsn)
+        try:
+            await db.execute("drop schema public cascade; create schema public;")
+        finally:
+            await db.close()
+        return
     admin = await asyncpg.connect(
         user=PG_USER,
         password=PG_PASSWORD,

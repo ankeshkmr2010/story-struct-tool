@@ -1417,7 +1417,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/imports/docx": {
+    "/api/imports/{fmt}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1426,8 +1426,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Import Word body prose as a new story */
-        post: operations["ApiImportsDocxImportDocx"];
+        /** Import a manuscript (Word .docx or zipped Scrivener project) as a new story */
+        post: operations["ApiImportsFmtImportStory"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3735,12 +3735,6 @@ export interface components {
             ai_tools: string[];
             last_ai_edit: string | null;
         };
-        /** DocxImportOut */
-        DocxImportOut: {
-            story: components["schemas"]["StoryOut"];
-            chapter_count: number;
-            word_count: number;
-        };
         /** DraftReplyIn */
         DraftReplyIn: {
             body: string;
@@ -4014,6 +4008,13 @@ export interface components {
             chapter?: string | null;
             /** @default 1 */
             count: number;
+        };
+        /** ImportOut */
+        ImportOut: {
+            story: components["schemas"]["StoryOut"];
+            chapter_count: number;
+            scene_count: number;
+            word_count: number;
         };
         /** InviteOut */
         InviteOut: {
@@ -9098,13 +9099,15 @@ export interface operations {
             };
         };
     };
-    ApiImportsDocxImportDocx: {
+    ApiImportsFmtImportStory: {
         parameters: {
             query: {
                 title: string;
             };
             header?: never;
-            path?: never;
+            path: {
+                fmt: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -9115,7 +9118,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocxImportOut"];
+                    "application/json": components["schemas"]["ImportOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

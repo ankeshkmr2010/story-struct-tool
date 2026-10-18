@@ -28,7 +28,8 @@ export type AuthConfig = S['AuthConfigOut']
 export type ProductFeedback = S['ProductFeedbackOut']
 export type ProductFeedbackInput = S['ProductFeedbackIn']
 export type Funnel = S['FunnelOut']
-export type DocxImport = S['DocxImportOut']
+export type DocxImport = S['ImportOut']
+export type ImportFormat = 'docx' | 'scrivener'
 export type BetaRound = S['RoundOut']
 export type BetaTriage = S['BetaTriageOut']
 export type BetaDocument = S['BetaDocumentOut']
@@ -467,8 +468,8 @@ export const api = {
   manuscriptTextUrl: (storyId: string) => `/api/stories/${storyId}/manuscript.txt`,
   backupUrl: (storyId: string) => `/api/stories/${storyId}/backup`,
   importBackup: (backup: unknown) => post<Story>('/api/backups/import', backup),
-  importDocx: (file: File, title: string) => request<DocxImport>(`/api/imports/docx?title=${encodeURIComponent(title)}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }, body: file,
+  importStory: (format: ImportFormat, file: File, title: string) => request<DocxImport>(`/api/imports/${format}?title=${encodeURIComponent(title)}`, {
+    method: 'POST', headers: { 'Content-Type': format === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/zip' }, body: file,
   }),
 
   // Noticing. A pass only ever records observations -- it never alters structure or prose.

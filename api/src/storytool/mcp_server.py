@@ -386,6 +386,11 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         identifier = story_id or grant.story_id
         product_feedback = suffix == "/product-feedback" and method == "POST"
         validators = suffix.split("?", 1)[0] == "/validators" or suffix.startswith("/validators/")
+        if grant.round_id:
+            raise ToolError(
+                "This is a beta-reader connection. Use get_beta_round_overview, "
+                "read_beta_chapter, get_my_beta_feedback or get_beta_polls instead."
+            )
         if not collection and not product_feedback and not validators and identifier is None:
             raise ToolError("Choose a story ID from list_stories and pass story_id to this tool")
         if validators:

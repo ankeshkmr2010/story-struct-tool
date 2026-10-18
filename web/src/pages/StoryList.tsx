@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
-import { api, type Story, type DocxImport } from '../api/client'
+import { api, type Story, type DocxImport, type ImportFormat } from '../api/client'
 import { errorText } from '../api/errors'
 import { StorySharing } from '../components/StorySharing'
 import { WordImportDialog } from '../components/WordImportDialog'
@@ -70,6 +70,7 @@ export default function StoryList() {
 
   const backupInput = useRef<HTMLInputElement>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [importFormat, setImportFormat] = useState<ImportFormat>('docx')
   const [promptStory, setPromptStory] = useState<Story | null>(null)
   const libraryStories = stories.data ? [...stories.data].sort((a, b) =>
     Number(b.prose_imported) - Number(a.prose_imported)
@@ -161,7 +162,8 @@ export default function StoryList() {
         {/* Other ways to start a story live behind ▾ beside Create. */}
         <Menu label={importBackup.isPending || importOpen ? '…' : '▾'} ariaLabel="More ways to start a story" className="library-create-more" triggerClassName="ui-btn ui-btn-secondary">
           <MenuItem disabled={importBackup.isPending || importOpen} title="Restore a StoryTool backup file as a new story" onSelect={() => backupInput.current?.click()}>From backup…</MenuItem>
-          <MenuItem disabled={importBackup.isPending || importOpen} title="Import body prose; Heading 1 starts each chapter" onSelect={() => { setPromptStory(null); setImportOpen(true) }}>From Word (.docx)…</MenuItem>
+          <MenuItem disabled={importBackup.isPending || importOpen} title="Import body prose; Heading 1 starts each chapter" onSelect={() => { setPromptStory(null); setImportFormat('docx'); setImportOpen(true) }}>From Word (.docx)…</MenuItem>
+          <MenuItem disabled={importBackup.isPending || importOpen} title="Import a zipped .scriv project: Draft folders become chapters, documents become scenes" onSelect={() => { setPromptStory(null); setImportFormat('scrivener'); setImportOpen(true) }}>From Scrivener (.zip)…</MenuItem>
         </Menu>
         <input
           ref={backupInput}
@@ -179,7 +181,7 @@ export default function StoryList() {
       </>}
 
       {stories.isPending && <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">Loading…</p>}
-      <WordImportDialog open={importOpen} story={promptStory} defaultTitle={title} onClose={() => setImportOpen(false)} onImported={(result: DocxImport) => {
+      <WordImportDialog open={importOpen} format={importFormat} story={promptStory} defaultTitle={title} onClose={() => setImportOpen(false)} onImported={(result: DocxImport) => {
         setTitle('')
         qc.setQueryData<Story[]>(['stories'], (current) => [
           { ...result.story, word_count: result.word_count }, ...(current ?? []).filter((item) => item.id !== result.story.id),

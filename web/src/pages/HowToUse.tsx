@@ -485,7 +485,10 @@ export default function HowToUse() {
                   it back as a new story.
                 </Item>
                 <Item title="Bring in existing prose">
-                  In Your stories, choose <strong className="font-medium">Create ▾ → From Word (.docx)</strong>.
+                  In Your stories, choose <strong className="font-medium">Create ▾ → From Word (.docx)</strong> or{' '}
+                  <strong className="font-medium">From Scrivener (.zip)</strong>. For Scrivener, zip the whole .scriv
+                  project folder: Draft folders become chapters, their documents become scenes and synopses become
+                  scene summaries; research and documents excluded from compile stay out.
                   The import window stays open through completion and offers prompts to organize
                   chapters/scenes or populate story components while preserving your prose.
                   Imported stories keep an <strong className="font-medium">Import prompts</strong> entry.

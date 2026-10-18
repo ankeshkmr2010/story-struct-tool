@@ -376,11 +376,9 @@ async def complete_consent(
         )
     if round_id is not None:
         return await _complete_reader_consent(db, pending, params, user_id, round_id, scopes)
-    if (
-        "story:read" not in scopes
-        or "beta:read" in scopes
-        or not set(scopes) <= set(params.scopes or [])
-    ):
+    # beta:read only means something on a round-scoped reader grant; story grants drop it.
+    scopes = [scope for scope in scopes if scope != "beta:read"]
+    if "story:read" not in scopes or not set(scopes) <= set(params.scopes or []):
         raise ValueError("Invalid consent scopes")
     story = await db.scalar(
         select(Story)
