@@ -46,6 +46,7 @@ from storytool.domain.story.image_models import ImageBlob, ImageDeletion, StoryI
 from storytool.domain.story.models import Story
 from storytool.domain.story.sharing import StoryShare
 from storytool.domain.story.showcase import StoryShowcase
+from storytool.domain.story.story_import import ImportUpload
 from storytool.domain.story.workspace import WorkspacePosition
 from storytool.domain.structure.models import Act, Beat, Event, Thread, event_character
 from storytool.domain.versioning.models import StoryVersion
@@ -79,6 +80,7 @@ __all__ = (
     "GlossaryEntry",
     "ImageBlob",
     "ImageDeletion",
+    "ImportUpload",
     "Location",
     "MCPClient",
     "MCPConsent",

@@ -291,6 +291,19 @@ class StoryAccessMiddleware:
                     and http_scope["method"] in {"GET", "POST", "PATCH", "DELETE"}
                     and validator_scope in scopes
                 )
+                # Manuscript import uploads: an agent helping the author plan and run an import.
+                # It creates a story, so it needs story:create; handlers check upload ownership.
+                import_path = bool(
+                    re.fullmatch(
+                        r"/api/imports/uploads/[0-9a-fA-F-]{36}(?:/preview|/import)?", path
+                    )
+                )
+                allowed = allowed or bool(
+                    delegated
+                    and import_path
+                    and http_scope["method"] in {"GET", "POST"}
+                    and "story:create" in scopes
+                )
                 if not delegated or not allowed:
                     await _reject(send, 401, "Invalid or out-of-scope agent token")
                     return
@@ -351,6 +364,8 @@ class StoryAccessMiddleware:
                     needed.update({"versions:restore", "prose:read"})
                 if validator_path:
                     needed = {validator_scope}
+                if import_path:
+                    needed = {"story:create"}
                 if not needed <= set(scopes):
                     await _reject(send, 403, "Connection lacks required story permissions")
                     return

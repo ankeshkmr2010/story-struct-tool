@@ -30,6 +30,8 @@ export type ProductFeedbackInput = S['ProductFeedbackIn']
 export type Funnel = S['FunnelOut']
 export type DocxImport = S['ImportOut']
 export type ImportFormat = 'docx' | 'scrivener'
+export type ImportUpload = S['UploadOut']
+export type ImportPreview = S['PreviewOut']
 export type BetaRound = S['RoundOut']
 export type BetaTriage = S['BetaTriageOut']
 export type BetaDocument = S['BetaDocumentOut']
@@ -471,6 +473,12 @@ export const api = {
   importStory: (format: ImportFormat, file: File, title: string) => request<DocxImport>(`/api/imports/${format}?title=${encodeURIComponent(title)}`, {
     method: 'POST', headers: { 'Content-Type': format === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/zip' }, body: file,
   }),
+  uploadImport: (format: ImportFormat, file: File) => request<ImportUpload>(`/api/imports/${format}/uploads?filename=${encodeURIComponent(file.name)}`, {
+    method: 'POST', headers: { 'Content-Type': format === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/zip' }, body: file,
+  }),
+  getImportUpload: (id: string) => request<ImportUpload>(`/api/imports/uploads/${id}?limit=1`),
+  previewImport: (id: string, plan: Record<string, unknown>) => post<ImportPreview>(`/api/imports/uploads/${id}/preview`, { plan }),
+  importUpload: (id: string, title: string, plan: Record<string, unknown>) => post<DocxImport>(`/api/imports/uploads/${id}/import`, { title, plan }),
 
   // Noticing. A pass only ever records observations -- it never alters structure or prose.
   noticerInfo: () => request<NoticerInfo>('/api/noticing'),

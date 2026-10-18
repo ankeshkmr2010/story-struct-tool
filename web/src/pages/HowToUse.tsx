@@ -486,9 +486,11 @@ export default function HowToUse() {
                 </Item>
                 <Item title="Bring in existing prose">
                   In Your stories, choose <strong className="font-medium">Create ▾ → From Word (.docx)</strong> or{' '}
-                  <strong className="font-medium">From Scrivener (.zip)</strong>. For Scrivener, zip the whole .scriv
-                  project folder: Draft folders become chapters, their documents become scenes and synopses become
-                  scene summaries; research and documents excluded from compile stay out.
+                  <strong className="font-medium">From Scrivener (.zip)</strong> (zip the whole .scriv folder first).
+                  StoryTool reads the file and shows what it found; you choose where chapters and scenes start (headings,
+                  “Chapter” lines, *** separators, page breaks, or Scrivener folder levels), whether to skip a title page,
+                  and whether synopses and notes come along, with a live preview. Or copy the prompt for your connected AI:
+                  it can read the outline, plan exact breaks, titles and summaries, preview them and import once you approve.
                   The import window stays open through completion and offers prompts to organize
                   chapters/scenes or populate story components while preserving your prose.
                   Imported stories keep an <strong className="font-medium">Import prompts</strong> entry.

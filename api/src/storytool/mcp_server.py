@@ -385,7 +385,9 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
             raise ToolError("Authentication expired or revoked. Reconnect or sign in again.")
         identifier = story_id or grant.story_id
         product_feedback = suffix == "/product-feedback" and method == "POST"
-        validators = suffix.split("?", 1)[0] == "/validators" or suffix.startswith("/validators/")
+        validators = suffix.split("?", 1)[0] == "/validators" or suffix.startswith(
+            ("/validators/", "/imports/")
+        )
         if grant.round_id:
             raise ToolError(
                 "This is a beta-reader connection. Use get_beta_round_overview, "
@@ -1060,6 +1062,56 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
                 key=lambda c: (c.get("sort_key") or 0, c.get("number") or 0, c["id"]),
             )
         ]
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_manuscript_import(
+        ctx: Context,
+        upload_id: UUID,
+        offset: Annotated[int, Field(ge=0)] = 0,
+        limit: Annotated[int, Field(ge=1, le=2000)] = 600,
+    ) -> dict[str, Any]:
+        """Inspect a manuscript the author uploaded in StoryTool's import window (the window
+        shows the upload_id in its AI prompt). Returns format, stats, splitting options with
+        counts, a recommended plan, a guide to every plan field and a numbered outline: Word
+        blocks (style, word count, first 140 characters, cues such as page_break, chapter_line,
+        separator, italic) or Scrivener binder items (type, depth, title, words, synopsis,
+        notes, compile flag). Page with offset/limit until outline_total is covered.
+
+        Then build the best plan: find front and back matter to skip (title page, copyright,
+        dedication, contents, acknowledgements, about the author), decide where chapters and
+        scenes really start (headings, 'Chapter N' lines, separators, page breaks or explicit
+        block/item numbers when styles are inconsistent), give clear titles where the source
+        has none, and add one-sentence scene summaries only when you have read enough to be
+        accurate. Check it with preview_manuscript_import. Requires story:create."""
+        return await call(ctx, f"/imports/uploads/{upload_id}?offset={offset}&limit={limit}")
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def preview_manuscript_import(
+        ctx: Context, upload_id: UUID, plan: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Dry-run an import plan: the chapters and scenes it would create, with titles, word
+        counts, summaries and whether notes are kept. Nothing is saved. Iterate until the
+        structure matches the manuscript, then show the author the outline before importing.
+        Requires story:create."""
+        return await call(ctx, f"/imports/uploads/{upload_id}/preview", "POST", {"plan": plan})
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def import_manuscript(
+        ctx: Context,
+        upload_id: UUID,
+        title: Annotated[str, Field(min_length=1, max_length=200)],
+        plan: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Create a new story from the upload with this plan, after the author has approved
+        the previewed structure and the title. Prose is imported unchanged; the author's
+        import window notices and offers to open the story. Each upload imports once.
+        Requires story:create."""
+        return await call(
+            ctx,
+            f"/imports/uploads/{upload_id}/import",
+            "POST",
+            {"title": title, "plan": plan},
+        )
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_beta_round_overview(ctx: Context) -> dict[str, Any]:

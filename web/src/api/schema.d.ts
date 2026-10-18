@@ -1426,8 +1426,76 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Import a manuscript (Word .docx or zipped Scrivener project) as a new story */
+        /** Import a manuscript with the recommended plan (no preview step) */
         post: operations["ApiImportsFmtImportStory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/uploads/{upload_id}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import with a plan */
+        post: operations["ApiImportsUploadsUploadIdImportUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/uploads/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inspect an upload: stats, options, outline */
+        get: operations["ApiImportsUploadsUploadIdInspect"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/uploads/{upload_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dry-run a plan */
+        post: operations["ApiImportsUploadsUploadIdPreviewPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{fmt}/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Keep a manuscript for 24 hours and describe how it could be split */
+        post: operations["ApiImportsFmtUploadsUpload"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4009,6 +4077,13 @@ export interface components {
             /** @default 1 */
             count: number;
         };
+        /** ImportIn */
+        ImportIn: {
+            plan?: {
+                [key: string]: unknown;
+            };
+            title: string;
+        };
         /** ImportOut */
         ImportOut: {
             story: components["schemas"]["StoryOut"];
@@ -4239,6 +4314,12 @@ export interface components {
             turning_points_flagged: number;
             suggestions_added: number;
         };
+        /** PlanIn */
+        PlanIn: {
+            plan?: {
+                [key: string]: unknown;
+            };
+        };
         /** PollAnswerOut */
         PollAnswerOut: {
             reader: string | null;
@@ -4316,6 +4397,26 @@ export interface components {
          * @enum {string}
          */
         PovStyle: "first" | "third_limited" | "third_omniscient" | "second" | "mixed";
+        /** PreviewChapter */
+        PreviewChapter: {
+            title: string | null;
+            scenes: components["schemas"]["PreviewScene"][];
+        };
+        /** PreviewOut */
+        PreviewOut: {
+            chapter_count: number;
+            scene_count: number;
+            word_count: number;
+            chapters: components["schemas"]["PreviewChapter"][];
+            truncated: boolean;
+        };
+        /** PreviewScene */
+        PreviewScene: {
+            title: string | null;
+            words: number;
+            summary: string | null;
+            has_notes: boolean;
+        };
         /** ProblemRecipe */
         ProblemRecipe: {
             /**
@@ -5170,6 +5271,23 @@ export interface components {
             /** Format: uuid */
             visitor_id: string;
             events: ("try_start" | "try_step_1" | "try_step_2" | "try_step_3" | "try_step_4" | "try_step_5" | "try_step_6" | "try_skip" | "try_keep_click" | "try_imported")[];
+        };
+        /** UploadOut */
+        UploadOut: {
+            /** Format: uuid */
+            id: string;
+            format: string;
+            filename: string;
+            /** Format: date-time */
+            expires_at: string;
+            story_id: string | null;
+            inspection: {
+                [key: string]: unknown;
+            } | null;
+            /** @default 0 */
+            outline_total: number;
+            /** @default 0 */
+            outline_offset: number;
         };
         /** UserOut */
         UserOut: {
@@ -9119,6 +9237,167 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiImportsUploadsUploadIdImportUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiImportsUploadsUploadIdInspect: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiImportsUploadsUploadIdPreviewPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiImportsFmtUploadsUpload: {
+        parameters: {
+            query?: {
+                filename?: string;
+            };
+            header?: never;
+            path: {
+                fmt: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */
