@@ -12,7 +12,7 @@ const plan = [
 ] as const
 
 const craft = [
-  ['01', 'Know who wrote what', 'Your words and AI changes have a record. See who changed each field in History, review proposed edits, and choose what to keep.'],
+  ['01', 'Know who wrote what', 'Your words and AI changes have a record. See who changed each field in History, review proposed edits, and copy an AI-use disclosure for agents, publishers or contests.'],
   ['02', 'Keep your threads connected', 'MICE thread nesting shows where each storyline opens and closes, and flags threads that resolve out of order. The built-in reader checks your prose, with no AI key needed.'],
   ['03', 'Find your scene rhythm', 'Scene and sequel checks highlight long runs of action or reaction, so you can decide where the story needs room to breathe.'],
   ['04', 'Misbelief at midpoint', 'Check how the midpoint challenges a character’s false belief, using evidence read from your scenes. No AI key needed.'],
@@ -57,14 +57,14 @@ export default function Landing() {
     </div>
 
     <section className="landing-features" aria-labelledby="craft-title">
-      <div className="section-intro"><p className="eyebrow">SEE YOUR STORY CLEARLY</p><h2 id="craft-title">See the changes.<br />Check the craft.</h2><p>On-demand suggestions and a record of authorship, with you in control.</p></div>
+      <div className="section-intro"><p className="eyebrow">SEE YOUR STORY CLEARLY</p><h2 id="craft-title">See the changes.<br />Check the craft.</h2><p>On-demand suggestions, every craft check in one Run all, and a record of authorship, with you in control.</p></div>
       <div className="feature-grid">{craft.map(([number, title, description]) => <article key={number}><span className="feature-number">{number}</span><h3>{title}</h3><p>{description}</p></article>)}</div>
     </section>
 
     <section className="landing-writing" aria-labelledby="write-title">
       <div className="section-intro"><p className="eyebrow">WRITE</p><h2 id="write-title">Start with the words.</h2><p>Open a story and type. Chapters, scenes and structure can come later, or never.</p></div>
       <div className="writing-workspaces">
-        <article><span className="writing-tab-label">Write</span><h3>One page per chapter.</h3><p>A single scrolling manuscript for each chapter. Name scenes if it helps, or just keep typing into the next one.</p></article>
+        <article><span className="writing-tab-label">Write</span><h3>One page per chapter.</h3><p>A single scrolling manuscript for each chapter. Name scenes if it helps, or just keep typing into the next one. Reopen the story on any device and land where you stopped.</p></article>
         <article><span className="writing-tab-label">Read</span><h3>Read it like a book.</h3><p>Read across chapters by page or by scroll, set your own type, and pick up where you left off. Click an illustration for a larger preview and its caption.</p></article>
         <article><span className="writing-tab-label">Focus</span><h3>Nothing but the words.</h3><p>Hide everything around the manuscript. Autosave shows when your words are safe, and a failed save keeps your draft for a retry.</p></article>
       </div>
@@ -75,7 +75,7 @@ export default function Landing() {
     <section className="landing-writing" aria-labelledby="images-title"><div className="section-intro"><p className="eyebrow">IMAGES</p><h2 id="images-title">Make room for illustrations.</h2><p>Insert images where they belong in your manuscript, or keep maps and character art beside your planning details. Add captions, preview them while reading, and manage current uses from Images in the story header.</p><Link to="/how-to-use#images" className="landing-secondary">How images work →</Link></div></section>
 
     <section className="landing-writing" aria-labelledby="ai-title">
-      <div className="section-intro"><p className="eyebrow">SOLO OR WITH AI</p><h2 id="ai-title">Your AI writes with you.<br />You decide.</h2><p>Everything above works on your own. If you write with Claude or ChatGPT, connect it and it works on the same story you do. Already have prose? It can draft the outline from what you've written.</p></div>
+      <div className="section-intro"><p className="eyebrow">SOLO OR WITH AI</p><h2 id="ai-title">Your AI writes with you.<br />You decide.</h2><p>Everything above works on your own. If you write with Claude, ChatGPT or Gemini, connect it and it works on the same story you do. Already have prose? It can plan the import of your Word or Scrivener manuscript, then draft the outline from what you've written.</p></div>
       <div className="writing-workspaces">
         <article><span className="writing-tab-label">Context</span><h3>It knows the whole story.</h3><p>Characters, arcs, timeline, places and glossary, not just the page in front of it.</p></article>
         <article><span className="writing-tab-label">Agent changes</span><h3>It proposes. You choose.</h3><p>Every edit arrives as a proposal. Keep all of it, some of it or none, and undo what you applied.</p></article>
@@ -91,11 +91,11 @@ export default function Landing() {
       <div className="section-intro sharing-intro">
         <p className="eyebrow">SHARE</p>
         <h2 id="sharing-title">Ready for readers.</h2>
-        <p>Collect private beta feedback on a fixed draft, share your latest manuscript, or give your story a public page anyone can open.</p>
+        <p>Collect private beta feedback on a fixed draft, share your latest manuscript, or give your story a public page anyone can open. If you allow it, beta readers can bring their own AI to a round, read-only.</p>
         <div className="sharing-actions"><Link to={SHOWCASE} className="landing-primary">See a showcase <span aria-hidden="true">→</span></Link><Link to="/how-to-use#beta-readers" className="landing-secondary">How beta reading works →</Link></div>
       </div>
       <div className="sharing-permissions">
-        <article><span className="writing-tab-label">Beta readers</span><h3>Feedback you can talk through.</h3><p>Publish a frozen manuscript round, send a signed-in invitation and approve readers. Each passage comment becomes a private conversation with you, with replies, an open or resolved state and a link you can return to.</p></article>
+        <article><span className="writing-tab-label">Beta readers</span><h3>Feedback you can talk through.</h3><p>Publish a frozen manuscript round, send a signed-in invitation and approve readers. Readers comment from a small icon beside selected text. Each comment becomes a private conversation that lands in your story’s Feedback panel, marked beside the quoted line in Write; your AI can draft replies for you to send.</p></article>
         <article><span className="writing-tab-label">Beta polls</span><h3>Ask your readers directly.</h3><p>Put questions to a beta round and see the results below reader management. Choose named or anonymous answers, let readers update their response while a poll is open, and keep past results when a question changes.</p></article>
         <article><span className="writing-tab-label">Reader link</span><h3>For the readers you pick.</h3><p>Invite someone by their sign-in email. They read your latest draft with characters and timeline close at hand, and can import their own copy if you allow it.</p></article>
         <article><span className="writing-tab-label">Public showcase</span><h3>For anyone with the link.</h3><p>Turn on a page with your premise, cast and timeline. Visitors need no account, and you can change or switch off the link at any time.</p></article>
@@ -104,7 +104,7 @@ export default function Landing() {
       <p className="sharing-footnote">Your private notes, version history and AI conversations stay private. You can revoke access later; copies already imported remain independent.</p>
     </section>
 
-    <section className="landing-modes" aria-labelledby="keep-title"><div><p className="eyebrow">YOURS TO KEEP</p><h2 id="keep-title">Your words can<br />always leave.</h2></div><div className="mode-list"><p><strong>Manuscript</strong><span>Export to Word, Markdown, PDF, EPUB or HTML with illustrations in place; plain text keeps descriptions and captions.</span></p><p><strong>Word import</strong><span>Start with prose from a .docx manuscript.</span></p><p><strong>Full backup</strong><span>Everything in one file, restorable as a new story.</span></p><p><strong>Versions</strong><span>Restore any saved version; your current draft is kept as a recovery copy.</span></p></div></section>
+    <section className="landing-modes" aria-labelledby="keep-title"><div><p className="eyebrow">YOURS TO KEEP</p><h2 id="keep-title">Your words can<br />always leave.</h2></div><div className="mode-list"><p><strong>Manuscript</strong><span>Export to Word, Markdown, PDF, EPUB or HTML with illustrations in place; plain text keeps descriptions and captions.</span></p><p><strong>Import</strong><span>Start from a Word manuscript or a Scrivener project. Preview how chapters and scenes split, or let your AI plan it.</span></p><p><strong>Full backup</strong><span>Everything in one file, restorable as a new story.</span></p><p><strong>Versions</strong><span>Restore any saved version; your current draft is kept as a recovery copy.</span></p></div></section>
 
     <footer className="landing-footer"><span>StoryTool · Make room for your story.</span><Link to="/privacy">Privacy</Link><Link to="/pricing">Pricing</Link><Link to="/about">About the developer</Link><Link to="/library">Start your story →</Link></footer>
   </main>

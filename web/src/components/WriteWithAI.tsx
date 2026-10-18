@@ -7,6 +7,8 @@ const prompts = [
   ['Catch up the outline', 'Read the prose in my StoryTool story “[title]” and propose missing scene summaries, cast, places, beats and thread links. Preserve every word of the manuscript. Stage one proposal for my review; do not apply it.'],
   ['Revise one scene', 'In my StoryTool story “[title]”, revise “[scene]” to [your goal]. Keep the viewpoint, voice and established facts consistent. Propose focused prose edits and stage them for review. Do not apply them until I approve.'],
   ['Review the craft', 'Run the Value shift versus prose review for my StoryTool story “[title]”. Read the relevant scenes, cite evidence and save the review in Evaluate. Do not change my story.'],
+  ['Work through beta feedback', 'Read the open beta feedback and round progress on my StoryTool story “[title]”. Group the comments by issue, tell me which to address first with scene evidence, and draft replies to readers for me to review. Do not send anything or change my story until I approve.'],
+  ['Plan a manuscript import', 'I uploaded a manuscript in StoryTool’s import window (upload_id [id]). Read its whole outline, plan where chapters and scenes start, what to skip and any titles, preview the result and show me the outline. Import it only after I approve.'],
 ] as const
 
 export function WriteWithAI() {
@@ -15,7 +17,7 @@ export function WriteWithAI() {
   return <div className="mt-8 space-y-10">
     <section aria-labelledby="ai-quickstart"><p className="eyebrow">QUICKSTART</p><h2 id="ai-quickstart" className="text-2xl font-semibold">Connect, ask, review.</h2><p className="mt-3 text-sm leading-6 text-[var(--muted)]">Use the AI you already talk to. It reads your story through StoryTool and can propose edits for you to review.</p><ol className="mt-5 space-y-3 text-sm leading-6">{[
       <>Sign in to StoryTool and create, import or open a story in <Link to="/library" className="underline">Your stories</Link>.</>,
-      <>Follow the Claude or ChatGPT connection guide below. Authorize your story; choose library access if you also want your AI to create stories.</>,
+      <>Follow the connection guide below for Claude, ChatGPT, Gemini or another client. Authorize your story; choose library access if you also want your AI to create or import stories.</>,
       <>Enable StoryTool in your AI conversation. Replace “[title]” in a prompt below with your story’s title and ask it to read the story first.</>,
       <>Discuss the suggestions. Ask for one focused proposal and tell your AI to stage it without applying it.</>,
       <>Return to <strong>Design → Agent changes</strong>. Review the proposed edits and accept all, some or none. Read saved craft reviews in <strong>Design → Evaluate</strong>.</>,

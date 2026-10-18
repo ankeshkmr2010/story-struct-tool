@@ -372,8 +372,10 @@ export default function HowToUse() {
               <div className="mt-5 grid gap-5 sm:grid-cols-2">
                 <Item title="Publish a manuscript round">Give the round a title and reader brief, choose all or selected chapters, and optionally set a deadline. Publish saved draft freezes that manuscript for the round while you continue writing. Readers see the manuscript and brief; planning details, AI conversations and other readers’ private feedback stay hidden. The deadline is guidance, not an automatic lock.</Item>
                 <Item title="Invite and manage readers">Copy the invitation link and send it yourself; StoryTool does not send an email. Anyone with it must sign in and request your approval by default. Enable automatic admission if you prefer. Approved rounds appear under Shared with you. Disable or rotate the invitation without removing admitted readers, or revoke a reader’s access separately. Closing a round stops new feedback and votes while existing feedback stays readable.</Item>
-                <Item title="Have a private feedback conversation">Readers can select a passage and choose Comment on selected text, use Leave scene feedback, or leave chapter or whole-story feedback. Save a private draft or send it to the author. My feedback and polls keeps conversations reachable; each has a protected URL showing the quoted passage and replies. Readers see their own threads and author replies; authors can mark feedback addressed or reopen it. Readers may also share their chapter progress and reading status.</Item>
+                <Item title="Have a private feedback conversation">Readers select a passage and click the small comment icon beside it, or right-click a paragraph and choose Comment on selected text or Comment on this scene. Leave feedback in the header covers a chapter or the whole story. Save a private draft or send it to the author. My feedback and polls keeps conversations reachable; each has a protected URL showing the quoted passage and replies. Readers see their own threads and author replies; authors can mark feedback addressed or reopen it. Readers may also share their chapter progress and reading status.</Item>
                 <Item title="Create polls and see results">Under Beta polls, create a question for a round or chapter with one-choice, multiple-choice or written answers. Manage draft, open, closed and archived polls, edit or delete them, and see results. Each reader has one response, editable while open. Choose identified or name-hidden answers; readers see results only if enabled, after answering or closing. Changing questions or options after responses creates a new version. Archive preserves results; permanent deletion asks for confirmation.</Item>
+                <Item title="Work through feedback in your story">Open conversations collect in the Feedback tab of the story’s side panel, in reading order, with the count on Beta readers buttons. Show in Write jumps to the quoted passage; a small marker sits beside quoted lines in Write and opens the matching card. Mark addressed or Reopen from the card, or open the full conversation.</Item>
+                <Item title="Bring AI into beta reading">With the Draft replies to beta readers permission, your connected AI can read open feedback and round progress (readers appear as anonymous labels), save draft replies that only you see until you send them, and mark feedback addressed. Turn on Let readers connect their own AI on a round and approved readers can connect their AI to that round only: its frozen chapters, their own comments and your polls, read-only. Turning it off or removing a reader cuts their AI off at once.</Item>
               </div>
             </Section>
 
@@ -389,8 +391,9 @@ export default function HowToUse() {
                   full planning workspace. Both tabs edit the same story.
                 </Item>
                 <Item title="Switch between Write, Read, and Design">
-                  All three tabs use the same chapters, scenes, and prose. Your chosen tab and
-                  chapter are remembered on this device. Write saves pending prose before
+                  All three tabs use the same chapters, scenes, and prose. Each story reopens
+                  where you left off on any device: the same tab, chapter and position, and Your
+                  stories offers a Pick up where you left off card. Write saves pending prose before
                   you switch tabs or chapters; if saving fails, resolve the error first.
                   Write is available in Plotter, Pantser, and Hybrid.
                 </Item>
@@ -409,7 +412,7 @@ export default function HowToUse() {
                   reader while keeping the author’s permissions.
                 </Item>
                 <Item title="See edits from your LLM session">
-                  StoryTool checks for changes every five seconds while the page is visible.
+                  StoryTool checks for changes every 15 seconds while the page is visible.
                   Changed chapters, scenes, beats, arcs, timeline, proposals, and prose refresh
                   automatically. Unsaved prose is preserved when a remote edit conflicts;
                   review the latest saved text before choosing which draft to keep. Saved
@@ -441,7 +444,7 @@ export default function HowToUse() {
                   Design. Confirm the deletion; Cancel keeps the scene. Unsaved prose must
                   save successfully first. Every deletion saves a whole-story recovery
                   version before removing the scene, plus a version of the result. Use
-                  Versions in the story header to recover it; restoring a version restores
+                  History in the Design rail to recover it; restoring a version restores
                   the whole story, including prose, notes, and structural links.
                 </Item>
                 <Item title="Recover a draft or resolve a conflict">
@@ -453,7 +456,7 @@ export default function HowToUse() {
                   signing out clears it. Versions preserve saved story state separately.
                 </Item>
                 <Item title="Define your places">
-                  Under Reference, give locations a description and atmosphere, then link
+                  Open Places in the side panel, give locations a description and atmosphere, then link
                   scenes to them. Places shows where each one appears and who was there.
                 </Item>
                 <Item title="Build your own writing checks">
@@ -464,9 +467,15 @@ export default function HowToUse() {
                   Your connected AI can create, read, edit, toggle and delete checks, or try a supplied sample through MCP, with your explicit writing-check permissions. It should supply the same recipe, counting criterion, examples and highlight preference used by the form.
                 </Item>
                 <Item title="Ask the tool to read">
-                  In Evaluate, Run reads saved scenes with the shared reader and combines evidence for craft checks. Uncertain findings offer Verify with your AI or a copy-scene prompt; verification includes only the selected scenes and their relevant thread or protagonist-belief context, and native reports remain available on return. Missing coverage is shown explicitly. In Noticed, choose <strong className="font-medium">read prose</strong>. When the site-provided Jev reader is available, no personal AI connection is needed. The
+                  Evaluate opens on an Overview: Run all runs every ready check at once and lists each check’s status, with an amber dot where there is something to look at. In a check, Run reads saved scenes with the shared reader and combines evidence for craft checks. Uncertain findings offer Verify with your AI or a copy-scene prompt; verification includes only the selected scenes and their relevant thread or protagonist-belief context, and native reports remain available on return. Missing coverage is shown explicitly. In Noticed, choose <strong className="font-medium">read prose</strong>. When the site-provided Jev reader is available, no personal AI connection is needed. The
                   panel names the active reader; with no model configured it matches names
                   only. Observations you dismiss stay dismissed.
+                </Item>
+                <Item title="Disclose AI use">
+                  In Design → History → Who wrote what, the AI-use disclosure card summarises saved edits to
+                  prose and planning by you, connected AI clients and StoryTool’s assistant, with the AI tools
+                  used and when tracking began. Copy it or download it as text for agents, publishers or contests.
+                  It counts edits, not words, so check it before sending.
                 </Item>
                 <Item title="Track progress">
                   The header shows total words and how many scenes are drafted. Word counts
