@@ -519,7 +519,9 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_connection(ctx: Context) -> dict[str, Any]:
-        """Discover your selected-story or account-library access and permission scopes."""
+        """Discover your selected-story, account-library or beta-reader access and scopes.
+        In beta_reader mode only the get_beta_round_overview, read_beta_chapter,
+        get_my_beta_feedback and get_beta_polls tools work."""
         grant = await principal(ctx.headers or {})
         if grant is None:
             raise ToolError("Story token required")
@@ -532,7 +534,12 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
             ),
             "can_manage_validators": "validators:write" in grant.scopes,
             "can_draft_beta_replies": "beta:write" in grant.scopes,
-            "access_mode": "library" if grant.story_id is None else "story",
+            "beta_round_id": str(grant.round_id) if grant.round_id else None,
+            "access_mode": "beta_reader"
+            if grant.round_id
+            else "library"
+            if grant.story_id is None
+            else "story",
             "expires_at": grant.expires_at.isoformat(),
             "permissions": grant.scopes,
             "transport": "Streamable HTTP",
@@ -1002,6 +1009,108 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
                     answer["reader"] = f"Reader {answer['reader']}" if answer["reader"] else None
         return {"rounds": rounds, "count": len(rounds)}
 
+    async def reader_call(ctx: Context, suffix: str = "") -> Any:
+        """GET one endpoint of the beta round a reader connection is scoped to."""
+        grant = await principal(ctx.headers or {})
+        if grant is None:
+            raise ToolError("Authentication expired or revoked. Reconnect or sign in again.")
+        if not grant.round_id:
+            raise ToolError("This tool is for beta-reader connections; use the story tools.")
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=cast(Any, get_app()), raise_app_exceptions=False),
+            base_url="http://storytool.internal",
+            headers={"Authorization": (ctx.headers or {})["authorization"]},
+            timeout=120,
+        ) as client:
+            response = await client.get(f"/api/beta/rounds/{grant.round_id}{suffix}")
+        if not response.is_success:
+            raise ToolError(
+                "The author has turned off reader AI access, your access was revoked, or the "
+                "round is unavailable."
+                if response.status_code in {403, 404}
+                else f"StoryTool {response.status_code}: the request could not complete."
+            )
+        return response.json()
+
+    def reader_chapters(document: dict[str, Any]) -> list[dict[str, Any]]:
+        structure = document["structure"]
+        scenes = structure.get("scene") or []
+        return [
+            {
+                "chapter_id": chapter["id"],
+                "number": chapter.get("number"),
+                "title": chapter.get("title"),
+                "scenes": [
+                    {
+                        "scene_id": s["id"],
+                        "title": s.get("title"),
+                        "content": s.get("content") or "",
+                    }
+                    for s in sorted(scenes, key=lambda s: (s.get("sort_key") or 0, s["id"]))
+                    if s.get("chapter_id") == chapter["id"]
+                ],
+            }
+            for chapter in sorted(
+                structure.get("chapter") or [],
+                key=lambda c: (c.get("sort_key") or 0, c.get("number") or 0, c["id"]),
+            )
+        ]
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_beta_round_overview(ctx: Context) -> dict[str, Any]:
+        """Beta-reader connections: the round you were invited to read: story title, author,
+        the author's brief and deadline, the chapter list with word counts, and the reading
+        progress you have recorded. Frozen draft only; never the author's live story."""
+        document = await reader_call(ctx)
+        return {
+            "story_title": document["share"]["title"],
+            "author": document["share"]["owner_name"],
+            "round": {
+                key: document["round"].get(key)
+                for key in ("id", "title", "brief", "deadline", "status")
+            },
+            "chapters": [
+                {
+                    "chapter_id": chapter["chapter_id"],
+                    "number": chapter["number"],
+                    "title": chapter["title"],
+                    "words": sum(len(s["content"].split()) for s in chapter["scenes"]),
+                }
+                for chapter in reader_chapters(document)
+            ],
+            "my_progress": {
+                "read_chapter_ids": document["read_chapters"],
+                "status": document["reading_status"],
+            },
+        }
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def read_beta_chapter(ctx: Context, chapter_id: UUID) -> dict[str, Any]:
+        """Beta-reader connections: the frozen text of one chapter in this round, scene by
+        scene. Use chapter_id from get_beta_round_overview. Help the reader think about their
+        feedback; the reader writes and sends it themselves in StoryTool."""
+        document = await reader_call(ctx)
+        chapter = next(
+            (c for c in reader_chapters(document) if c["chapter_id"] == str(chapter_id)), None
+        )
+        if chapter is None:
+            raise ToolError("That chapter is not part of this beta round.")
+        return chapter
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_my_beta_feedback(ctx: Context) -> dict[str, Any]:
+        """Beta-reader connections: your own comments and private drafts in this round, with
+        the author's replies. Other readers' feedback is never included."""
+        threads = await reader_call(ctx, "/threads")
+        return {"threads": threads, "count": len(threads)}
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_beta_polls(ctx: Context) -> dict[str, Any]:
+        """Beta-reader connections: the author's published polls in this round and your own
+        answers. Results appear only where the author chose to share them."""
+        polls = await reader_call(ctx, "/polls")
+        return {"polls": polls, "count": len(polls)}
+
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_evaluation_package(
         ctx: Context,
@@ -1015,7 +1124,8 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         grant = await principal(ctx.headers or {})
         include_prose = grant is not None and "prose:read" in grant.scopes
         return await call(
-            ctx, f"/evaluations/{evaluator_id}/package?include_prose={str(include_prose).lower()}",
+            ctx,
+            f"/evaluations/{evaluator_id}/package?include_prose={str(include_prose).lower()}",
             story_id=story_id,
         )
 

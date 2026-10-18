@@ -20,6 +20,7 @@ from litestar.types import (
     Send,
 )
 from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.ai.models import AgentToken, AIRun
 from storytool.domain.auth.models import User, UserSession
@@ -104,6 +105,46 @@ async def _reject(send: Send, status: int, detail: str) -> None:
     )
 
 
+_READER_ROUND_PATH = re.compile(r"^/api/beta/rounds/([0-9a-fA-F-]{36})(?:/threads|/polls)?/?$")
+_READER_THREAD_PATH = re.compile(r"^/api/beta/threads/([0-9a-fA-F-]{36})/?$")
+
+
+async def _reader_request_allowed(
+    db: AsyncSession, delegated: Delegation, path: str, method: str
+) -> bool:
+    """Round-scoped reader grants may only GET their own round's reader endpoints."""
+    from storytool.domain.story.beta import BetaMember, BetaRound, BetaThread
+
+    if method != "GET" or "beta:read" not in delegated.scopes:
+        return False
+    try:
+        if match := _READER_ROUND_PATH.match(path):
+            round_id = UUID(match.group(1))
+        elif match := _READER_THREAD_PATH.match(path):
+            round_id = await db.scalar(
+                select(BetaThread.round_id).where(BetaThread.id == UUID(match.group(1)))
+            )
+        else:
+            return False
+    except ValueError:
+        return False
+    if round_id != delegated.round_id:
+        return False
+    allowed = await db.scalar(
+        select(BetaRound.id)
+        .join(BetaMember, BetaMember.round_id == BetaRound.id)
+        .join(Story, Story.id == BetaRound.story_id)
+        .where(
+            BetaRound.id == round_id,
+            BetaRound.allow_reader_ai.is_(True),
+            BetaMember.user_id == delegated.user_id,
+            BetaMember.status == "approved",
+            Story.deleted_at.is_(None),
+        )
+    )
+    return allowed is not None
+
+
 class StoryAccessMiddleware:
     def __init__(self, app: ASGIApp, db_config: SQLAlchemyAsyncConfig) -> None:
         self.app = app
@@ -167,6 +208,16 @@ class StoryAccessMiddleware:
                 )
                 if delegated is None:
                     delegated = await delegated_access(db, bearer)
+                # A beta reader's own AI: GET-only reader endpoints of its one round, re-checked
+                # on every call (still approved, author still allows it, story not deleted).
+                if isinstance(delegated, Delegation) and delegated.round_id:
+                    if not await _reader_request_allowed(db, delegated, path, http_scope["method"]):
+                        await _reject(send, 403, "This connection can only read its beta round")
+                        return
+                    scope.setdefault("state", {})["storytool_user_id"] = delegated.user_id
+                    scope["state"]["storytool_write_origin"] = "mcp"
+                    await self.app(scope, receive, send)
+                    return
                 scopes = getattr(delegated, "scopes", STORY_SCOPES)
                 library = (
                     isinstance(delegated, Delegation)

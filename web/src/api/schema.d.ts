@@ -3646,6 +3646,7 @@ export interface components {
         /** ConsentDecision */
         ConsentDecision: {
             story_id?: string | null;
+            round_id?: string | null;
             scopes?: string[];
             /** @default false */
             deny: boolean;
@@ -4533,6 +4534,8 @@ export interface components {
             created_at: string;
             auto_approve: boolean;
             link_enabled: boolean;
+            /** @default false */
+            allow_reader_ai: boolean;
             join_path?: string | null;
         };
         /** RoundStatusOut */
@@ -4557,6 +4560,7 @@ export interface components {
             status?: "open" | "closed" | null;
             link_enabled?: boolean | null;
             auto_approve?: boolean | null;
+            allow_reader_ai?: boolean | null;
         };
         /** RuleExample */
         RuleExample: {

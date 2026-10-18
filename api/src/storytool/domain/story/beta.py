@@ -36,6 +36,7 @@ class BetaRound(StoryToolBase):
     status: Mapped[str] = mapped_column(String(20), default="open")
     snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB)
     source_fingerprint: Mapped[str] = mapped_column(String(64))
+    allow_reader_ai: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     token: Mapped[str] = mapped_column(String(64), unique=True)
     link_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     auto_approve: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -124,6 +125,7 @@ class RoundUpdate(BaseModel):
     status: Literal["open", "closed"] | None = None
     link_enabled: bool | None = None
     auto_approve: bool | None = None
+    allow_reader_ai: bool | None = None
 
 
 class RoundOut(BaseModel):
@@ -137,6 +139,7 @@ class RoundOut(BaseModel):
     created_at: datetime
     auto_approve: bool
     link_enabled: bool
+    allow_reader_ai: bool = False
     join_path: str | None = None
 
 

@@ -37,6 +37,7 @@ SCOPES = [
     "validators:read",
     "validators:write",
     "beta:write",
+    "beta:read",
 ]
 
 
@@ -59,6 +60,7 @@ class Delegation:
     expires_at: datetime
     scopes: list[str]
     oauth: bool
+    round_id: UUID | None = None
 
 
 async def delegated_access(db: AsyncSession, raw: str) -> Delegation | None:
@@ -89,6 +91,8 @@ async def delegated_access(db: AsyncSession, raw: str) -> Delegation | None:
                 or_(
                     and_(MCPGrant.story_id.is_(None), MCPGrant.scopes.contains(["library:read"])),
                     and_(Story.user_id == MCPGrant.user_id, Story.deleted_at.is_(None)),
+                    # Beta-reader grants: membership and the round opt-in are checked per request.
+                    and_(MCPGrant.round_id.is_not(None), MCPGrant.scopes.contains(["beta:read"])),
                 ),
             )
         )
@@ -99,7 +103,7 @@ async def delegated_access(db: AsyncSession, raw: str) -> Delegation | None:
     if token.parameters.get("resource") != resource():
         return None
     scopes = [s for s in token.parameters["scopes"] if s in grant.scopes]
-    return Delegation(grant.user_id, grant.story_id, token.expires_at, scopes, True)
+    return Delegation(grant.user_id, grant.story_id, token.expires_at, scopes, True, grant.round_id)
 
 
 class OAuthProvider:
@@ -114,7 +118,8 @@ class OAuthProvider:
             data = dict(record.metadata_json)
             # New capabilities may be requested by previously registered default clients.
             # Existing grants/tokens keep their scopes; expansion still needs fresh consent.
-            if data.get("scope") == " ".join(STORY_SCOPES):
+            registered = (data.get("scope") or "").split()
+            if len(registered) >= len(STORY_SCOPES) and registered == SCOPES[: len(registered)]:
                 data["scope"] = " ".join(SCOPES)
             if data.get("client_secret"):
                 data["client_secret"] = decrypt_key(data["client_secret"])
@@ -244,9 +249,9 @@ class OAuthProvider:
                     Story.deleted_at.is_(None),
                 )
             )
-            if (grant.story_id is None and "library:read" not in scopes) or (
-                grant.story_id is not None and active is None
-            ):
+            if (
+                grant.story_id is None and grant.round_id is None and "library:read" not in scopes
+            ) or (grant.story_id is not None and active is None):
                 raise TokenError("invalid_grant", "Story is unavailable")
             row.consumed_at = datetime.now(UTC)
             return await self._issue(db, grant, scopes)
@@ -358,6 +363,7 @@ async def complete_consent(
     story_id: UUID | None,
     scopes: list[str],
     deny: bool,
+    round_id: UUID | None = None,
 ) -> str:
     pending = await consent_record(db, raw, lock=True)
     if pending is None:
@@ -368,7 +374,13 @@ async def complete_consent(
         return construct_redirect_uri(
             str(params.redirect_uri), error="access_denied", state=params.state, iss=issuer()
         )
-    if "story:read" not in scopes or not set(scopes) <= set(params.scopes or []):
+    if round_id is not None:
+        return await _complete_reader_consent(db, pending, params, user_id, round_id, scopes)
+    if (
+        "story:read" not in scopes
+        or "beta:read" in scopes
+        or not set(scopes) <= set(params.scopes or [])
+    ):
         raise ValueError("Invalid consent scopes")
     story = await db.scalar(
         select(Story)
@@ -390,6 +402,55 @@ async def complete_consent(
         scopes=scopes,
         expires_at=datetime.now(UTC) + timedelta(days=30),
     )
+    return await _grant_code(db, pending, params, grant, user_id, scopes)
+
+
+async def _complete_reader_consent(
+    db: AsyncSession,
+    pending: MCPConsent,
+    params: AuthorizationParams,
+    user_id: UUID,
+    round_id: UUID,
+    scopes: list[str],
+) -> str:
+    """A beta reader's own AI: read-only, one round, only while the author allows it."""
+    from storytool.domain.story.beta import BetaMember, BetaRound
+
+    if scopes != ["beta:read"] or "beta:read" not in (params.scopes or []):
+        raise ValueError("Invalid consent scopes")
+    allowed = await db.scalar(
+        select(BetaRound.id)
+        .join(BetaMember, BetaMember.round_id == BetaRound.id)
+        .join(Story, Story.id == BetaRound.story_id)
+        .where(
+            BetaRound.id == round_id,
+            BetaRound.allow_reader_ai.is_(True),
+            BetaMember.user_id == user_id,
+            BetaMember.status == "approved",
+            Story.deleted_at.is_(None),
+        )
+    )
+    if allowed is None:
+        raise ValueError("Choose a beta round whose author allows reader AI connections")
+    grant = MCPGrant(
+        client_id=pending.client_id,
+        user_id=user_id,
+        story_id=None,
+        round_id=round_id,
+        scopes=scopes,
+        expires_at=datetime.now(UTC) + timedelta(days=30),
+    )
+    return await _grant_code(db, pending, params, grant, user_id, scopes)
+
+
+async def _grant_code(
+    db: AsyncSession,
+    pending: MCPConsent,
+    params: AuthorizationParams,
+    grant: MCPGrant,
+    user_id: UUID,
+    scopes: list[str],
+) -> str:
     db.add(grant)
     await db.flush()
     from storytool.domain.site.funnel import record_milestone

@@ -33,6 +33,9 @@ class MCPGrant(StoryToolBase):
     story_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("story.id", ondelete="CASCADE"), index=True, nullable=True
     )
+    round_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("beta_round.id", ondelete="CASCADE"), nullable=True, default=None
+    )
     scopes: Mapped[list[str]] = mapped_column(JSONB)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
