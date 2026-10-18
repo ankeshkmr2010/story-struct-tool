@@ -24,6 +24,7 @@ PAGES = {
         "roadmap",
     ),
     "/thanks": ("Shoutouts", "The people and ideas that helped shape StoryTool.", "shoutouts"),
+    "/about": ("About the developer", "Who builds StoryTool, and why.", "landing"),
     "/feedback": ("Feedback", "Share a bug, an idea or a better way to use StoryTool.", "feedback"),
     "/how-to-use": ("How to use StoryTool", "Your guide to writing with StoryTool.", "how-to-use"),
 }

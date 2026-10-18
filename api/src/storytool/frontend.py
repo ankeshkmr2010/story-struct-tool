@@ -31,6 +31,7 @@ def frontend_router(directory: Path) -> Router:
             "/how-to-use",
             "/roadmap",
             "/thanks",
+            "/about",
             "/pricing",
             "/privacy",
             "/feedback",

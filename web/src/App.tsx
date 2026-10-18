@@ -11,6 +11,7 @@ const StoryShowcase = lazy(() => import('./pages/StoryShowcase'))
 import HowToUse from './pages/HowToUse'
 import Roadmap from './pages/Roadmap'
 import Shoutouts from './pages/Shoutouts'
+import About from './pages/About'
 import Pricing from './pages/Pricing'
 import Privacy from './pages/Privacy'
 import Feedback from './pages/Feedback'
@@ -29,7 +30,7 @@ const TryLocked = lazy(() => import('./pages/TryStory').then(m => ({ default: m.
 // Browser tab titles by route; story pages refine theirs once the story's title loads.
 const PAGE_TITLES: [RegExp, string][] = [
   [/^\/$/, 'StoryTool — From idea to story'], [/^\/try/, 'Try StoryTool'], [/^\/how-to-use/, 'How to use · StoryTool'],
-  [/^\/roadmap/, 'Roadmap · StoryTool'], [/^\/thanks/, 'Shoutouts · StoryTool'], [/^\/pricing/, 'Pricing · StoryTool'],
+  [/^\/roadmap/, 'Roadmap · StoryTool'], [/^\/thanks/, 'Shoutouts · StoryTool'], [/^\/about/, 'About the developer · StoryTool'], [/^\/pricing/, 'Pricing · StoryTool'],
   [/^\/privacy/, 'Privacy · StoryTool'], [/^\/library/, 'Your stories · StoryTool'], [/^\/settings/, 'Settings · StoryTool'],
   [/^\/checks/, 'Writing checks · StoryTool'], [/^\/feedback/, 'Feedback · StoryTool'], [/^\/oauth/, 'Connect AI · StoryTool'],
   [/^\/stories\/[^/]+\/images/, 'Images · StoryTool'], [/^\/stories\/[^/]+\/beta/, 'Beta readers · StoryTool'],
@@ -63,6 +64,7 @@ export default function App() {
           <NavLink to="/library" className={`site-nav-link ${location.pathname.startsWith('/stories/') ? 'is-active' : ''}`}>Your stories</NavLink>
           <NavLink to="/how-to-use" className="site-nav-link">How to use</NavLink>
           <NavLink to="/roadmap" className="site-nav-link">Roadmap</NavLink>
+          <NavLink to="/about" className="site-nav-link">About</NavLink>
           <a href="/#mcp" className={`site-nav-link ${location.hash === '#mcp' ? 'is-active' : ''}`}>Connect AI</a>
           <NavLink to="/feedback" className="site-nav-link site-feedback-link">Feedback</NavLink>
         </nav>}
@@ -76,6 +78,7 @@ export default function App() {
       <Route path="/how-to-use" element={<HowToUse />} />
       <Route path="/roadmap" element={<Roadmap />} />
       <Route path="/thanks" element={<Shoutouts />} />
+      <Route path="/about" element={<About />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/showcase/:token" element={<Suspense fallback={<p className="p-8">Loading showcase…</p>}><StoryShowcase /></Suspense>} />

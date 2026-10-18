@@ -106,6 +106,6 @@ export default function Landing() {
 
     <section className="landing-modes" aria-labelledby="keep-title"><div><p className="eyebrow">YOURS TO KEEP</p><h2 id="keep-title">Your words can<br />always leave.</h2></div><div className="mode-list"><p><strong>Manuscript</strong><span>Export to Word, Markdown, PDF, EPUB or HTML with illustrations in place; plain text keeps descriptions and captions.</span></p><p><strong>Word import</strong><span>Start with prose from a .docx manuscript.</span></p><p><strong>Full backup</strong><span>Everything in one file, restorable as a new story.</span></p><p><strong>Versions</strong><span>Restore any saved version; your current draft is kept as a recovery copy.</span></p></div></section>
 
-    <footer className="landing-footer"><span>StoryTool · Make room for your story.</span><Link to="/privacy">Privacy</Link><Link to="/pricing">Pricing</Link><Link to="/library">Start your story →</Link></footer>
+    <footer className="landing-footer"><span>StoryTool · Make room for your story.</span><Link to="/privacy">Privacy</Link><Link to="/pricing">Pricing</Link><Link to="/about">About the developer</Link><Link to="/library">Start your story →</Link></footer>
   </main>
 }
