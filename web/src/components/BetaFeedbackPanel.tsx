@@ -54,6 +54,7 @@ export function BetaFeedbackPanel({ storyId, focusId, onShowInWrite }: { storyId
         {item.quote && <blockquote className="line-clamp-3 border-l-2 border-[var(--accent)] pl-2 text-sm italic">{item.quote}</blockquote>}
         {first && <p className="whitespace-pre-wrap text-sm"><strong>{first.name}:</strong> {first.body}</p>}
         {replies.length > 0 && <p className="text-xs text-[var(--muted)]">{replies.length} more {replies.length === 1 ? 'reply' : 'replies'}</p>}
+        {(item.draft_replies ?? 0) > 0 && <p className="text-xs font-medium text-[var(--accent)]">{item.draft_replies === 1 ? 'A draft reply is' : `${item.draft_replies} draft replies are`} waiting. Open Conversation to review and send.</p>}
         <div className="flex flex-wrap gap-2">
           {item.scene_id && <button type="button" className="ui-btn ui-btn-secondary" onClick={() => onShowInWrite(item.scene_id!, quoteNeedle(item.quote))}>Show in Write</button>}
           <Link className="ui-btn ui-btn-secondary" to={item.url}>Conversation</Link>

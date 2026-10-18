@@ -182,6 +182,12 @@ class StoryAccessMiddleware:
                     else ""
                 )
                 suffix = path.removeprefix(story_prefix) if delegated else ""
+                # Author-side beta actions: draft a reply (POST) or mark addressed (PATCH).
+                beta_write = bool(
+                    re.fullmatch(r"/beta-feedback/[0-9a-fA-F-]{36}(?:/draft-reply)?", suffix)
+                ) and http_scope["method"] == (
+                    "POST" if suffix.endswith("/draft-reply") else "PATCH"
+                )
                 allowed = bool(delegated and path.startswith(story_prefix + "/")) and (
                     http_scope["method"] == "GET"
                     or (
@@ -211,6 +217,7 @@ class StoryAccessMiddleware:
                     path == "/api/product-feedback" and http_scope["method"] == "POST"
                 )
                 allowed = allowed or bool(delegated and product_feedback)
+                allowed = allowed or bool(delegated and beta_write)
                 allowed = allowed or bool(
                     delegated
                     and collection
@@ -288,7 +295,7 @@ class StoryAccessMiddleware:
                 if collection:
                     needed.add("story:create" if http_scope["method"] == "POST" else "library:read")
                 elif http_scope["method"] != "GET" and not product_feedback:
-                    needed.add("story:write")
+                    needed.add("beta:write" if beta_write else "story:write")
                 if suffix.startswith("/versions/") and suffix.endswith("/restore"):
                     needed.update({"versions:restore", "prose:read"})
                 if validator_path:
@@ -428,10 +435,18 @@ class StoryAccessMiddleware:
                                 if ref_owner is not None and ref_owner != story_id:
                                     await _reject(send, 404, "Referenced item not found")
                                     return
-                if http_scope["method"] in {"POST", "PATCH", "PUT", "DELETE"} and not path.endswith(
-                    (
-                        "/ai/propose", "/notice", "/ai-review", "/scene-reader",
-                        "/reader-verify", "/hints",
+                if (
+                    http_scope["method"] in {"POST", "PATCH", "PUT", "DELETE"}
+                    and "/beta-feedback/" not in path
+                    and not path.endswith(
+                        (
+                            "/ai/propose",
+                            "/notice",
+                            "/ai-review",
+                            "/scene-reader",
+                            "/reader-verify",
+                            "/hints",
+                        )
                     )
                 ):
                     lock_story_id = story_id

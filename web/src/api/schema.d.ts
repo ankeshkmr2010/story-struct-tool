@@ -728,6 +728,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/authorship/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Summary */
+        get: operations["ApiStoriesStoryIdAuthorshipSummarySummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/shares": {
         parameters: {
             query?: never;
@@ -1059,6 +1076,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/beta-feedback/{thread_id}/draft-reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** DraftReply */
+        post: operations["ApiStoriesStoryIdBetaFeedbackThreadIdDraftReplyDraftReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/beta-feedback": {
         parameters: {
             query?: never;
@@ -1074,6 +1108,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/beta-feedback/{thread_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** SetAddressed */
+        patch: operations["ApiStoriesStoryIdBetaFeedbackThreadIdSetAddressed"];
         trace?: never;
     };
     "/api/stories/{story_id}/beta-status": {
@@ -3063,6 +3114,10 @@ export interface components {
             closing_turning_point_id?: string | null;
             sort_key?: number | null;
         };
+        /** AddressedIn */
+        AddressedIn: {
+            resolved: boolean;
+        };
         /** AdminStatusOut */
         AdminStatusOut: {
             is_admin: boolean;
@@ -3312,6 +3367,14 @@ export interface components {
             created_at: string;
             url: string;
             messages: components["schemas"]["FeedbackMessageOut"][];
+            /** @default 0 */
+            draft_replies: number;
+        };
+        /** BetaFeedbackStateOut */
+        BetaFeedbackStateOut: {
+            /** Format: uuid */
+            id: string;
+            resolved: boolean;
         };
         /** BetaThreadOut */
         BetaThreadOut: {
@@ -3661,11 +3724,33 @@ export interface components {
             outcome: "accepted" | "dismissed";
             rubric_version?: string | null;
         };
+        /** DisclosureOut */
+        DisclosureOut: {
+            story_title: string;
+            author_name: string | null;
+            tracking_since: string | null;
+            prose: components["schemas"]["OriginCounts"];
+            planning: components["schemas"]["OriginCounts"];
+            ai_tools: string[];
+            last_ai_edit: string | null;
+        };
         /** DocxImportOut */
         DocxImportOut: {
             story: components["schemas"]["StoryOut"];
             chapter_count: number;
             word_count: number;
+        };
+        /** DraftReplyIn */
+        DraftReplyIn: {
+            body: string;
+        };
+        /** DraftReplyOut */
+        DraftReplyOut: {
+            /** Format: uuid */
+            thread_id: string;
+            /** Format: uuid */
+            message_id: string;
+            url: string;
         };
         /**
          * DraftStatus
@@ -4116,6 +4201,17 @@ export interface components {
             data: {
                 [key: string]: unknown;
             };
+        };
+        /** OriginCounts */
+        OriginCounts: {
+            /** @default 0 */
+            author: number;
+            /** @default 0 */
+            assistant: number;
+            /** @default 0 */
+            mcp: number;
+            /** @default 0 */
+            other: number;
         };
         /** PackageOut */
         PackageOut: {
@@ -7127,6 +7223,43 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdAuthorshipSummarySummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisclosureOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdSharesListShares: {
         parameters: {
             query?: never;
@@ -8175,6 +8308,48 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdBetaFeedbackThreadIdDraftReplyDraftReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftReplyIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftReplyOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdBetaFeedbackFeedback: {
         parameters: {
             query?: {
@@ -8195,6 +8370,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BetaFeedbackOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdBetaFeedbackThreadIdSetAddressed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddressedIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BetaFeedbackStateOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

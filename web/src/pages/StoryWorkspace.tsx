@@ -23,7 +23,7 @@ import { OutlineCatchup } from '../components/OutlineCatchup'
 import { StoryEvaluation } from '../components/StoryEvaluation'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
-import { AuthorshipPanel } from '../components/AuthorshipPanel'
+import { AuthorshipPanel, DisclosureCard } from '../components/AuthorshipPanel'
 import { StorySharing } from '../components/StorySharing'
 import { DownloadMenu } from '../components/DownloadMenu'
 import { Tabs } from '../ui/Tabs'
@@ -503,7 +503,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
               <button type="button" role="tab" aria-selected={historyTab === 'versions'} onClick={() => setHistoryTab('versions')}>Versions</button>
               <button type="button" role="tab" aria-selected={historyTab === 'authorship'} onClick={() => setHistoryTab('authorship')}>Who wrote what</button>
             </div>
-            {historyTab === 'versions' ? <StoryVersions storyId={storyId} /> : <AuthorshipPanel storyId={storyId} />}
+            {historyTab === 'versions' ? <StoryVersions storyId={storyId} /> : <><DisclosureCard storyId={storyId} /><AuthorshipPanel storyId={storyId} /></>}
           </div>}
           {level === 1 && (
             <Panel title="Premise" hint="The story's starting point and settings." help="The premise is the core idea: who wants what, what stands in the way, and why it matters. Every later level builds on it.">

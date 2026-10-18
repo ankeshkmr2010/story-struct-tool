@@ -24,9 +24,10 @@ export default function OAuthConsent() {
   const [allowCreate, setAllowCreate] = useState(false)
   const [allowReadValidators, setAllowReadValidators] = useState(false)
   const [allowWriteValidators, setAllowWriteValidators] = useState(false)
+  const [allowBetaWrite, setAllowBetaWrite] = useState(false)
   const library = storyId === '__library__'
   const requested = request.data?.requested_scopes ?? []
-  const scopes = ['story:read', ...(allowProse ? ['prose:read'] : []), ...(allowWrite ? ['story:write'] : []), ...(allowWrite && allowProse && allowRestore ? ['versions:restore'] : []), ...(library ? ['library:read'] : []), ...(library && allowCreate ? ['story:create'] : []), ...(allowReadValidators || allowWriteValidators ? ['validators:read'] : []), ...(allowWriteValidators ? ['validators:write'] : [])].filter(scope => requested.includes(scope))
+  const scopes = ['story:read', ...(allowProse ? ['prose:read'] : []), ...(allowWrite ? ['story:write'] : []), ...(allowWrite && allowProse && allowRestore ? ['versions:restore'] : []), ...(library ? ['library:read'] : []), ...(library && allowCreate ? ['story:create'] : []), ...(allowReadValidators || allowWriteValidators ? ['validators:read'] : []), ...(allowWriteValidators ? ['validators:write'] : []), ...(allowBetaWrite && requested.includes('beta:write') ? ['beta:write'] : [])].filter(scope => requested.includes(scope))
   const decide = useMutation({ mutationFn: (deny: boolean) => api.decideOAuthConsent(requestId, { story_id: deny || library ? null : storyId, scopes: deny ? [] : scopes, deny }), onSuccess: ({ redirect_url }) => window.location.assign(redirect_url) })
   return <main className="mx-auto max-w-xl px-5 py-10">
     <p className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">StoryTool connection</p>
@@ -48,6 +49,7 @@ export default function OAuthConsent() {
         {library && requested.includes('story:create') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowCreate} onChange={event => setAllowCreate(event.target.checked)} />Create new stories in my account</label>}
         {requested.includes('prose:read') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowProse} onChange={event => setAllowProse(event.target.checked)} />{scopeLabels['prose:read']}</label>}
         {requested.includes('story:write') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowWrite} onChange={event => setAllowWrite(event.target.checked)} />{scopeLabels['story:write']}</label>}
+        {requested.includes('beta:write') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowBetaWrite} onChange={event => setAllowBetaWrite(event.target.checked)} />Draft replies to beta readers (you review and send them) and mark their feedback addressed</label>}
         {requested.includes('versions:restore') && <label className="flex items-start gap-2"><input type="checkbox" checked={allowRestore && allowWrite && allowProse} disabled={!allowWrite || !allowProse} onChange={event => setAllowRestore(event.target.checked)} />{scopeLabels['versions:restore']}</label>}
       </div>
       <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">{library ? 'This connection can access all active stories in your account, including stories created later.' : 'This connection can access only the selected story.'} Provider keys and other users’ stories stay private. Access lasts up to 30 days and can be revoked in Settings. Text you share goes to the connected AI client.</p>

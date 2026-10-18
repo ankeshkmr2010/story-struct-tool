@@ -3,6 +3,7 @@
 import asyncio
 import hashlib
 import hmac
+import logging
 import secrets
 import time
 from collections import OrderedDict
@@ -31,12 +32,42 @@ _secret = secrets.token_bytes(32)
 _peers: OrderedDict[str, tuple[int, int, int]] = OrderedDict()
 _cookie = "storytool_hint_session"
 
+# L14-DIAG (temporary, 2026-10-18): learn which client-IP headers Render forwards, so sandbox
+# limits can key on the visitor instead of the proxy. Logs hashed values only; remove after.
+_diag_left = 20
+
+
+def _log_ip_headers(request: Request, key: bytes) -> None:
+    global _diag_left
+    if _diag_left <= 0:
+        return
+    _diag_left -= 1
+
+    def tag(value: str | None) -> str:
+        return (
+            hmac.new(key, value.strip().encode(), hashlib.sha256).hexdigest()[:8] if value else "-"
+        )
+
+    chain = [
+        part for part in (request.headers.get("x-forwarded-for") or "").split(",") if part.strip()
+    ]
+    logging.getLogger("storytool.diag").warning(
+        "L14-DIAG peer=%s xff_len=%d xff=%s cf_connecting_ip=%s true_client_ip=%s x_real_ip=%s",
+        tag(request.client.host if request.client else None),
+        len(chain),
+        ",".join(tag(part) for part in chain),
+        tag(request.headers.get("cf-connecting-ip")),
+        tag(request.headers.get("true-client-ip")),
+        tag(request.headers.get("x-real-ip")),
+    )
+
 
 def sandbox_identity(request: Request) -> tuple[str, Cookie | None]:
     # Hash the socket peer; never trust a client-supplied visitor ID or forwarded header.
     # Peer caps also bound cookie-reset abuse. Global persisted spend caps cover workers.
     key = (get_settings().ai_encryption_key or "").encode() or _secret
     peer = request.client.host if request.client else "unknown"
+    _log_ip_headers(request, key)
     peer_hash = hmac.new(key, peer.encode(), hashlib.sha256).hexdigest()
     minute = int(time.time()) // 60
     previous, calls, issued = _peers.pop(peer_hash, (minute, 0, 0))

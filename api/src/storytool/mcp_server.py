@@ -531,6 +531,7 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
                 {"validators:read", "validators:write"} & set(grant.scopes)
             ),
             "can_manage_validators": "validators:write" in grant.scopes,
+            "can_draft_beta_replies": "beta:write" in grant.scopes,
             "access_mode": "library" if grant.story_id is None else "story",
             "expires_at": grant.expires_at.isoformat(),
             "permissions": grant.scopes,
@@ -955,6 +956,35 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
                 message["name"] = "Author" if message["author"] else reader
                 del message["reader"]
         return {"threads": threads, "count": len(threads)}
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def draft_beta_reply(
+        ctx: Context,
+        thread_id: UUID,
+        body: Annotated[str, Field(min_length=1, max_length=4000)],
+        story_id: UUID | None = None,
+    ) -> dict[str, Any]:
+        """Save an unsent reply to one beta-reader conversation (thread_id from
+        get_beta_feedback). Only the author sees it; they review, edit and send it from the
+        conversation page, so it never reaches the reader automatically. Write only what the
+        author asked for. Requires beta:write."""
+        return await call(
+            ctx,
+            f"/beta-feedback/{thread_id}/draft-reply",
+            "POST",
+            {"body": body},
+            story_id=story_id,
+        )
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def mark_beta_feedback_addressed(
+        ctx: Context, thread_id: UUID, addressed: bool = True, story_id: UUID | None = None
+    ) -> dict[str, Any]:
+        """Mark one beta-reader conversation addressed (or reopen it with addressed=false).
+        Do this only when the author says the feedback is handled. Requires beta:write."""
+        return await call(
+            ctx, f"/beta-feedback/{thread_id}", "PATCH", {"resolved": addressed}, story_id=story_id
+        )
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_beta_rounds(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:

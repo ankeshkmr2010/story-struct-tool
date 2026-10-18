@@ -764,6 +764,33 @@ class BetaFeedbackOut(BaseModel):
     created_at: datetime
     url: str
     messages: list[FeedbackMessageOut]
+    draft_replies: int = 0
+
+
+class DraftReplyIn(BaseModel):
+    body: str = Field(min_length=1, max_length=4000)
+
+    @field_validator("body")
+    @classmethod
+    def body_nonblank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Write a reply")
+        return value.strip()
+
+
+class DraftReplyOut(BaseModel):
+    thread_id: UUID
+    message_id: UUID
+    url: str
+
+
+class AddressedIn(BaseModel):
+    resolved: bool
+
+
+class BetaFeedbackStateOut(BaseModel):
+    id: UUID
+    resolved: bool
 
 
 class BetaFeedbackController(Controller):
@@ -787,7 +814,22 @@ class BetaFeedbackController(Controller):
             query = query.where(BetaThread.resolved.is_(False))
         rows = (await db_session.execute(query.order_by(BetaThread.updated_at.desc()))).all()
         messages: dict[UUID, list[FeedbackMessageOut]] = {}
+        drafts: dict[UUID, int] = {}
         if rows:
+            drafts = dict(
+                (
+                    await db_session.execute(
+                        select(BetaMessage.thread_id, func.count())
+                        .where(
+                            BetaMessage.thread_id.in_([thread.id for thread, _ in rows]),
+                            BetaMessage.submitted.is_(False),
+                            BetaMessage.deleted.is_(False),
+                            BetaMessage.user_id == actor(request),
+                        )
+                        .group_by(BetaMessage.thread_id)
+                    )
+                ).all()
+            )
             posts = await db_session.scalars(
                 select(BetaMessage)
                 .where(
@@ -812,10 +854,34 @@ class BetaFeedbackController(Controller):
                 id=thread.id, round_id=thread.round_id, round_title=title, chapter_id=thread.chapter_id,
                 scene_id=thread.scene_id, quote=thread.quote, paragraph=thread.paragraph, resolved=thread.resolved,
                 created_at=thread.created_at, url=f"/beta/rounds/{thread.round_id}/threads/{thread.id}",
-                messages=messages.get(thread.id, []),
+                messages=messages.get(thread.id, []), draft_replies=drafts.get(thread.id, 0),
             )
             for thread, title in rows
         ]
+
+    async def owned_thread(self, request: Request, db_session: AsyncSession, story_id: UUID, thread_id: UUID, write: bool) -> BetaThread:
+        thread, row, owner = await thread_access(db_session, request, thread_id, write=write)
+        if not owner or row.story_id != story_id:
+            raise NotFoundException(detail="Comment not found")
+        return thread
+
+    @post("/{thread_id:uuid}/draft-reply", status_code=201)
+    async def draft_reply(self, request: Request, db_session: AsyncSession, story_id: UUID, thread_id: UUID, data: DraftReplyIn) -> DraftReplyOut:
+        """An unsent author reply; the author reviews and sends it from the conversation page."""
+        thread = await self.owned_thread(request, db_session, story_id, thread_id, write=True)
+        user = await db_session.get(User, actor(request))
+        message = BetaMessage(thread_id=thread.id, user_id=user.id, name=user.author_name or "Author", body=data.body, submitted=False)
+        db_session.add(message)
+        await db_session.flush()
+        return DraftReplyOut(thread_id=thread.id, message_id=message.id, url=f"/beta/rounds/{thread.round_id}/threads/{thread.id}")
+
+    @patch("/{thread_id:uuid}")
+    async def set_addressed(self, request: Request, db_session: AsyncSession, story_id: UUID, thread_id: UUID, data: AddressedIn) -> BetaFeedbackStateOut:
+        thread = await self.owned_thread(request, db_session, story_id, thread_id, write=False)
+        await lock_source(db_session, story_id)
+        thread.resolved = data.resolved
+        await db_session.flush()
+        return BetaFeedbackStateOut(id=thread.id, resolved=thread.resolved)
 
 
 @get("/api/beta/feedback-counts", tags=["beta"])

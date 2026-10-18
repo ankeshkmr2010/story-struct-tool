@@ -192,6 +192,7 @@ export const api = {
     return request<SearchPage>(`/api/stories/${id}/search?${params}`, { signal })
   },
   getAuthorship: (id: string) => request<Authorship[]>(`/api/stories/${id}/authorship`),
+  getDisclosure: (id: string) => request<S['DisclosureOut']>(`/api/stories/${id}/authorship/summary`),
   listShares: (id: string) => request<StoryShare[]>(`/api/stories/${id}/shares`),
   shareStory: (id: string, recipient_email: string, allow_import: boolean) =>
     request<StoryShare>(`/api/stories/${id}/shares`, { method: 'PUT', body: JSON.stringify({ recipient_email, allow_import }) }),

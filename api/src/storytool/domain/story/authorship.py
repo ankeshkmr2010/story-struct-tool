@@ -1,12 +1,13 @@
 """Field authorship records contain attribution, never duplicated prose or provider keys."""
 
+import re
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
 from litestar import Controller, get
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import ForeignKey, String, select
+from sqlalchemy import ForeignKey, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -116,6 +117,26 @@ async def record_changes(
     await db.flush()
 
 
+TECHNICAL_FIELD = re.compile(r"(^id$|_id$|sort_key)")
+
+
+class OriginCounts(BaseModel):
+    author: int = 0
+    assistant: int = 0
+    mcp: int = 0
+    other: int = 0
+
+
+class DisclosureOut(BaseModel):
+    story_title: str
+    author_name: str | None
+    tracking_since: datetime | None
+    prose: OriginCounts
+    planning: OriginCounts
+    ai_tools: list[str]
+    last_ai_edit: datetime | None
+
+
 class AuthorshipController(Controller):
     path = "/api/stories/{story_id:uuid}/authorship"
     tags = ["authorship"]  # noqa: RUF012
@@ -130,3 +151,53 @@ class AuthorshipController(Controller):
             .limit(500)
         )
         return [AuthorshipOut.model_validate(row) for row in rows]
+
+    @get("/summary")
+    async def summary(self, db_session: AsyncSession, story_id: UUID) -> DisclosureOut:
+        """Counts of tracked saved edits by origin, for an AI-use disclosure. Not word shares."""
+        from storytool.domain.auth.models import User
+        from storytool.domain.story.models import Story
+
+        story = await db_session.get(Story, story_id)
+        owner = await db_session.get(User, story.user_id) if story else None
+        rows = await db_session.execute(
+            select(
+                FieldAuthorship.entity_type,
+                FieldAuthorship.field,
+                FieldAuthorship.origin,
+                func.count(),
+                func.min(FieldAuthorship.created_at),
+                func.max(FieldAuthorship.created_at),
+            )
+            .where(FieldAuthorship.story_id == story_id)
+            .group_by(FieldAuthorship.entity_type, FieldAuthorship.field, FieldAuthorship.origin)
+        )
+        prose, planning = OriginCounts(), OriginCounts()
+        since: datetime | None = None
+        last_ai: datetime | None = None
+        for entity_type, field, origin, count, first, last in rows:
+            since = first if since is None or first < since else since
+            if origin in {"mcp", "assistant"}:
+                last_ai = last if last_ai is None or last > last_ai else last_ai
+            if TECHNICAL_FIELD.search(field):
+                continue
+            bucket = prose if (entity_type, field) == ("scene", "content") else planning
+            key = origin if origin in {"author", "assistant", "mcp"} else "other"
+            setattr(bucket, key, getattr(bucket, key) + count)
+        clients = await db_session.scalars(
+            select(FieldAuthorship.actor_label)
+            .where(
+                FieldAuthorship.story_id == story_id,
+                FieldAuthorship.origin.in_(["mcp", "assistant"]),
+            )
+            .distinct()
+        )
+        return DisclosureOut(
+            story_title=story.title if story else "",
+            author_name=(owner.author_name or owner.name) if owner else None,
+            tracking_since=since,
+            prose=prose,
+            planning=planning,
+            ai_tools=sorted(clients),
+            last_ai_edit=last_ai,
+        )

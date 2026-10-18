@@ -30,7 +30,14 @@ from storytool.domain.auth.oauth_models import MCPClient, MCPConsent, MCPGrant, 
 from storytool.domain.story.models import Story
 
 STORY_SCOPES = ["story:read", "prose:read", "story:write", "versions:restore"]
-SCOPES = [*STORY_SCOPES, "library:read", "story:create", "validators:read", "validators:write"]
+SCOPES = [
+    *STORY_SCOPES,
+    "library:read",
+    "story:create",
+    "validators:read",
+    "validators:write",
+    "beta:write",
+]
 
 
 def digest(raw: str) -> str:
