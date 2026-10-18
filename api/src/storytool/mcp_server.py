@@ -1072,9 +1072,9 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
     ) -> dict[str, Any]:
         """Inspect a manuscript the author uploaded in StoryTool's import window (the window
         shows the upload_id in its AI prompt). Returns format, stats, splitting options with
-        counts, a recommended plan, a guide to every plan field and a numbered outline: Word
-        blocks (style, word count, first 140 characters, cues such as page_break, chapter_line,
-        separator, italic) or Scrivener binder items (type, depth, title, words, synopsis,
+        counts, a recommended plan, a guide to every plan field and a numbered outline:
+        blocks for Word, Markdown/text and EPUB (style, word count, first 140 characters,
+        cues such as page_break, chapter_line, separator, italic) or Scrivener binder items (type, depth, title, words, synopsis,
         notes, compile flag). Page with offset/limit until outline_total is covered.
 
         Then build the best plan: find front and back matter to skip (title page, copyright,

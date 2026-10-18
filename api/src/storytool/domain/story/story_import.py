@@ -21,13 +21,17 @@ from storytool.domain.narrative.prose import save_scene_content
 from storytool.domain.site.funnel import record_milestone
 from storytool.domain.story.authorship import record_changes
 from storytool.domain.story.docx_import import DOCX
+from storytool.domain.story.epub_import import EPUB
 from storytool.domain.story.import_model import ImportAdapter, ImportedStory
 from storytool.domain.story.models import Story
 from storytool.domain.story.schemas import StoryOut
 from storytool.domain.story.scrivener_import import SCRIVENER
+from storytool.domain.story.text_import import TEXT
 from storytool.domain.versioning.service import checkpoint, full_state
 
-ADAPTERS: dict[str, ImportAdapter] = {adapter.name: adapter for adapter in (DOCX, SCRIVENER)}
+ADAPTERS: dict[str, ImportAdapter] = {
+    adapter.name: adapter for adapter in (DOCX, SCRIVENER, TEXT, EPUB)
+}
 MAX_IMPORT_BYTES = max(adapter.max_bytes for adapter in ADAPTERS.values())
 UPLOAD_HOURS = 24
 

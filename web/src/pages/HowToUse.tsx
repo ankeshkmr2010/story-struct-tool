@@ -495,7 +495,8 @@ export default function HowToUse() {
                 </Item>
                 <Item title="Bring in existing prose">
                   In Your stories, choose <strong className="font-medium">Create ▾ → From Word (.docx)</strong> or{' '}
-                  <strong className="font-medium">From Scrivener (.zip)</strong> (zip the whole .scriv folder first).
+                  <strong className="font-medium">From Scrivener (.zip)</strong> (zip the whole .scriv folder first),{' '}
+                  <strong className="font-medium">From Markdown or text</strong> or <strong className="font-medium">From EPUB</strong> (DRM-free).
                   StoryTool reads the file and shows what it found; you choose where chapters and scenes start (headings,
                   “Chapter” lines, *** separators, page breaks, or Scrivener folder levels), whether to skip a title page,
                   and whether synopses and notes come along, with a live preview. Or copy the prompt for your connected AI:

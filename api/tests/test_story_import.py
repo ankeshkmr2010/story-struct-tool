@@ -282,3 +282,72 @@ async def test_mcp_tools_plan_and_import_an_upload(client) -> None:
     assert imported["chapter_count"] == 2
     status = (await client.get(f"/api/imports/uploads/{upload['id']}")).json()
     assert status["story_id"] == imported["story"]["id"]
+
+
+def test_markdown_and_text_share_block_planning() -> None:
+    from storytool.domain.story.block_import import inspect_blocks, read_blocks
+    from storytool.domain.story.text_import import text_blocks
+
+    source = (
+        b"Title Page\n\n# Chapter One\n\nMaya lit the lamp.\n\n---\n\nMorning came.\n\n"
+        b"Chapter Two\n===========\n\n*She leaves.*\n\nThe boat rocked.\f\nAfterword text."
+    )
+    blocks = text_blocks(source)
+    assert [b.style for b in blocks][:2] == ["Normal", "Heading 1"]
+    assert blocks[3].separator and blocks[5].style == "Heading 1" and blocks[6].italic
+    assert blocks[-1].page_break_before
+    info = inspect_blocks(blocks)
+    assert info["recommended"]["chapter_split"] == "heading1"
+    assert info["recommended"]["scene_split"] == "separators"
+    story = read_blocks(blocks, None)
+    assert [c.title for c in story.chapters] == ["Chapter One", "Chapter Two"]
+    assert len(story.chapters[0].scenes) == 2
+
+
+def epub_bytes(drm: bool = False) -> bytes:
+    container = (
+        '<?xml version="1.0"?><container xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+        '<rootfiles><rootfile full-path="OEBPS/content.opf"/></rootfiles></container>'
+    )
+    opf = (
+        '<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf"><manifest>'
+        '<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>'
+        '<item id="c1" href="text/c1.xhtml" media-type="application/xhtml+xml"/>'
+        '<item id="c2" href="text/c2.xhtml" media-type="application/xhtml+xml"/>'
+        '</manifest><spine><itemref idref="nav"/><itemref idref="c1"/><itemref idref="c2"/>'
+        "</spine></package>"
+    )
+    page = '<html xmlns="http://www.w3.org/1999/xhtml"><head><title>x</title></head><body>{}</body></html>'
+    files = {
+        "META-INF/container.xml": container,
+        "OEBPS/content.opf": opf,
+        "OEBPS/nav.xhtml": page.format("<nav><ol><li>Contents</li></ol></nav>"),
+        "OEBPS/text/c1.xhtml": page.format(
+            "<h1>Chapter One</h1><p>Maya&nbsp;lit the lamp.</p><p><em>A short opener.</em></p>"
+        ),
+        "OEBPS/text/c2.xhtml": page.format(
+            "<h1>Chapter Two</h1><div><p>The boat rocked.</p></div>"
+        ),
+    }
+    if drm:
+        files["META-INF/encryption.xml"] = "<encryption><EncryptedData/></encryption>"
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        for name, data in files.items():
+            archive.writestr(name, data)
+    return buffer.getvalue()
+
+
+def test_epub_reads_spine_order_headings_and_refuses_drm() -> None:
+    from storytool.domain.story.block_import import read_blocks
+    from storytool.domain.story.epub_import import epub_blocks
+
+    blocks = epub_blocks(epub_bytes())
+    assert blocks[0].text == "Chapter One"
+    assert "Contents" not in [b.text for b in blocks]
+    assert blocks[2].italic and blocks[3].page_break_before
+    story = read_blocks(blocks, None)
+    assert [c.title for c in story.chapters] == ["Chapter One", "Chapter Two"]
+    assert story.chapters[0].scenes[0].prose.startswith("Maya lit the lamp.")
+    with pytest.raises(ValueError, match="DRM"):
+        epub_blocks(epub_bytes(drm=True))

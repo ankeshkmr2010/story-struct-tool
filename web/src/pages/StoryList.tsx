@@ -162,8 +162,10 @@ export default function StoryList() {
         {/* Other ways to start a story live behind ▾ beside Create. */}
         <Menu label={importBackup.isPending || importOpen ? '…' : '▾'} ariaLabel="More ways to start a story" className="library-create-more" triggerClassName="ui-btn ui-btn-secondary">
           <MenuItem disabled={importBackup.isPending || importOpen} title="Restore a StoryTool backup file as a new story" onSelect={() => backupInput.current?.click()}>From backup…</MenuItem>
-          <MenuItem disabled={importBackup.isPending || importOpen} title="Import body prose; Heading 1 starts each chapter" onSelect={() => { setPromptStory(null); setImportFormat('docx'); setImportOpen(true) }}>From Word (.docx)…</MenuItem>
+          <MenuItem disabled={importBackup.isPending || importOpen} title="Import a Word manuscript and choose how it splits" onSelect={() => { setPromptStory(null); setImportFormat('docx'); setImportOpen(true) }}>From Word (.docx)…</MenuItem>
           <MenuItem disabled={importBackup.isPending || importOpen} title="Import a zipped .scriv project: Draft folders become chapters, documents become scenes" onSelect={() => { setPromptStory(null); setImportFormat('scrivener'); setImportOpen(true) }}>From Scrivener (.zip)…</MenuItem>
+          <MenuItem disabled={importBackup.isPending || importOpen} title="Import a Markdown or plain-text manuscript" onSelect={() => { setPromptStory(null); setImportFormat('text'); setImportOpen(true) }}>From Markdown or text…</MenuItem>
+          <MenuItem disabled={importBackup.isPending || importOpen} title="Import a DRM-free EPUB book" onSelect={() => { setPromptStory(null); setImportFormat('epub'); setImportOpen(true) }}>From EPUB…</MenuItem>
         </Menu>
         <input
           ref={backupInput}

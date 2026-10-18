@@ -29,7 +29,8 @@ export type ProductFeedback = S['ProductFeedbackOut']
 export type ProductFeedbackInput = S['ProductFeedbackIn']
 export type Funnel = S['FunnelOut']
 export type DocxImport = S['ImportOut']
-export type ImportFormat = 'docx' | 'scrivener'
+export type ImportFormat = 'docx' | 'scrivener' | 'text' | 'epub'
+const IMPORT_TYPES: Record<ImportFormat, string> = { docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', scrivener: 'application/zip', text: 'text/plain', epub: 'application/epub+zip' }
 export type ImportUpload = S['UploadOut']
 export type ImportPreview = S['PreviewOut']
 export type BetaRound = S['RoundOut']
@@ -471,10 +472,10 @@ export const api = {
   backupUrl: (storyId: string) => `/api/stories/${storyId}/backup`,
   importBackup: (backup: unknown) => post<Story>('/api/backups/import', backup),
   importStory: (format: ImportFormat, file: File, title: string) => request<DocxImport>(`/api/imports/${format}?title=${encodeURIComponent(title)}`, {
-    method: 'POST', headers: { 'Content-Type': format === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/zip' }, body: file,
+    method: 'POST', headers: { 'Content-Type': IMPORT_TYPES[format] }, body: file,
   }),
   uploadImport: (format: ImportFormat, file: File) => request<ImportUpload>(`/api/imports/${format}/uploads?filename=${encodeURIComponent(file.name)}`, {
-    method: 'POST', headers: { 'Content-Type': format === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/zip' }, body: file,
+    method: 'POST', headers: { 'Content-Type': IMPORT_TYPES[format] }, body: file,
   }),
   getImportUpload: (id: string) => request<ImportUpload>(`/api/imports/uploads/${id}?limit=1`),
   previewImport: (id: string, plan: Record<string, unknown>) => post<ImportPreview>(`/api/imports/uploads/${id}/preview`, { plan }),

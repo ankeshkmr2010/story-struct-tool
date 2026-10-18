@@ -20,6 +20,16 @@ const FORMATS: Record<ImportFormat, { heading: string; fileLabel: string; accept
     accept: '.zip,application/zip',
     help: 'Up to 40 MB. Zip your whole .scriv project folder first (on a Mac, right-click it and choose Compress). StoryTool reads the Draft or Manuscript folder, then you choose which folders are chapters before anything is created. Research is left out.',
   },
+  text: {
+    heading: 'Import Markdown or plain text', fileLabel: 'Markdown or text file (.md or .txt)', extension: /\.(md|markdown|txt)$/i, maxMb: 10,
+    accept: '.md,.markdown,.txt,text/markdown,text/plain',
+    help: 'Up to 10 MB, saved as UTF-8. Blank lines separate paragraphs; # headings or “Chapter” lines can start chapters, and ***, --- or # lines can start scenes. You choose before anything is created.',
+  },
+  epub: {
+    heading: 'Import an EPUB book', fileLabel: 'EPUB file (.epub)', extension: /\.epub$/i, maxMb: 40,
+    accept: '.epub,application/epub+zip',
+    help: 'Up to 40 MB, DRM-free only. StoryTool reads the book in reading order, skipping the contents page; each section starts on a new page, so headings or section starts can become chapters. You choose before anything is created.',
+  },
 }
 
 const SPLIT_LABELS: Record<string, string> = {
@@ -162,12 +172,12 @@ export function WordImportDialog({ open, format = 'docx', story, defaultTitle, o
       {analyse.error && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(analyse.error)}</p>}
     </form> : <div className="mt-5 space-y-4">
       <p className="text-sm text-[var(--muted)]">
-        {format === 'docx'
+        {format !== 'scrivener'
           ? `Found ${stats.words?.toLocaleString() ?? 0} words in ${stats.blocks ?? 0} paragraphs: ${stats.heading1 ?? 0} Heading 1, ${stats.heading2 ?? 0} Heading 2, ${stats.chapter_lines ?? 0} “Chapter” lines, ${stats.separators ?? 0} separators and ${stats.page_break ?? 0} page breaks.`
           : `Found ${stats.words?.toLocaleString() ?? 0} words in ${stats.documents ?? 0} documents and ${stats.folders ?? 0} folders, with ${stats.synopses ?? 0} synopses and ${stats.notes ?? 0} notes. ${stats.excluded_from_compile ?? 0} items are excluded from compile.`}
       </p>
       <label className="block text-sm">Story title<input required maxLength={200} disabled={busy} value={title} onChange={(event) => setTitle(event.target.value)} className="mt-2 block w-full rounded border border-[var(--line)] bg-[var(--surface)] p-3" /></label>
-      {format === 'docx' ? <div className="grid gap-3 sm:grid-cols-2">
+      {format !== 'scrivener' ? <div className="grid gap-3 sm:grid-cols-2">
         <label className="block text-sm">Chapters start at<select value={String(plan.chapter_split ?? 'none')} disabled={busy} onChange={(event) => set('chapter_split', event.target.value)} className="mt-2 block w-full rounded border border-[var(--line)] bg-[var(--surface)] p-2">
           {(inspection?.options.chapter_split ?? []).filter(option => option.value !== 'explicit' || plan.chapter_split === 'explicit').map(option => <option key={option.value} value={option.value}>{optionLabel(option)}</option>)}
         </select></label>
