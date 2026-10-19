@@ -28,7 +28,9 @@ import { StorySharing } from '../components/StorySharing'
 import { DownloadMenu } from '../components/DownloadMenu'
 import { Tabs } from '../ui/Tabs'
 import { IconButton } from '../ui/primitives'
-import { MenuItem } from '../ui/Menu'
+import { Menu, MenuItem } from '../ui/Menu'
+import { ThemeToggle } from '../components/Theme'
+import { AccountMenu } from '../components/AuthGate'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
 import { SANDBOX_ID, FIRST_SCENE, tourEvent, type Sandbox } from '../sandbox/storage'
@@ -313,6 +315,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
     if (!sandbox || !sandboxStep) return
     if (sandboxStep === 1) { void changeTab('read'); setReaderScene({ sceneId: FIRST_SCENE, sequence: Date.now() }) }
     if (sandboxStep === 2 || sandboxStep === 3) { void changeTab('write'); setWriterScene({ id: FIRST_SCENE, at: Date.now() }) }
+    // "Open Context" must open Context, not whichever panel tab was used last.
+    if (sandboxStep === 3) { setRefPanelPref('context'); setPanelHidden(true) }
     if (sandboxStep === 4) setRefPanel('timeline')
     if (sandboxStep === 5) {
       setRefPanel(null)
@@ -322,6 +326,11 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
     // The persisted step drives navigation once; ordinary browsing remains free.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sandboxStep, sandbox, sandboxRun])
+  // One bar instead of two: the workspace bar carries the site header's links while open.
+  useEffect(() => {
+    document.documentElement.classList.add('ws-active')
+    return () => document.documentElement.classList.remove('ws-active')
+  }, [])
   useEffect(() => {
     if (!sandbox) return
     window.storytoolTryFlush = () => writerFlush.current()
@@ -443,6 +452,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
     <main data-workspace-story={storyId} data-workspace-ready={!chapters.isPending && !scenes.isPending ? true : undefined} className="workspace-page ws-page">
       {searchParams.get('sandbox_saved') === '1' && <p role="status" className="try-saved">Your Last Lantern is saved. <Link to="/library">Start your own story →</Link></p>}
       <header className="ws-bar">
+        <Link to="/" className="ws-brand" aria-label="StoryTool home" title="StoryTool home"><img src="/branding/storytool.svg" alt="" width="26" height="26" /></Link>
         {!sandbox && <Link to="/library" className="ws-back" aria-label="All stories" title="All stories">‹</Link>}
         <div className="ws-title"><h1>{story.data.title}</h1>{progress.data && <span>{progress.data.word_count.toLocaleString()} words · {progress.data.drafted_scene_count}/{progress.data.scene_count} scenes drafted</span>}</div>
       <div className="story-workspace-tabs" role="tablist" aria-label="Story workspace" onKeyDown={event => {
@@ -463,10 +473,15 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {pendingRuns > 0 && <button type="button" className="workspace-ref-alert" onClick={() => { void openView(INBOX_VIEW) }}>Agent changes<span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span></button>}
         <div className="ws-bar-actions">
           {tab === 'write' && <IconButton label="Focus mode" onClick={() => setWriterFocus(true)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></IconButton>}
+          <IconButton label="History" aria-pressed={tab === 'design' && level === HISTORY_VIEW} onClick={() => { void openView(HISTORY_VIEW).then(() => { if (sandbox) tourEvent('history') }) }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l3 2" /></svg></IconButton>
           <IconButton label={hasPanel ? 'Hide side panel' : tab === 'write' ? 'Show context and side panel' : 'Show side panel'} aria-pressed={hasPanel} className={tab === 'write' && !hasPanel ? 'writer-context-toggle' : ''} onClick={togglePanel}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg></IconButton>
           {!sandbox && <StorySharing menu betaOpen={openFeedback.data?.length ?? 0} storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>Images</MenuItem>} />}
           {/* Export is first-class: the words must always be able to leave. */}
           {!sandbox && <DownloadMenu storyId={storyId} />}
+          {/* The site header is hidden while a workspace is open; its links live here. */}
+          {!sandbox && <Menu label="⋯" ariaLabel="Site menu" triggerClassName="share-story-button"><MenuItem onSelect={() => navigate('/library')}>Your stories</MenuItem><MenuItem onSelect={() => navigate('/how-to-use')}>How to use</MenuItem><MenuItem onSelect={() => navigate('/roadmap')}>Roadmap</MenuItem><MenuItem onSelect={() => navigate('/about')}>About</MenuItem><MenuItem onSelect={() => navigate('/#mcp')}>Connect AI</MenuItem><MenuItem onSelect={() => navigate('/feedback')}>Feedback</MenuItem></Menu>}
+          <ThemeToggle />
+          {!sandbox && <AccountMenu />}
         </div>
       </header>
       {tabError && <p role="alert" className="writer-error">{tabError}</p>}

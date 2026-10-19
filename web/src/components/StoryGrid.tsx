@@ -330,7 +330,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                         {isEditing && <button type="button" onClick={(event) => { event.stopPropagation(); setEditing(null) }} className="workspace-shortcut mt-2 block rounded px-2 text-xs">Done</button>}
                       </td>
                       <td className={`px-2 ${pad}`}>
-                        <button type="button" aria-label={`Status ${scene.status}, click to advance`} title={`${scene.status} — click to advance`} onClick={(event) => { event.stopPropagation(); advanceStatus(scene) }} className={`mt-1 block h-3 w-3 rounded-full ${STATUS_DOT[scene.status] ?? 'bg-slate-300'}`} />
+                        <button type="button" aria-label={`Status ${scene.status}, click to advance`} title={`${scene.status} — click to advance`} onClick={(event) => { event.stopPropagation(); advanceStatus(scene) }} className={`mt-0.5 block h-4 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/20 ${STATUS_DOT[scene.status] ?? 'bg-slate-300'}`} />
                       </td>
                       {shown.map((column) => {
                         const edit = agentEdit(scene, column.fields)

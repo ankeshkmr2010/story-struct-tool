@@ -221,6 +221,8 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   const [imageAnchor, setImageAnchor] = useState<{ x: number; y: number; at: number } | null>(null)
   const [context, setContext] = useState<{ x: number; y: number; at: number; hasSelection: boolean } | null>(null)
   const [clipboardError, setClipboardError] = useState('')
+  // A small button beside a selection opens the same actions as right-click, so they are discoverable.
+  const [selectionChip, setSelectionChip] = useState<{ x: number; y: number } | null>(null)
   const menu = useRef<HTMLDivElement>(null)
   const images = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: storyId !== SANDBOX_ID })
   const [latest, setLatest] = useState<string | null>(null)
@@ -259,6 +261,12 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     window.addEventListener('pointerdown', outside); window.addEventListener('keydown', dismiss); window.addEventListener('scroll', scroll, true)
     return () => { window.removeEventListener('pointerdown', outside); window.removeEventListener('keydown', dismiss); window.removeEventListener('scroll', scroll, true) }
   }, [context])
+  useEffect(() => {
+    if (!selectionChip) return
+    const hide = () => setSelectionChip(null)
+    window.addEventListener('scroll', hide, true)
+    return () => window.removeEventListener('scroll', hide, true)
+  }, [selectionChip])
   const editClipboard = async (action: 'cut' | 'copy' | 'paste' | 'select') => {
     const editor = view.current; if (!editor) return
     const selection = editor.state.selection.main
@@ -286,6 +294,11 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     {state.status === 'error' && <div role="alert" className="writer-error"><p>{state.error}</p><p>Your draft is preserved in this browser tab.</p><button type="button" onClick={() => { void draft.flush() }}>Retry save</button> <button type="button" onClick={() => { void review() }}>Review latest text</button>{reviewError && <p>{reviewError}</p>}{latest !== null && <div><h3>Latest saved text</h3><pre className="writer-latest">{latest || '(Empty passage)'}</pre><button type="button" onClick={() => { if (window.confirm('Replace your local draft with the latest saved text?')) { draft.useLatest(latest); setLatest(null) } }}>Use latest text</button> <button type="button" onClick={() => { if (window.confirm('Save your draft over the latest text? A prose revision will preserve the previous text.')) { lastCheckpoint.current = 0; draft.rebase(latest); setLatest(null); void draft.flush() } }}>Keep my draft</button></div>}</div>}
     <div className={liveHints && scene ? "writer-hint-layout" : undefined}>
     <CodeMirror onUpdate={update => {
+      if (update.selectionSet || update.docChanged || update.focusChanged) {
+        const selected = update.state.selection.main
+        const coords = !selected.empty && update.view.hasFocus ? update.view.coordsAtPos(selected.to) : null
+        setSelectionChip(coords ? { x: coords.right, y: coords.bottom } : null)
+      }
       if (!liveHints || (!update.selectionSet && !update.docChanged && !update.focusChanged)) return
       const cursor = update.state.selection.main.head
       const parts = [...update.state.doc.toString().matchAll(/(?:^|\n\s*\n)([\s\S]*?)(?=\n\s*\n|$)/g)].filter(part => part[1].replace(/!\[[^\]\n]*\]\([^\n)]*\)/g, '').trim())
@@ -330,6 +343,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     }} />}
     </div>
     {previewImage && <ImagePreview url={previewImage.url} alt={previewImage.alt} caption={previewImage.caption} onClose={() => { setPreviewImage(null); view.current?.focus() }} />}
+    {selectionChip && !context && <button type="button" className="writer-selection-chip" aria-label="Writing actions for selection" title="Writing actions (or right-click)" style={{ left: Math.max(8, Math.min(selectionChip.x + 4, window.innerWidth - 48)), top: Math.max(8, Math.min(selectionChip.y + 6, window.innerHeight - 40)) }} onMouseDown={event => event.preventDefault()} onClick={() => { const editor = view.current; if (editor) openContext(editor, selectionChip.x, selectionChip.y + 6, false); setSelectionChip(null) }}>⋯</button>}
     {context && <div ref={menu} className="writer-context-menu" role="menu" aria-label="Writing actions" style={{ left: Math.max(8, Math.min(context.x, window.innerWidth - 208)), top: Math.max(8, Math.min(context.y, window.innerHeight - 284)) }} onKeyDown={event => {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault(); const buttons = Array.from(menu.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a') ?? []); const index = buttons.indexOf(document.activeElement as HTMLElement)
