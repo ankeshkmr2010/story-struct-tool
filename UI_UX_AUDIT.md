@@ -536,3 +536,23 @@ Everything above marked [~] is built and deployed but not yet confirmed by the u
 Open, not started: T62 v2 `beta:comment`; fast local DB tests; T25 view counts (define first);
 T50 word-level authorship; T44 series bible; T45/T52 languages; T46 monetisation; T9 heroine
 choice and redesign CSS cleanup (both waiting on the user). See SESSION_HANDOFF.md 2026-10-19.
+
+## External review fixes — 2026-10-19 (`eed5f9f`, pushed; awaiting deploy + user check)
+
+Source: reviewer feedback on the Oct 18 build (/try, signed out). Claims checked against code first.
+- [~] R1 Header bars: the workspace bar replaces the site header on story pages and /try
+  (`.ws-active .site-header`; logo, "⋯" site menu with all six nav links, theme, account).
+- [~] R2 Write selection: a "⋯" chip beside a non-empty selection opens the right-click menu
+  (`StoryWriter.tsx` `selectionChip`); hides on scroll/blur.
+- [~] R3 History button in the workspace bar (all tabs; also counts for tour step 6).
+- [~] R4 Tour step 3 forces the Context panel tab (was: last-used tab).
+- [~] R5 Tour button "Next →" → "Continue tour" (clashed with Read page-turn in step 1).
+- [~] R6 Contrast: light slate-400 #6b6352 / slate-500 #566258, dark slate-500 #8a8d92 (all ≥4.5:1
+  on page); HelpTip 20 px with 12 px glyph and slate-400 border; Grid status dots 16 px.
+
+Not started (reviewer's smaller notes, verified as described unless marked):
+- Context tab reads like a form (~16 fields); pin the most-used fields.
+- Grid sits under Plan but behaves like a review view.
+- Tour skips the 8-level Design plan and the Grid.
+- Clicking below the last line extends the last paragraph (CodeMirror default).
+- Landing nav crowding: wraps below 640 px already; 640–900 px [unverified].
