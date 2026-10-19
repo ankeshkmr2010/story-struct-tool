@@ -388,7 +388,10 @@ export default function HowToUse() {
                   or continue into the next chapter. Prose is Markdown and autosaves; Context
                   opens scene details and the chapter brief, while Focus hides the surrounding
                   controls. The <strong className="font-medium">Design</strong> tab keeps the
-                  full planning workspace. Both tabs edit the same story.
+                  full planning workspace. Both tabs edit the same story. Right-click the prose,
+                  or select text and click the small ⋯ button beside it, for editing actions,
+                  Insert image and Add TK here. The story bar carries everything else: the
+                  StoryTool menu, History (the clock), the side panel, theme and your account.
                 </Item>
                 <Item title="Switch between Write, Read, and Design">
                   All three tabs use the same chapters, scenes, and prose. Each story reopens
@@ -444,7 +447,7 @@ export default function HowToUse() {
                   Design. Confirm the deletion; Cancel keeps the scene. Unsaved prose must
                   save successfully first. Every deletion saves a whole-story recovery
                   version before removing the scene, plus a version of the result. Use
-                  History in the Design rail to recover it; restoring a version restores
+                  History (the clock in the story bar) to recover it; restoring a version restores
                   the whole story, including prose, notes, and structural links.
                 </Item>
                 <Item title="Recover a draft or resolve a conflict">
@@ -520,6 +523,7 @@ export default function HowToUse() {
                 <Item title="Keep reference art with your plan">Choose Add reference image on a character, place, glossary entry or scene. Select or upload an image, then choose Attach image. Reference attachments appear beside that item and stay outside manuscript exports unless you also insert the image into prose. Detach image removes only that attachment.</Item>
                 <Item title="Preview while reading">Click an image in Read to open a larger preview with its caption. Close it with Close, Escape or the backdrop, or use Open original image to view the file separately. Images follow the story’s sharing permissions; beta rounds preserve the illustrations and captions published with that draft.</Item>
                 <Item title="Delete current uses safely">In Images, select an image and choose Delete image. The confirmation shows how many manuscript placements and reference attachments will be removed. Pending writing saves first. Scene revisions and a recovery version preserve the previous state; historical files and existing beta rounds keep the image. Files kept for history still count toward the story’s limits. Permanently deleting the story queues its retained files for storage cleanup.</Item>
+                <Item title="Restart the guided tour">In the sandbox, open the ⋯ menu in the banner and choose Restart tour to go back to step 1 with your edits kept. Reset sandbox starts the sample story over.</Item>
                 <Item title="Try the image flow">In step 2 of the guided tour, choose Try inserting an image, or open Discover more and choose Images to edit a sample caption, preview the illustration, and try delete/restore. The sample HTML download includes the illustration in place; the text download keeps its description and caption.</Item>
               </div>
             </Section>
