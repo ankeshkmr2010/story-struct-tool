@@ -103,7 +103,7 @@ def test_a_rare_misspelling_beside_a_common_name_is_a_likely_typo() -> None:
     )
     [finding] = [f for f in consistency(g) if f.code.startswith("names.")]
     assert finding.code == "names.likely_typo" and not finding.uncertain
-    assert "'Maia' (once) is probably Maya (6×)" in finding.message
+    assert "'Maia' (once) is probably Maya (6\u00d7)" in finding.message
     assert "Maya Torres is in that scene" in finding.message
     assert (finding.entity_type, finding.entity_id) == ("character", maya.id)
     kinds = [a.kind for a in finding.actions]
@@ -216,7 +216,7 @@ def test_capitalisation_ignores_sentence_starts_and_longer_names() -> None:
         locations=(harbour,),
     )
     found = [f for f in consistency(g) if f.code == "variants.capitalisation"]
-    assert len(found) == 1 and "'Keep' 2× and 'keep' once" in found[0].message
+    assert len(found) == 1 and "'Keep' 2\u00d7 and 'keep' once" in found[0].message
     assert found[0].uncertain
     assert [e.replacement for e in found[0].actions[0].edits] == ["Keep"]
 
@@ -224,3 +224,25 @@ def test_capitalisation_ignores_sentence_starts_and_longer_names() -> None:
 def test_prose_checks_require_prose_read() -> None:
     assert reads_prose("tk_placeholders") and reads_prose("consistency")
     assert not reads_prose("scene_rhythm") and not reads_prose("missing")
+
+
+def test_short_words_beside_a_compound_are_a_phrase_not_a_variant() -> None:
+    g = graph(
+        "Set it a right. Find it aright. A waiting cab stood by, awaiting us. "
+        "It will be long; they belong. Here by the fire, hereby I swear."
+    )
+    assert [f for f in consistency(g) if f.code == "variants.hyphenation"] == []
+
+
+def test_two_words_against_one_is_only_worth_a_look() -> None:
+    g = graph("Their good will held. Their goodwill held. Good will again.")
+    [finding] = [f for f in consistency(g) if f.code == "variants.hyphenation"]
+    assert finding.uncertain and "can mean different things" in finding.message
+
+
+def test_quoted_speech_starts_a_sentence() -> None:
+    g = graph(
+        'He said, "Please sit." She said, "When?" They said, "Please go." '
+        "Say please. Say please now. Wait when ready."
+    )
+    assert [f for f in consistency(g) if f.code == "variants.capitalisation"] == []

@@ -65,6 +65,14 @@ _FUNCTION_WORDS = frozenset(
     she they we you his her their our your this that these those not no so if then there
     """.split()  # noqa: SIM905
 )
+# Short words that make a two-word phrase rather than a split compound (a waiting
+# carriage, be long, here by the fire, there of all places).
+_PARTICLES = frozenset(
+    """
+    a an the be by here there of to in on at for with up out over under off down some any
+    every no all where what who how why when one
+    """.split()  # noqa: SIM905
+)
 _LANGUAGE_NAMES = {Language.EN_US: "American English", Language.EN_GB: "British English"}
 
 
@@ -90,7 +98,13 @@ class _Word:
         return len(self.match.text) > 1 and self.match.text.isupper()
 
 
+_QUOTES_OPEN = "\"'\u201c\u2018"
+
+
 def _starts_sentence(text: str, start: int) -> bool:
+    # Quoted speech opens a sentence even mid-line: he said, "Please come."
+    if start > 0 and text[start - 1] in _QUOTES_OPEN:
+        return True
     index = start - 1
     while index >= 0 and text[index] in _OPENERS:
         index -= 1
@@ -412,8 +426,14 @@ def _hyphenation(g: StoryGraph, index: _Index, kept: set[str]) -> list[Evaluatio
 
     def pairs(text: str) -> Iterator[tuple[int, int, dict[str, str]]]:
         for found in _PAIR.finditer(text):
-            joined = (found[1] + found[2]).casefold()
-            if joined in candidates and len(joined) >= 6:
+            first, second = found[1].casefold(), found[2].casefold()
+            joined = first + second
+            if (
+                joined in candidates
+                and len(joined) >= 6
+                and first not in _PARTICLES
+                and second not in _PARTICLES
+            ):
                 yield found.start(1), found.end(2), {}
 
     groups: dict[str, list[_Word]] = defaultdict(list)
@@ -442,12 +462,20 @@ def _hyphenation(g: StoryGraph, index: _Index, kept: set[str]) -> list[Evaluatio
         reason = "the glossary spelling" if key in glossary else "the most used form"
         # Open beside hyphenated is often grammar, not inconsistency: "at half wages" but
         # "a half-wages job". A closed form (lanternkeeper) is a spelling choice.
-        grammatical = key not in forms and key not in glossary
-        uncertain = grammatical or share < 0.6
+        # Only closed against hyphenated (lanternkeeper, lantern-keeper) is a plain spelling
+        # choice. Open against hyphenated is often grammar, and two words against one can
+        # mean different things.
+        hyphen = any("-" in form or "\u2010" in form for form in forms)
+        open_form = any(" " in form for form in forms)
+        grammatical = hyphen and open_form and key not in forms and key not in glossary
+        meaning = open_form and not hyphen and key not in glossary
+        uncertain = grammatical or meaning or share < 0.6
         note = (
             " A hyphen is usual when the term comes before a noun (a well-known man; he is "
             "well known), so both may be right."
             if grammatical
+            else " Two words and one word can mean different things (good will, goodwill)."
+            if meaning
             else ""
         )
         findings.append(
