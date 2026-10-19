@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from storytool.config import get_settings
 from storytool.domain.auth.access import SESSION_COOKIE, session_token
 from storytool.domain.auth.models import User, UserSession
+from storytool.domain.enums import Language
 from storytool.domain.story.models import Story
 from storytool.examples.provision import ensure_starter_examples
 
@@ -38,17 +39,27 @@ class UserOut(BaseModel):
     name: str | None
     author_name: str | None
     picture_url: str | None
+    language: str
 
     @classmethod
     def from_user(cls, user: User) -> "UserOut":
         return cls(
-            id=user.id, email=user.email, name=user.name,
-            author_name=user.author_name, picture_url=user.picture_url,
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            author_name=user.author_name,
+            picture_url=user.picture_url,
+            language=user.language,
         )
 
 
-class AuthorNameIn(BaseModel):
-    author_name: str | None = Field(max_length=200)
+class ProfileIn(BaseModel):
+    """Only the fields sent are changed."""
+
+    author_name: str | None = Field(default=None, max_length=200)
+    language: Language | None = Field(
+        default=None, description="Default writing language for stories that do not set one."
+    )
 
 
 def verify_google_credential(credential: str, client_id: str) -> dict[str, object]:
@@ -101,9 +112,7 @@ class AuthController(Controller):
 
             visitor_id = request_visitor(request)
             await record_milestone(db_session, "visit", visitor_id=visitor_id)
-            await record_milestone(
-                db_session, "signup", user_id=user.id, visitor_id=visitor_id
-            )
+            await record_milestone(db_session, "signup", user_id=user.id, visitor_id=visitor_id)
 
         # Claim pre-auth stories only for the explicitly configured, verified Google account.
         if settings.legacy_owner_email and email == settings.legacy_owner_email.lower():
@@ -143,14 +152,17 @@ class AuthController(Controller):
             raise NotAuthorizedException()
         return UserOut.from_user(user)
 
-    @patch("/profile", summary="Set the author's export byline")
+    @patch("/profile", summary="Set the author's export byline and default writing language")
     async def update_profile(
-        self, request: Request, db_session: AsyncSession, data: AuthorNameIn
+        self, request: Request, db_session: AsyncSession, data: ProfileIn
     ) -> UserOut:
         user = await db_session.get(User, request.scope["state"]["storytool_user_id"])
         if user is None:
             raise NotAuthorizedException()
-        user.author_name = " ".join((data.author_name or "").split()) or None
+        if "author_name" in data.model_fields_set:
+            user.author_name = " ".join((data.author_name or "").split()) or None
+        if data.language is not None:
+            user.language = data.language
         await db_session.flush()
         return UserOut.from_user(user)
 

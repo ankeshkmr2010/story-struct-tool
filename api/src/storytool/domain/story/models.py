@@ -30,6 +30,10 @@ class Story(StoryToolBase, CompletableMixin):
     notes: Mapped[str | None] = mapped_column(Text, default=None)
     genre: Mapped[str | None] = mapped_column(String(120), default=None)
     pov_style: Mapped[str | None] = mapped_column(String(40), default=None)
+    # None follows the author's account language.
+    language: Mapped[str | None] = mapped_column(String(10), default=None)
+    # Consistency findings the author chose to keep ("Keep both"), by finding key.
+    consistency_exceptions: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
     structure_framework: Mapped[str] = mapped_column(
         String(40), default=StructureFramework.THREE_ACT
     )

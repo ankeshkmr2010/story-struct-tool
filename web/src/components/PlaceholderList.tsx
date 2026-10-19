@@ -1,24 +1,13 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, type Evaluation } from '../api/client'
+import { api } from '../api/client'
 import { errorText } from '../api/errors'
+import { applyPassageEdits, type Passage } from './passageEdits'
 import { usePlaceholders } from './usePlaceholders'
-
-type Passage = NonNullable<Evaluation['findings'][number]['passage']>
 
 const note = (marker: string) => marker.replace(/^\[\s*tk\s*:?\s*/i, '').replace(/\]$/, '').trim()
 
-// Removing a marker should not leave a double space or a space before punctuation.
-function without(content: string, start: number, end: number) {
-  const before = content.slice(0, start), after = content.slice(end)
-  return / $/.test(before) && /^( |[.,;:!?)\]'"’”])/.test(after) ? before.slice(0, -1) + after : before + after
-}
-
-/**
- * Fill or remove placeholders as ordinary saves of the scene's prose. Each edit first saves any
- * open writing, re-reads the scene and checks the marker is still at its recorded offsets, so
- * a stale list can never overwrite newer text.
- */
+/** Fill or remove placeholders as verified saves of the scene's prose (see passageEdits). */
 export function PlaceholderList({ storyId, compact = false, beforeEdit, onOpen }: {
   storyId: string
   compact?: boolean
@@ -31,13 +20,9 @@ export function PlaceholderList({ storyId, compact = false, beforeEdit, onOpen }
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const edit = useMutation({
-    mutationFn: async ({ passage, replacement }: { passage: Passage; replacement: string | null }) => {
-      if (!await beforeEdit()) throw new Error('Save your writing before changing placeholders.')
-      const current = await api.getContent(storyId, passage.scene_id)
-      const content = current.content ?? ''
-      if (content.slice(passage.start, passage.end) !== passage.find) throw new Error('This placeholder changed since the list loaded. The list is refreshed; try again.')
-      const next = replacement === null ? without(content, passage.start, passage.end) : content.slice(0, passage.start) + replacement + content.slice(passage.end)
-      await api.saveContent(storyId, passage.scene_id, { content: next, expected_content: content })
+    mutationFn: async ({ passage, replacement }: { passage: Passage; replacement: string }) => {
+      const { stale } = await applyPassageEdits(storyId, [{ passage, replacement }], beforeEdit)
+      if (stale) throw new Error('This placeholder changed since the list loaded. The list is refreshed; try again.')
     },
     onSettled: async (_, __, { passage }) => {
       await Promise.all([
@@ -73,7 +58,7 @@ export function PlaceholderList({ storyId, compact = false, beforeEdit, onOpen }
               <input aria-label={`Text to replace ${passage.find}`} placeholder="Fill in…" value={value} onChange={event => setDrafts(current => ({ ...current, [key(passage)]: event.target.value }))} />
               <button type="submit" className="ui-btn ui-btn-primary ui-btn-sm" disabled={edit.isPending || !value.trim()}>Fill</button>
               <button type="button" className="ui-btn ui-btn-secondary ui-btn-sm" onClick={() => onOpen(passage.scene_id, passage.find, passage.paragraph)}>Open</button>
-              <button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" disabled={edit.isPending} onClick={() => edit.mutate({ passage, replacement: null })} title="Delete the marker and keep the surrounding text">Remove</button>
+              <button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" disabled={edit.isPending} onClick={() => edit.mutate({ passage, replacement: '' })} title="Delete the marker and keep the surrounding text">Remove</button>
             </form>
           </div>
         </li>

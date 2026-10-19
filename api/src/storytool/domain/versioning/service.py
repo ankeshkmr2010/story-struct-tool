@@ -78,8 +78,10 @@ async def full_state(db: AsyncSession, story_id: UUID) -> dict[str, Any]:
         ]
     for image in state.get("story_image", []):
         image["attachments"] = [
-            attachment for attachment in image.get("attachments", [])
-            if UUID(attachment["id"]) in identifiers.get(
+            attachment
+            for attachment in image.get("attachments", [])
+            if UUID(attachment["id"])
+            in identifiers.get(
                 "glossary_entry" if attachment["entity"] == "glossary" else attachment["entity"], []
             )
         ]
@@ -297,7 +299,16 @@ async def restore_state(db: AsyncSession, story_id: UUID, state: dict[str, Any])
         for key, value in state["story"][0].items()
         if key not in AUDIT | ADMIN | {"id"}
     }
-    for field in ("blurb", "notes", "world_rules", "style_rules", "thematic_statement", "motifs"):
+    for field in (
+        "blurb",
+        "notes",
+        "world_rules",
+        "style_rules",
+        "thematic_statement",
+        "motifs",
+        "language",
+        "consistency_exceptions",
+    ):
         if field not in state["story"][0]:
             values[field] = None
     await db.execute(update(story_table).where(story_table.c.id == story_id).values(**values))

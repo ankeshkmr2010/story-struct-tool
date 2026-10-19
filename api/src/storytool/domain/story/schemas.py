@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from storytool.domain.common import EntityOut
-from storytool.domain.enums import AuthoringMode, PovStyle, StructureFramework
+from storytool.domain.enums import AuthoringMode, Language, PovStyle, StructureFramework
 
 
 class StoryCreate(BaseModel):
@@ -27,6 +27,7 @@ class StoryCreate(BaseModel):
     notes: str | None = None
     genre: str | None = Field(default=None, max_length=120)
     pov_style: PovStyle | None = None
+    language: Language | None = None
     structure_framework: StructureFramework = StructureFramework.THREE_ACT
     authoring_mode: AuthoringMode = AuthoringMode.HYBRID
 
@@ -46,6 +47,10 @@ class StoryUpdate(BaseModel):
     notes: str | None = None
     genre: str | None = Field(default=None, max_length=120)
     pov_style: PovStyle | None = None
+    language: Language | None = Field(
+        default=None, description="Spelling convention; null follows the author's account."
+    )
+    consistency_exceptions: list[str] | None = Field(default=None, max_length=1000)
     structure_framework: StructureFramework | None = None
     authoring_mode: AuthoringMode | None = None
 
@@ -61,6 +66,8 @@ class StoryOut(EntityOut):
     notes: str | None
     genre: str | None
     pov_style: str | None
+    language: str | None
+    consistency_exceptions: list[str] | None
     structure_framework: str
     authoring_mode: str
     parent_story_id: UUID | None

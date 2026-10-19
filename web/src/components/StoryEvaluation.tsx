@@ -1,7 +1,8 @@
 import { SceneReaderResults } from './SceneReaderResults'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, type CraftReading, type Evaluation, type Evaluator } from '../api/client'
+import { api, type CraftReading, type Evaluation, type Evaluator, type StoryUpdate } from '../api/client'
+import { applyPassageEdits } from './passageEdits'
 import { errorText } from '../api/errors'
 
 /**
@@ -365,10 +366,15 @@ function EvaluationOverview({ evaluators, results, reading, readerShared, runnin
   </section>
 }
 
-type FindingAction = NonNullable<Evaluation['findings'][number]['action']>
+type Finding = Evaluation['findings'][number]
+type FindingAction = Finding['actions'][number]
+// What part of a check a finding comes from, by code prefix (shown as a small tag).
+const FINDING_TAGS: [string, string][] = [['names.', 'Names'], ['spelling.', 'Spelling'], ['variants.hyphenation', 'Hyphenation'], ['variants.capitalisation', 'Capitals'], ['tk.', 'TK']]
 
-export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters, onOpenStory, onOpenPassage }: {
+export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters, onOpenStory, onOpenPassage }: {
   storyId: string
+  /** Saves open writing before a finding's fix edits the prose. */
+  beforeEdit?: () => Promise<boolean>
   onOpenInbox: () => void
   onOpenScene: (scene: { id: string; chapter_id: string | null }) => void
   onOpenThreads: (id: string) => void
@@ -400,23 +406,35 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
   })
 
   const qc = useQueryClient()
-  // A finding's one-click remedy is an ordinary author edit; the check then runs again.
+  // A finding's one-click remedies are ordinary author edits; the check then runs again.
   const applyAction = useMutation({
     mutationFn: async (action: FindingAction) => {
-      if (action.kind !== 'add_alias') return
-      if (action.entity_type === 'character') {
+      if (action.kind === 'replace') {
+        const { stale } = await applyPassageEdits(storyId, action.edits, beforeEdit, `Consistency: ${action.value}`)
+        await Promise.all([qc.invalidateQueries({ queryKey: ['content', storyId] }), qc.invalidateQueries({ queryKey: ['placeholders', storyId] })])
+        if (stale) throw new Error(`${stale} of ${action.edits.length} changed since the check ran and were left alone. The check has run again.`)
+      } else if (action.kind === 'add_alias' && action.entity_type === 'character') {
         const character = (await api.listCharacters(storyId)).find((item) => item.id === action.entity_id)
         if (!character) throw new Error('That character no longer exists.')
         await api.updateCharacter(storyId, character.id, { aliases: [...(character.aliases ?? []), action.value] })
         await qc.invalidateQueries({ queryKey: ['characters', storyId] })
-      } else if (action.entity_type === 'glossary_entry') {
+      } else if (action.kind === 'add_alias' && action.entity_type === 'glossary_entry') {
         const entry = (await api.listGlossary(storyId)).find((item) => item.id === action.entity_id)
         if (!entry) throw new Error('That glossary term no longer exists.')
         await api.updateGlossaryEntry(storyId, entry.id, { aliases: [...(entry.aliases ?? []), action.value] })
         await qc.invalidateQueries({ queryKey: ['glossary', storyId] })
+      } else if (action.kind === 'add_character') {
+        await api.createCharacter(storyId, { name: action.value })
+        await qc.invalidateQueries({ queryKey: ['characters', storyId] })
+      } else if (action.kind === 'keep' || action.kind === 'set_language') {
+        const story = await api.getStory(storyId)
+        await api.updateStory(storyId, action.kind === 'keep'
+          ? { consistency_exceptions: [...new Set([...(story.consistency_exceptions ?? []), action.value])] }
+          : { language: action.value as StoryUpdate['language'] })
+        await qc.invalidateQueries({ queryKey: ['story', storyId] })
       }
     },
-    onSuccess: () => { if (selected) run.mutate(selected.id) },
+    onSettled: () => { if (selected) run.mutate(selected.id) },
   })
   const openEntity = (type: string | null | undefined, id: string | null | undefined) => {
     if (!id) return null
@@ -428,6 +446,24 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
     if (type === 'thread') return () => onOpenThreads(id)
     if (type === 'story') return onOpenStory
     return null
+  }
+
+  const renderFinding = (finding: Finding, index: number) => {
+    const open = openEntity(finding.entity_type, finding.entity_id)
+    const tag = FINDING_TAGS.find(([prefix]) => finding.code.startsWith(prefix))?.[1]
+    const busy = applyAction.isPending
+    return (
+      <li key={`${finding.code}-${index}`} className={`rounded-md border-l-4 bg-white p-3 text-sm dark:bg-slate-900 ${finding.severity === 'warning' ? 'border-amber-400' : 'border-slate-300 dark:border-slate-600'}`}>
+        <p>{tag && <span className="eval-finding-tag">{tag}</span>}{finding.message}</p>
+        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          {finding.passage && onOpenPassage && <button type="button" onClick={() => onOpenPassage(finding.passage!.scene_id, finding.passage!.find, finding.passage!.paragraph)} className="underline">Open in Write →</button>}
+          {open && <button type="button" onClick={open} className="underline">Open {finding.entity_type === 'story' ? 'story' : finding.entity_type} in Plan →</button>}
+          {finding.actions.filter((action) => action.kind !== 'replace' || action.edits.length > 0).map((action) => <button key={`${action.kind}-${action.value}`} type="button" disabled={busy} onClick={() => applyAction.mutate(action)} className="underline disabled:opacity-50">
+            {action.label}{action.kind === 'replace' && action.edits.length > 1 ? ` (${action.edits.length})` : ''}
+          </button>)}
+        </div>
+      </li>
+    )
   }
 
   return (
@@ -493,23 +529,13 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
             {applyAction.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(applyAction.error)}</p>}
             {shown.findings.length === 0 ? (
               <p className="text-sm text-emerald-700 dark:text-emerald-300">Nothing to flag.</p>
-            ) : (
-              <ul className="space-y-2">
-                {shown.findings.map((finding, index) => {
-                  const open = openEntity(finding.entity_type, finding.entity_id)
-                  return (
-                    <li key={`${finding.code}-${index}`} className={`rounded-md border-l-4 bg-white p-3 text-sm dark:bg-slate-900 ${finding.severity === 'warning' ? 'border-amber-400' : 'border-slate-300 dark:border-slate-600'}`}>
-                      <p>{finding.message}</p>
-                      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                        {finding.passage && onOpenPassage && <button type="button" onClick={() => onOpenPassage(finding.passage!.scene_id, finding.passage!.find, finding.passage!.paragraph)} className="underline">Open in Write →</button>}
-                        {open && <button type="button" onClick={open} className="underline">Open {finding.entity_type === 'story' ? 'story' : finding.entity_type} in Plan →</button>}
-                        {finding.action?.kind === 'add_alias' && <button type="button" disabled={applyAction.isPending} onClick={() => applyAction.mutate(finding.action!)} className="underline disabled:opacity-50">{finding.action.label}</button>}
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
+            ) : <>
+              {shown.findings.some((finding) => !finding.uncertain) && <ul className="space-y-2">{shown.findings.filter((finding) => !finding.uncertain).map(renderFinding)}</ul>}
+              {shown.findings.some((finding) => finding.uncertain) && <details className="eval-worth-a-look">
+                <summary>Worth a look ({shown.findings.filter((finding) => finding.uncertain).length}): may be intended</summary>
+                <ul className="mt-2 space-y-2">{shown.findings.filter((finding) => finding.uncertain).map(renderFinding)}</ul>
+              </details>}
+            </>}
           </section>
         )}
         {selected.has_review && <AIReview key={selected.id} storyId={storyId} evaluatorId={selected.id} evaluatorName={selected.name} ready={selected.ready} onOpenScene={onOpenScene} onOpenThreads={onOpenThreads} onOpenCharacters={onOpenCharacters} />}

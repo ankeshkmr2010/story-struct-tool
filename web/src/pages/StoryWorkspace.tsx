@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { api, type SearchContext, type SearchHit, type WorkspacePlace } from '../api/client'
+import { api, type SearchContext, type SearchHit, type StoryUpdate, type WorkspacePlace } from '../api/client'
 import { useWorkspacePosition } from '../components/useWorkspacePosition'
 import { SearchDialog } from '../components/StorySearch'
 import { Ladder, type AuthoringMode } from '../components/Ladder'
@@ -23,6 +23,7 @@ import { OutlineCatchup } from '../components/OutlineCatchup'
 import { StoryEvaluation } from '../components/StoryEvaluation'
 import { PlaceholderList } from '../components/PlaceholderList'
 import { usePlaceholders } from '../components/usePlaceholders'
+import { LANGUAGES, languageLabel } from '../components/languages'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
 import { AuthorshipPanel, DisclosureCard } from '../components/AuthorshipPanel'
@@ -91,6 +92,7 @@ function SavedWorkspace({ storyId }: { storyId: string }) {
 export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, initialPosition, syncPosition = false }: { storyId: string; sandboxStep?: number; sandboxRun?: number; sandboxHistory?: Sandbox; initialPosition?: WorkspacePlace | null; syncPosition?: boolean }) {
   const sandbox = storyId === SANDBOX_ID
   const placeholders = usePlaceholders(storyId, !sandbox)
+  const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, enabled: !sandbox })
   const placeholderCount = placeholders.data?.findings.length ?? 0
   const openFeedback = useQuery({ queryKey: ['beta-feedback', storyId, 'open'], queryFn: () => api.betaFeedback(storyId), enabled: !sandbox, refetchInterval: 60_000 })
   const [feedbackFocus, setFeedbackFocus] = useState<string | null>(null)
@@ -519,7 +521,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
           {level === PLACEHOLDERS_VIEW && !sandbox && <section><h2 className="level-title">Placeholders</h2><PlaceholderList storyId={storyId} beforeEdit={() => writerFlush.current()} onOpen={openPassage} /></section>}
-          {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
+          {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} beforeEdit={() => writerFlush.current()} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
           {level === HISTORY_VIEW && sandboxHistory && <SandboxHistory value={sandboxHistory} />}
           {level === HISTORY_VIEW && !sandbox && <div>
@@ -539,6 +541,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Point of view</span><HelpTip label="point of view">Whose eyes the reader sees the story through.{choiceList(POV_OPTIONS)}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.pov_style} options={POV_OPTIONS} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></span><span className="help-text mt-1 block">{describe(POV_OPTIONS, story.data.pov_style)}</span></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Framework</span><HelpTip label="a framework">The story shape used to seed your acts and beats. You can change any of them afterwards.{choiceList(FRAMEWORK_OPTIONS)}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.structure_framework} options={FRAMEWORK_OPTIONS} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /></span><span className="help-text mt-1 block">{describe(FRAMEWORK_OPTIONS, story.data.structure_framework)}</span></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Mode</span><HelpTip label="mode">How much the plan guides you. It only changes what is flagged; nothing is ever blocked.{choiceList(MODE_OPTIONS)}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.authoring_mode} options={MODE_OPTIONS} onSave={(authoring_mode) => updateStory.mutateAsync({ authoring_mode })} /></span><span className="help-text mt-1 block">{describe(MODE_OPTIONS, story.data.authoring_mode)}</span></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Language</span><HelpTip label="language">The spelling convention for this story. Smart consistency in Evaluate flags spellings from the other variety (colour in a US story, color in a UK one). Leave it on the default to follow your account setting.</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.language} options={LANGUAGES.map(language => ({ value: language.id, label: language.label }))} placeholder={`Account default (${languageLabel(me.data?.language)})`} onSave={(language) => updateStory.mutateAsync({ language: language as StoryUpdate['language'] })} /></span></label>
               </div>
               <details className="mt-5 rounded border border-slate-200 p-3 dark:border-slate-700"><summary className="cursor-pointer text-sm font-medium">World, style, theme, and notes</summary><div className="mt-3 space-y-3">
                 <label className="block text-xs"><span className="field-label">World rules</span> (one per line)<InlineText value={story.data.world_rules?.join('\n') ?? null} placeholder="What is possible in this world?" onSave={value => updateStory.mutateAsync({ world_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>

@@ -11,8 +11,9 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from storytool.domain.auth.models import User
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
-from storytool.domain.enums import CharacterRole
+from storytool.domain.enums import DEFAULT_LANGUAGE, CharacterRole
 from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.graph import StoryGraph
 from storytool.domain.narrative.models import (
@@ -130,8 +131,13 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
         )
         character_mentions = tuple((r.scene_id, r.character_id) for r in rows)
 
+    language = story.language
+    if language is None and story.user_id is not None:
+        language = await session.scalar(select(User.language).where(User.id == story.user_id))
+
     return StoryGraph(
         story=story,
+        language=language or DEFAULT_LANGUAGE,
         events=await fetch(Event, Event.sort_ordinal.asc()),
         acts=await fetch(Act, Act.sort_key.asc()),
         beats=await fetch(Beat, Beat.sort_key.asc()),

@@ -26,6 +26,7 @@ __all__ = (
     "Evaluator",
     "FindingAction",
     "Review",
+    "TextEdit",
     "all_evaluators",
     "get_evaluator",
     "reads_prose",
@@ -34,15 +35,28 @@ __all__ = (
 
 
 @dataclass(frozen=True, slots=True)
+class TextEdit:
+    """Replace the text at a passage; the page verifies it is still there before saving."""
+
+    passage: Passage
+    replacement: str
+
+
+@dataclass(frozen=True, slots=True)
 class FindingAction:
-    """A one-click remedy the page can offer, e.g. kind "add_alias" adds `value` to the
-    aliases of the named entity. Applying it is an ordinary edit by the author."""
+    """A one-click remedy the page can offer. Applying it is an ordinary edit by the author.
+
+    Kinds: "add_alias" adds `value` to the aliases of the entity; "add_character" creates a
+    character named `value`; "replace" applies `edits` to the prose; "keep" records `value`
+    in the story's consistency exceptions so the finding stops appearing.
+    """
 
     kind: str
     label: str
-    entity_type: str
-    entity_id: UUID
-    value: str
+    value: str = ""
+    entity_type: str | None = None
+    entity_id: UUID | None = None
+    edits: tuple[TextEdit, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,7 +68,9 @@ class EvaluationFinding:
     entity_id: UUID | None = None
     passage: Passage | None = None
     """Where in the prose the finding sits, so the page can open it in Write."""
-    action: FindingAction | None = None
+    actions: tuple[FindingAction, ...] = ()
+    uncertain: bool = False
+    """Worth a look rather than likely wrong; the page groups these separately."""
 
 
 @dataclass(frozen=True, slots=True)

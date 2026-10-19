@@ -23,6 +23,8 @@ dependencies = [
     "reportlab>=4.4,<6",
     "boto3>=1.40,<2",
     "Pillow>=11,<13",
+    "rapidfuzz>=3.14",
+    "metaphone>=0.6",
 ]
 
 [dependency-groups]

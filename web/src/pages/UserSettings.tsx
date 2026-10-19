@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api, type AIConnection, type OAuthGrant } from '../api/client'
 import { errorText } from '../api/errors'
+import { LANGUAGES, type LanguageId } from '../components/languages'
 
 function AuthorNameSettings() {
   const qc = useQueryClient()
@@ -10,7 +11,7 @@ function AuthorNameSettings() {
   const [draft, setDraft] = useState<string | null>(null)
   const value = draft ?? me.data?.author_name ?? ''
   const save = useMutation({
-    mutationFn: () => api.saveAuthorName({ author_name: value.trim() || null }),
+    mutationFn: () => api.saveProfile({ author_name: value.trim() || null }),
     onSuccess: (user) => { qc.setQueryData(['me'], user); setDraft(null) },
   })
   return <section id="profile" className="scroll-mt-24 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6">
@@ -22,6 +23,26 @@ function AuthorNameSettings() {
     </form>
     {save.isSuccess && <p role="status" className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">Author name saved.</p>}
     {(save.error || me.error) && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(save.error ?? me.error)}</p>}
+  </section>
+}
+
+function LanguageSettings() {
+  const qc = useQueryClient()
+  const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser })
+  const save = useMutation({
+    mutationFn: (language: LanguageId) => api.saveProfile({ language }),
+    onSuccess: (user) => qc.setQueryData(['me'], user),
+  })
+  return <section className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6">
+    <h2 className="text-lg font-semibold">Writing language</h2>
+    <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">The default for your stories. Smart consistency in Evaluate flags spellings from the other variety, such as colour in a US story. A story can choose its own under Design → Premise.</p>
+    <label className="mt-4 block text-sm">Default language
+      <select value={me.data?.language ?? 'en-US'} disabled={!me.data || save.isPending} onChange={(event) => save.mutate(event.target.value as LanguageId)} className="mt-2 block rounded-md border border-slate-300 bg-white p-2 dark:border-slate-600 dark:bg-slate-900">
+        {LANGUAGES.map((language) => <option key={language.id} value={language.id}>{language.label}</option>)}
+      </select>
+    </label>
+    {save.isSuccess && <p role="status" className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">Default language saved.</p>}
+    {save.error && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(save.error)}</p>}
   </section>
 }
 
@@ -74,6 +95,7 @@ export default function UserSettings() {
         <nav className="settings-nav" aria-label="Settings sections"><a href="#profile">Profile</a><a href="#ai-clients">AI clients</a><a href="#api-keys">API keys</a><Link to="/checks">Writing checks</Link></nav>
         <div className="min-w-0">
       <AuthorNameSettings />
+      <LanguageSettings />
       <section id="ai-clients" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6">
         <h2 className="text-lg font-semibold">Connect an AI client · MCP</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Connect Claude or ChatGPT through browser sign-in, then choose the stories and permissions it can use. Your client supplies the model; no provider API key or token copying is needed here. <Link to="/#mcp" className="underline">Open the connection guides →</Link></p>

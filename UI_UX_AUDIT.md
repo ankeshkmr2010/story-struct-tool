@@ -578,3 +578,23 @@ Not started (reviewer's smaller notes, verified as described unless marked):
   marker at its offsets and save with `expected_content`. Write right-click "Add TK here"
   (selection becomes the note). Export's "Show them" now opens Design → Placeholders.
   Passages carry absolute `start`/`end` offsets and an excerpt for every check.
+
+## Smart consistency and writing language — 2026-10-20 (awaiting deploy + user check)
+
+- [~] `domain/consistency.py` replaces Name consistency (Evaluate id `consistency`): one index
+  pass over placed prose, then names (rapidfuzz Jaro-Winkler + OSA + Double Metaphone
+  candidates, weighed by frequency ratio and scene context: POV, confirmed mentions, setting,
+  known name in scene), spelling (US/UK pairs in `spelling_variants.py`, story language),
+  hyphenation (closed/open/hyphenated; open-vs-hyphenated only "worth a look") and
+  capitalisation (mid-sentence only; multi-word names and name/word pairs skipped).
+- [~] Findings carry `actions` (replace with verified edits, add_alias, add_character, keep,
+  set_language) and `uncertain`; Evaluate shows a section tag and collapses "Worth a look".
+  Replace-all uses `passageEdits.applyPassageEdits` (shared with placeholders): flush Write,
+  re-read, verify offsets, one save per scene with a labelled snapshot.
+- [~] Language: `app_user.language` (default en-US) in Settings; `story.language` (null =
+  account) under Design → Premise; `story.consistency_exceptions` stores "Keep both".
+  Migration c4e8a1f6d209 (SQL rendered offline; not applied anywhere yet).
+- [~] Noticing: a recurring unknown name that resembles a defined one says "looks like X".
+- Calibration: The Red-Headed League example (8.5k words, en-GB): 0 name false positives,
+  5 "worth a look"; planted Holms/Watsen/redheaded all found. 100k words in ~1 s.
+  Tests: `test_prose_checks.py` 16 passed (pure). DB-backed tests not run [unverified].

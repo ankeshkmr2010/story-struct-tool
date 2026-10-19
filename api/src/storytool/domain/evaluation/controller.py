@@ -32,6 +32,7 @@ from storytool.domain.evaluation.reports import (
 )
 from storytool.domain.evaluation.scene_reader import CraftReading
 from storytool.domain.graph import StoryGraph
+from storytool.domain.prose_scan import Passage
 
 
 class EvaluatorOut(BaseModel):
@@ -56,13 +57,31 @@ class PassageOut(BaseModel):
     end: int
     excerpt: str
 
+    @classmethod
+    def of(cls, p: Passage) -> "PassageOut":
+        return cls(
+            scene_id=p.scene_id,
+            paragraph=p.paragraph,
+            find=p.find,
+            start=p.start,
+            end=p.end,
+            excerpt=p.excerpt,
+        )
+
+
+class TextEditOut(BaseModel):
+    passage: PassageOut
+    replacement: str
+
 
 class FindingActionOut(BaseModel):
     kind: str
+    """add_alias, add_character, replace or keep."""
     label: str
-    entity_type: str
-    entity_id: UUID
     value: str
+    entity_type: str | None
+    entity_id: UUID | None
+    edits: list[TextEditOut]
 
 
 class EvaluationFindingOut(BaseModel):
@@ -72,36 +91,33 @@ class EvaluationFindingOut(BaseModel):
     entity_type: str | None
     entity_id: UUID | None
     passage: PassageOut | None = None
-    action: FindingActionOut | None = None
+    actions: list[FindingActionOut] = Field(default_factory=list)
+    uncertain: bool = False
 
     @classmethod
     def of(cls, finding: EvaluationFinding) -> "EvaluationFindingOut":
-        p, a = finding.passage, finding.action
         return cls(
             code=finding.code,
             severity=finding.severity.value,
             message=finding.message,
             entity_type=finding.entity_type,
             entity_id=finding.entity_id,
-            passage=PassageOut(
-                scene_id=p.scene_id,
-                paragraph=p.paragraph,
-                find=p.find,
-                start=p.start,
-                end=p.end,
-                excerpt=p.excerpt,
-            )
-            if p
-            else None,
-            action=FindingActionOut(
-                kind=a.kind,
-                label=a.label,
-                entity_type=a.entity_type,
-                entity_id=a.entity_id,
-                value=a.value,
-            )
-            if a
-            else None,
+            passage=PassageOut.of(finding.passage) if finding.passage else None,
+            actions=[
+                FindingActionOut(
+                    kind=a.kind,
+                    label=a.label,
+                    value=a.value,
+                    entity_type=a.entity_type,
+                    entity_id=a.entity_id,
+                    edits=[
+                        TextEditOut(passage=PassageOut.of(e.passage), replacement=e.replacement)
+                        for e in a.edits
+                    ],
+                )
+                for a in finding.actions
+            ],
+            uncertain=finding.uncertain,
         )
 
 

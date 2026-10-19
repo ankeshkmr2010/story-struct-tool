@@ -19,10 +19,7 @@ __all__ = (
     "NameSource",
     "Passage",
     "ProseMatch",
-    "edit_distance",
-    "lowercase_vocabulary",
     "markers",
-    "near_miss_names",
     "paragraph_spans",
     "paragraphs",
     "scan",
@@ -137,26 +134,6 @@ def markers(*kinds: str) -> Matcher:
     return match
 
 
-def edit_distance(a: str, b: str, limit: int) -> int:
-    """Edit distance counting a swap of neighbouring letters as one edit; stops early
-    and returns limit + 1 once the distance must exceed `limit`."""
-    if abs(len(a) - len(b)) > limit:
-        return limit + 1
-    previous2: list[int] = []
-    previous = list(range(len(b) + 1))
-    for i in range(1, len(a) + 1):
-        current = [i] + [0] * len(b)
-        for j in range(1, len(b) + 1):
-            cost = 0 if a[i - 1] == b[j - 1] else 1
-            current[j] = min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost)
-            if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
-                current[j] = min(current[j], previous2[j - 2] + 1)
-        if min(current) > limit:
-            return limit + 1
-        previous2, previous = previous, current
-    return previous[-1]
-
-
 @dataclass(frozen=True, slots=True)
 class NameSource:
     """A name the author has defined (character, place, glossary term) and its aliases."""
@@ -170,68 +147,3 @@ class NameSource:
         return {
             word.casefold() for value in (self.name, *self.aliases) for word in _WORD.findall(value)
         }
-
-
-MIN_NAME_LENGTH = 4
-
-
-def _allowed_edits(token: str) -> int:
-    return 1 if len(token) <= 6 else 2
-
-
-def near_miss_names(sources: Iterable[NameSource], common_words: set[str]) -> Matcher:
-    """Capitalised words that are not a defined name but are one or two letters away from
-    one (Maia for Maya, Ellowen for Elowen).
-
-    `common_words` holds words (casefolded) known to be ordinary vocabulary, usually every
-    word the manuscript also uses in lower case, so sentence-initial words such as "Many"
-    are not mistaken for "Mary". Details carry the matched name's `entity_type`,
-    `entity_id`, `name` and the defined `token` it resembles.
-    """
-    known: dict[str, NameSource] = {}
-    for source in sources:
-        for token in source.tokens():
-            known.setdefault(token, source)
-    targets = [(token, source) for token, source in known.items() if len(token) >= MIN_NAME_LENGTH]
-
-    def match(text: str) -> Iterator[tuple[int, int, dict[str, str]]]:
-        for found in _WORD.finditer(text):
-            word = found.group()
-            folded = word.casefold()
-            if (
-                len(word) < MIN_NAME_LENGTH
-                or not word[0].isupper()
-                or folded in known
-                or folded in common_words
-            ):
-                continue
-            best: tuple[int, str, NameSource] | None = None
-            for token, source in targets:
-                limit = _allowed_edits(token)
-                distance = edit_distance(folded, token, limit)
-                if distance <= limit and (best is None or distance < best[0]):
-                    best = (distance, token, source)
-            if best is not None:
-                _, token, source = best
-                yield (
-                    found.start(),
-                    found.end(),
-                    {
-                        "entity_type": source.entity_type,
-                        "entity_id": str(source.entity_id),
-                        "name": source.name,
-                        "token": token,
-                    },
-                )
-
-    return match
-
-
-def lowercase_vocabulary(scenes: Iterable[Scene]) -> set[str]:
-    """Every word the prose uses at least once starting with a lower-case letter."""
-    words: set[str] = set()
-    for scene in scenes:
-        for word in _WORD.findall(_IMAGE.sub(" ", scene.content or "")):
-            if word[0].islower():
-                words.add(word.casefold())
-    return words

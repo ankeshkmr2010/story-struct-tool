@@ -98,19 +98,30 @@ def character_with_presence_but_no_arc(
 def recurring_name_that_is_not_a_character(
     graph: StoryGraph, state: NoticingState
 ) -> list[ProposedSuggestion]:
-    """A name the prose keeps using that the cast list has never heard of."""
-    return [
-        ProposedSuggestion(
-            code="character.recurring_unknown_name",
-            message=(
-                f'"{name}" appears in {_plural(count, "scene")} but is not a character '
-                "in this story yet."
-            ),
-            subject_key=name,
+    """A name the prose keeps using that the cast list has never heard of. When it closely
+    resembles a defined name it is more likely a misspelling or a nickname than a new person,
+    and the message says so (Smart consistency in Evaluate can fix it or add the alias)."""
+    from storytool.domain.consistency import resembled_name  # imports the evaluation package
+
+    out = []
+    for name, count in sorted(state.unknown_name_scene_counts.items(), key=lambda kv: -kv[1]):
+        if count < MIN_SCENES_FOR_UNKNOWN_NAME:
+            continue
+        known = resembled_name(name, graph)
+        message = (
+            f'"{name}" appears in {_plural(count, "scene")} and looks like {known}: a '
+            "misspelling or another name for them? Smart consistency in Evaluate can fix "
+            "every occurrence or add it as an alias."
+            if known
+            else f'"{name}" appears in {_plural(count, "scene")} but is not a character '
+            "in this story yet."
         )
-        for name, count in sorted(state.unknown_name_scene_counts.items(), key=lambda kv: -kv[1])
-        if count >= MIN_SCENES_FOR_UNKNOWN_NAME
-    ]
+        out.append(
+            ProposedSuggestion(
+                code="character.recurring_unknown_name", message=message, subject_key=name
+            )
+        )
+    return out
 
 
 def character_with_arc_but_no_presence(

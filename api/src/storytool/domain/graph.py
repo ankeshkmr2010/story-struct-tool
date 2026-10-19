@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from uuid import UUID
 
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
+from storytool.domain.enums import DEFAULT_LANGUAGE
 from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.narrative.models import Chapter, Scene
 from storytool.domain.ordering import chapter_order_key, scene_order_key
@@ -39,6 +40,8 @@ class StoryGraph:
     scenes: tuple[Scene, ...] = field(default_factory=tuple)
     locations: tuple[Location, ...] = field(default_factory=tuple)
     glossary_entries: tuple[GlossaryEntry, ...] = field(default_factory=tuple)
+    language: str = DEFAULT_LANGUAGE
+    """The story's writing language, or its author's when the story sets none."""
 
     # Association rows, as plain tuples -- these are edges, not entities.
     chapter_beats: tuple[tuple[UUID, UUID], ...] = field(default_factory=tuple)

@@ -154,7 +154,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Set the author's export byline */
+        /** Set the author's export byline and default writing language */
         patch: operations["ApiAuthProfileUpdateProfile"];
         trace?: never;
     };
@@ -3324,10 +3324,6 @@ export interface components {
         AuthConfigOut: {
             google_client_id: string | null;
         };
-        /** AuthorNameIn */
-        AuthorNameIn: {
-            author_name: string | null;
-        };
         /**
          * AuthoringMode
          * @default hybrid
@@ -3833,7 +3829,9 @@ export interface components {
             entity_type: string | null;
             entity_id: string | null;
             passage?: components["schemas"]["PassageOut"] | null;
-            action?: components["schemas"]["FindingActionOut"] | null;
+            actions?: components["schemas"]["FindingActionOut"][];
+            /** @default false */
+            uncertain: boolean;
         };
         /** EvaluationOut */
         EvaluationOut: {
@@ -3916,10 +3914,10 @@ export interface components {
         FindingActionOut: {
             kind: string;
             label: string;
-            entity_type: string;
-            /** Format: uuid */
-            entity_id: string;
             value: string;
+            entity_type: string | null;
+            entity_id: string | null;
+            edits: components["schemas"]["TextEditOut"][];
         };
         /** FindingOut */
         FindingOut: {
@@ -4117,6 +4115,12 @@ export interface components {
             levels: components["schemas"]["ReadinessOut"][];
             snapshot: components["schemas"]["SnapshotOut"];
         };
+        /**
+         * Language
+         * @description Writing language and spelling convention. A story without one follows its author's.
+         * @enum {string}
+         */
+        Language: "en-US" | "en-GB";
         /** LatestPlace */
         LatestPlace: {
             /** Format: uuid */
@@ -4464,6 +4468,12 @@ export interface components {
             message: string;
             /** Format: date-time */
             created_at: string;
+        };
+        /** ProfileIn */
+        ProfileIn: {
+            author_name?: string | null;
+            /** @description Default writing language for stories that do not set one. */
+            language?: components["schemas"]["Language"] | null;
         };
         /** ProgressIn */
         ProgressIn: {
@@ -5073,6 +5083,7 @@ export interface components {
             notes?: string | null;
             genre?: string | null;
             pov_style?: components["schemas"]["PovStyle"] | null;
+            language?: components["schemas"]["Language"] | null;
             structure_framework?: components["schemas"]["StructureFramework"];
             authoring_mode?: components["schemas"]["AuthoringMode"];
         };
@@ -5095,6 +5106,8 @@ export interface components {
             notes: string | null;
             genre: string | null;
             pov_style: string | null;
+            language: string | null;
+            consistency_exceptions: string[] | null;
             structure_framework: string;
             authoring_mode: string;
             parent_story_id: string | null;
@@ -5133,6 +5146,9 @@ export interface components {
             notes?: string | null;
             genre?: string | null;
             pov_style?: components["schemas"]["PovStyle"] | null;
+            /** @description Spelling convention; null follows the author's account. */
+            language?: components["schemas"]["Language"] | null;
+            consistency_exceptions?: string[] | null;
             structure_framework?: components["schemas"]["StructureFramework"] | null;
             authoring_mode?: components["schemas"]["AuthoringMode"] | null;
         };
@@ -5164,6 +5180,11 @@ export interface components {
         /** SuggestionUpdate */
         SuggestionUpdate: {
             is_dismissed: boolean;
+        };
+        /** TextEditOut */
+        TextEditOut: {
+            passage: components["schemas"]["PassageOut"];
+            replacement: string;
         };
         /** ThreadCreate */
         ThreadCreate: {
@@ -5319,6 +5340,7 @@ export interface components {
             name: string | null;
             author_name: string | null;
             picture_url: string | null;
+            language: string;
         };
         /** ValidatorCreate */
         ValidatorCreate: {
@@ -5776,7 +5798,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AuthorNameIn"];
+                "application/json": components["schemas"]["ProfileIn"];
             };
         };
         responses: {

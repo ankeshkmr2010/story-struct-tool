@@ -236,7 +236,7 @@ export const api = {
   // Google sign-in and current account
   authConfig: () => request<AuthConfig>('/api/auth/config'),
   currentUser: () => request<AuthUser>('/api/auth/me'),
-  saveAuthorName: (body: S['AuthorNameIn']) => patch<AuthUser>('/api/auth/profile', body),
+  saveProfile: (body: S['ProfileIn']) => patch<AuthUser>('/api/auth/profile', body),
   listShoutouts: () => request<Shoutout[]>('/api/shoutouts'),
   adminStatus: () => request<{ is_admin: boolean }>('/api/admin/status'),
   betaRounds: (storyId: string) => request<BetaRound[]>(`/api/beta/manage/${storyId}/rounds`),

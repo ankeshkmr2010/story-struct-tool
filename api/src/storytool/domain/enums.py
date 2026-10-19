@@ -35,6 +35,16 @@ class PovStyle(StrEnum):
     MIXED = "mixed"
 
 
+class Language(StrEnum):
+    """Writing language and spelling convention. A story without one follows its author's."""
+
+    EN_US = "en-US"
+    EN_GB = "en-GB"
+
+
+DEFAULT_LANGUAGE = Language.EN_US
+
+
 class StoryStatus(StrEnum):
     """Derived, never stored -- see DESIGN.md principle 3."""
 

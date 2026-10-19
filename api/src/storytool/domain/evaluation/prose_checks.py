@@ -1,34 +1,20 @@
-"""Prose checks that need no AI: TK placeholders and name consistency.
+"""Prose checks that need no AI: TK placeholders and smart consistency.
 
 Both read the saved prose through `prose_scan`, so each finding carries the passage it came
 from and opens there in Write. Only scenes placed in chapters are read, in reading order --
 the same text an export contains.
 """
 
-from collections import defaultdict
-from uuid import UUID
-
+from storytool.domain import consistency
 from storytool.domain.evaluation.engine import (
     EvaluationFinding,
     EvaluationResult,
     Evaluator,
-    FindingAction,
     register,
 )
 from storytool.domain.graph import StoryGraph
 from storytool.domain.health import Severity
-from storytool.domain.prose_scan import (
-    NameSource,
-    ProseMatch,
-    lowercase_vocabulary,
-    markers,
-    near_miss_names,
-    scan,
-)
-
-MAX_NAME_FINDINGS = 50
-ALIAS_TARGETS = {"character", "glossary_entry"}
-"""Entity kinds whose aliases the author can extend from a finding; places have no aliases."""
+from storytool.domain.prose_scan import ProseMatch, markers, scan
 
 
 def _title(match: ProseMatch) -> str:
@@ -68,66 +54,9 @@ def _run_tk(g: StoryGraph) -> EvaluationResult:
     )
 
 
-def name_sources(g: StoryGraph) -> list[NameSource]:
-    return [
-        *(NameSource("character", c.id, c.name, tuple(c.aliases or ())) for c in g.characters),
-        *(NameSource("location", place.id, place.name) for place in g.locations),
-        *(
-            NameSource("glossary_entry", entry.id, entry.term, tuple(entry.aliases or ()))
-            for entry in g.glossary_entries
-        ),
-    ]
-
-
-def _missing_names(g: StoryGraph) -> list[str]:
-    missing = _needs_prose(g)
-    if not name_sources(g):
-        missing.append("Add a character, place or glossary term")
-    return missing
-
-
-def _run_names(g: StoryGraph) -> EvaluationResult:
-    scenes = g.scenes_in_reading_order()
-    matcher = near_miss_names(name_sources(g), lowercase_vocabulary(scenes))
-    # One finding per spelling and name it resembles, opened at its first appearance.
-    groups: dict[tuple[str, str], list[ProseMatch]] = defaultdict(list)
-    for match in scan(scenes, matcher):
-        groups[(match.text, match.details["entity_id"])].append(match)
-
-    findings = []
-    for (variant, _), matches in list(groups.items())[:MAX_NAME_FINDINGS]:
-        first = matches[0]
-        name, entity_type = first.details["name"], first.details["entity_type"]
-        entity_id = UUID(first.details["entity_id"])
-        times = "once" if len(matches) == 1 else f"{len(matches)} times"
-        findings.append(
-            EvaluationFinding(
-                code="names.near_miss",
-                severity=Severity.WARNING,
-                message=(
-                    f"'{variant}' looks like {name}: it appears {times}, first in "
-                    f"'{_title(first)}'. Fix the spelling, or add it as an alias if intended."
-                ),
-                entity_type=entity_type,
-                entity_id=entity_id,
-                passage=first.passage,
-                action=(
-                    FindingAction(
-                        kind="add_alias",
-                        label=f"Add '{variant}' as an alias of {name}",
-                        entity_type=entity_type,
-                        entity_id=entity_id,
-                        value=variant,
-                    )
-                    if entity_type in ALIAS_TARGETS
-                    else None
-                ),
-            )
-        )
-    return EvaluationResult(
-        findings=tuple(findings),
-        visual={"spellings": len(groups), "shown": len(findings)},
-    )
+def _run_consistency(g: StoryGraph) -> EvaluationResult:
+    findings, counts = consistency.check(g)
+    return EvaluationResult(findings=tuple(findings), visual={"language": g.language, **counts})
 
 
 TK_PLACEHOLDERS = register(
@@ -146,17 +75,25 @@ TK_PLACEHOLDERS = register(
     )
 )
 
-NAME_CONSISTENCY = register(
+CONSISTENCY = register(
     Evaluator(
-        id="name_consistency",
-        name="Name consistency",
+        id="consistency",
+        name="Smart consistency",
         description=(
-            "Flags capitalised words one or two letters away from a character, place or "
-            "glossary name or alias (Maia for Maya). Intended variants can be added as aliases."
+            "Finds misspelt names (Maia for Maya), spellings from the other side of the "
+            "Atlantic, terms written several ways (lantern-keeper, lanternkeeper) and "
+            "inconsistent capitals. Each finding says why, weighing how often each spelling "
+            "appears and who is in the scene, and can be fixed everywhere at once."
         ),
-        inputs=("scene.content", "character.aliases", "glossary_entry.aliases"),
-        missing=_missing_names,
-        run=_run_names,
+        inputs=(
+            "scene.content",
+            "character.aliases",
+            "glossary_entry.aliases",
+            "scene.pov_character_id",
+            "story.language",
+        ),
+        missing=_needs_prose,
+        run=_run_consistency,
         reads_prose=True,
     )
 )

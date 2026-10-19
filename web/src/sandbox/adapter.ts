@@ -63,7 +63,7 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
   const url = new URL(path, location.origin)
   const method = init?.method ?? 'GET'
   const body = init?.body ? JSON.parse(String(init.body)) as Row : {}
-  if (path === '/api/auth/me') return { id: SANDBOX_ID, name: 'You', email: '', author_name: null }
+  if (path === '/api/auth/me') return { id: SANDBOX_ID, name: 'You', email: '', author_name: null, language: 'en-US' }
   return transact(s => {
     if (method !== 'GET' && s.imported) {
       s.importId = crypto.randomUUID()

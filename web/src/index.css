@@ -944,3 +944,8 @@ ol.showcase-list { list-style: decimal; }
 .placeholder-item p span { color: var(--muted); font-size: var(--text-xs); }
 .placeholder-item form { display: flex; flex-wrap: wrap; gap: 6px; }
 .placeholder-item input { flex: 1 1 140px; min-width: 0; padding: 4px 8px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--page); color: var(--ink); font-size: var(--text-sm); }
+
+/* Evaluate findings: a small tag naming the part of the check, and a collapsed group for the
+   ones that may be intended. */
+.eval-finding-tag { display: inline-block; margin-right: 8px; padding: 0 6px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: var(--text-xs); line-height: 18px; vertical-align: 1px; }
+.eval-worth-a-look > summary { cursor: pointer; color: var(--muted); font-size: var(--text-sm); }
