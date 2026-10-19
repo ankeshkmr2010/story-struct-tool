@@ -1,5 +1,5 @@
 import { SceneReaderResults } from './SceneReaderResults'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type CraftReading, type Evaluation, type Evaluator } from '../api/client'
 import { errorText } from '../api/errors'
@@ -367,10 +367,8 @@ function EvaluationOverview({ evaluators, results, reading, readerShared, runnin
 
 type FindingAction = NonNullable<Evaluation['findings'][number]['action']>
 
-export function StoryEvaluation({ storyId, initialCheck, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters, onOpenStory, onOpenPassage }: {
+export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters, onOpenStory, onOpenPassage }: {
   storyId: string
-  /** Open straight to one check, e.g. TK placeholders from the export warning. */
-  initialCheck?: string
   onOpenInbox: () => void
   onOpenScene: (scene: { id: string; chapter_id: string | null }) => void
   onOpenThreads: (id: string) => void
@@ -382,15 +380,12 @@ export function StoryEvaluation({ storyId, initialCheck, onOpenInbox, onOpenScen
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
   const noticer = useQuery({ queryKey: ['noticer'], queryFn: api.noticerInfo })
   const reader = useMutation({ mutationFn: () => api.readCraftScenes(storyId) })
-  const [chosen, setChosen] = useState<string | null>(initialCheck ?? null)
+  const [chosen, setChosen] = useState<string | null>(null)
   const [results, setResults] = useState<Record<string, Evaluation>>({})
   const overview = !chosen
   const selected = overview ? undefined : evaluators.data?.find((item) => item.id === chosen) ?? evaluators.data?.[0]
   const run = useMutation({ mutationFn: (id: string) => api.runEvaluator(storyId, id), onSuccess: (result) => setResults((current) => ({ ...current, [result.evaluator_id]: result })) })
   const usesReader = selected && READER_CHECKS.includes(selected.id)
-  // Opened on one check (Export's "Show them"): show its findings straight away.
-  const opened = useRef(false)
-  useEffect(() => { if (initialCheck && !opened.current) { opened.current = true; run.mutate(initialCheck) } }, [initialCheck, run])
   const shown = selected ? results[selected.id] ?? null : null
   // Run all: every ready outline check, plus one shared-reader pass that serves all prose checks.
   const runAll = useMutation({

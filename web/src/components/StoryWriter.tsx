@@ -235,6 +235,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     await api.saveContent(storyId, current.id, { content: text, expected_content: base, snapshot, snapshot_label: 'Writing checkpoint' })
     if (snapshot) lastCheckpoint.current = Date.now()
     qc.setQueryData(['content', storyId, current.id], { scene_id: current.id, content: text, word_count: proseWords(text) })
+    void qc.invalidateQueries({ queryKey: ['placeholders', storyId] })
     if (!createdAnnounced.current) { createdAnnounced.current = true; onCreated?.(current, text) }
     refresh()
   }) }, [draft, storyId, prefix, createScene, qc, onCreated, refresh])
@@ -267,6 +268,15 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     window.addEventListener('scroll', hide, true)
     return () => window.removeEventListener('scroll', hide, true)
   }, [selectionChip])
+  // A selection becomes the TK's note; the cursor lands inside the marker, ready to type.
+  const addPlaceholder = () => {
+    const editor = view.current; if (!editor) return
+    const { from, to } = editor.state.selection.main
+    const selected = editor.state.sliceDoc(from, to)
+    const marker = `[TK: ${selected}]`
+    editor.dispatch({ changes: { from, to, insert: marker }, selection: { anchor: from + marker.length - 1 }, scrollIntoView: true, userEvent: 'input' })
+    setContext(null); editor.focus()
+  }
   const editClipboard = async (action: 'cut' | 'copy' | 'paste' | 'select') => {
     const editor = view.current; if (!editor) return
     const selection = editor.state.selection.main
@@ -350,6 +360,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
         buttons[(index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length]?.focus()
       }
     }}>
+      {storyId !== SANDBOX_ID && <button type="button" role="menuitem" onClick={addPlaceholder}>Add TK here</button>}
       <button type="button" role="menuitem" onClick={() => { const anchor = context; setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor(anchor) }}>Insert image…</button>
       {(['cut', 'copy', 'paste', 'select'] as const).map(action => <button type="button" role="menuitem" key={action} disabled={(action === 'cut' || action === 'copy') && !context.hasSelection} onClick={() => { void editClipboard(action) }}>{({ cut: 'Cut', copy: 'Copy', paste: 'Paste', select: 'Select all' })[action]}</button>)}
       <a role="menuitem" href="https://emojidb.org/" target="_blank" rel="noopener noreferrer" onClick={() => setContext(null)}>Find emojis ↗</a>

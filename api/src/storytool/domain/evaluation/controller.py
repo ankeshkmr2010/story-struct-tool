@@ -51,6 +51,10 @@ class PassageOut(BaseModel):
     paragraph: int
     """1-based, counting non-empty blank-line separated blocks, as Write does."""
     find: str
+    start: int
+    """Offsets of `find` in the scene's saved content; check them before editing."""
+    end: int
+    excerpt: str
 
 
 class FindingActionOut(BaseModel):
@@ -79,7 +83,14 @@ class EvaluationFindingOut(BaseModel):
             message=finding.message,
             entity_type=finding.entity_type,
             entity_id=finding.entity_id,
-            passage=PassageOut(scene_id=p.scene_id, paragraph=p.paragraph, find=p.find)
+            passage=PassageOut(
+                scene_id=p.scene_id,
+                paragraph=p.paragraph,
+                find=p.find,
+                start=p.start,
+                end=p.end,
+                excerpt=p.excerpt,
+            )
             if p
             else None,
             action=FindingActionOut(

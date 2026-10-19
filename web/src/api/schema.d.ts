@@ -4332,6 +4332,9 @@ export interface components {
             scene_id: string;
             paragraph: number;
             find: string;
+            start: number;
+            end: number;
+            excerpt: string;
         };
         /** PlanIn */
         PlanIn: {

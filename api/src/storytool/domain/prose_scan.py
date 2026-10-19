@@ -23,6 +23,7 @@ __all__ = (
     "lowercase_vocabulary",
     "markers",
     "near_miss_names",
+    "paragraph_spans",
     "paragraphs",
     "scan",
 )
@@ -39,11 +40,15 @@ Matcher = Callable[[str], Iterable[tuple[int, int, dict[str, str]]]]
 
 @dataclass(frozen=True, slots=True)
 class Passage:
-    """Where a finding sits: the exact text to select inside a numbered paragraph."""
+    """Where a finding sits: the exact text to select inside a numbered paragraph, and its
+    character offsets in the scene's saved content, so an edit can verify and replace it."""
 
     scene_id: UUID
     paragraph: int
     find: str
+    start: int
+    end: int
+    excerpt: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +56,7 @@ class ProseMatch:
     scene: Scene
     paragraph: int
     start: int
+    """Offset in the scene's whole content, not in the paragraph."""
     end: int
     text: str
     excerpt: str
@@ -58,11 +64,28 @@ class ProseMatch:
 
     @property
     def passage(self) -> Passage:
-        return Passage(scene_id=self.scene.id, paragraph=self.paragraph, find=self.text)
+        return Passage(
+            scene_id=self.scene.id,
+            paragraph=self.paragraph,
+            find=self.text,
+            start=self.start,
+            end=self.end,
+            excerpt=self.excerpt,
+        )
+
+
+def paragraph_spans(content: str | None) -> list[tuple[int, str]]:
+    """(offset in content, text) of each non-empty paragraph."""
+    text, spans, start = content or "", [], 0
+    for brk in _PARAGRAPH_BREAK.finditer(text):
+        spans.append((start, text[start : brk.start()]))
+        start = brk.end()
+    spans.append((start, text[start:]))
+    return [(offset, part) for offset, part in spans if part.strip()]
 
 
 def paragraphs(content: str | None) -> list[str]:
-    return [part for part in _PARAGRAPH_BREAK.split(content or "") if part.strip()]
+    return [part for _, part in paragraph_spans(content)]
 
 
 def _excerpt(text: str, start: int, end: int) -> str:
@@ -79,14 +102,14 @@ def _excerpt(text: str, start: int, end: int) -> str:
 def scan(scenes: Iterable[Scene], matcher: Matcher) -> Iterator[ProseMatch]:
     """Every match in the given scenes, in the order given, paragraph by paragraph."""
     for scene in scenes:
-        for number, text in enumerate(paragraphs(scene.content), start=1):
+        for number, (offset, text) in enumerate(paragraph_spans(scene.content), start=1):
             visible = _IMAGE.sub(lambda image: " " * len(image.group()), text)
             for start, end, details in matcher(visible):
                 yield ProseMatch(
                     scene=scene,
                     paragraph=number,
-                    start=start,
-                    end=end,
+                    start=offset + start,
+                    end=offset + end,
                     text=text[start:end],
                     excerpt=_excerpt(text, start, end),
                     details=details,

@@ -83,6 +83,10 @@ def test_tk_check_lists_placed_scenes_only_with_passages() -> None:
     assert [f.message for f in result.findings] == ["TK in 'S1': inn"]
     passage = result.findings[0].passage
     assert passage is not None and (passage.paragraph, passage.find) == (2, "[TK: inn]")
+    assert g.scenes[0].content[passage.start : passage.end] == "[TK: inn]", (
+        "offsets index the content"
+    )
+    assert passage.excerpt == "The [TK: inn] was full."
     assert result.visual == {"count": 1, "scenes": 1}
 
 

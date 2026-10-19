@@ -21,6 +21,8 @@ import { StoryGrid } from '../components/StoryGrid'
 import { ProposalInbox } from '../components/ProposalInbox'
 import { OutlineCatchup } from '../components/OutlineCatchup'
 import { StoryEvaluation } from '../components/StoryEvaluation'
+import { PlaceholderList } from '../components/PlaceholderList'
+import { usePlaceholders } from '../components/usePlaceholders'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
 import { AuthorshipPanel, DisclosureCard } from '../components/AuthorshipPanel'
@@ -69,10 +71,11 @@ const GRID_VIEW = 105
 const CATCHUP_VIEW = 106
 const HISTORY_VIEW = 107
 const EVALUATE_VIEW = 108
+const PLACEHOLDERS_VIEW = 109
 
 // One docked side panel; which tabs it offers depends on the mode (Context and Hints belong to Write).
-type RefPanel = 'context' | 'hints' | 'insights' | 'feedback' | 'timeline' | 'places' | 'glossary' | 'assistant'
-const REF_PANELS: [RefPanel, string][] = [['context', 'Context'], ['hints', 'Hints'], ['insights', 'Insights'], ['feedback', 'Feedback'], ['timeline', 'Timeline'], ['places', 'Places'], ['glossary', 'Glossary'], ['assistant', 'Assistant']]
+type RefPanel = 'context' | 'hints' | 'insights' | 'feedback' | 'placeholders' | 'timeline' | 'places' | 'glossary' | 'assistant'
+const REF_PANELS: [RefPanel, string][] = [['context', 'Context'], ['hints', 'Hints'], ['insights', 'Insights'], ['feedback', 'Feedback'], ['placeholders', 'TKs'], ['timeline', 'Timeline'], ['places', 'Places'], ['glossary', 'Glossary'], ['assistant', 'Assistant']]
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
@@ -87,6 +90,8 @@ function SavedWorkspace({ storyId }: { storyId: string }) {
 
 export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, initialPosition, syncPosition = false }: { storyId: string; sandboxStep?: number; sandboxRun?: number; sandboxHistory?: Sandbox; initialPosition?: WorkspacePlace | null; syncPosition?: boolean }) {
   const sandbox = storyId === SANDBOX_ID
+  const placeholders = usePlaceholders(storyId, !sandbox)
+  const placeholderCount = placeholders.data?.findings.length ?? 0
   const openFeedback = useQuery({ queryKey: ['beta-feedback', storyId, 'open'], queryFn: () => api.betaFeedback(storyId), enabled: !sandbox, refetchInterval: 60_000 })
   const [feedbackFocus, setFeedbackFocus] = useState<string | null>(null)
   const qc = useQueryClient()
@@ -102,7 +107,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [savedSearchContext] = useState(() => {
     try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' ? JSON.parse(localStorage.getItem(`storytool-search-context:${storyId}`) || '{}') : {} } catch { return {} }
   })
-  const [level, setLevel] = useState(() => initialPosition?.level ?? ([1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1))
+  const [level, setLevel] = useState(() => initialPosition?.level ?? ([1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW, PLACEHOLDERS_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1))
   // Levels 1-8 are the Plan; ids from 104 up are full-width Design pages (Grid, History, …).
   const isView = level >= INBOX_VIEW
   const planLevel = useRef(1)
@@ -125,8 +130,6 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [writerOpened, setWriterOpened] = useState(tab === 'write')
   const [readerResume, setReaderResume] = useState(initialPosition?.reading)
   const [tabError, setTabError] = useState<string | null>(null)
-  // Export's "Show them" opens Evaluate on one check; the key remounts it on that check.
-  const [evaluateFocus, setEvaluateFocus] = useState<{ check: string; at: number } | null>(null)
   const writerFlush = useRef<() => Promise<boolean>>(async () => true)
   const registerFlush = useCallback((flush: () => Promise<boolean>) => { writerFlush.current = flush }, [])
   const changeTab = async (next: 'write' | 'read' | 'design') => {
@@ -143,6 +146,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   }
   // Design pages (Grid, History, …) need the full width; the header's Agent changes badge opens one from any tab.
   const openView = async (view: number) => { if (await changeTab('design')) setLevel(view) }
+  // Evaluate findings and placeholders open their exact passage in Write.
+  const openPassage = (id: string, find: string, paragraph: number) => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id, find, paragraph, at: Date.now() }) }) }
   const viewItem = (view: number, label: ReactNode) => <button type="button" aria-current={level === view ? 'page' : undefined} onClick={() => { setLevel(view); if (sandbox && view === HISTORY_VIEW) tourEvent('history') }}>{label}</button>
   // Reference panels sit beside the text in every tab, so looking something up never leaves the page.
   // The panel opens by default (Context in Write, Insights in Design); closing it is remembered for the visit.
@@ -161,7 +166,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [searchParams] = useSearchParams()
   const handledSearchTarget = useRef('')
   const navigate = useNavigate()
-  const panelTabs = REF_PANELS.filter(([key]) => key === 'context' || key === 'hints' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' || key === 'feedback' ? !sandbox : true)
+  const panelTabs = REF_PANELS.filter(([key]) => key === 'context' || key === 'hints' ? tab === 'write' : key === 'placeholders' ? tab === 'write' && !sandbox : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' || key === 'feedback' ? !sandbox : true)
   const modePanel: RefPanel | null = tab === 'write' ? 'context' : tab === 'design' && !sandbox ? 'insights' : null
   const preferredPanel = panelTabs.some(([key]) => key === refPanel) ? refPanel : modePanel
   const activePanel = panelHidden ? null : preferredPanel
@@ -479,7 +484,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           <IconButton label={hasPanel ? 'Hide side panel' : tab === 'write' ? 'Show context and side panel' : 'Show side panel'} aria-pressed={hasPanel} className={tab === 'write' && !hasPanel ? 'writer-context-toggle' : ''} onClick={togglePanel}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg></IconButton>
           {!sandbox && <StorySharing menu betaOpen={openFeedback.data?.length ?? 0} storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>Images</MenuItem>} />}
           {/* Export is first-class: the words must always be able to leave. */}
-          {!sandbox && <DownloadMenu storyId={storyId} onShowPlaceholders={() => { setEvaluateFocus({ check: 'tk_placeholders', at: Date.now() }); void openView(EVALUATE_VIEW) }} />}
+          {!sandbox && <DownloadMenu storyId={storyId} onShowPlaceholders={() => { void openView(PLACEHOLDERS_VIEW) }} />}
           {/* The site header is hidden while a workspace is open; its links live here. */}
           {!sandbox && <Menu label="⋯" ariaLabel="Site menu" triggerClassName="share-story-button"><MenuItem onSelect={() => navigate('/library')}>Your stories</MenuItem><MenuItem onSelect={() => navigate('/how-to-use')}>How to use</MenuItem><MenuItem onSelect={() => navigate('/roadmap')}>Roadmap</MenuItem><MenuItem onSelect={() => navigate('/about')}>About</MenuItem><MenuItem onSelect={() => navigate('/#mcp')}>Connect AI</MenuItem><MenuItem onSelect={() => navigate('/feedback')}>Feedback</MenuItem></Menu>}
           <ThemeToggle />
@@ -505,6 +510,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {!sandbox && viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
           {!sandbox && viewItem(CATCHUP_VIEW, 'Catch up')}
           {!sandbox && viewItem(EVALUATE_VIEW, 'Evaluate')}
+          {!sandbox && viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>Placeholders<span className="workspace-nav-badge" aria-label={`${placeholderCount} left`}>{placeholderCount}</span></> : 'Placeholders')}
           {viewItem(HISTORY_VIEW, 'History')}
         </nav>
         <div className="min-w-0">
@@ -512,7 +518,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         <section ref={levelSection} id="story-search-design-section" className="min-w-0 scroll-mt-4">
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
-          {level === EVALUATE_VIEW && <StoryEvaluation key={evaluateFocus?.at} initialCheck={evaluateFocus?.check} storyId={storyId} onOpenPassage={(id, find, paragraph) => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id, find, paragraph, at: Date.now() }) }) }} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
+          {level === PLACEHOLDERS_VIEW && !sandbox && <section><h2 className="level-title">Placeholders</h2><PlaceholderList storyId={storyId} beforeEdit={() => writerFlush.current()} onOpen={openPassage} /></section>}
+          {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
           {level === HISTORY_VIEW && sandboxHistory && <SandboxHistory value={sandboxHistory} />}
           {level === HISTORY_VIEW && !sandbox && <div>
@@ -677,7 +684,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       </div>
       <aside hidden={!hasPanel} className="workspace-ref-panel ws-panel" aria-label="Side panel">
         <div className="workspace-ref-head">
-          <Tabs label="Side panel" value={activePanel ?? panelTabs[0][0]} onChange={selectPanel} items={panelTabs.map(([key, label]) => ({ id: key, label: key === 'feedback' && openFeedback.data?.length ? `${label} (${openFeedback.data.length})` : label, className: key === 'context' ? 'writer-context-toggle' : undefined }))} />
+          <Tabs label="Side panel" value={activePanel ?? panelTabs[0][0]} onChange={selectPanel} items={panelTabs.map(([key, label]) => ({ id: key, label: key === 'feedback' && openFeedback.data?.length ? `${label} (${openFeedback.data.length})` : key === 'placeholders' && placeholderCount ? `${label} (${placeholderCount})` : label, className: key === 'context' ? 'writer-context-toggle' : undefined }))} />
           <div><button type="button" aria-label="Search this panel" title="Search this panel" onClick={() => setSearchOpen(true)} disabled={!searchContext}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></button><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div>
         </div>
         {activePanel === 'context' && <div ref={setContextSlot} />}
@@ -691,6 +698,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         {activePanel === 'places' && <PlacesPanel storyId={storyId} />}
         {activePanel === 'feedback' && <BetaFeedbackPanel storyId={storyId} focusId={feedbackFocus} onShowInWrite={(id, find) => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id, at: Date.now(), find: find || undefined }) }) }} />}
         {activePanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
+        {activePanel === 'placeholders' && <PlaceholderList storyId={storyId} compact beforeEdit={() => writerFlush.current()} onOpen={openPassage} />}
         {activePanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
       </aside>
       </div>

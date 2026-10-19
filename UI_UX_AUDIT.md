@@ -572,3 +572,9 @@ Not started (reviewer's smaller notes, verified as described unless marked):
 - [~] MCP `run_story_check` lists checks or runs one. How to use: "Leave a TK and keep writing".
 - Tests: `api/tests/test_prose_checks.py` (pure, `--noconftest`) 9 passed. Not run: DB-backed
   middleware/MCP tests for the prose:read gate [unverified].
+- [~] Placeholders get their own places (2026-10-20): Write side-panel tab "TKs (n)" and
+  Design → Review → Placeholders (count badge), one shared `PlaceholderList`. Fill in place,
+  Remove marker (tidies spacing) and Open; edits flush Write, re-read the scene, verify the
+  marker at its offsets and save with `expected_content`. Write right-click "Add TK here"
+  (selection becomes the note). Export's "Show them" now opens Design → Placeholders.
+  Passages carry absolute `start`/`end` offsets and an excerpt for every check.
