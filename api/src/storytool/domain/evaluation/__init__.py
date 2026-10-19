@@ -3,12 +3,13 @@
 from storytool.domain.evaluation import (  # noqa: F401
     mice_nesting,
     misbelief_midpoint,
+    prose_checks,
     scene_rhythm,
     value_shift,
 )
-from storytool.domain.evaluation.engine import all_evaluators, get_evaluator
+from storytool.domain.evaluation.engine import all_evaluators, get_evaluator, reads_prose
 
-__all__ = ("all_evaluators", "get_evaluator")
+__all__ = ("all_evaluators", "get_evaluator", "reads_prose")
 
 from storytool.domain.evaluation.engine import EvaluationResult, Evaluator, register
 

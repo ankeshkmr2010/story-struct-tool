@@ -1187,6 +1187,19 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
             story_id=story_id,
         )
 
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def run_story_check(
+        ctx: Context, evaluator_id: str | None = None, story_id: UUID | None = None
+    ) -> dict[str, Any]:
+        """Without evaluator_id: list Evaluate checks, whether each is ready and what is missing.
+        With one: run that deterministic check (e.g. tk_placeholders, name_consistency,
+        scene_rhythm). Findings may carry a passage {scene_id, paragraph, find} and an action
+        such as add_alias; propose fixes, never apply them unasked. Checks marked
+        reads_prose need prose:read. AI reviews use get_evaluation_package instead."""
+        if evaluator_id is None:
+            return {"checks": await call(ctx, "/evaluations", story_id=story_id)}
+        return await call(ctx, f"/evaluations/{evaluator_id}", story_id=story_id)
+
     @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
     async def submit_evaluation_report(
         ctx: Context,

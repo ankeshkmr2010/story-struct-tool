@@ -1,5 +1,5 @@
 import { SceneReaderResults } from './SceneReaderResults'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type CraftReading, type Evaluation, type Evaluator } from '../api/client'
 import { errorText } from '../api/errors'
@@ -339,7 +339,8 @@ function EvaluationOverview({ evaluators, results, reading, readerShared, runnin
     const parts: string[] = []
     if (item.missing.length) parts.push('Needs inputs')
     if (reading?.check_missing[item.id]) parts.push(reading.check_missing[item.id])
-    if (outline) parts.push(outline.findings.length ? `${outline.findings.length} outline ${outline.findings.length === 1 ? 'note' : 'notes'}` : 'Outline: nothing to flag')
+    const source = item.reads_prose ? 'prose' : 'outline'
+    if (outline) parts.push(outline.findings.length ? `${outline.findings.length} ${source} ${outline.findings.length === 1 ? 'note' : 'notes'}` : `${source[0].toUpperCase()}${source.slice(1)}: nothing to flag`)
     if (reading && READER_CHECKS.includes(item.id)) parts.push(certain ? `${certain} from the prose` : 'Prose: nothing confident to flag')
     if (uncertain) parts.push(`${uncertain} uncertain`)
     if (!parts.length) parts.push(item.kind === 'deterministic' || READER_CHECKS.includes(item.id) ? 'Not run yet' : 'AI review only')
@@ -364,8 +365,12 @@ function EvaluationOverview({ evaluators, results, reading, readerShared, runnin
   </section>
 }
 
-export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters, onOpenStory, onOpenPassage }: {
+type FindingAction = NonNullable<Evaluation['findings'][number]['action']>
+
+export function StoryEvaluation({ storyId, initialCheck, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters, onOpenStory, onOpenPassage }: {
   storyId: string
+  /** Open straight to one check, e.g. TK placeholders from the export warning. */
+  initialCheck?: string
   onOpenInbox: () => void
   onOpenScene: (scene: { id: string; chapter_id: string | null }) => void
   onOpenThreads: (id: string) => void
@@ -377,12 +382,15 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
   const noticer = useQuery({ queryKey: ['noticer'], queryFn: api.noticerInfo })
   const reader = useMutation({ mutationFn: () => api.readCraftScenes(storyId) })
-  const [chosen, setChosen] = useState<string | null>(null)
+  const [chosen, setChosen] = useState<string | null>(initialCheck ?? null)
   const [results, setResults] = useState<Record<string, Evaluation>>({})
   const overview = !chosen
   const selected = overview ? undefined : evaluators.data?.find((item) => item.id === chosen) ?? evaluators.data?.[0]
   const run = useMutation({ mutationFn: (id: string) => api.runEvaluator(storyId, id), onSuccess: (result) => setResults((current) => ({ ...current, [result.evaluator_id]: result })) })
   const usesReader = selected && READER_CHECKS.includes(selected.id)
+  // Opened on one check (Export's "Show them"): show its findings straight away.
+  const opened = useRef(false)
+  useEffect(() => { if (initialCheck && !opened.current) { opened.current = true; run.mutate(initialCheck) } }, [initialCheck, run])
   const shown = selected ? results[selected.id] ?? null : null
   // Run all: every ready outline check, plus one shared-reader pass that serves all prose checks.
   const runAll = useMutation({
@@ -396,8 +404,28 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
     },
   })
 
+  const qc = useQueryClient()
+  // A finding's one-click remedy is an ordinary author edit; the check then runs again.
+  const applyAction = useMutation({
+    mutationFn: async (action: FindingAction) => {
+      if (action.kind !== 'add_alias') return
+      if (action.entity_type === 'character') {
+        const character = (await api.listCharacters(storyId)).find((item) => item.id === action.entity_id)
+        if (!character) throw new Error('That character no longer exists.')
+        await api.updateCharacter(storyId, character.id, { aliases: [...(character.aliases ?? []), action.value] })
+        await qc.invalidateQueries({ queryKey: ['characters', storyId] })
+      } else if (action.entity_type === 'glossary_entry') {
+        const entry = (await api.listGlossary(storyId)).find((item) => item.id === action.entity_id)
+        if (!entry) throw new Error('That glossary term no longer exists.')
+        await api.updateGlossaryEntry(storyId, entry.id, { aliases: [...(entry.aliases ?? []), action.value] })
+        await qc.invalidateQueries({ queryKey: ['glossary', storyId] })
+      }
+    },
+    onSuccess: () => { if (selected) run.mutate(selected.id) },
+  })
   const openEntity = (type: string | null | undefined, id: string | null | undefined) => {
     if (!id) return null
+    if (type === 'character') return () => onOpenCharacters(id)
     if (type === 'scene') {
       const scene = scenes.data?.find((item) => item.id === id)
       return scene ? () => onOpenScene({ id: scene.id, chapter_id: scene.chapter_id ?? null }) : null
@@ -467,6 +495,7 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
             <h3 className="text-lg font-semibold">Results</h3>
             {selected.id === 'scene_rhythm' && <RhythmStrip visual={shown.visual as unknown as RhythmVisual} />}
             {selected.id === 'mice_nesting' && <MiceSpans visual={shown.visual as unknown as MiceVisual} />}
+            {applyAction.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(applyAction.error)}</p>}
             {shown.findings.length === 0 ? (
               <p className="text-sm text-emerald-700 dark:text-emerald-300">Nothing to flag.</p>
             ) : (
@@ -476,7 +505,11 @@ export function StoryEvaluation({ storyId, onOpenInbox, onOpenScene, onOpenThrea
                   return (
                     <li key={`${finding.code}-${index}`} className={`rounded-md border-l-4 bg-white p-3 text-sm dark:bg-slate-900 ${finding.severity === 'warning' ? 'border-amber-400' : 'border-slate-300 dark:border-slate-600'}`}>
                       <p>{finding.message}</p>
-                      {open && <button type="button" onClick={open} className="mt-1 text-xs underline">Open {finding.entity_type === 'story' ? 'story' : finding.entity_type} in Plan →</button>}
+                      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                        {finding.passage && onOpenPassage && <button type="button" onClick={() => onOpenPassage(finding.passage!.scene_id, finding.passage!.find, finding.passage!.paragraph)} className="underline">Open in Write →</button>}
+                        {open && <button type="button" onClick={open} className="underline">Open {finding.entity_type === 'story' ? 'story' : finding.entity_type} in Plan →</button>}
+                        {finding.action?.kind === 'add_alias' && <button type="button" disabled={applyAction.isPending} onClick={() => applyAction.mutate(finding.action!)} className="underline disabled:opacity-50">{finding.action.label}</button>}
+                      </div>
                     </li>
                   )
                 })}

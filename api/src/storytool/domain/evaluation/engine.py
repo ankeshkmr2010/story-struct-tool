@@ -18,16 +18,31 @@ from uuid import UUID
 
 from storytool.domain.graph import StoryGraph
 from storytool.domain.health import Severity
+from storytool.domain.prose_scan import Passage
 
 __all__ = (
     "EvaluationFinding",
     "EvaluationResult",
     "Evaluator",
+    "FindingAction",
     "Review",
     "all_evaluators",
     "get_evaluator",
+    "reads_prose",
     "register",
 )
+
+
+@dataclass(frozen=True, slots=True)
+class FindingAction:
+    """A one-click remedy the page can offer, e.g. kind "add_alias" adds `value` to the
+    aliases of the named entity. Applying it is an ordinary edit by the author."""
+
+    kind: str
+    label: str
+    entity_type: str
+    entity_id: UUID
+    value: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +52,9 @@ class EvaluationFinding:
     message: str
     entity_type: str | None = None
     entity_id: UUID | None = None
+    passage: Passage | None = None
+    """Where in the prose the finding sits, so the page can open it in Write."""
+    action: FindingAction | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,6 +86,8 @@ class Evaluator:
     run: Callable[[StoryGraph], EvaluationResult]
     kind: str = "deterministic"
     review: Review | None = None
+    reads_prose: bool = False
+    """Running it returns prose excerpts, so callers need prose:read."""
 
 
 _REGISTRY: dict[str, Evaluator] = {}
@@ -86,3 +106,8 @@ def all_evaluators() -> tuple[Evaluator, ...]:
 
 def get_evaluator(evaluator_id: str) -> Evaluator | None:
     return _REGISTRY.get(evaluator_id)
+
+
+def reads_prose(evaluator_id: str) -> bool:
+    evaluator = _REGISTRY.get(evaluator_id)
+    return evaluator is not None and evaluator.reads_prose

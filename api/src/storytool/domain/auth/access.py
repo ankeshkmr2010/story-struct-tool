@@ -26,6 +26,7 @@ from storytool.domain.ai.models import AgentToken, AIRun
 from storytool.domain.auth.models import User, UserSession
 from storytool.domain.auth.oauth import STORY_SCOPES, Delegation, delegated_access
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
+from storytool.domain.evaluation import reads_prose
 from storytool.domain.narrative.models import Chapter, Scene
 from storytool.domain.story.models import Story
 from storytool.domain.structure.models import Act, Beat, Event, Thread
@@ -346,6 +347,12 @@ class StoryAccessMiddleware:
                         suffix.startswith("/evaluations/")
                         and suffix.endswith("/reports")
                         and http_scope["method"] == "GET"
+                    )
+                    # Running a check that quotes the prose (TK placeholders, name consistency).
+                    or (
+                        suffix.startswith("/evaluations/")
+                        and suffix.count("/") == 2
+                        and reads_prose(suffix.removeprefix("/evaluations/"))
                     )
                     or suffix.startswith(
                         (

@@ -125,6 +125,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [writerOpened, setWriterOpened] = useState(tab === 'write')
   const [readerResume, setReaderResume] = useState(initialPosition?.reading)
   const [tabError, setTabError] = useState<string | null>(null)
+  // Export's "Show them" opens Evaluate on one check; the key remounts it on that check.
+  const [evaluateFocus, setEvaluateFocus] = useState<{ check: string; at: number } | null>(null)
   const writerFlush = useRef<() => Promise<boolean>>(async () => true)
   const registerFlush = useCallback((flush: () => Promise<boolean>) => { writerFlush.current = flush }, [])
   const changeTab = async (next: 'write' | 'read' | 'design') => {
@@ -477,7 +479,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           <IconButton label={hasPanel ? 'Hide side panel' : tab === 'write' ? 'Show context and side panel' : 'Show side panel'} aria-pressed={hasPanel} className={tab === 'write' && !hasPanel ? 'writer-context-toggle' : ''} onClick={togglePanel}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg></IconButton>
           {!sandbox && <StorySharing menu betaOpen={openFeedback.data?.length ?? 0} storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>Images</MenuItem>} />}
           {/* Export is first-class: the words must always be able to leave. */}
-          {!sandbox && <DownloadMenu storyId={storyId} />}
+          {!sandbox && <DownloadMenu storyId={storyId} onShowPlaceholders={() => { setEvaluateFocus({ check: 'tk_placeholders', at: Date.now() }); void openView(EVALUATE_VIEW) }} />}
           {/* The site header is hidden while a workspace is open; its links live here. */}
           {!sandbox && <Menu label="⋯" ariaLabel="Site menu" triggerClassName="share-story-button"><MenuItem onSelect={() => navigate('/library')}>Your stories</MenuItem><MenuItem onSelect={() => navigate('/how-to-use')}>How to use</MenuItem><MenuItem onSelect={() => navigate('/roadmap')}>Roadmap</MenuItem><MenuItem onSelect={() => navigate('/about')}>About</MenuItem><MenuItem onSelect={() => navigate('/#mcp')}>Connect AI</MenuItem><MenuItem onSelect={() => navigate('/feedback')}>Feedback</MenuItem></Menu>}
           <ThemeToggle />
@@ -510,7 +512,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         <section ref={levelSection} id="story-search-design-section" className="min-w-0 scroll-mt-4">
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
-          {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} onOpenPassage={(id, find, paragraph) => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id, find, paragraph, at: Date.now() }) }) }} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
+          {level === EVALUATE_VIEW && <StoryEvaluation key={evaluateFocus?.at} initialCheck={evaluateFocus?.check} storyId={storyId} onOpenPassage={(id, find, paragraph) => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id, find, paragraph, at: Date.now() }) }) }} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
           {level === HISTORY_VIEW && sandboxHistory && <SandboxHistory value={sandboxHistory} />}
           {level === HISTORY_VIEW && !sandbox && <div>

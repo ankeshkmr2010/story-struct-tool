@@ -471,6 +471,9 @@ export default function HowToUse() {
                   panel names the active reader; with no model configured it matches names
                   only. Observations you dismiss stay dismissed.
                 </Item>
+                <Item title="Leave a TK and keep writing">
+                  When a detail can wait, type <code>[TK]</code> or <code>[TK: name of the inn]</code> and carry on. Evaluate’s TK placeholders check lists every one with Open in Write, and Export asks before a manuscript leaves with TKs still in it. Name consistency flags near-miss spellings of your character, place and glossary names (Maia for Maya); if a variant is intended, add it as an alias from the finding. Your connected AI can run both checks with run_story_check.
+                </Item>
                 <Item title="Disclose AI use">
                   In Design → History → Who wrote what, the AI-use disclosure card summarises saved edits to
                   prose and planning by you, connected AI clients and StoryTool’s assistant, with the AI tools

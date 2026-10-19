@@ -556,3 +556,19 @@ Not started (reviewer's smaller notes, verified as described unless marked):
 - Tour skips the 8-level Design plan and the Grid.
 - Clicking below the last line extends the last paragraph (CodeMirror default).
 - Landing nav crowding: wraps below 640 px already; 640–900 px [unverified].
+
+## Prose scanner, TK placeholders and name consistency — 2026-10-19 (awaiting deploy + user check)
+
+- [~] Shared deterministic scanner `api/src/storytool/domain/prose_scan.py`: walks placed scenes in
+  reading order using Write's paragraph numbering, masks image markup, returns matches with
+  passage (scene, paragraph, find) and excerpt. Matchers: bracketed `markers(...)` and
+  `near_miss_names(...)` (1 edit up to 6 letters, 2 above; words also used in lower case skipped).
+- [~] Evaluate findings may carry `passage` (Open in Write) and `action` (`add_alias`); checks
+  declare `reads_prose`, and `StoryAccessMiddleware` requires prose:read to run those.
+  `StoryGraph` now loads glossary entries.
+- [~] Checks `tk_placeholders` and `name_consistency` (`evaluation/prose_checks.py`); Overview
+  says "prose notes" for prose checks. Export runs the TK check before manuscript downloads
+  (not backup) and asks: Show them (opens Evaluate on the check, run) / Export anyway.
+- [~] MCP `run_story_check` lists checks or runs one. How to use: "Leave a TK and keep writing".
+- Tests: `api/tests/test_prose_checks.py` (pure, `--noconftest`) 9 passed. Not run: DB-backed
+  middleware/MCP tests for the prose:read gate [unverified].

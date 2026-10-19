@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
 from storytool.domain.enums import CharacterRole
+from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.graph import StoryGraph
 from storytool.domain.narrative.models import (
     Chapter,
@@ -142,6 +143,7 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
         chapters=chapters,
         scenes=scenes,
         locations=await fetch(Location, Location.name.asc()),
+        glossary_entries=await fetch(GlossaryEntry, GlossaryEntry.term.asc()),
         chapter_beats=chapter_beats,
         scene_beats=scene_beats,
         scene_threads=scene_threads,

@@ -3832,6 +3832,8 @@ export interface components {
             message: string;
             entity_type: string | null;
             entity_id: string | null;
+            passage?: components["schemas"]["PassageOut"] | null;
+            action?: components["schemas"]["FindingActionOut"] | null;
         };
         /** EvaluationOut */
         EvaluationOut: {
@@ -3852,6 +3854,7 @@ export interface components {
             description: string;
             kind: string;
             has_review: boolean;
+            reads_prose: boolean;
             inputs: string[];
             ready: boolean;
             missing: string[];
@@ -3908,6 +3911,15 @@ export interface components {
             body: string;
             /** Format: date-time */
             created_at: string;
+        };
+        /** FindingActionOut */
+        FindingActionOut: {
+            kind: string;
+            label: string;
+            entity_type: string;
+            /** Format: uuid */
+            entity_id: string;
+            value: string;
         };
         /** FindingOut */
         FindingOut: {
@@ -4313,6 +4325,13 @@ export interface components {
             unknown_names_found: number;
             turning_points_flagged: number;
             suggestions_added: number;
+        };
+        /** PassageOut */
+        PassageOut: {
+            /** Format: uuid */
+            scene_id: string;
+            paragraph: number;
+            find: string;
         };
         /** PlanIn */
         PlanIn: {

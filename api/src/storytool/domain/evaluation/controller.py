@@ -21,7 +21,7 @@ from storytool.domain.ai.controller import actor, connection
 from storytool.domain.ai.credentials import decrypt_key
 from storytool.domain.analysis import load_graph_by_id
 from storytool.domain.evaluation import all_evaluators, get_evaluator
-from storytool.domain.evaluation.engine import Evaluator, Review
+from storytool.domain.evaluation.engine import EvaluationFinding, Evaluator, Review
 from storytool.domain.evaluation.reports import (
     EvaluationReport,
     PackageOut,
@@ -40,9 +40,25 @@ class EvaluatorOut(BaseModel):
     description: str
     kind: str
     has_review: bool
+    reads_prose: bool
     inputs: list[str]
     ready: bool
     missing: list[str]
+
+
+class PassageOut(BaseModel):
+    scene_id: UUID
+    paragraph: int
+    """1-based, counting non-empty blank-line separated blocks, as Write does."""
+    find: str
+
+
+class FindingActionOut(BaseModel):
+    kind: str
+    label: str
+    entity_type: str
+    entity_id: UUID
+    value: str
 
 
 class EvaluationFindingOut(BaseModel):
@@ -51,6 +67,31 @@ class EvaluationFindingOut(BaseModel):
     message: str
     entity_type: str | None
     entity_id: UUID | None
+    passage: PassageOut | None = None
+    action: FindingActionOut | None = None
+
+    @classmethod
+    def of(cls, finding: EvaluationFinding) -> "EvaluationFindingOut":
+        p, a = finding.passage, finding.action
+        return cls(
+            code=finding.code,
+            severity=finding.severity.value,
+            message=finding.message,
+            entity_type=finding.entity_type,
+            entity_id=finding.entity_id,
+            passage=PassageOut(scene_id=p.scene_id, paragraph=p.paragraph, find=p.find)
+            if p
+            else None,
+            action=FindingActionOut(
+                kind=a.kind,
+                label=a.label,
+                entity_type=a.entity_type,
+                entity_id=a.entity_id,
+                value=a.value,
+            )
+            if a
+            else None,
+        )
 
 
 class EvaluationOut(BaseModel):
@@ -98,6 +139,7 @@ class EvaluationController(Controller):
                     description=evaluator.description,
                     kind=evaluator.kind,
                     has_review=evaluator.review is not None,
+                    reads_prose=evaluator.reads_prose,
                     inputs=list(evaluator.inputs),
                     ready=not missing,
                     missing=missing,
@@ -137,16 +179,7 @@ class EvaluationController(Controller):
             evaluator_id=evaluator.id,
             ready=True,
             missing=[],
-            findings=[
-                EvaluationFindingOut(
-                    code=f.code,
-                    severity=f.severity.value,
-                    message=f.message,
-                    entity_type=f.entity_type,
-                    entity_id=f.entity_id,
-                )
-                for f in result.findings
-            ],
+            findings=[EvaluationFindingOut.of(f) for f in result.findings],
             visual=result.visual,
         )
 

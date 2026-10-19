@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from uuid import UUID
 
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
+from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.narrative.models import Chapter, Scene
 from storytool.domain.ordering import chapter_order_key, scene_order_key
 from storytool.domain.story.models import Story
@@ -37,6 +38,7 @@ class StoryGraph:
     chapters: tuple[Chapter, ...] = field(default_factory=tuple)
     scenes: tuple[Scene, ...] = field(default_factory=tuple)
     locations: tuple[Location, ...] = field(default_factory=tuple)
+    glossary_entries: tuple[GlossaryEntry, ...] = field(default_factory=tuple)
 
     # Association rows, as plain tuples -- these are edges, not entities.
     chapter_beats: tuple[tuple[UUID, UUID], ...] = field(default_factory=tuple)

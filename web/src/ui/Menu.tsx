@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 
 // One menu behaviour everywhere: a single open menu, Escape and outside pointer close it,
 // arrow keys move between items, and focus returns to the trigger.
@@ -49,7 +49,7 @@ export function MenuItem({ children, onSelect, disabled, title, className = '' }
   return <button type="button" role="menuitem" className={`ui-menu-item ${className}`} disabled={disabled} title={title} onClick={() => { close(); onSelect() }}>{children}</button>
 }
 
-export function MenuLink({ children, href, className = '' }: { children: ReactNode; href: string; className?: string }) {
+export function MenuLink({ children, href, className = '', onClick }: { children: ReactNode; href: string; className?: string; onClick?: (event: MouseEvent<HTMLAnchorElement>) => void }) {
   const close = useContext(CloseContext)
-  return <a role="menuitem" href={href} className={`ui-menu-item ${className}`} onClick={close}>{children}</a>
+  return <a role="menuitem" href={href} className={`ui-menu-item ${className}`} onClick={event => { onClick?.(event); close() }}>{children}</a>
 }
