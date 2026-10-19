@@ -246,3 +246,18 @@ def test_quoted_speech_starts_a_sentence() -> None:
         "Say please. Say please now. Wait when ready."
     )
     assert [f for f in consistency(g) if f.code == "variants.capitalisation"] == []
+
+
+def test_only_changed_scenes_are_read_again() -> None:
+    from storytool.domain.consistency import _read_scene
+
+    maya = with_id(Character(story_id=None, name="Maya"))
+    g = graph("Maya ran far.", "Maia stopped.", "Maya laughed.", characters=(maya,))
+    _read_scene.cache_clear()
+    first = consistency(g)
+    assert _read_scene.cache_info().misses == 3
+    assert consistency(g) == first
+    assert _read_scene.cache_info().misses == 3, "unchanged scenes come from memory"
+    g.scenes[1].content = "Maya stopped."
+    assert [f for f in consistency(g) if f.code.startswith("names.")] == []
+    assert _read_scene.cache_info().misses == 4, "only the edited scene is read again"

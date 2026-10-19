@@ -598,3 +598,8 @@ Not started (reviewer's smaller notes, verified as described unless marked):
 - Calibration: The Red-Headed League example (8.5k words, en-GB): 0 name false positives,
   5 "worth a look"; planted Holms/Watsen/redheaded all found. 100k words in ~1 s.
   Tests: `test_prose_checks.py` 16 passed (pure). DB-backed tests not run [unverified].
+- [~] Smart consistency speed (2026-10-20): lean index (records only capitalised, hyphenated
+  and spelling-variant words; counts the rest), regex passes for lower-case and open-compound
+  uses, and per-scene memoisation (`_read_scene` / `_find_in_scene`, lru_cache keyed on scene
+  id + exact text + language, 512 scenes). 100k words locally: 0.94 s → 0.29 s cold, 0.023 s
+  warm or after one scene edit. Prod before: Hound 59k words 5.4–8 s [verify after deploy].

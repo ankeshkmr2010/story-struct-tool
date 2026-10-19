@@ -19,6 +19,7 @@ __all__ = (
     "NameSource",
     "Passage",
     "ProseMatch",
+    "excerpt_around",
     "markers",
     "paragraph_spans",
     "paragraphs",
@@ -65,7 +66,7 @@ class ProseMatch:
     def excerpt(self) -> str:
         """Computed on demand: a scan can match every word, but few become findings."""
         start = self.start - self.paragraph_offset
-        return _excerpt(self.paragraph_text, start, start + len(self.text))
+        return excerpt_around(self.paragraph_text, start, start + len(self.text))
 
     @property
     def passage(self) -> Passage:
@@ -93,7 +94,7 @@ def paragraphs(content: str | None) -> list[str]:
     return [part for _, part in paragraph_spans(content)]
 
 
-def _excerpt(text: str, start: int, end: int) -> str:
+def excerpt_around(text: str, start: int, end: int) -> str:
     left = max(0, start - EXCERPT_CONTEXT)
     right = min(len(text), end + EXCERPT_CONTEXT)
     if left > 0 and " " in text[left:start]:

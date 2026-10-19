@@ -21,8 +21,9 @@ keep both -- remembered in `story.consistency_exceptions` under the finding's ke
 
 import re
 from collections import Counter, defaultdict
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
 from dataclasses import dataclass
+from functools import lru_cache
 from uuid import UUID
 
 from metaphone import doublemetaphone
@@ -32,11 +33,11 @@ from storytool.domain.enums import Language
 from storytool.domain.evaluation.engine import EvaluationFinding, FindingAction, TextEdit
 from storytool.domain.graph import StoryGraph
 from storytool.domain.health import Severity
-from storytool.domain.narrative.models import Scene
 from storytool.domain.noticing.deterministic import NOT_NAMES
 from storytool.domain.prose_scan import (
     NameSource,
-    ProseMatch,
+    Passage,
+    excerpt_around,
     paragraph_spans,
     visible_text,
 )
@@ -83,25 +84,49 @@ _LANGUAGE_NAMES = {Language.EN_US: "American English", Language.EN_GB: "British 
 
 @dataclass(frozen=True, slots=True)
 class _Word:
-    """One word of the prose; its passage and excerpt are only built if it becomes a finding."""
+    """One use of a word. Holds no database row, so readings can be memoised across runs;
+    its passage and excerpt are only built if it becomes part of a finding."""
 
-    match: ProseMatch
-    sentence_start: bool
+    scene_id: UUID
+    paragraph: int
+    paragraph_offset: int
+    paragraph_text: str
+    start: int
+    """Offset in the scene's whole content."""
     text: str
+    sentence_start: bool
     fold: str
     capitalised: bool
     acronym: bool
 
     @classmethod
-    def of(cls, match: ProseMatch, sentence_start: bool) -> "_Word":
-        text = match.text
+    def at(
+        cls, scene_id: UUID, paragraph: tuple[int, int, str, str], start: int, text: str
+    ) -> "_Word":
+        number, offset, paragraph_text, visible = paragraph
         return cls(
-            match=match,
-            sentence_start=sentence_start,
+            scene_id=scene_id,
+            paragraph=number,
+            paragraph_offset=offset,
+            paragraph_text=paragraph_text,
+            start=offset + start,
             text=text,
+            sentence_start=_starts_sentence(visible, start),
             fold=text.casefold(),
             capitalised=text[0].isupper(),
             acronym=len(text) > 1 and text.isupper(),
+        )
+
+    @property
+    def passage(self) -> Passage:
+        start = self.start - self.paragraph_offset
+        return Passage(
+            scene_id=self.scene_id,
+            paragraph=self.paragraph,
+            find=self.text,
+            start=self.start,
+            end=self.start + len(self.text),
+            excerpt=excerpt_around(self.paragraph_text, start, start + len(self.text)),
         )
 
 
@@ -118,7 +143,8 @@ def _starts_sentence(text: str, start: int) -> bool:
     return index < 0 or text[index] in _SENTENCE_END
 
 
-def _alternation(phrases: Iterable[str], ignore_case: bool) -> re.Pattern[str]:
+@lru_cache(maxsize=256)
+def _alternation(phrases: frozenset[str], ignore_case: bool) -> re.Pattern[str]:
     """Whole words or phrases only: not inside a longer word or a hyphenated compound."""
     body = "|".join(re.escape(p).replace(r"\ ", r"[ \t]+") for p in sorted(phrases, key=len)[::-1])
     flags = re.IGNORECASE if ignore_case else 0
@@ -129,71 +155,115 @@ def _is_compound(word: str) -> bool:
     return "-" in word or "\u2010" in word
 
 
-# (scene, paragraph number, offset in content, paragraph text, text with images blanked)
-_Paragraph = tuple[Scene, int, int, str, str]
+@dataclass(frozen=True, slots=True)
+class _SceneReading:
+    """What one pass over a scene's text learns. Memoised: see `_read_scene`."""
+
+    paragraphs: tuple[tuple[int, int, str, str], ...]
+    """(number, offset in content, text, text with images blanked)"""
+    by_fold: dict[str, tuple[_Word, ...]]
+    """Words worth a record: capitalised, hyphenated or a known spelling variant."""
+    counts: dict[str, int]
+    """Every other word, counted by lower-case form."""
+    lower: frozenset[str]
+
+
+@lru_cache(maxsize=8)
+def _spellings_to_keep(language: str) -> frozenset[str]:
+    return frozenset(preferred_spellings(language))
+
+
+# Memoised on the scene's exact text: a check re-reads only scenes that changed since it last
+# ran, which on a long book is usually one or two. Nothing is stored; a restart empties it.
+@lru_cache(maxsize=512)  # ~40 MB at most: several full novels
+def _read_scene(scene_id: UUID, content: str, language: str) -> _SceneReading:
+    keep = _spellings_to_keep(language)
+    paragraphs = tuple(
+        (number, offset, text, visible_text(text))
+        for number, (offset, text) in enumerate(paragraph_spans(content), start=1)
+    )
+    by_fold: dict[str, list[_Word]] = defaultdict(list)
+    counts: Counter[str] = Counter()
+    lower: set[str] = set()
+    for paragraph in paragraphs:
+        for found in _WORD.finditer(paragraph[3]):
+            word = found.group()
+            capital = word[0].isupper()
+            fold = word if word.islower() else word.casefold()
+            if not capital:
+                lower.add(fold)
+            if capital or _is_compound(word) or fold in keep:
+                by_fold[fold].append(_Word.at(scene_id, paragraph, found.start(), word))
+            else:
+                counts[fold] += 1
+    return _SceneReading(
+        paragraphs,
+        {fold: tuple(words) for fold, words in by_fold.items()},
+        dict(counts),
+        frozenset(lower),
+    )
+
+
+@lru_cache(maxsize=512)  # ~40 MB at most: several full novels
+def _find_in_scene(
+    scene_id: UUID, content: str, language: str, phrases: frozenset[str], ignore_case: bool
+) -> tuple[_Word, ...]:
+    """Every use of these words or phrases in one scene; memoised like `_read_scene`."""
+    pattern = _alternation(phrases, ignore_case)
+    return tuple(
+        _Word.at(scene_id, paragraph, found.start(), found.group())
+        for paragraph in _read_scene(scene_id, content, language).paragraphs
+        for found in pattern.finditer(paragraph[3])
+    )
 
 
 class _Index:
     """The words of the placed prose, grouped by lower-case form.
 
     The cost of this check is per-word Python work, which a small server CPU feels at once.
-    So the first pass keeps a full record only for words a report can use -- capitalised or
-    hyphenated words, and the spellings in `keep` -- and merely counts every other word.
-    `include` records the lower-case uses of a few more words in one further pass, once
-    hyphenation or capitalisation know which they need.
+    So each scene's pass keeps a record only for words a report can use -- capitalised or
+    hyphenated words and known spelling variants -- and merely counts every other word.
+    `include` adds the lower-case uses of a few more words once hyphenation or
+    capitalisation know which they need. Both are memoised per scene text, so a repeat run
+    only reads the scenes that changed.
     """
 
-    def __init__(self, g: StoryGraph, keep: set[str]) -> None:
+    def __init__(self, g: StoryGraph) -> None:
+        self.language = g.language
         self.scenes = g.scenes_in_reading_order()
-        self.paragraphs: list[_Paragraph] = [
-            (scene, number, offset, text, visible_text(text))
-            for scene in self.scenes
-            for number, (offset, text) in enumerate(paragraph_spans(scene.content), start=1)
-        ]
+        self.rank = {scene.id: index for index, scene in enumerate(self.scenes)}
         self.by_fold: dict[str, list[_Word]] = defaultdict(list)
         self.counts: Counter[str] = Counter()
         """Lower-case uses that have no record in `by_fold`."""
         self.lower: set[str] = set()
-        for paragraph in self.paragraphs:
-            for found in _WORD.finditer(paragraph[4]):
-                word = found.group()
-                capital = word[0].isupper()
-                fold = word if word.islower() else word.casefold()
-                if not capital:
-                    self.lower.add(fold)
-                if capital or _is_compound(word) or fold in keep:
-                    self._record(paragraph, found.start(), word)
-                else:
-                    self.counts[fold] += 1
+        for scene in self.scenes:
+            reading = _read_scene(scene.id, scene.content or "", g.language)
+            for fold, words in reading.by_fold.items():
+                self.by_fold[fold].extend(words)
+            self.counts.update(reading.counts)
+            self.lower |= reading.lower
 
-    def _record(self, paragraph: _Paragraph, start: int, word: str) -> None:
-        scene, number, offset, text, visible = paragraph
-        match = ProseMatch(
-            scene=scene,
-            paragraph=number,
-            start=offset + start,
-            end=offset + start + len(word),
-            text=word,
-            paragraph_text=text,
-            paragraph_offset=offset,
-        )
-        record = _Word.of(match, _starts_sentence(visible, start))
-        self.by_fold[record.fold].append(record)
+    def find(self, phrases: Iterable[str], ignore_case: bool) -> list[_Word]:
+        """Every use of these words or phrases, in reading order."""
+        wanted = frozenset(phrases)
+        if not wanted:
+            return []
+        return [
+            word
+            for scene in self.scenes
+            for word in _find_in_scene(
+                scene.id, scene.content or "", self.language, wanted, ignore_case
+            )
+        ]
 
     def include(self, folds: Iterable[str]) -> None:
-        """Record the lower-case uses of these words too (one more pass, only if needed)."""
+        """Record the lower-case uses of these words too."""
         wanted = {fold for fold in folds if self.counts.get(fold)}
-        if not wanted:
-            return
-        for paragraph, found in self.find(_alternation(wanted, ignore_case=False)):
-            self._record(paragraph, found.start(), found.group())
+        for word in self.find(wanted, ignore_case=False):
+            self.by_fold[word.fold].append(word)
         for fold in wanted:
             del self.counts[fold]
-
-    def find(self, pattern: re.Pattern[str]) -> Iterator[tuple[_Paragraph, re.Match[str]]]:
-        for paragraph in self.paragraphs:
-            for found in pattern.finditer(paragraph[4]):
-                yield paragraph, found
+            self.by_fold[fold].sort(key=lambda w: (self.rank[w.scene_id], w.start))
 
     def count(self, fold: str) -> int:
         return len(self.by_fold.get(fold, ())) + self.counts.get(fold, 0)
@@ -202,7 +272,7 @@ class _Index:
         return set(self.by_fold) | set(self.counts)
 
     def scenes_with(self, fold: str) -> set[UUID]:
-        return {word.match.scene.id for word in self.by_fold.get(fold, ())}
+        return {word.scene_id for word in self.by_fold.get(fold, ())}
 
 
 def name_sources(g: StoryGraph) -> list[NameSource]:
@@ -226,8 +296,9 @@ def _canon_tokens(sources: Iterable[NameSource]) -> dict[str, tuple[NameSource, 
     return tokens
 
 
-def _codes(word: str) -> set[str]:
-    return {code for code in doublemetaphone(word) if len(code) >= 2}
+@lru_cache(maxsize=16384)
+def _codes(word: str) -> frozenset[str]:
+    return frozenset(code for code in doublemetaphone(word) if len(code) >= 2)
 
 
 @dataclass(frozen=True, slots=True)
@@ -304,7 +375,7 @@ def _match_case(source: str, target: str) -> str:
 
 def _replace(label: str, words: Iterable[_Word], target: str) -> FindingAction:
     edits = tuple(
-        TextEdit(passage=w.match.passage, replacement=_match_case(w.text, target))
+        TextEdit(passage=w.passage, replacement=_match_case(w.text, target))
         for w in words
         if w.text != _match_case(w.text, target)
     )
@@ -363,7 +434,7 @@ def _names(g: StoryGraph, index: _Index, kept: set[str]) -> list[EvaluationFindi
         variant = words[0].text
         n_variant = len(words)
         n_known = index.count(known)
-        where = {w.match.scene.id for w in words}
+        where = {w.scene_id for w in words}
         present = _present(source, where, g, index)
         ratio = n_variant / max(n_known, 1)
         context = (
@@ -422,7 +493,7 @@ def _names(g: StoryGraph, index: _Index, kept: set[str]) -> list[EvaluationFindi
                 message=message,
                 entity_type=source.entity_type,
                 entity_id=source.entity_id,
-                passage=words[0].match.passage,
+                passage=words[0].passage,
                 actions=tuple(actions),
                 uncertain=uncertain,
             )
@@ -452,7 +523,7 @@ def _spelling(g: StoryGraph, index: _Index, kept: set[str]) -> list[EvaluationFi
                     f"'{words[0].text}' ({_times(len(words))}{also}): {language} spells it "
                     f"'{right}'. The story's language is set under Design."
                 ),
-                passage=words[0].match.passage,
+                passage=words[0].passage,
                 actions=(_replace(f"Replace with '{right}'", words, right), _keep(key)),
             )
         )
@@ -512,19 +583,8 @@ def _hyphenation(g: StoryGraph, index: _Index, kept: set[str]) -> list[Evaluatio
     for fold, words in index.by_fold.items():
         if _is_compound(fold):
             groups[key_of(fold)].extend(words)
-    if open_forms:
-        for paragraph, found in index.find(_alternation(open_forms, ignore_case=True)):
-            scene, number, offset, text, _ = paragraph
-            match = ProseMatch(
-                scene=scene,
-                paragraph=number,
-                start=offset + found.start(),
-                end=offset + found.end(),
-                text=found.group(),
-                paragraph_text=text,
-                paragraph_offset=offset,
-            )
-            groups[key_of(found.group())].append(_Word.of(match, False))
+    for word in index.find(open_forms, ignore_case=True):
+        groups[key_of(word.text)].append(word)
     index.include(groups)
     for key, words in groups.items():  # the closed form joins its open and hyphenated forms
         words.extend(index.by_fold.get(key, ()))
@@ -569,7 +629,7 @@ def _hyphenation(g: StoryGraph, index: _Index, kept: set[str]) -> list[Evaluatio
                 message=(
                     f"One term, {len(forms)} spellings: {listing}. '{target}' is {reason}.{note}"
                 ),
-                passage=others[0].match.passage,
+                passage=others[0].passage,
                 actions=(
                     _replace(f"Use '{target}' everywhere", others, target),
                     _keep(f"variant:{key}"),
@@ -587,7 +647,9 @@ _NEIGHBOUR_AFTER = re.compile(r"^[ \t]+([^\W\d_]+)")
 
 def _in_longer_name(word: _Word) -> bool:
     """Part of a multi-word name such as Elowen Harbour, where a capital is expected."""
-    content, start, end = word.match.scene.content or "", word.match.start, word.match.end
+    content = word.paragraph_text
+    start = word.start - word.paragraph_offset
+    end = start + len(word.text)
     before = _NEIGHBOUR_BEFORE.search(content[max(0, start - 40) : start])
     after = _NEIGHBOUR_AFTER.search(content[end : end + 40])
     return any(m is not None and m[1][0].isupper() for m in (before, after))
@@ -665,13 +727,13 @@ def _capitalisation(g: StoryGraph, index: _Index, kept: set[str]) -> list[Evalua
                 code="variants.capitalisation",
                 severity=Severity.INFO if uncertain else Severity.WARNING,
                 message=message,
-                passage=wrong[0].match.passage,
+                passage=wrong[0].passage,
                 actions=(
                     FindingAction(
                         kind="replace",
                         label=f"Write '{target}' everywhere mid-sentence",
                         value=target,
-                        edits=tuple(TextEdit(w.match.passage, target) for w in wrong),
+                        edits=tuple(TextEdit(w.passage, target) for w in wrong),
                     ),
                     _keep(key),
                 ),
@@ -684,7 +746,7 @@ def _capitalisation(g: StoryGraph, index: _Index, kept: set[str]) -> list[Evalua
 
 def check(g: StoryGraph) -> tuple[list[EvaluationFinding], dict[str, int]]:
     """All consistency findings, names first, and a count per section."""
-    index = _Index(g, keep=set(preferred_spellings(g.language)))
+    index = _Index(g)
     kept = set(g.story.consistency_exceptions or ())
     sections = {
         "names": _names(g, index, kept),
