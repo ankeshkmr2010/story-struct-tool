@@ -32,8 +32,8 @@ from storytool.domain.enums import Language
 from storytool.domain.evaluation.engine import EvaluationFinding, FindingAction, TextEdit
 from storytool.domain.graph import StoryGraph
 from storytool.domain.health import Severity
-from storytool.domain.noticing.deterministic import NOT_NAMES
 from storytool.domain.narrative.models import Scene
+from storytool.domain.noticing.deterministic import NOT_NAMES
 from storytool.domain.prose_scan import (
     NameSource,
     ProseMatch,
