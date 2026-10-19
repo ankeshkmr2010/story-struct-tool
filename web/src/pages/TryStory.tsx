@@ -135,11 +135,12 @@ export default function TryStory() {
       navigate('/try/keep')
     } catch (e) { setError(String(e)); setKeeping(false) }
   }
-  const resumeTour = async () => {
+  // Restart goes back to step 1 from anywhere (a stuck or finished tour) and keeps the visitor's edits.
+  const resumeTour = async (restart = false) => {
     try {
       setError('')
       if (window.storytoolTryFlush && !await window.storytoolTryFlush()) throw new Error('Save your writing before resuming the tour.')
-      await transact(value => { value.skipped = false; if (value.completed) { value.step = 1; value.completed = false; value.doneSteps = [] } })
+      await transact(value => { value.skipped = false; if (restart || value.completed) { value.step = 1; value.completed = false; value.doneSteps = [] } })
       await query.refetch()
       setTourRun(value => value + 1)
     } catch (e) { setError(String(e)) }
@@ -168,7 +169,7 @@ export default function TryStory() {
       {state.completed && <div className="flex flex-wrap gap-3"><button className="sharing-primary" disabled={keeping} onClick={() => void keep()}>Keep this story in your account</button><button onClick={() => { void transact(value => { value.skipped = true }).then(() => query.refetch()) }}>Keep exploring</button></div>}
     </aside>
   return <div className="try-page" data-try-step={state.skipped ? 0 : state.step}>
-    <div ref={bannerRef} className="try-banner"><span>Sandbox · your changes stay in this browser</span><button className="try-tour-button" aria-controls="try-tour" onClick={() => void resumeTour()}>{!state.skipped && !state.completed ? `Tour · ${state.step} of 6` : state.completed || state.step === 1 ? 'Start tour' : 'Resume tour'}</button><button className="try-discover-button" onClick={() => setDiscoverOpen(true)}>Discover more →</button><button disabled={keeping} onClick={() => void keep()}>Keep this story free →</button><details><summary aria-label="Sandbox menu">⋯</summary><button disabled={resetting} onClick={() => { if (!confirm('Reset The Last Lantern and remove your sandbox edits?')) return; setResetting(true); void resetSandbox().then(() => { qc.removeQueries({ predicate: query => query.queryKey.includes(SANDBOX_ID) || query.queryKey[0] === 'sandbox' }); location.assign('/try') }).catch(e => { setError(String(e)); setResetting(false) }) }}>Reset sandbox</button></details></div>
+    <div ref={bannerRef} className="try-banner"><span>Sandbox · your changes stay in this browser</span><button className="try-tour-button" aria-controls="try-tour" onClick={() => void resumeTour()}>{!state.skipped && !state.completed ? `Tour · ${state.step} of 6` : state.completed || state.step === 1 ? 'Start tour' : 'Resume tour'}</button><button className="try-discover-button" onClick={() => setDiscoverOpen(true)}>Discover more →</button><button disabled={keeping} onClick={() => void keep()}>Keep this story free →</button><details><summary aria-label="Sandbox menu">⋯</summary><button onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); void resumeTour(true) }}>Restart tour</button><button disabled={resetting} onClick={() => { if (!confirm('Reset The Last Lantern and remove your sandbox edits?')) return; setResetting(true); void resetSandbox().then(() => { qc.removeQueries({ predicate: query => query.queryKey.includes(SANDBOX_ID) || query.queryKey[0] === 'sandbox' }); location.assign('/try') }).catch(e => { setError(String(e)); setResetting(false) }) }}>Reset sandbox</button></details></div>
     {error && <p role="alert" className="p-3 writer-error">{error}</p>}
     <Workspace storyId={SANDBOX_ID} sandboxStep={state.skipped ? 0 : state.step} sandboxRun={tourRun} sandboxHistory={state} />
     <DiscoverTour open={discoverOpen} onClose={() => setDiscoverOpen(false)} onKeep={() => { setDiscoverOpen(false); void keep() }} />
