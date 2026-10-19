@@ -23,6 +23,7 @@ __all__ = (
     "paragraph_spans",
     "paragraphs",
     "scan",
+    "visible_text",
 )
 
 _PARAGRAPH_BREAK = re.compile(r"\n\s*\n")
@@ -56,8 +57,15 @@ class ProseMatch:
     """Offset in the scene's whole content, not in the paragraph."""
     end: int
     text: str
-    excerpt: str
+    paragraph_text: str = field(repr=False)
+    paragraph_offset: int = field(repr=False)
     details: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def excerpt(self) -> str:
+        """Computed on demand: a scan can match every word, but few become findings."""
+        start = self.start - self.paragraph_offset
+        return _excerpt(self.paragraph_text, start, start + len(self.text))
 
     @property
     def passage(self) -> Passage:
@@ -96,19 +104,24 @@ def _excerpt(text: str, start: int, end: int) -> str:
     return f"{'…' if left > 0 else ''}{body}{'…' if right < len(text) else ''}"
 
 
+def visible_text(paragraph: str) -> str:
+    """The paragraph with image markup blanked out, keeping every offset."""
+    return _IMAGE.sub(lambda image: " " * len(image.group()), paragraph)
+
+
 def scan(scenes: Iterable[Scene], matcher: Matcher) -> Iterator[ProseMatch]:
     """Every match in the given scenes, in the order given, paragraph by paragraph."""
     for scene in scenes:
         for number, (offset, text) in enumerate(paragraph_spans(scene.content), start=1):
-            visible = _IMAGE.sub(lambda image: " " * len(image.group()), text)
-            for start, end, details in matcher(visible):
+            for start, end, details in matcher(visible_text(text)):
                 yield ProseMatch(
                     scene=scene,
                     paragraph=number,
                     start=offset + start,
                     end=offset + end,
                     text=text[start:end],
-                    excerpt=_excerpt(text, start, end),
+                    paragraph_text=text,
+                    paragraph_offset=offset,
                     details=details,
                 )
 
