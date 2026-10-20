@@ -386,7 +386,9 @@ export default function HowToUse() {
                   typing. A chapter’s scenes appear together on one scrolling manuscript.
                   Chapter titles and scene names are optional. Add a scene break at the end
                   or continue into the next chapter. Prose is Markdown and autosaves; Context
-                  opens scene details and the chapter brief, while Focus hides the surrounding
+                  shows the chapter brief and keeps the scene’s summary, POV, place, goal and
+                  value shift in view, with every other field under More details and links,
+                  while Focus hides the surrounding
                   controls. The <strong className="font-medium">Design</strong> tab keeps the
                   full planning workspace. Both tabs edit the same story. Right-click the prose,
                   or select text and click the small ⋯ button beside it, for editing actions,

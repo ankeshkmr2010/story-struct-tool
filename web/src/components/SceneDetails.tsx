@@ -7,7 +7,11 @@ import { Chip, Field, InlineNumber, InlineSelect, InlineText } from './fields'
 const STATUSES = ['placeholder', 'outlined', 'drafted', 'revised']
 
 
-export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; scene: Scene; onDeleted: () => void }) {
+/**
+ * Every scene field and link. With `essentials` (Write's Context panel) the fields a writer
+ * reaches for mid-draft stay in view and everything else folds under More details and links.
+ */
+export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: { storyId: string; scene: Scene; onDeleted: () => void; essentials?: boolean }) {
   const qc = useQueryClient()
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId) })
@@ -41,10 +45,22 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
     owner: characters.data?.find((character) => character.id === arcs.data?.[index]?.character_id)?.name ?? 'Arc',
   })))
 
+  const pov = <Field label="POV character"><InlineSelect value={scene.pov_character_id} options={(characters.data ?? []).map((character) => ({ value: character.id, label: character.name }))} onSave={save('pov_character_id')} /></Field>
+  const place = <Field label="Place"><InlineSelect value={scene.location_id} options={(locations.data ?? []).map((location) => ({ value: location.id, label: location.name }))} onSave={save('location_id')} /></Field>
+  const summary = <Field label="Summary"><InlineText value={scene.summary} placeholder="What happens?" onSave={save('summary')} multiline /></Field>
+  const goal = <Field label="Goal"><InlineText value={scene.goal} placeholder="What does the POV character want?" onSave={save('goal')} multiline /></Field>
+  const valueFrom = <Field label="Emotional value from"><InlineText value={scene.emotional_value_from} placeholder="from" onSave={save('emotional_value_from')} /></Field>
+  const valueTo = <Field label="Emotional value to"><InlineText value={scene.emotional_value_to} placeholder="to" onSave={save('emotional_value_to')} /></Field>
+
   return (
-    <div><div className="scene-details-actions"><SceneDelete storyId={storyId} scene={scene} onDeleted={() => { onDeleted(); refresh() }} /></div><SceneImages storyId={storyId} sceneId={scene.id} /><details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+    <div>{essentials && <section className="scene-essentials" aria-label="Scene essentials">
+      {summary}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{pov}{place}</div>
+      {goal}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{valueFrom}{valueTo}</div>
+    </section>}<div className="scene-details-actions"><SceneDelete storyId={storyId} scene={scene} onDeleted={() => { onDeleted(); refresh() }} /></div><SceneImages storyId={storyId} sceneId={scene.id} /><details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
       <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-950">
-        <span>Scene details and links</span>
+        <span>{essentials ? 'More details and links' : 'Scene details and links'}</span>
         <span className="truncate text-xs font-normal text-slate-400">Draft: {scene.status} · {scene.word_count} words</span>
       </summary>
       <div className="border-t border-slate-100 dark:border-slate-800 p-3">
@@ -58,25 +74,20 @@ export function SceneDetails({ storyId, scene, onDeleted }: { storyId: string; s
         <Field label="Chapter"><InlineSelect value={scene.chapter_id} options={(chapters.data ?? []).map((chapter) => ({ value: chapter.id, label: `${chapter.number}. ${chapter.title ?? 'Untitled'}` }))} onSave={save('chapter_id')} /></Field>
         <Field label="Type"><InlineSelect value={scene.type} options={['scene', 'sequel']} onSave={save('type')} /></Field>
         <Field label="Draft status"><InlineSelect value={scene.status} options={STATUSES} onSave={save('status')} /></Field>
-        <Field label="POV character"><InlineSelect value={scene.pov_character_id} options={(characters.data ?? []).map((character) => ({ value: character.id, label: character.name }))} onSave={save('pov_character_id')} /></Field>
-        <Field label="Place"><InlineSelect value={scene.location_id} options={(locations.data ?? []).map((location) => ({ value: location.id, label: location.name }))} onSave={save('location_id')} /></Field>
+        {!essentials && <>{pov}{place}</>}
         <Field label="Story time"><InlineNumber value={scene.story_time_ordinal} onSave={save('story_time_ordinal')} /></Field>
         <Field label="Time label"><InlineText value={scene.time_label} placeholder="e.g. next morning" onSave={save('time_label')} /></Field>
         <Field label="Flashback"><InlineSelect value={String(scene.is_flashback)} options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]} onSave={(v) => update.mutateAsync({ is_flashback: v === 'true' })} /></Field>
       </div>
       <div className="mt-2 space-y-2">
         <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">The completeness badge follows your filled details. Choose Draft status yourself: placeholder → outlined → drafted → revised.</p>
-        <Field label="Summary"><InlineText value={scene.summary} placeholder="What happens?" onSave={save('summary')} multiline /></Field>
-        <Field label="Goal"><InlineText value={scene.goal} placeholder="What does the POV character want?" onSave={save('goal')} multiline /></Field>
+        {!essentials && <>{summary}{goal}</>}
         <Field label="Conflict"><InlineText value={scene.conflict} placeholder="What opposes them?" onSave={save('conflict')} multiline /></Field>
         <OriginSummary storyId={storyId} entityId={scene.id} entityType="scene" />
         <Field label="Private scene notes"><InlineText value={scene.notes} placeholder="Notes belong here; summary describes the scene" onSave={save('notes')} multiline /></Field>
         <Field label="Outcome"><InlineText value={scene.outcome} placeholder="What changes?" onSave={save('outcome')} multiline /></Field>
       </div>
-      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <Field label="Emotional value from"><InlineText value={scene.emotional_value_from} placeholder="from" onSave={save('emotional_value_from')} /></Field>
-        <Field label="Emotional value to"><InlineText value={scene.emotional_value_to} placeholder="to" onSave={save('emotional_value_to')} /></Field>
-      </div>
+      {!essentials && <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">{valueFrom}{valueTo}</div>}
       <div className="mt-4 space-y-3 border-t border-slate-100 dark:border-slate-800 pt-3">
         <div><h4 className="field-label">Beats this scene fulfils</h4><div className="mt-1 flex flex-wrap gap-2">{beats.data?.map((beat) => <label key={beat.id} className="text-xs"><input type="checkbox" checked={links.data?.beat_ids.includes(beat.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'beat', id: beat.id, checked: event.target.checked })} /> {beat.label}</label>)}</div></div>
         <div><h4 className="field-label">Threads advanced</h4><div className="mt-1 flex flex-wrap gap-2">{threads.data?.map((thread) => <label key={thread.id} className="text-xs"><input type="checkbox" checked={links.data?.thread_ids.includes(thread.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'thread', id: thread.id, checked: event.target.checked })} /> {thread.title ?? thread.type}</label>)}</div></div>

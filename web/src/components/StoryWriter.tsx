@@ -188,7 +188,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
       </article>
       {contextSlot && !focus && createPortal(<div className="writer-context" aria-label="Writing context">
         {brief.data && <ChapterBriefCard brief={brief.data} />}
-        {contextScene ? <SceneDetails key={contextScene.id} storyId={storyId} scene={contextScene} onDeleted={() => { setActiveScene(null); refresh() }} /> : <p>Start writing to add scene details. Beats, characters, and locations are optional.</p>}
+        {contextScene ? <SceneDetails key={contextScene.id} storyId={storyId} scene={contextScene} essentials onDeleted={() => { setActiveScene(null); refresh() }} /> : <p>Start writing to add scene details. Beats, characters, and locations are optional.</p>}
         {contextScene && <SceneRevisions key={`rev-${contextScene.id}`} storyId={storyId} sceneId={contextScene.id} flush={() => flushWriter(prefix)} onRestored={text => writerDraft(prefix + contextScene.id, text).useLatest(text)} />}
         <p className="writer-help">Timeline, places, glossary and the assistant are tabs in this panel; Design holds the full outline.</p>
       </div>, contextSlot)}

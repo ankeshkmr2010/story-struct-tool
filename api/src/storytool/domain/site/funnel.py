@@ -15,7 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from storytool.db.base import StoryToolBase
 from storytool.domain.site.shoutouts import require_admin
 
-TryKind = Literal["try_start", "try_step_1", "try_step_2", "try_step_3", "try_step_4", "try_step_5", "try_step_6", "try_skip", "try_keep_click", "try_imported"]
+TryKind = Literal["try_start", "try_step_1", "try_step_2", "try_step_3", "try_step_4", "try_step_5", "try_step_6", "try_step_7", "try_skip", "try_keep_click", "try_imported"]
 EventKind = Literal["visit", "signup", "first_scene", "ai_connected"] | TryKind
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ class FunnelController(Controller):
     @get("/try", summary="Guided sandbox funnel (site admin only)")
     async def try_counts(self, request: Request, db_session: AsyncSession) -> dict[str, int]:
         await require_admin(request, db_session)
-        kinds = ["try_start", *[f"try_step_{i}" for i in range(1, 7)], "try_skip", "try_keep_click", "try_imported"]
+        kinds = ["try_start", *[f"try_step_{i}" for i in range(1, 8)], "try_skip", "try_keep_click", "try_imported"]
         grouped = await db_session.execute(select(FunnelEvent.kind, func.count()).where(FunnelEvent.kind.in_(kinds)).group_by(FunnelEvent.kind))
         result = {kind: 0 for kind in kinds}
         result.update(dict(grouped.all()))

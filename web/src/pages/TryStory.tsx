@@ -17,9 +17,11 @@ const instructions = [
   'The harbor secret happened years earlier. Readers just learn it later. Flip World time ↔ Reading order.',
   'Jump straight to any line. Open an Exact result for lantern.',
   'Every change is on record. Open History to see what you wrote.',
+  'Plotting instead? Design holds an eight-level plan, from premise to scenes, and Grid shows every scene at a glance. Open the Grid.',
 ]
-const events = ['page', 'write', 'context', 'timeline', 'search', 'history']
-const doneSteps = (state: { doneSteps?: number[]; completed: boolean; step: number }) => state.doneSteps ?? Array.from({ length: state.completed ? 6 : state.step - 1 }, (_, index) => index + 1)
+const events = ['page', 'write', 'context', 'timeline', 'search', 'history', 'grid']
+const LAST_STEP = events.length
+const doneSteps = (state: { doneSteps?: number[]; completed: boolean; step: number }) => state.doneSteps ?? Array.from({ length: state.completed ? LAST_STEP : state.step - 1 }, (_, index) => index + 1)
 let sending = false
 async function flushEvents() {
   if (sending || !getVisitorId()) return
@@ -76,6 +78,7 @@ export default function TryStory() {
       '.workspace-ref-panel [aria-label="Timeline order"] button[aria-pressed="false"]',
       '.story-search-dialog li button',
       '.try-coach .sharing-primary',
+      '.ws-rail [data-view="grid"]',
     ]
     let highlighted: HTMLElement | undefined
     let observer: MutationObserver | undefined
@@ -117,7 +120,7 @@ export default function TryStory() {
       void transact(value => {
         if (value.skipped || value.completed || events[value.step - 1] !== name) return
         value.doneSteps = doneSteps(value)
-        if (!value.doneSteps.includes(value.step)) { value.doneSteps.push(value.step); if (value.step < 6) value.events.push(`try_step_${value.step}`) }
+        if (!value.doneSteps.includes(value.step)) { value.doneSteps.push(value.step); if (value.step < LAST_STEP) value.events.push(`try_step_${value.step}`) }
       }).then(() => { void qc.invalidateQueries({ queryKey: ['sandbox'] }); void flushEvents() }).catch(e => setError(String(e)))
     }
     const online = () => { void flushEvents() }
@@ -151,8 +154,8 @@ export default function TryStory() {
       if (window.storytoolTryFlush && !await window.storytoolTryFlush()) throw new Error('Save your writing before changing tour steps.')
       await transact(value => {
         if (direction > 0 && !doneSteps(value).includes(value.step)) return
-        if (direction > 0 && value.step === 6) { value.completed = true; value.events.push('try_step_6') }
-        else { value.step = Math.max(1, Math.min(6, value.step + direction)); value.completed = false }
+        if (direction > 0 && value.step === LAST_STEP) { value.completed = true; value.events.push(`try_step_${LAST_STEP}`) }
+        else { value.step = Math.max(1, Math.min(LAST_STEP, value.step + direction)); value.completed = false }
       })
       await query.refetch()
       void flushEvents()
@@ -161,15 +164,15 @@ export default function TryStory() {
   }
   if (!state) return <main className="p-8"><h1>The Last Lantern</h1>{query.error ? <><p role="alert">{String(query.error)}</p><button onClick={() => void query.refetch()}>Retry</button></> : <p>Opening your browser sandbox…</p>}</main>
   const coach = !state.skipped && <aside ref={coachRef} id="try-tour" className="try-coach" aria-label="Guided sandbox tour">
-      <div className="try-progress"><span>{state.step} of 6</span><span aria-hidden="true">{events.map((_, i) => <i key={i} className={i < state.step ? 'filled' : ''} />)}</span><button onClick={() => { void transact(value => { value.skipped = true; value.events.push('try_skip') }).then(() => { void query.refetch(); void flushEvents() }).catch(e => setError(String(e))) }}>Skip tour</button></div>
+      <div className="try-progress"><span>{state.step} of {LAST_STEP}</span><span aria-hidden="true">{events.map((_, i) => <i key={i} className={i < state.step ? 'filled' : ''} />)}</span><button onClick={() => { void transact(value => { value.skipped = true; value.events.push('try_skip') }).then(() => { void query.refetch(); void flushEvents() }).catch(e => setError(String(e))) }}>Skip tour</button></div>
       <p>{state.completed ? 'Every change is on record. Keep this story and everything you wrote.' : instructions[state.step - 1]}</p>
       {state.step === 2 && !state.completed && <button className="share-story-button" onClick={() => window.dispatchEvent(new Event('storytool-try-images'))}>Try inserting an image →</button>}
       {state.step === 6 && !state.completed && <button className="sharing-primary" onClick={() => window.dispatchEvent(new Event('storytool-try-history'))}>Open History</button>}
-      {!state.completed && <div className="try-tour-navigation"><button disabled={tourMoving || state.step === 1} onClick={() => void moveTour(-1)}>← Previous</button><span>{doneSteps(state).includes(state.step) ? 'Ready when you are' : 'Complete the action above'}</span><button className="sharing-primary" disabled={tourMoving || !doneSteps(state).includes(state.step)} onClick={() => void moveTour(1)}>{state.step === 6 ? 'Finish tour' : 'Continue tour'}</button></div>}
+      {!state.completed && <div className="try-tour-navigation"><button disabled={tourMoving || state.step === 1} onClick={() => void moveTour(-1)}>← Previous</button><span>{doneSteps(state).includes(state.step) ? 'Ready when you are' : 'Complete the action above'}</span><button className="sharing-primary" disabled={tourMoving || !doneSteps(state).includes(state.step)} onClick={() => void moveTour(1)}>{state.step === LAST_STEP ? 'Finish tour' : 'Continue tour'}</button></div>}
       {state.completed && <div className="flex flex-wrap gap-3"><button className="sharing-primary" disabled={keeping} onClick={() => void keep()}>Keep this story in your account</button><button onClick={() => { void transact(value => { value.skipped = true }).then(() => query.refetch()) }}>Keep exploring</button></div>}
     </aside>
   return <div className="try-page" data-try-step={state.skipped ? 0 : state.step}>
-    <div ref={bannerRef} className="try-banner"><span>Sandbox · your changes stay in this browser</span><button className="try-tour-button" aria-controls="try-tour" onClick={() => void resumeTour()}>{!state.skipped && !state.completed ? `Tour · ${state.step} of 6` : state.completed || state.step === 1 ? 'Start tour' : 'Resume tour'}</button><button className="try-discover-button" onClick={() => setDiscoverOpen(true)}>Discover more →</button><button disabled={keeping} onClick={() => void keep()}>Keep this story free →</button><details><summary aria-label="Sandbox menu">⋯</summary><button onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); void resumeTour(true) }}>Restart tour</button><button disabled={resetting} onClick={() => { if (!confirm('Reset The Last Lantern and remove your sandbox edits?')) return; setResetting(true); void resetSandbox().then(() => { qc.removeQueries({ predicate: query => query.queryKey.includes(SANDBOX_ID) || query.queryKey[0] === 'sandbox' }); location.assign('/try') }).catch(e => { setError(String(e)); setResetting(false) }) }}>Reset sandbox</button></details></div>
+    <div ref={bannerRef} className="try-banner"><span>Sandbox · your changes stay in this browser</span><button className="try-tour-button" aria-controls="try-tour" onClick={() => void resumeTour()}>{!state.skipped && !state.completed ? `Tour · ${state.step} of ${LAST_STEP}` : state.completed || state.step === 1 ? 'Start tour' : 'Resume tour'}</button><button className="try-discover-button" onClick={() => setDiscoverOpen(true)}>Discover more →</button><button disabled={keeping} onClick={() => void keep()}>Keep this story free →</button><details><summary aria-label="Sandbox menu">⋯</summary><button onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); void resumeTour(true) }}>Restart tour</button><button disabled={resetting} onClick={() => { if (!confirm('Reset The Last Lantern and remove your sandbox edits?')) return; setResetting(true); void resetSandbox().then(() => { qc.removeQueries({ predicate: query => query.queryKey.includes(SANDBOX_ID) || query.queryKey[0] === 'sandbox' }); location.assign('/try') }).catch(e => { setError(String(e)); setResetting(false) }) }}>Reset sandbox</button></details></div>
     {error && <p role="alert" className="p-3 writer-error">{error}</p>}
     <Workspace storyId={SANDBOX_ID} sandboxStep={state.skipped ? 0 : state.step} sandboxRun={tourRun} sandboxHistory={state} />
     <DiscoverTour open={discoverOpen} onClose={() => setDiscoverOpen(false)} onKeep={() => { setDiscoverOpen(false); void keep() }} />

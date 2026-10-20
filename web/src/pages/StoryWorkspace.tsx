@@ -150,7 +150,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const openView = async (view: number) => { if (await changeTab('design')) setLevel(view) }
   // Evaluate findings and placeholders open their exact passage in Write.
   const openPassage = (id: string, find: string, paragraph: number) => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id, find, paragraph, at: Date.now() }) }) }
-  const viewItem = (view: number, label: ReactNode) => <button type="button" aria-current={level === view ? 'page' : undefined} onClick={() => { setLevel(view); if (sandbox && view === HISTORY_VIEW) tourEvent('history') }}>{label}</button>
+  const viewItem = (view: number, label: ReactNode) => <button type="button" data-view={view === GRID_VIEW ? 'grid' : undefined} aria-current={level === view ? 'page' : undefined} onClick={() => { setLevel(view); if (sandbox && view === HISTORY_VIEW) tourEvent('history'); if (sandbox && view === GRID_VIEW) tourEvent('grid') }}>{label}</button>
   // Reference panels sit beside the text in every tab, so looking something up never leaves the page.
   // The panel opens by default (Context in Write, Insights in Design); closing it is remembered for the visit.
   const [refPanel, setRefPanelPref] = useState<RefPanel | null>(() => REF_PANELS.some(([key]) => key === savedSearchContext.refPanel) ? savedSearchContext.refPanel : null)
@@ -332,6 +332,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       void changeTab('write').then(ok => { if (ok) { localStorage.setItem(`storytool-search:${storyId}:prose`, JSON.stringify({ q: 'lantern', field: '', entity: '' })); setSearchOpen(true) } })
     }
     if (sandboxStep === 6) { setSearchOpen(false); setRefPanel(null) }
+    // The plan for plotters: open Design on the first level; the tour then points at Grid.
+    if (sandboxStep === 7) { setSearchOpen(false); void changeTab('design').then(ok => { if (ok) setLevel(1) }) }
     // The persisted step drives navigation once; ordinary browsing remains free.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sandboxStep, sandbox, sandboxRun])

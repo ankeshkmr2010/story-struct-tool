@@ -607,3 +607,10 @@ Not started (reviewer's smaller notes, verified as described unless marked):
   starts a new paragraph (`StoryWriter` mousedown); Grid moved from Plan to Review in the
   Design rail; landing header wraps links to their own row at 640–900 px (measured on prod in
   frames: the header needed ~856 px and scrolled sideways between ~640 and ~880 px).
+- [~] Placeholder highlight in Write (`writerPlaceholders.ts`, c890fd8; confirmed on prod in the sandbox).
+- [~] Guided tour step 7 (2026-10-20): after History, Design opens on the plan and the tour
+  points at Grid; done when Grid opens. Funnel gains `try_step_7` (= tour finished; step 6 now
+  = History done). Steps 1-5 unchanged.
+- [~] Context essentials (2026-10-20): Write's Context shows Summary, POV, Place, Goal and value
+  shift above the folded "More details and links" (all other fields and links). Design's scene
+  form and the Grid drawer keep the full form (`SceneDetails essentials`).
