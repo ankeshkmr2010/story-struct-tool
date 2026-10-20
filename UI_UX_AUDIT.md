@@ -614,3 +614,8 @@ Not started (reviewer's smaller notes, verified as described unless marked):
 - [~] Context essentials (2026-10-20): Write's Context shows Summary, POV, Place, Goal and value
   shift above the folded "More details and links" (all other fields and links). Design's scene
   form and the Grid drawer keep the full form (`SceneDetails essentials`).
+- [~] Split view, "Beside" (2026-10-20): read-only scene prose, character, place, glossary
+  entry or image in the side panel's place (`BesidePanel`, remembered per story for the visit
+  in sessionStorage), picker, New window ↗ (`/stories/:id/beside/:kind/:id`). Opened by
+  `openBeside` events from Write right-click ("Open <name> beside" on a defined name, "Open
+  scene beside…"), Placeholders, Evaluate findings and search results. Off in the sandbox.

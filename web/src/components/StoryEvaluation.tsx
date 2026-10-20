@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type CraftReading, type Evaluation, type Evaluator, type StoryUpdate } from '../api/client'
 import { applyPassageEdits } from './passageEdits'
+import { besideKind, openBeside } from './beside'
 import { errorText } from '../api/errors'
 
 /**
@@ -458,6 +459,8 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs">
           {finding.passage && onOpenPassage && <button type="button" onClick={() => onOpenPassage(finding.passage!.scene_id, finding.passage!.find, finding.passage!.paragraph)} className="underline">Open in Write →</button>}
           {open && <button type="button" onClick={open} className="underline">Open {finding.entity_type === 'story' ? 'story' : finding.entity_type} in Plan →</button>}
+          {finding.passage ? <button type="button" onClick={() => openBeside({ kind: 'scene', id: finding.passage!.scene_id })} className="underline">Open scene beside</button>
+            : besideKind(finding.entity_type) && finding.entity_id && <button type="button" onClick={() => openBeside({ kind: besideKind(finding.entity_type)!, id: finding.entity_id! })} className="underline">Open beside</button>}
           {finding.actions.filter((action) => action.kind !== 'replace' || action.edits.length > 0).map((action) => <button key={`${action.kind}-${action.value}`} type="button" disabled={busy} onClick={() => applyAction.mutate(action)} className="underline disabled:opacity-50">
             {action.label}{action.kind === 'replace' && action.edits.length > 1 ? ` (${action.edits.length})` : ''}
           </button>)}

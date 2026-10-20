@@ -23,6 +23,8 @@ import { OutlineCatchup } from '../components/OutlineCatchup'
 import { StoryEvaluation } from '../components/StoryEvaluation'
 import { PlaceholderList } from '../components/PlaceholderList'
 import { usePlaceholders } from '../components/usePlaceholders'
+import { BesidePanel } from '../components/BesidePanel'
+import { OPEN_BESIDE_EVENT, isBesideItem, type BesideTarget } from '../components/beside'
 import { LANGUAGES, languageLabel } from '../components/languages'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
@@ -172,13 +174,30 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const modePanel: RefPanel | null = tab === 'write' ? 'context' : tab === 'design' && !sandbox ? 'insights' : null
   const preferredPanel = panelTabs.some(([key]) => key === refPanel) ? refPanel : modePanel
   const activePanel = panelHidden ? null : preferredPanel
-  const hasPanel = Boolean(activePanel)
+  // Something read-only beside the manuscript (a scene, character, place, term or image). It
+  // takes the side panel's place while open and is remembered for the visit, per story.
+  const besideKey = `storytool-beside:${storyId}`
+  const [beside, setBesideState] = useState<BesideTarget | null>(() => {
+    try { const saved = JSON.parse(sessionStorage.getItem(besideKey) || 'null'); return isBesideItem(saved) ? saved : null } catch { return null }
+  })
+  const setBeside = (target: BesideTarget | null) => {
+    setBesideState(target)
+    try { if (target && target.kind !== 'pick') sessionStorage.setItem(besideKey, JSON.stringify(target)); else sessionStorage.removeItem(besideKey) } catch { /* Optional browser storage. */ }
+  }
+  useEffect(() => {
+    if (sandbox) return
+    const open = (event: Event) => setBeside((event as CustomEvent<BesideTarget>).detail)
+    window.addEventListener(OPEN_BESIDE_EVENT, open)
+    return () => window.removeEventListener(OPEN_BESIDE_EVENT, open)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storyId, sandbox])
+  const hasPanel = Boolean(activePanel) || Boolean(beside)
   const [writerFocus, setWriterFocus] = useState(false)
   const [liveHints, setLiveHints] = useState(false)
   const [contextSlot, setContextSlot] = useState<HTMLElement | null>(null)
   const [hintsSlot, setHintsSlot] = useState<HTMLElement | null>(null)
   const selectPanel = (key: RefPanel) => { setRefPanel(key); if (key === 'context') { setSearchOpen(false); if (sandbox) tourEvent('context') } }
-  const togglePanel = () => { if (hasPanel) setRefPanel(null); else selectPanel(preferredPanel ?? 'timeline') }
+  const togglePanel = () => { if (beside) setBeside(null); else if (hasPanel) setRefPanel(null); else selectPanel(preferredPanel ?? 'timeline') }
   const openImages = async () => { if (!await writerFlush.current()) { setTabError('Save your writing before managing images.'); return } navigate(`/stories/${storyId}/images`) }
   useEffect(() => {
     const open = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setSearchOpen(true) } }
@@ -688,6 +707,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       </div>
       </div>
       <aside hidden={!hasPanel} className="workspace-ref-panel ws-panel" aria-label="Side panel">
+        {beside && <BesidePanel storyId={storyId} target={beside} onChange={setBeside} onClose={() => setBeside(null)} />}
+        {!beside && <>
         <div className="workspace-ref-head">
           <Tabs label="Side panel" value={activePanel ?? panelTabs[0][0]} onChange={selectPanel} items={panelTabs.map(([key, label]) => ({ id: key, label: key === 'feedback' && openFeedback.data?.length ? `${label} (${openFeedback.data.length})` : key === 'placeholders' && placeholderCount ? `${label} (${placeholderCount})` : label, className: key === 'context' ? 'writer-context-toggle' : undefined }))} />
           <div><button type="button" aria-label="Search this panel" title="Search this panel" onClick={() => setSearchOpen(true)} disabled={!searchContext}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></button><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div>
@@ -705,6 +726,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         {activePanel === 'glossary' && <GlossaryPanel storyId={storyId} />}
         {activePanel === 'placeholders' && <PlaceholderList storyId={storyId} compact beforeEdit={() => writerFlush.current()} onOpen={openPassage} />}
         {activePanel === 'assistant' && <AuthoringAssistant storyId={storyId} />}
+        </>}
       </aside>
       </div>
       <SearchDialog storyId={storyId} initialQuery={sandboxStep === 5 ? 'lantern' : undefined} context={searchContext} active={searchOpen} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={async hit => { await openSearchHit(hit); if (sandbox) tourEvent('search') }} />

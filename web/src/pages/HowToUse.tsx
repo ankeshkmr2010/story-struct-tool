@@ -395,6 +395,13 @@ export default function HowToUse() {
                   Insert image and Add TK here. The story bar carries everything else: the
                   StoryTool menu, History (the clock), the side panel, theme and your account.
                 </Item>
+                <Item title="Check a detail beside the manuscript">
+                  Right-click in Write and choose Open scene beside… to pick a scene, character, place,
+                  glossary term or image; right-click a defined name (a character, place or term) to open
+                  it directly. Placeholders, Evaluate findings and search results also offer Open beside.
+                  It shows read only in the side panel’s place until you close it, stays open while you
+                  change chapters, and New window ↗ moves it to its own window, e.g. on a second screen.
+                </Item>
                 <Item title="Switch between Write, Read, and Design">
                   All three tabs use the same chapters, scenes, and prose. Each story reopens
                   where you left off on any device: the same tab, chapter and position, and Your

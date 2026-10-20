@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { errorText } from '../api/errors'
 import { applyPassageEdits, type Passage } from './passageEdits'
+import { openBeside } from './beside'
 import { usePlaceholders } from './usePlaceholders'
 
 const note = (marker: string) => marker.replace(/^\[\s*tk\s*:?\s*/i, '').replace(/\]$/, '').trim()
@@ -58,6 +59,7 @@ export function PlaceholderList({ storyId, compact = false, beforeEdit, onOpen }
               <input aria-label={`Text to replace ${passage.find}`} placeholder="Fill in…" value={value} onChange={event => setDrafts(current => ({ ...current, [key(passage)]: event.target.value }))} />
               <button type="submit" className="ui-btn ui-btn-primary ui-btn-sm" disabled={edit.isPending || !value.trim()}>Fill</button>
               <button type="button" className="ui-btn ui-btn-secondary ui-btn-sm" onClick={() => onOpen(passage.scene_id, passage.find, passage.paragraph)}>Open</button>
+              <button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" title="Show this scene read-only beside the manuscript" onClick={() => openBeside({ kind: 'scene', id: passage.scene_id })}>Beside</button>
               <button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" disabled={edit.isPending} onClick={() => edit.mutate({ passage, replacement: '' })} title="Delete the marker and keep the surrounding text">Remove</button>
             </form>
           </div>

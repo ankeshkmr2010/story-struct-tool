@@ -959,3 +959,25 @@ ol.showcase-list { list-style: decimal; }
 
 /* Write's Context: the scene fields used mid-draft, above the folded full form. */
 .scene-essentials { display: grid; gap: 8px; margin-bottom: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+
+/* Beside: a read-only scene, character, place, term or image next to the manuscript. */
+.beside-panel { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.beside-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.beside-head h2 { margin: 2px 0 0; overflow: hidden; font-family: var(--font-serif); font-size: var(--text-lg); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.beside-meta { margin: 0; color: var(--muted); font-size: var(--text-xs); }
+.beside-actions { display: flex; flex: none; align-items: center; gap: 8px; font-size: var(--text-xs); }
+.beside-actions button, .beside-actions a { padding: 3px 6px; border-radius: var(--radius-md); color: var(--muted); }
+.beside-actions button:hover, .beside-actions a:hover { background: var(--accent-soft); color: var(--accent); }
+.beside-prose { overflow-y: auto; font-family: var(--font-serif); font-size: var(--text-base); line-height: 1.7; }
+.beside-prose p { margin: 0 0 0.9em; }
+.beside-facts { display: grid; gap: 10px; margin: 0; }
+.beside-facts dt { color: var(--muted); font-size: var(--text-xs); font-weight: 600; }
+.beside-facts dd { margin: 2px 0 0; white-space: pre-wrap; }
+.beside-image img { max-width: 100%; height: auto; border-radius: var(--radius-md); }
+.beside-image figcaption { margin-top: 6px; color: var(--muted); font-size: var(--text-sm); }
+.beside-picker input { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--page); color: var(--ink); }
+.beside-picker ul { margin: 8px 0 0; padding: 0; list-style: none; }
+.beside-picker li button { display: flex; gap: 8px; width: 100%; padding: 6px 8px; border-radius: var(--radius-md); text-align: left; }
+.beside-picker li button:hover, .beside-picker li button:focus-visible { background: var(--accent-soft); }
+.beside-picker li button span { flex: none; width: 64px; color: var(--muted); font-size: var(--text-xs); line-height: 20px; }
+.beside-page { max-width: 760px; margin: 0 auto; padding: 16px; }

@@ -6,6 +6,7 @@ import { AccountMenu, AuthGate } from './components/AuthGate'
 import StoryList from './pages/StoryList'
 import StoryWorkspace from './pages/StoryWorkspace'
 import StoryImagesPage from './pages/StoryImagesPage'
+import BesidePage from './pages/BesidePage'
 const SharedStoryReader = lazy(() => import('./pages/SharedStoryReader'))
 const StoryShowcase = lazy(() => import('./pages/StoryShowcase'))
 import HowToUse from './pages/HowToUse'
@@ -33,7 +34,7 @@ const PAGE_TITLES: [RegExp, string][] = [
   [/^\/roadmap/, 'Roadmap · StoryTool'], [/^\/thanks/, 'Shoutouts · StoryTool'], [/^\/about/, 'About the developer · StoryTool'], [/^\/pricing/, 'Pricing · StoryTool'],
   [/^\/privacy/, 'Privacy · StoryTool'], [/^\/library/, 'Your stories · StoryTool'], [/^\/settings/, 'Settings · StoryTool'],
   [/^\/checks/, 'Writing checks · StoryTool'], [/^\/feedback/, 'Feedback · StoryTool'], [/^\/oauth/, 'Connect AI · StoryTool'],
-  [/^\/stories\/[^/]+\/images/, 'Images · StoryTool'], [/^\/stories\/[^/]+\/beta/, 'Beta readers · StoryTool'],
+  [/^\/stories\/[^/]+\/images/, 'Images · StoryTool'], [/^\/stories\/[^/]+\/beside/, 'Beside · StoryTool'], [/^\/stories\/[^/]+\/beta/, 'Beta readers · StoryTool'],
   [/^\/stories\/[^/]+\/polls/, 'Reader polls · StoryTool'], [/^\/stories\//, 'Story · StoryTool'], [/^\/shared\//, 'Shared story · StoryTool'],
   [/^\/beta\//, 'Beta manuscript · StoryTool'], [/^\/showcase\//, 'Showcase · StoryTool'],
 ]
@@ -90,6 +91,7 @@ export default function App() {
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/stories/:storyId" element={<StoryWorkspace />} />
         <Route path="/stories/:storyId/images" element={<StoryImagesPage />} />
+        <Route path="/stories/:storyId/beside/:kind/:id" element={<BesidePage />} />
         <Route path="/stories/:storyId/beta" element={<BetaOwner />} />
         <Route path="/stories/:storyId/polls" element={<BetaPolls />} />
         <Route path="/shared/:storyId" element={<Suspense fallback={<p className="p-8">Loading reader…</p>}><SharedStoryReader /></Suspense>} />

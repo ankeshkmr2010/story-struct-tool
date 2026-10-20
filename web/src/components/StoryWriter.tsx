@@ -21,6 +21,9 @@ import { ImageInsertionPicker } from './ImageInsertionPicker'
 import { LiveWritingHints } from './LiveWritingHints'
 import { readerComments } from './readerComments'
 import { writerPlaceholders } from './writerPlaceholders'
+import { openBeside, type BesideItem } from './beside'
+
+type Named = { label: string; item: BesideItem }
 
 const imageMarkdown = (image: StoryImage) => `![${image.alt.replace(/[\]\n]/g, ' ')}](storytool-image:${image.id})`
 const proseWords = (text: string) => text.replace(/!\[[^\]\n]*\]\(storytool-image:[0-9a-fA-F-]{36}\)/g, '').trim().split(/\s+/).filter(Boolean).length
@@ -220,12 +223,34 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   const [previewImage, setPreviewImage] = useState<StoryImage | null>(null)
   const [hintParagraph, setHintParagraph] = useState(1)
   const [imageAnchor, setImageAnchor] = useState<{ x: number; y: number; at: number } | null>(null)
-  const [context, setContext] = useState<{ x: number; y: number; at: number; hasSelection: boolean } | null>(null)
+  const [context, setContext] = useState<{ x: number; y: number; at: number; hasSelection: boolean; named: Named | null } | null>(null)
   const [clipboardError, setClipboardError] = useState('')
   // A small button beside a selection opens the same actions as right-click, so they are discoverable.
   const [selectionChip, setSelectionChip] = useState<{ x: number; y: number } | null>(null)
   const menu = useRef<HTMLDivElement>(null)
   const images = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: storyId !== SANDBOX_ID })
+  const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId), enabled: storyId !== SANDBOX_ID })
+  const locations = useQuery({ queryKey: ['locations', storyId], queryFn: () => api.listLocations(storyId), enabled: storyId !== SANDBOX_ID })
+  const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId), enabled: storyId !== SANDBOX_ID })
+  // Right-clicking a defined name offers to open it beside the manuscript.
+  const nameAt = (editor: EditorView, at: number | null): Named | null => {
+    if (at === null) return null
+    const names: (Named & { text: string })[] = [
+      ...(characters.data ?? []).flatMap(c => [c.name, ...(c.aliases ?? [])].map(text => ({ text, label: c.name, item: { kind: 'character' as const, id: c.id } }))),
+      ...(locations.data ?? []).map(l => ({ text: l.name, label: l.name, item: { kind: 'location' as const, id: l.id } })),
+      ...(glossary.data ?? []).flatMap(g => [g.term, ...(g.aliases ?? [])].map(text => ({ text, label: g.term, item: { kind: 'glossary_entry' as const, id: g.id } }))),
+    ].filter(name => name.text.trim().length > 1).sort((a, b) => b.text.length - a.text.length)
+    const line = editor.state.doc.lineAt(at)
+    const offset = at - line.from
+    const letter = (char: string | undefined) => !!char && /[\p{L}\p{N}]/u.test(char)
+    for (const name of names) {
+      for (let index = line.text.indexOf(name.text); index >= 0; index = line.text.indexOf(name.text, index + 1)) {
+        const end = index + name.text.length
+        if (offset >= index && offset <= end && !letter(line.text[index - 1]) && !letter(line.text[end])) return { label: name.label, item: name.item }
+      }
+    }
+    return null
+  }
   const [latest, setLatest] = useState<string | null>(null)
   const [reviewError, setReviewError] = useState<string | null>(null)
   useEffect(() => { draft.configure(async (text, base) => {
@@ -252,7 +277,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     const position = pointer ? editor.posAtCoords({ x, y }) : editor.state.selection.main.head
     const selected = editor.state.selection.main
     if (position !== null && (selected.empty || position < selected.from || position > selected.to)) editor.dispatch({ selection: { anchor: position } })
-    setClipboardError(''); setContext({ x, y, at: position ?? editor.state.selection.main.head, hasSelection: !editor.state.selection.main.empty }); setImageAnchor(null)
+    setClipboardError(''); setContext({ x, y, at: position ?? editor.state.selection.main.head, hasSelection: !editor.state.selection.main.empty, named: nameAt(editor, position) }); setImageAnchor(null)
   }
   useEffect(() => {
     if (!context) return
@@ -378,6 +403,8 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       }
     }}>
       {storyId !== SANDBOX_ID && <button type="button" role="menuitem" onClick={addPlaceholder}>Add TK here</button>}
+      {storyId !== SANDBOX_ID && context.named && <button type="button" role="menuitem" onClick={() => { openBeside(context.named!.item); setContext(null) }}>Open {context.named.label} beside</button>}
+      {storyId !== SANDBOX_ID && <button type="button" role="menuitem" onClick={() => { openBeside({ kind: 'pick' }); setContext(null) }}>Open scene beside…</button>}
       <button type="button" role="menuitem" onClick={() => { const anchor = context; setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor(anchor) }}>Insert image…</button>
       {(['cut', 'copy', 'paste', 'select'] as const).map(action => <button type="button" role="menuitem" key={action} disabled={(action === 'cut' || action === 'copy') && !context.hasSelection} onClick={() => { void editClipboard(action) }}>{({ cut: 'Cut', copy: 'Copy', paste: 'Paste', select: 'Select all' })[action]}</button>)}
       <a role="menuitem" href="https://emojidb.org/" target="_blank" rel="noopener noreferrer" onClick={() => setContext(null)}>Find emojis ↗</a>
