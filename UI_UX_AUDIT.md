@@ -603,3 +603,7 @@ Not started (reviewer's smaller notes, verified as described unless marked):
   uses, and per-scene memoisation (`_read_scene` / `_find_in_scene`, lru_cache keyed on scene
   id + exact text + language, 512 scenes). 100k words locally: 0.94 s → 0.29 s cold, 0.023 s
   warm or after one scene edit. Prod before: Hound 59k words 5.4–8 s [verify after deploy].
+- [~] Reviewer smaller notes (2026-10-20): a click in the 24 px zone under a scene's text
+  starts a new paragraph (`StoryWriter` mousedown); Grid moved from Plan to Review in the
+  Design rail; landing header wraps links to their own row at 640–900 px (measured on prod in
+  frames: the header needed ~856 px and scrolled sideways between ~640 and ~880 px).

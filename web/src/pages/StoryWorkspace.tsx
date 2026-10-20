@@ -507,8 +507,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         <nav aria-label="Story design" className="workspace-nav ws-rail">
           <h2>Plan</h2>
           {ladder.data && <Ladder ladder={ladder.data} mode={story.data.authoring_mode as AuthoringMode} activeLevel={level} onSelect={selectLevel} />}
-          {viewItem(GRID_VIEW, 'Grid')}
           <h2>Review</h2>
+          {viewItem(GRID_VIEW, 'Grid')}
           {!sandbox && viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
           {!sandbox && viewItem(CATCHUP_VIEW, 'Catch up')}
           {!sandbox && viewItem(EVALUATE_VIEW, 'Evaluate')}

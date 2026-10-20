@@ -318,7 +318,22 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       markdown(), EditorView.lineWrapping,
       writerImages(images.data?.images ?? [], setPreviewImage),
       readerComments(comments),
-      EditorView.domEventHandlers({ contextmenu: (event, editor) => { event.preventDefault(); openContext(editor, event.clientX, event.clientY, true); return true } }),
+      EditorView.domEventHandlers({
+        contextmenu: (event, editor) => { event.preventDefault(); openContext(editor, event.clientX, event.clientY, true); return true },
+        // A click below the last line starts a new paragraph instead of extending the last one.
+        mousedown: (event, editor) => {
+          if (event.button !== 0 || event.shiftKey) return false
+          const end = editor.state.doc.length
+          const bottom = editor.coordsAtPos(end)?.bottom
+          if (!end || bottom === undefined || event.clientY <= bottom + 4) return false
+          event.preventDefault()
+          const text = editor.state.doc.toString()
+          const gap = text.endsWith('\n\n') ? '' : text.endsWith('\n') ? '\n' : '\n\n'
+          editor.dispatch({ changes: gap ? { from: end, insert: gap } : undefined, selection: { anchor: end + gap.length }, scrollIntoView: true, userEvent: 'input' })
+          editor.focus()
+          return true
+        },
+      }),
       keymap.of([{ key: 'Shift-F10', run: editor => { const coords = editor.coordsAtPos(editor.state.selection.main.head); openContext(editor, coords?.left ?? 20, coords?.bottom ?? 100, false); return true } }]),
       EditorView.contentAttributes.of({ 'aria-label': scene?.title ? `Prose: ${scene.title}` : 'Story prose', spellcheck: 'true', autocapitalize: 'sentences' }),
       keymap.of([{ key: 'Mod-s', run: () => { void draft.flush(); return true } }]),

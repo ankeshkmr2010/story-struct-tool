@@ -549,6 +549,8 @@ ol.showcase-list { list-style: decimal; }
 .writer-scene-break { padding: 16px 0; text-align: center; color: var(--muted); font-size: 24px; }
 .writer-passage .cm-editor, .writer-passage .cm-scroller { background: transparent !important; color: var(--ink); }
 .writer-passage .cm-editor.cm-focused { outline: none; }
+/* A small click zone under the text: clicking there starts a new paragraph (see StoryWriter). */
+.writer-passage .cm-content { padding-bottom: 24px; cursor: text; }
 .writer-continuation { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
 .writer-continuation span { color: var(--muted); font-size: 12px; }
 .writer-context { min-width: 0; padding: 20px 16px; border-left: 1px solid var(--line); overflow-wrap: anywhere; }
@@ -580,6 +582,8 @@ ol.showcase-list { list-style: decimal; }
   .writer-toolbar { padding: 10px; }
   .writer-toolbar button { min-height: 42px; }
 }
+/* 640-900px: the six links, theme and account no longer fit on one row; give the links their own. */
+@media (max-width: 900px) { .site-header { flex-wrap: wrap; row-gap: 8px; } .site-header nav { order: 3; flex-basis: 100%; flex-wrap: wrap; justify-content: flex-start; gap: 4px 14px; margin: 0; } .site-header-actions { margin-left: auto; } }
 @media (max-width: 900px) { .account-dropdown .account-name { display: none; } }
 @media (max-width: 640px) { .site-header { gap: 12px; padding: 12px 18px; } .site-header nav { order: 3; justify-content: flex-start; gap: 2px; margin: 0; width: 100%; } .site-header nav .site-nav-link { min-height: 38px; padding: 8px 11px; font-size: 12px; } .site-header-actions { margin-left: auto; gap: 4px; } .theme-toggle { padding: 8px; } .story-card { padding: 16px; } .page-heading h1 { font-size: 29px; } }
 @media (max-width: 640px) { .story-card > div:first-child { flex-basis: 100%; } }
