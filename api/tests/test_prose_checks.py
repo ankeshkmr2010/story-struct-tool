@@ -261,3 +261,11 @@ def test_only_changed_scenes_are_read_again() -> None:
     g.scenes[1].content = "Maya stopped."
     assert [f for f in consistency(g) if f.code.startswith("names.")] == []
     assert _read_scene.cache_info().misses == 4, "only the edited scene is read again"
+
+
+def test_closing_quotes_and_calendar_words_are_not_capitalisation_slips() -> None:
+    g = graph(
+        "“You can go.” When he had gone, we sat. “Good.” When she came, we rose. "
+        "It was the fourth of May. On May 14th he left. You may go. We may stay. They may not."
+    )
+    assert [f for f in consistency(g) if f.code == "variants.capitalisation"] == []

@@ -52,7 +52,7 @@ TYPO_RATIO = 0.25
 TWO_PEOPLE_RATIO = 0.5
 _HYPHENS = "-\u2010"
 _WORD = re.compile(r"[^\W\d_]+(?:[-\u2010][^\W\d_]+)*")
-_OPENERS = "\"'\u201c\u2018([*_\u2014\u2013- \t"
+_OPENERS = "\"'\u201c\u2018\u201d\u2019()[]*_\u2014\u2013- \t"
 _SENTENCE_END = ".!?\u2026\n"
 _NOT_NAMES = frozenset(word.casefold() for word in NOT_NAMES)
 # Closed and open forms that are different words, not inconsistent spellings.
@@ -64,6 +64,13 @@ _SEPARATE_WORDS = frozenset(
     whatever whenever wherever himself herself itself myself yourself ourselves themselves
     without within another today tonight tomorrow nowadays
     """.split()  # noqa: SIM905 - a word list reads best as text
+)
+# Always capitalised in English, so a lower-case twin (may, march, sun) is another word.
+_CALENDAR = frozenset(
+    """
+    january february march april may june july august september october november december
+    monday tuesday wednesday thursday friday saturday sunday
+    """.split()  # noqa: SIM905
 )
 _FUNCTION_WORDS = frozenset(
     """
@@ -695,6 +702,7 @@ def _capitalisation(g: StoryGraph, index: _Index, kept: set[str]) -> list[Evalua
             or not lower
             or len(fold) < 3
             or fold in _FUNCTION_WORDS
+            or fold in _CALENDAR
             or "-" in fold
             or key in kept
         ):
