@@ -20,6 +20,7 @@ import { writerImages } from './writerImages'
 import { ImageInsertionPicker } from './ImageInsertionPicker'
 import { LiveWritingHints } from './LiveWritingHints'
 import { readerComments } from './readerComments'
+import { writerPlaceholders } from './writerPlaceholders'
 
 const imageMarkdown = (image: StoryImage) => `![${image.alt.replace(/[\]\n]/g, ' ')}](storytool-image:${image.id})`
 const proseWords = (text: string) => text.replace(/!\[[^\]\n]*\]\(storytool-image:[0-9a-fA-F-]{36}\)/g, '').trim().split(/\s+/).filter(Boolean).length
@@ -318,6 +319,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       markdown(), EditorView.lineWrapping,
       writerImages(images.data?.images ?? [], setPreviewImage),
       readerComments(comments),
+      writerPlaceholders,
       EditorView.domEventHandlers({
         contextmenu: (event, editor) => { event.preventDefault(); openContext(editor, event.clientX, event.clientY, true); return true },
         // A click below the last line starts a new paragraph instead of extending the last one.
