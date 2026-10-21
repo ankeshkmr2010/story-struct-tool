@@ -530,12 +530,20 @@ Open / not done:
 - [~] 2026-10-18 import formats: Word's paragraph planning moved to shared `block_import.py` (Block, BlockPlan, inspect_blocks, read_blocks, block_adapter); `docx_import.py` now only reads paragraphs. New adapters `text_import.py` (Markdown/plain text: blank-line paragraphs, # and underlined headings, form-feed page breaks, ---/___ count as separators) and `epub_import.py` (spine order, h1/h2/h3, new page per spine document, nav/linear=no skipped, DRM refused, size limits). Library Create ▾ gains From Markdown or text… and From EPUB…; same preview, plan options and AI planning. Privacy: reader-AI paragraph. Pure tests 8/8; no DB run. Awaiting deploy.
 - [~] 2026-10-18 L14 fixed: Render log evidence via API (key in `.env.local` RENDER_API_KEY, read-only use) showed the socket peer is a rotating Render proxy (different per request), `X-Forwarded-For` accepts a client-prepended value, `CF-Connecting-IP`/`True-Client-IP` carry the real client, Cloudflare rejects a client-supplied `CF-Connecting-IP` (403) and overwrites `True-Client-IP`. `hint_controller.visitor_address` now keys /try limits on `CF-Connecting-IP`, falling back to the peer; the L14-DIAG logging is removed. Awaiting deploy.
 
-## Status summary — 2026-10-19 (for a fresh session)
+## Status summary — 2026-10-21 (for a fresh session)
 
-Everything above marked [~] is built and deployed but not yet confirmed by the user on prod.
-Open, not started: T62 v2 `beta:comment`; fast local DB tests; T25 view counts (define first);
-T50 word-level authorship; T44 series bible; T45/T52 languages; T46 monetisation; T9 heroine
-choice and redesign CSS cleanup (both waiting on the user). See SESSION_HANDOFF.md 2026-10-19.
+Everything marked [~] is built and deployed but not yet confirmed by the user on prod; items
+Claude has checked on prod in Chrome are listed under "Prod checks by Claude" at the end.
+Roadmap (live, admin API): Delivered this week: TK placeholders, Smart consistency, Split view
+(Beside), Pacing view. Still open: Planned: Latin-script language support (the en-US/en-GB
+setting is its first step), Draft compare, Setups and payoffs (Evaluate already has an AI
+"Setups and payoffs" thread review; the roadmap item is line-level setup→payoff links).
+Exploring: View counts on shared stories (T25, define first), Series bible (T44).
+Other open, not started: T62 v2 `beta:comment`; fast local DB tests (DB-backed tests for the
+prose:read gate, migration c4e8a1f6d209 and run_story_check not run); T50 word-level
+authorship; T45/T52 languages beyond en-US/en-GB; T46 monetisation; T9 heroine choice and
+redesign CSS cleanup (both waiting on the user). Chrome screenshots time out in this
+environment; prod checks use DOM measurement instead.
 
 ## External review fixes — 2026-10-19 (`eed5f9f`, pushed; awaiting deploy + user check)
 
@@ -624,4 +632,25 @@ Not started (reviewer's smaller notes, verified as described unless marked):
   legend-labelled), POV strip (validated 8-slot categorical order, light/dark steps, Other
   past 8, named legend), chapter starts, per-scene hover/focus details, click opens the
   scene, Table view. Palette validated against #f8f0e1 / #1b1c1e (light contrast relief:
-  legend + table). Not yet seen rendered [unverified].
+  legend + table). Prod-checked by Claude 2026-10-21 (see below).
+
+## Prod checks by Claude — 2026-10-20/21 (Chrome, DOM measurement; user check still pending)
+
+Items stay [~] until the user confirms them; these record what was verified on prod.
+- R1 header merge, R3 History button, R6 colours: site header hidden on story pages and /try;
+  bar has logo, History, panel, theme (+ site menu and account when signed in).
+- Tour fixes: side panel no longer covers the tour coach on narrow screens; Restart tour in
+  the sandbox ⋯ menu (user confirmed "Works").
+- Smart consistency on the Hound (59k words): spelling, hyphenation (phrases with a, be,
+  here... skipped) and capitals (dialogue, closing quotes, months skipped) as designed; 5.4-8 s
+  before the speed work, then 4.1 s cold, 1.7 s and 0.6 s on repeat runs.
+- Placeholders: TKs tab and Design → Placeholders present; [TK] highlight in Write (sandbox).
+- Click below a scene's text starts a new paragraph; Grid under Review; landing header wraps
+  at 680-860 px with no horizontal scroll.
+- Language: Settings "Writing language" and Premise "Language" field present; account en-US.
+- Beside (Red-Headed League): right-click "Holmes" offers "Open Sherlock Holmes beside";
+  character and scene views, picker filter, reload persistence; New window page loads after
+  befdee0 and its picker navigates to the chosen scene.
+- Pacing (Red-Headed League, dark): 6 scenes, chapter starts 1-3, bars proportional to
+  word counts (134 to 4,866), POV strip and legend (Watson), focus details, table view (6
+  rows), click opens Scene 5 in Design; no horizontal scroll.
