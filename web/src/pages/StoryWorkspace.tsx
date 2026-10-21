@@ -18,6 +18,7 @@ import { SceneDetails } from '../components/SceneDetails'
 import { StoryTimeline } from '../components/StoryTimeline'
 import { AuthoringAssistant } from '../components/AuthoringAssistant'
 import { StoryGrid } from '../components/StoryGrid'
+import { PacingView } from '../components/PacingView'
 import { ProposalInbox } from '../components/ProposalInbox'
 import { OutlineCatchup } from '../components/OutlineCatchup'
 import { StoryEvaluation } from '../components/StoryEvaluation'
@@ -75,6 +76,7 @@ const CATCHUP_VIEW = 106
 const HISTORY_VIEW = 107
 const EVALUATE_VIEW = 108
 const PLACEHOLDERS_VIEW = 109
+const PACING_VIEW = 110
 
 // One docked side panel; which tabs it offers depends on the mode (Context and Hints belong to Write).
 type RefPanel = 'context' | 'hints' | 'insights' | 'feedback' | 'placeholders' | 'timeline' | 'places' | 'glossary' | 'assistant'
@@ -111,7 +113,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [savedSearchContext] = useState(() => {
     try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' ? JSON.parse(localStorage.getItem(`storytool-search-context:${storyId}`) || '{}') : {} } catch { return {} }
   })
-  const [level, setLevel] = useState(() => initialPosition?.level ?? ([1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW, PLACEHOLDERS_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1))
+  const [level, setLevel] = useState(() => initialPosition?.level ?? ([1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW, PLACEHOLDERS_VIEW, PACING_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1))
   // Levels 1-8 are the Plan; ids from 104 up are full-width Design pages (Grid, History, …).
   const isView = level >= INBOX_VIEW
   const planLevel = useRef(1)
@@ -530,6 +532,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {ladder.data && <Ladder ladder={ladder.data} mode={story.data.authoring_mode as AuthoringMode} activeLevel={level} onSelect={selectLevel} />}
           <h2>Review</h2>
           {viewItem(GRID_VIEW, 'Grid')}
+          {viewItem(PACING_VIEW, 'Pacing')}
           {!sandbox && viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
           {!sandbox && viewItem(CATCHUP_VIEW, 'Catch up')}
           {!sandbox && viewItem(EVALUATE_VIEW, 'Evaluate')}
@@ -543,6 +546,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
           {level === PLACEHOLDERS_VIEW && !sandbox && <section><h2 className="level-title">Placeholders</h2><PlaceholderList storyId={storyId} beforeEdit={() => writerFlush.current()} onOpen={openPassage} /></section>}
           {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} beforeEdit={() => writerFlush.current()} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
+          {level === PACING_VIEW && <section><h2 className="level-title">Pacing</h2><PacingView storyId={storyId} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} /></section>}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
           {level === HISTORY_VIEW && sandboxHistory && <SandboxHistory value={sandboxHistory} />}
           {level === HISTORY_VIEW && !sandbox && <div>

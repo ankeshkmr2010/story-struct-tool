@@ -402,6 +402,13 @@ export default function HowToUse() {
                   It shows read only in the side panel’s place until you close it, stays open while you
                   change chapters, and New window ↗ moves it to its own window, e.g. on a second screen.
                 </Item>
+                <Item title="See the book’s pacing">
+                  Design → Review → Pacing lines up every placed scene in reading order on three rows:
+                  scene length, whether its value shifts (filled dot), stays flat (amber ring) or is not
+                  set (dash), and its point of view, one colour per POV character with a named legend.
+                  Chapter numbers mark where chapters begin. Hover or tab to a scene for its details and
+                  click to open it; Table view lists the same data.
+                </Item>
                 <Item title="Switch between Write, Read, and Design">
                   All three tabs use the same chapters, scenes, and prose. Each story reopens
                   where you left off on any device: the same tab, chapter and position, and Your

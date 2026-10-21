@@ -619,3 +619,9 @@ Not started (reviewer's smaller notes, verified as described unless marked):
   in sessionStorage), picker, New window ↗ (`/stories/:id/beside/:kind/:id`). Opened by
   `openBeside` events from Write right-click ("Open <name> beside" on a defined name, "Open
   scene beside…"), Placeholders, Evaluate findings and search results. Off in the sandbox.
+- [~] Pacing view (2026-10-21, roadmap "Pacing view"): Design → Review → Pacing
+  (`PacingView`): scene length bars (accent), value shift states (dot / amber ring / dash,
+  legend-labelled), POV strip (validated 8-slot categorical order, light/dark steps, Other
+  past 8, named legend), chapter starts, per-scene hover/focus details, click opens the
+  scene, Table view. Palette validated against #f8f0e1 / #1b1c1e (light contrast relief:
+  legend + table). Not yet seen rendered [unverified].
