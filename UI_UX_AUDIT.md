@@ -671,3 +671,11 @@ Items stay [~] until the user confirms them; these record what was verified on p
   "← Back to Pacing" after opening, 6% minimum bar, Beside in Table view.
 - [~] Beside buttons on character and glossary cards; spellcheck off inside [TK] marks;
   one-time Write tip about right-click and ⋯ (dismiss remembered).
+- [~] Draft compare (2026-10-21, roadmap "Draft compare"): `draftDiff.ts` (jsdiff 9.0.0,
+  BSD-3: word diff grouped into changes; merge by per-change choice) and `DraftCompare.tsx`
+  (Changes view with per-change "take earlier" toggles and bulk buttons, Side by side view,
+  Apply = verified save with expected_content and a "Before taking changes from …" snapshot).
+  Entry points: Write → Context → Revisions → Compare (vs current or another snapshot, the
+  latter read-only); Design → History version preview → "Compare prose word by word" for
+  scenes whose content differs (VersionChange now carries `entity_id`). Works in /try.
+  Diff/merge checked in Node; UI not yet seen rendered [unverified].

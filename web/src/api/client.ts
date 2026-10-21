@@ -217,6 +217,7 @@ export const api = {
   listStoryVersions: (id: string) => request<StoryVersion[]>(`/api/stories/${id}/versions`),
   saveStoryVersion: (id: string, label: string) => post<StoryVersion>(`/api/stories/${id}/versions`, { label }),
   previewStoryVersion: (id: string, versionId: string) => request<StoryVersionPreview>(`/api/stories/${id}/versions/${versionId}/preview`),
+  readStoryVersion: (id: string, versionId: string) => request<{ state: { scene?: { id: string; content?: string | null }[] } }>(`/api/stories/${id}/versions/${versionId}?include_prose=true`),
   restoreStoryVersion: (id: string, versionId: string, fingerprint: string) => post<S['VersionRestoreOut']>(`/api/stories/${id}/versions/${versionId}/restore`, { expected_fingerprint: fingerprint }),
   listAIConnections: () => request<AIConnection[]>('/api/ai/connections'),
   saveAIConnection: (body: { provider: AIConnection['provider']; model: string; api_key: string }) => request<AIConnection>('/api/ai/connections', { method: 'PUT', body: JSON.stringify(body) }),

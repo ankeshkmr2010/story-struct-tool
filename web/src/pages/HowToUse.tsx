@@ -403,6 +403,15 @@ export default function HowToUse() {
                   It shows read only in the side panel’s place until you close it, stays open while you
                   change chapters, and New window ↗ moves it to its own window, e.g. on a second screen.
                 </Item>
+                <Item title="Compare drafts and take changes back">
+                  In Write → Context, open Revisions and choose Compare on any snapshot: the scene is
+                  compared word by word with the current text (or with another snapshot), shown as
+                  changes or side by side. Click a change to take the earlier wording, or take them all,
+                  then Apply; the current text is snapshotted first, so this can be undone too. In
+                  Design → History, a whole-story version’s preview offers Compare prose word by word
+                  for any scene whose text differs. Any save that replaces most of a scene keeps the
+                  previous text as a “Before a large change” snapshot.
+                </Item>
                 <Item title="See the book’s pacing">
                   Design → Review → Pacing lines up every placed scene in reading order on three rows:
                   scene length, whether its value shifts (filled dot), stays flat (amber ring) or is not

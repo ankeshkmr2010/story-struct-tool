@@ -236,6 +236,7 @@ def changes(current: dict[str, Any], target: dict[str, Any]) -> tuple[list[Versi
             result.append(
                 VersionChange(
                     entity=kind,
+                    entity_id=str(identifier),
                     title=str(title),
                     action="add" if not before else "remove" if not after else "update",
                     fields=fields,

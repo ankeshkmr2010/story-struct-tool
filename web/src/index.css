@@ -1031,3 +1031,27 @@ ol.showcase-list { list-style: decimal; }
 /* Write's one-time tip about where its actions live. */
 .writer-tip { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: var(--muted); font-size: var(--text-sm); }
 .writer-tip button { color: var(--accent); font-weight: 600; }
+
+/* Draft compare: earlier wording struck through, later wording underlined; taking the earlier
+   wording for a change swaps which side looks chosen. */
+.draft-compare-dialog { width: min(980px, calc(100vw - 32px)); }
+.draft-compare { display: grid; gap: 12px; }
+.draft-compare-against { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--muted); font-size: var(--text-sm); }
+.draft-compare-against select { padding: 4px 8px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--page); color: var(--ink); }
+.draft-compare-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.draft-compare-bar p { margin: 0; color: var(--muted); font-size: var(--text-sm); }
+.draft-compare-views { display: inline-flex; padding: 2px; border: 1px solid var(--line); border-radius: var(--radius-md); }
+.draft-compare-views button { padding: 3px 10px; border-radius: 6px; color: var(--muted); font-size: var(--text-sm); }
+.draft-compare-views button[aria-pressed=true] { background: var(--accent-soft); color: var(--accent); }
+.draft-compare-bulk { display: flex; flex-wrap: wrap; gap: 6px; }
+.draft-compare-text { max-height: 55vh; overflow-y: auto; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); font-family: var(--font-serif); line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+.draft-compare-text del { background: var(--danger-soft); color: var(--danger); text-decoration: line-through; }
+.draft-compare-text ins { background: var(--accent-soft); color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+.draft-change.is-earlier del { color: var(--ink); text-decoration: underline; text-decoration-color: var(--danger); }
+.draft-change.is-earlier ins { opacity: .55; text-decoration: line-through; }
+.draft-change-toggle { margin: 0 4px; padding: 0 6px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-family: var(--font-sans); font-size: var(--text-xs); white-space: nowrap; vertical-align: 1px; }
+.draft-change-toggle[aria-pressed=true] { border-color: var(--danger); color: var(--danger); }
+.draft-compare-side { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.draft-compare-side h3 { margin: 0 0 6px; color: var(--muted); font-size: var(--text-sm); font-weight: 600; }
+@media (max-width: 700px) { .draft-compare-side { grid-template-columns: 1fr; } }
+.draft-compare-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Dialog } from '../ui/Dialog'
+import { DraftCompare } from './DraftCompare'
 import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type StoryVersion } from '../api/client'
 import { errorText } from '../api/errors'
@@ -8,8 +10,10 @@ function counts(version: StoryVersion) {
   return `${Number(version.statistics.word_count ?? 0).toLocaleString()} words · ${items.scene ?? 0} scenes · ${items.beat ?? 0} beats · ${items.event ?? 0} events`
 }
 
-export function StoryVersions({ storyId }: { storyId: string }) {
+export function StoryVersions({ storyId, beforeEdit = async () => true }: { storyId: string; beforeEdit?: () => Promise<boolean> }) {
   const qc = useQueryClient()
+  // Compare one scene's prose in the selected version with its current text.
+  const [compareScene, setCompareScene] = useState<{ id: string; title: string } | null>(null)
   const [label, setLabel] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
@@ -18,6 +22,8 @@ export function StoryVersions({ storyId }: { storyId: string }) {
   const selected = versions.data?.find((version) => version.id === selectedId) ?? versions.data?.[0]
   const preview = useQuery({ queryKey: ['version-preview', storyId, selected?.id], queryFn: () => api.previewStoryVersion(storyId, selected!.id), enabled: Boolean(selected) })
   const refresh = () => void qc.invalidateQueries({ predicate: (query) => query.queryKey.includes(storyId) })
+  const versionProse = useQuery({ queryKey: ['version-prose', storyId, selected?.id], queryFn: () => api.readStoryVersion(storyId, selected!.id), enabled: Boolean(selected && compareScene) })
+  const currentProse = useQuery({ queryKey: ['content', storyId, compareScene?.id], queryFn: () => api.getContent(storyId, compareScene!.id), enabled: Boolean(compareScene) })
   const save = useMutation({ mutationFn: () => api.saveStoryVersion(storyId, label.trim()), onSuccess: (version) => { setSelectedId(version.id); setLabel(''); setMessage(`Saved v${version.number}: ${version.label}`); refresh() } })
   const restore = useMutation({ mutationFn: () => api.restoreStoryVersion(storyId, selected!.id, preview.data!.current_fingerprint), onSuccess: (result) => { setMessage(`Restored v${result.restored_number}. Your previous draft is preserved in recovery v${result.recovery_version.number}.`); refresh() } })
   return <div>
@@ -41,7 +47,7 @@ export function StoryVersions({ storyId }: { storyId: string }) {
             {preview.isPending && <p className="text-sm text-slate-500 dark:text-slate-400">Comparing this version with the working draft…</p>}
             {preview.isError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(preview.error)}</p>}
             {preview.data && <><h3 className="text-base font-semibold">Restore preview · v{preview.data.version.number}</h3><p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{preview.data.change_count === 0 ? 'This version matches the current story.' : `${preview.data.change_count} changes would restore this version.`}</p>
-              <div className="mt-3 max-h-[22rem] space-y-2 overflow-y-auto">{preview.data.changes.map((change, index) => <details key={index} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3"><summary className="cursor-pointer break-words text-sm"><span className="capitalize text-emerald-700 dark:text-emerald-300">{change.action} {change.entity.replaceAll('_', ' ')}</span> · {change.title}</summary><dl className="mt-2 space-y-2">{[...new Set([...Object.keys(change.before), ...Object.keys(change.after)])].map((field) => <div key={field} className="break-words text-xs leading-5"><dt className="font-medium capitalize text-slate-600 dark:text-slate-300">{field.replace(/_id$/, '').replaceAll('_', ' ')}</dt><dd className="whitespace-pre-wrap text-slate-500 dark:text-slate-400">{change.before[field] ?? 'Not set'} → {change.after[field] ?? 'Not set'}</dd></div>)}</dl></details>)}</div>
+              <div className="mt-3 max-h-[22rem] space-y-2 overflow-y-auto">{preview.data.changes.map((change, index) => <details key={index} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3"><summary className="cursor-pointer break-words text-sm"><span className="capitalize text-emerald-700 dark:text-emerald-300">{change.action} {change.entity.replaceAll('_', ' ')}</span> · {change.title}</summary><dl className="mt-2 space-y-2">{[...new Set([...Object.keys(change.before), ...Object.keys(change.after)])].map((field) => <div key={field} className="break-words text-xs leading-5"><dt className="font-medium capitalize text-slate-600 dark:text-slate-300">{field.replace(/_id$/, '').replaceAll('_', ' ')}</dt><dd className="whitespace-pre-wrap text-slate-500 dark:text-slate-400">{change.before[field] ?? 'Not set'} → {change.after[field] ?? 'Not set'}</dd></div>)}</dl>{change.entity === 'scene' && change.action === 'update' && change.entity_id && change.fields?.includes('content') && <button type="button" className="mt-2 text-xs underline" onClick={() => setCompareScene({ id: change.entity_id!, title: change.title })}>Compare prose word by word</button>}</details>)}</div>
               {preview.data.change_count > preview.data.changes.length && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Showing the first {preview.data.changes.length} changes. Restore applies the complete version.</p>}
               <p className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-950 p-3 text-xs leading-5 text-amber-900 dark:text-amber-300">Restoring replaces the working draft's story state. A recovery checkpoint is saved first, so you can return to the draft you have now. Old AI edit plans are superseded; conversation history is kept.</p>
               <div className="mt-3 flex flex-wrap gap-3"><button type="button" onClick={() => void preview.refetch()} disabled={restore.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm">Refresh preview</button><button type="button" onClick={() => restore.mutate()} disabled={pending > 0 || preview.isFetching || preview.data.change_count === 0} className="rounded bg-emerald-700 px-4 py-2 text-sm text-white disabled:opacity-40">{restore.isPending ? 'Restoring…' : 'Restore this version'}</button></div>
@@ -49,5 +55,19 @@ export function StoryVersions({ storyId }: { storyId: string }) {
             {restore.isError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(restore.error)}</p>}
           </section>
         </div>}
+    <Dialog open={compareScene !== null} onClose={() => setCompareScene(null)} title={compareScene ? `${compareScene.title}: v${selected?.number ?? ''} and now` : 'Compare'} className="draft-compare-dialog">
+      {compareScene && (versionProse.isPending || currentProse.isPending ? <p className="writer-help">Loading both drafts…</p>
+        : versionProse.error || currentProse.error ? <p role="alert">{errorText(versionProse.error ?? currentProse.error)}</p>
+        : <DraftCompare
+          key={`${selected?.id}:${compareScene.id}`}
+          storyId={storyId}
+          sceneId={compareScene.id}
+          earlier={{ label: `v${selected?.number ?? ''}`, text: versionProse.data?.state.scene?.find(scene => scene.id === compareScene.id)?.content ?? '' }}
+          later={{ label: 'current text', text: currentProse.data?.content ?? '' }}
+          laterIsCurrent
+          beforeEdit={beforeEdit}
+          onApplied={() => { setCompareScene(null); refresh() }}
+        />)}
+    </Dialog>
   </div>
 }

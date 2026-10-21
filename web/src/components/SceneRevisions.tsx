@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type SceneRevision } from '../api/client'
 import { errorText } from '../api/errors'
+import { Dialog } from '../ui/Dialog'
+import { DraftCompare } from './DraftCompare'
 
 /**
  * Prose snapshots for one scene. Restoring is itself undoable: the API snapshots the
@@ -21,6 +23,9 @@ export function SceneRevisions({
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
   const [previewId, setPreviewId] = useState<string | null>(null)
+  // Compare one snapshot with the current text (changes can be taken) or another snapshot.
+  const [compareId, setCompareId] = useState<string | null>(null)
+  const [against, setAgainst] = useState<string>('current')
   const key = ['revisions', storyId, sceneId]
   const revisions = useQuery({ queryKey: key, queryFn: () => api.listRevisions(storyId, sceneId), enabled: open })
 
@@ -51,6 +56,10 @@ export function SceneRevisions({
     },
   })
 
+  const current = useQuery({ queryKey: ['content', storyId, sceneId], queryFn: () => api.getContent(storyId, sceneId), enabled: compareId !== null })
+  const label = (revision: SceneRevision) => `${revision.label || 'Snapshot'}, ${new Date(revision.created_at).toLocaleString()}`
+  const comparing = revisions.data?.find(revision => revision.id === compareId)
+  const other = against === 'current' ? null : revisions.data?.find(revision => revision.id === against)
   const error = snapshot.error ?? restore.error ?? revisions.error
   return (
     <details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/60 px-3 py-2 text-xs" onToggle={(e) => setOpen(e.currentTarget.open)}>
@@ -80,6 +89,9 @@ export function SceneRevisions({
                   <button type="button" onClick={() => setPreviewId(previewId === revision.id ? null : revision.id)} className="text-slate-500 dark:text-slate-400 hover:underline">
                     {previewId === revision.id ? 'Hide' : 'Preview'}
                   </button>
+                  <button type="button" onClick={() => { setAgainst('current'); setCompareId(revision.id) }} className="text-slate-500 dark:text-slate-400 hover:underline">
+                    Compare
+                  </button>
                   <button type="button" disabled={restore.isPending} onClick={() => restore.mutate(revision)} className="text-slate-500 dark:text-slate-400 hover:underline disabled:opacity-40">
                     Restore
                   </button>
@@ -90,6 +102,28 @@ export function SceneRevisions({
           ))}
         </ul>
       </div>
+      <Dialog open={comparing !== undefined} onClose={() => setCompareId(null)} title="Compare drafts" className="draft-compare-dialog">
+        {comparing && <>
+          <label className="draft-compare-against">Compare {label(comparing)} with
+            <select value={against} onChange={event => setAgainst(event.target.value)}>
+              <option value="current">the current text</option>
+              {revisions.data?.filter(revision => revision.id !== comparing.id).map(revision => <option key={revision.id} value={revision.id}>{label(revision)}</option>)}
+            </select>
+          </label>
+          {against === 'current' && current.isPending ? <p className="writer-help">Loading the current text…</p>
+            : current.error && against === 'current' ? <p role="alert">{errorText(current.error)}</p>
+            : <DraftCompare
+              key={`${comparing.id}:${against}`}
+              storyId={storyId}
+              sceneId={sceneId}
+              earlier={{ label: comparing.label || 'this snapshot', text: comparing.content ?? '' }}
+              later={other ? { label: other.label || 'the other snapshot', text: other.content ?? '' } : { label: 'current text', text: current.data?.content ?? '' }}
+              laterIsCurrent={!other}
+              beforeEdit={flush}
+              onApplied={text => { onRestored(text); setCompareId(null) }}
+            />}
+        </>}
+      </Dialog>
     </details>
   )
 }

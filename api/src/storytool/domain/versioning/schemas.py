@@ -21,6 +21,8 @@ class VersionOut(BaseModel):
 
 class VersionChange(BaseModel):
     entity: str
+    entity_id: str | None = None
+    """The changed entity's id (none for link changes), e.g. to compare a scene's prose."""
     title: str
     action: str
     fields: list[str] = Field(default_factory=list)

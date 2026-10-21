@@ -5313,7 +5313,7 @@ export interface components {
         TryEventsIn: {
             /** Format: uuid */
             visitor_id: string;
-            events: ("try_start" | "try_step_1" | "try_step_2" | "try_step_3" | "try_step_4" | "try_step_5" | "try_step_6" | "try_skip" | "try_keep_click" | "try_imported")[];
+            events: ("try_start" | "try_step_1" | "try_step_2" | "try_step_3" | "try_step_4" | "try_step_5" | "try_step_6" | "try_step_7" | "try_skip" | "try_keep_click" | "try_imported")[];
         };
         /** UploadOut */
         UploadOut: {
@@ -5423,6 +5423,7 @@ export interface components {
         /** VersionChange */
         VersionChange: {
             entity: string;
+            entity_id?: string | null;
             title: string;
             action: string;
             fields?: string[];
