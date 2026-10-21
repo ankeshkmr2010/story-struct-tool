@@ -41,6 +41,7 @@ def frontend_router(directory: Path) -> Router:
             "/stories/{story_id:uuid}/images",
             "/stories/{story_id:uuid}/beta",
             "/stories/{story_id:uuid}/polls",
+            "/stories/{story_id:uuid}/beside/{kind:str}/{item_id:uuid}",
             "/beta/join/{token:str}",
             "/beta/rounds/{round_id:uuid}",
             "/beta/rounds/{round_id:uuid}/threads/{thread_id:uuid}",
@@ -56,6 +57,8 @@ def frontend_router(directory: Path) -> Router:
         round_id: UUID | None = None,
         thread_id: UUID | None = None,
         feature: Path | None = None,
+        kind: str | None = None,
+        item_id: UUID | None = None,
     ) -> Response[str]:
         metadata = await preview_metadata(db_session, request.url.path, token)
         return Response(
