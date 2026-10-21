@@ -24,6 +24,7 @@ import { writerPlaceholders } from './writerPlaceholders'
 import { openBeside, type BesideItem } from './beside'
 
 type Named = { label: string; item: BesideItem }
+const WRITE_TIP_KEY = 'storytool-write-tip'
 
 const imageMarkdown = (image: StoryImage) => `![${image.alt.replace(/[\]\n]/g, ' ')}](storytool-image:${image.id})`
 const proseWords = (text: string) => text.replace(/!\[[^\]\n]*\]\(storytool-image:[0-9a-fA-F-]{36}\)/g, '').trim().split(/\s+/).filter(Boolean).length
@@ -31,6 +32,9 @@ const proseWords = (text: string) => text.replace(/!\[[^\]\n]*\]\(storytool-imag
 export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusChange, contextSlot, hintsSlot, liveHints, initialChapter, onChapterChange }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number; find?: string; paragraph?: number } | null; focus: boolean; onFocusChange: (focus: boolean) => void; contextSlot?: HTMLElement | null; hintsSlot?: HTMLElement | null; liveHints: boolean; initialChapter?: string | null; onChapterChange?: (id: string) => void }) {
   const qc = useQueryClient()
   const me = useQuery({ queryKey: [storyId === SANDBOX_ID ? 'sandbox-me' : 'me'], queryFn: api.currentUser })
+  // Write has no toolbar, so say once where its actions live; dismissing it is remembered.
+  const [tipShown, setTipShown] = useState(() => { try { return localStorage.getItem(WRITE_TIP_KEY) !== 'dismissed' } catch { return false } })
+  const dismissTip = () => { setTipShown(false); try { localStorage.setItem(WRITE_TIP_KEY, 'dismissed') } catch { /* Optional browser storage. */ } }
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
   const prefix = `storytool-writer:${me.data?.id}:${storyId}:`
@@ -164,6 +168,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
 
   return <div className={`story-writer ${focus ? 'writer-focus' : ''}`}>
     {focus && <div className="writer-toolbar"><span className="writer-toolbar-spacer" /><button type="button" onClick={() => onFocusChange(false)}>Exit focus</button></div>}
+    {tipShown && !focus && <p className="writer-tip" role="note"><span>Tip: right-click the prose, or select text and click <strong>⋯</strong>, for editing actions, Insert image, Add TK here and Open beside.</span><button type="button" onClick={dismissTip}>Got it</button></p>}
     {error && <p role="alert" className="writer-error">{error}</p>}
     <div className={`writer-layout ${!showNavigation || focus ? 'writer-no-navigation' : ''}`}>
       {!focus && <nav aria-label="Manuscript chapters" className={`writer-navigation ${showNavigation ? 'writer-navigation-open' : ''}`}>
@@ -229,9 +234,9 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   const [selectionChip, setSelectionChip] = useState<{ x: number; y: number } | null>(null)
   const menu = useRef<HTMLDivElement>(null)
   const images = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: storyId !== SANDBOX_ID })
-  const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId), enabled: storyId !== SANDBOX_ID })
-  const locations = useQuery({ queryKey: ['locations', storyId], queryFn: () => api.listLocations(storyId), enabled: storyId !== SANDBOX_ID })
-  const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId), enabled: storyId !== SANDBOX_ID })
+  const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId) })
+  const locations = useQuery({ queryKey: ['locations', storyId], queryFn: () => api.listLocations(storyId) })
+  const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId) })
   // Right-clicking a defined name offers to open it beside the manuscript.
   const nameAt = (editor: EditorView, at: number | null): Named | null => {
     if (at === null) return null
@@ -402,9 +407,9 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
         buttons[(index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length]?.focus()
       }
     }}>
-      {storyId !== SANDBOX_ID && <button type="button" role="menuitem" onClick={addPlaceholder}>Add TK here</button>}
-      {storyId !== SANDBOX_ID && context.named && <button type="button" role="menuitem" onClick={() => { openBeside(context.named!.item); setContext(null) }}>Open {context.named.label} beside</button>}
-      {storyId !== SANDBOX_ID && <button type="button" role="menuitem" onClick={() => { openBeside({ kind: 'pick' }); setContext(null) }}>Open scene beside…</button>}
+      <button type="button" role="menuitem" onClick={addPlaceholder}>Add TK here</button>
+      {context.named && <button type="button" role="menuitem" onClick={() => { openBeside(context.named!.item); setContext(null) }}>Open {context.named.label} beside</button>}
+      <button type="button" role="menuitem" onClick={() => { openBeside({ kind: 'pick' }); setContext(null) }}>Open scene beside…</button>
       <button type="button" role="menuitem" onClick={() => { const anchor = context; setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor(anchor) }}>Insert image…</button>
       {(['cut', 'copy', 'paste', 'select'] as const).map(action => <button type="button" role="menuitem" key={action} disabled={(action === 'cut' || action === 'copy') && !context.hasSelection} onClick={() => { void editClipboard(action) }}>{({ cut: 'Cut', copy: 'Copy', paste: 'Paste', select: 'Select all' })[action]}</button>)}
       <a role="menuitem" href="https://emojidb.org/" target="_blank" rel="noopener noreferrer" onClick={() => setContext(null)}>Find emojis ↗</a>

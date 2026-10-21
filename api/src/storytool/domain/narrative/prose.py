@@ -76,6 +76,30 @@ class SaveResult:
     annotations_orphaned: int
 
 
+LARGE_CHANGE_SHARE = 0.5
+LARGE_CHANGE_MIN_CHARS = 200
+LARGE_CHANGE_LABEL = "Before a large change"
+
+
+def replaces_most_of(previous: str | None, content: str | None) -> bool:
+    """True when a save removes or rewrites more than half of substantial existing prose.
+
+    Measured as the old text outside the longest unchanged start and end, so typing,
+    appending and local edits never count, while a pasted-over or regenerated scene does.
+    """
+    old, new = previous or "", content or ""
+    if len(old) < LARGE_CHANGE_MIN_CHARS or old == new:
+        return False
+    limit = min(len(old), len(new))
+    start = 0
+    while start < limit and old[start] == new[start]:
+        start += 1
+    end = 0
+    while end < limit - start and old[-1 - end] == new[-1 - end]:
+        end += 1
+    return (len(old) - start - end) / len(old) > LARGE_CHANGE_SHARE
+
+
 async def save_scene_content(
     session: AsyncSession,
     scene: Scene,
@@ -87,10 +111,14 @@ async def save_scene_content(
     """Write prose, recompute the word-count cache, and keep annotations anchored.
 
     `snapshot` captures the *previous* content, so a revision is what the scene looked like
-    before this save -- which is what an author reaching for history actually wants.
+    before this save -- which is what an author reaching for history actually wants. A save
+    that replaces most of a scene always snapshots first, whoever asked for it (Write, an
+    agent, an import or a fix), so a scene can never be lost to one large replacement.
     """
     previous = scene.content
     unchanged = previous == content
+    if not snapshot and replaces_most_of(previous, content):
+        snapshot, snapshot_label = True, LARGE_CHANGE_LABEL
 
     revision_created = False
     if snapshot and not unchanged and previous:
@@ -194,8 +222,11 @@ SCENE_SEPARATOR = "\n\n* * *\n\n"
 
 
 def compile_manuscript(
-    graph: StoryGraph, *, include_unplaced: bool = True,
-    author_name: str | None = None, include_planning: bool = True,
+    graph: StoryGraph,
+    *,
+    include_unplaced: bool = True,
+    author_name: str | None = None,
+    include_planning: bool = True,
 ) -> str:
     """Assemble the manuscript as Markdown, in reading order.
 
@@ -217,8 +248,10 @@ def compile_manuscript(
     for chapter in sorted(graph.chapters, key=chapter_order_key):
         scenes = sorted(by_chapter.get(chapter.id, []), key=scene_order_key)
         written = [s for s in scenes if (s.content or "").strip()]
-        if not include_planning and not written and not any(
-            (chapter.epigraph, chapter.opening_note, chapter.closing_note)
+        if (
+            not include_planning
+            and not written
+            and not any((chapter.epigraph, chapter.opening_note, chapter.closing_note))
         ):
             continue
         heading = f"## Chapter {chapter.number}"

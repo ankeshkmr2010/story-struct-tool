@@ -654,3 +654,20 @@ Items stay [~] until the user confirms them; these record what was verified on p
 - Pacing (Red-Headed League, dark): 6 scenes, chapter starts 1-3, bars proportional to
   word counts (134 to 4,866), POV strip and legend (Watson), focus details, table view (6
   rows), click opens Scene 5 in Design; no horizontal scroll.
+
+## Reviewer round 3 — 2026-10-21 (accepted suggestions; awaiting deploy + user check)
+
+- [~] Snapshot before large replacement: `prose.save_scene_content` snapshots the previous
+  text whenever a save replaces more than half of 200+ characters (all write paths: Write,
+  agents, fixes, images, imports, restores); label "Before a large change". The sandbox
+  adapter applies the same rule (`sandbox/checks.ts replacesMostOf`). Tests:
+  `test_large_change.py` 3 passed (pure); DB-backed save path not run [unverified].
+- [~] /try shows the newest features: TKs tab and Design → Placeholders, Evaluate with two
+  browser-side checks (`sandbox/checks.ts`: TK placeholders; Smart consistency for names
+  against the cast), Beside panel (no New window), Add TK here, search Open beside. The seed
+  now has one TK (scene 2) and one "Maia" (scene 3); sandboxes created before this deploy keep
+  the old text until Reset sandbox. Checked against the seed in Node.
+- [~] Pacing: click selects a scene (Open scene / Open beside / Clear), double-click opens,
+  "← Back to Pacing" after opening, 6% minimum bar, Beside in Table view.
+- [~] Beside buttons on character and glossary cards; spellcheck off inside [TK] marks;
+  one-time Write tip about right-click and ⋯ (dismiss remembered).

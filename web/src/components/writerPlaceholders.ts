@@ -5,7 +5,7 @@ const PLACEHOLDER = /\[tk(?:[ \t]*:[ \t]*[^\]\n]*)?\]/gi
 
 const mark = Decoration.mark({
   class: 'writer-tk',
-  attributes: { title: 'Placeholder: fill it in place, or from the TKs tab or Design → Placeholders' },
+  attributes: { title: 'Placeholder: fill it in place, or from the TKs tab or Design → Placeholders', spellcheck: 'false' },
 })
 
 /** Highlights [TK] and [TK: note] in the prose so unfinished details stand out while writing. */

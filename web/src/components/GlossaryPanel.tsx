@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type GlossaryUpdate } from '../api/client'
 import { errorText } from '../api/errors'
 import { DeleteButton, InlineSelect, InlineText } from './fields'
+import { OpenBesideButton } from './BesidePanel'
 
 export function GlossaryPanel({ storyId }: { storyId: string }) {
   const qc = useQueryClient()
@@ -28,7 +29,7 @@ export function GlossaryPanel({ storyId }: { storyId: string }) {
     <div className="mt-5 space-y-4">{entries.data?.map(item => {
       const save = (body: GlossaryUpdate) => update.mutateAsync({ id: item.id, body })
       return <article key={item.id} id={`search-glossary_entry-${item.id}`} className="scroll-mt-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex items-start gap-3"><label className="min-w-0 flex-1 text-xs text-slate-500 dark:text-slate-400">Term<InlineText value={item.term} placeholder="Term" onSave={term => term ? save({ term }) : Promise.reject(new Error('Term is required'))} className="font-semibold" /></label><DeleteButton what={`glossary entry “${item.term}”`} onConfirm={() => remove.mutateAsync(item.id)} /></div>
+        <div className="flex items-start gap-3"><label className="min-w-0 flex-1 text-xs text-slate-500 dark:text-slate-400">Term<InlineText value={item.term} placeholder="Term" onSave={term => term ? save({ term }) : Promise.reject(new Error('Term is required'))} className="font-semibold" /></label><OpenBesideButton item={{ kind: 'glossary_entry', id: item.id }} label={item.term} /><DeleteButton what={`glossary entry “${item.term}”`} onConfirm={() => remove.mutateAsync(item.id)} /></div>
         <div className="mt-3 space-y-3">
           <label className="block text-xs text-slate-500 dark:text-slate-400">Aliases (one per line)<InlineText value={item.aliases?.join('\n') ?? null} placeholder="Other names, spellings, or formal titles" multiline onSave={value => save({ aliases: value?.split('\n').map(alias => alias.trim()).filter(Boolean) ?? [] })} /></label>
           <label className="block text-xs text-slate-500 dark:text-slate-400">Definition<InlineText value={item.definition} placeholder="What does this term mean in your story?" multiline onSave={definition => save({ definition })} /></label>

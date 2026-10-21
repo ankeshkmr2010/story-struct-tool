@@ -3,6 +3,7 @@ import { OriginSummary } from './AuthorshipPanel'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { AddForm, Chip, DeleteButton, InlineSelect, InlineText } from './fields'
+import { OpenBesideButton } from './BesidePanel'
 import { HelpTip } from './HelpTip'
 import { ReferenceImages } from './StoryImages'
 
@@ -137,6 +138,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                   placeholder="— arc —"
                 />
                 <Chip complete={character.completeness.is_complete} missing={character.completeness.missing} />
+                <OpenBesideButton item={{ kind: 'character', id: character.id }} label={character.name} />
                 <DeleteButton onConfirm={() => remove.mutate(character.id)} what="character" />
               </div>
 

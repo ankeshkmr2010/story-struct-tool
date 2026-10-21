@@ -95,7 +95,7 @@ function SavedWorkspace({ storyId }: { storyId: string }) {
 
 export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, initialPosition, syncPosition = false }: { storyId: string; sandboxStep?: number; sandboxRun?: number; sandboxHistory?: Sandbox; initialPosition?: WorkspacePlace | null; syncPosition?: boolean }) {
   const sandbox = storyId === SANDBOX_ID
-  const placeholders = usePlaceholders(storyId, !sandbox)
+  const placeholders = usePlaceholders(storyId)
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, enabled: !sandbox })
   const placeholderCount = placeholders.data?.findings.length ?? 0
   const openFeedback = useQuery({ queryKey: ['beta-feedback', storyId, 'open'], queryFn: () => api.betaFeedback(storyId), enabled: !sandbox, refetchInterval: 60_000 })
@@ -136,6 +136,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [writerOpened, setWriterOpened] = useState(tab === 'write')
   const [readerResume, setReaderResume] = useState(initialPosition?.reading)
   const [tabError, setTabError] = useState<string | null>(null)
+  // Opening a scene from Pacing offers the way back while that scene stays open.
+  const [backToPacing, setBackToPacing] = useState(false)
   const writerFlush = useRef<() => Promise<boolean>>(async () => true)
   const registerFlush = useCallback((flush: () => Promise<boolean>) => { writerFlush.current = flush }, [])
   const changeTab = async (next: 'write' | 'read' | 'design') => {
@@ -172,7 +174,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [searchParams] = useSearchParams()
   const handledSearchTarget = useRef('')
   const navigate = useNavigate()
-  const panelTabs = REF_PANELS.filter(([key]) => key === 'context' || key === 'hints' ? tab === 'write' : key === 'placeholders' ? tab === 'write' && !sandbox : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' || key === 'feedback' ? !sandbox : true)
+  const panelTabs = REF_PANELS.filter(([key]) => key === 'context' || key === 'hints' ? tab === 'write' : key === 'placeholders' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' || key === 'feedback' ? !sandbox : true)
   const modePanel: RefPanel | null = tab === 'write' ? 'context' : tab === 'design' && !sandbox ? 'insights' : null
   const preferredPanel = panelTabs.some(([key]) => key === refPanel) ? refPanel : modePanel
   const activePanel = panelHidden ? null : preferredPanel
@@ -187,12 +189,11 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
     try { if (target && target.kind !== 'pick') sessionStorage.setItem(besideKey, JSON.stringify(target)); else sessionStorage.removeItem(besideKey) } catch { /* Optional browser storage. */ }
   }
   useEffect(() => {
-    if (sandbox) return
     const open = (event: Event) => setBeside((event as CustomEvent<BesideTarget>).detail)
     window.addEventListener(OPEN_BESIDE_EVENT, open)
     return () => window.removeEventListener(OPEN_BESIDE_EVENT, open)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storyId, sandbox])
+  }, [storyId])
   const hasPanel = Boolean(activePanel) || Boolean(beside)
   const [writerFocus, setWriterFocus] = useState(false)
   const [liveHints, setLiveHints] = useState(false)
@@ -535,8 +536,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {viewItem(PACING_VIEW, 'Pacing')}
           {!sandbox && viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
           {!sandbox && viewItem(CATCHUP_VIEW, 'Catch up')}
-          {!sandbox && viewItem(EVALUATE_VIEW, 'Evaluate')}
-          {!sandbox && viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>Placeholders<span className="workspace-nav-badge" aria-label={`${placeholderCount} left`}>{placeholderCount}</span></> : 'Placeholders')}
+          {viewItem(EVALUATE_VIEW, 'Evaluate')}
+          {viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>Placeholders<span className="workspace-nav-badge" aria-label={`${placeholderCount} left`}>{placeholderCount}</span></> : 'Placeholders')}
           {viewItem(HISTORY_VIEW, 'History')}
         </nav>
         <div className="min-w-0">
@@ -544,9 +545,10 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         <section ref={levelSection} id="story-search-design-section" className="min-w-0 scroll-mt-4">
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
-          {level === PLACEHOLDERS_VIEW && !sandbox && <section><h2 className="level-title">Placeholders</h2><PlaceholderList storyId={storyId} beforeEdit={() => writerFlush.current()} onOpen={openPassage} /></section>}
+          {level === PLACEHOLDERS_VIEW && <section><h2 className="level-title">Placeholders</h2><PlaceholderList storyId={storyId} beforeEdit={() => writerFlush.current()} onOpen={openPassage} /></section>}
           {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} beforeEdit={() => writerFlush.current()} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
-          {level === PACING_VIEW && <section><h2 className="level-title">Pacing</h2><PacingView storyId={storyId} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} /></section>}
+          {level === PACING_VIEW && <section><h2 className="level-title">Pacing</h2><PacingView storyId={storyId} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8); setBackToPacing(true) }} /></section>}
+          {level === 8 && backToPacing && <button type="button" className="ws-back-link" onClick={() => { setBackToPacing(false); setLevel(PACING_VIEW) }}>← Back to Pacing</button>}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
           {level === HISTORY_VIEW && sandboxHistory && <SandboxHistory value={sandboxHistory} />}
           {level === HISTORY_VIEW && !sandbox && <div>

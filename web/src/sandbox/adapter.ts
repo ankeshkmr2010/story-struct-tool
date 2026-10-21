@@ -1,4 +1,5 @@
 import { rows, SANDBOX_ID, transact, type Row, type Sandbox } from './storage'
+import { replacesMostOf, sandboxEvaluation } from './checks'
 
 const kinds: Record<string, string> = { characters: 'character', relationships: 'relationship', arcs: 'arc', stages: 'arc_stage', acts: 'act', beats: 'beat', threads: 'thread', chapters: 'chapter', scenes: 'scene', events: 'event', locations: 'location', glossary: 'glossary_entry' }
 const required: Record<string, string[]> = { story: ['title', 'premise'], character: ['name', 'role', 'want', 'need'], arc: ['resolution'], arc_stage: ['label'], act: ['summary'], beat: ['label'], thread: ['type'], chapter: ['title'], scene: ['summary', 'goal', 'conflict', 'outcome'], event: ['label'], location: ['name'], glossary_entry: ['term'] }
@@ -57,13 +58,14 @@ function search(s: Sandbox, params: URLSearchParams) {
   return { items: hits.slice(offset, offset + 30), next_offset: hits.length > offset + 30 ? offset + 30 : null, semantic_available: false, indexing: false }
 }
 export function isSandboxRequest(path: string) {
-  return path.startsWith(`/api/stories/${SANDBOX_ID}`) || (location.pathname === '/try' && (path.startsWith('/api/arcs/') || path === '/api/auth/me'))
+  return path.startsWith(`/api/stories/${SANDBOX_ID}`) || (location.pathname === '/try' && (path.startsWith('/api/arcs/') || path === '/api/auth/me' || path === '/api/noticing'))
 }
 export async function sandboxRequest(path: string, init?: RequestInit): Promise<unknown> {
   const url = new URL(path, location.origin)
   const method = init?.method ?? 'GET'
   const body = init?.body ? JSON.parse(String(init.body)) as Row : {}
   if (path === '/api/auth/me') return { id: SANDBOX_ID, name: 'You', email: '', author_name: null, language: 'en-US' }
+  if (path === '/api/noticing') return { noticer: 'deterministic', model: null, claude_available: false, jev_available: false, shared: false }
   return transact(s => {
     if (method !== 'GET' && s.imported) {
       s.importId = crypto.randomUUID()
@@ -93,6 +95,7 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
     if (collection === 'progress') { const scenes = rows(s, 'scene'); return { word_count: scenes.reduce((sum, scene) => sum + wordCount(scene.content), 0), scene_count: scenes.length, drafted_scene_count: scenes.filter(scene => scene.content).length, chapters: [] } }
     if (collection === 'authorship') return s.edits.slice().reverse().map(edit => ({ entity_type: 'scene', entity_id: edit.scene_id, field: 'content', actor_label: 'You', origin: 'author', action: 'update', created_at: edit.created_at }))
     if (collection === 'ai' || collection === 'suggestions') return []
+    if (collection === 'evaluations' && method === 'GET') return sandboxEvaluation(s, id)
     if (collection === 'locations' && id === 'usage') return rows(s, 'location').map(place => {
       const scenes = rows(s, 'scene').filter(scene => scene.location_id === place.id)
       const times = scenes.map(scene => scene.story_time_ordinal).filter((time): time is number => typeof time === 'number')
@@ -123,6 +126,8 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
       if (method === 'GET') return { scene_id: id, content: row.content ?? null, word_count: wordCount(row.content) }
       if ('expected_content' in body && String(row.content ?? '') !== String(body.expected_content ?? '')) throw new Error('Your scene changed in another tab. Reload the saved draft before retrying.')
       const revisions = rows(s, 'scene_revision')
+      // As on the server: replacing most of a scene always keeps the previous text first.
+      if (!body.snapshot && replacesMostOf(String(row.content ?? ''), String(body.content ?? ''))) { body.snapshot = true; body.snapshot_label = 'Before a large change' }
       if (body.snapshot) { revisions.push({ id: crypto.randomUUID(), scene_id: id, content: row.content, label: body.snapshot_label ?? 'Writing checkpoint', word_count: wordCount(row.content), created_at: new Date().toISOString() }); s.backup.state.scene_revision = revisions }
       row.content = body.content; row.updated_at = new Date().toISOString(); story.updated_at = row.updated_at
       s.editedScene = id; s.edits.push({ scene_id: id, content: String(body.content ?? ''), created_at: String(row.updated_at) })

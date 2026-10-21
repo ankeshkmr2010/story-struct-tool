@@ -398,7 +398,8 @@ export default function HowToUse() {
                 <Item title="Check a detail beside the manuscript">
                   Right-click in Write and choose Open scene beside… to pick a scene, character, place,
                   glossary term or image; right-click a defined name (a character, place or term) to open
-                  it directly. Placeholders, Evaluate findings and search results also offer Open beside.
+                  it directly. Character and glossary cards, Pacing, placeholders, Evaluate findings and
+                  search results also offer Open beside.
                   It shows read only in the side panel’s place until you close it, stays open while you
                   change chapters, and New window ↗ moves it to its own window, e.g. on a second screen.
                 </Item>
@@ -406,8 +407,9 @@ export default function HowToUse() {
                   Design → Review → Pacing lines up every placed scene in reading order on three rows:
                   scene length, whether its value shifts (filled dot), stays flat (amber ring) or is not
                   set (dash), and its point of view, one colour per POV character with a named legend.
-                  Chapter numbers mark where chapters begin. Hover or tab to a scene for its details and
-                  click to open it; Table view lists the same data.
+                  Chapter numbers mark where chapters begin. Hover or tab to a scene for its details; click to select it
+                  and choose Open scene (with a way back to the chart) or Open beside. Table view lists
+                  the same data.
                 </Item>
                 <Item title="Switch between Write, Read, and Design">
                   All three tabs use the same chapters, scenes, and prose. Each story reopens

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { errorText } from '../api/errors'
-import { besideUrl, type BesideItem, type BesideKind, type BesideTarget } from './beside'
+import { besideUrl, openBeside, type BesideItem, type BesideKind, type BesideTarget } from './beside'
+import { SANDBOX_ID } from '../sandbox/storage'
 
 const KIND_LABELS: Record<BesideKind, string> = { scene: 'Scene', character: 'Character', location: 'Place', glossary_entry: 'Glossary', image: 'Image' }
 const IMAGE = /!\[([^\]\n]*)\]\([^\n)]*\)/g
@@ -14,7 +15,7 @@ function useBesideSources(storyId: string) {
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId) })
   const locations = useQuery({ queryKey: ['locations', storyId], queryFn: () => api.listLocations(storyId) })
   const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId) })
-  const images = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId) })
+  const images = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: storyId !== SANDBOX_ID })
   return { scenes, chapters, characters, locations, glossary, images }
 }
 type Sources = ReturnType<typeof useBesideSources>
@@ -82,6 +83,11 @@ function Picker({ sources, onPick }: { sources: Sources; onPick: (item: BesideIt
   </div>
 }
 
+/** A small "Beside" button for cards and lists: shows the item read-only next to the manuscript. */
+export function OpenBesideButton({ item, label }: { item: BesideItem; label: string }) {
+  return <button type="button" className="open-beside-button" title={`Show ${label} read-only beside the manuscript`} aria-label={`Open ${label} beside the manuscript`} onClick={() => openBeside(item)}>Beside</button>
+}
+
 /**
  * A read-only view of one scene, character, place, glossary entry or image beside the
  * manuscript, for checking a detail while writing. Nothing here edits the story.
@@ -99,7 +105,7 @@ export function BesidePanel({ storyId, target, onChange, onClose }: {
       <div className="min-w-0"><p className="beside-meta">{item ? KIND_LABELS[item.kind] : 'Open beside'} · read only</p><h2>{item ? itemTitle(sources, item) : 'Choose what to show'}</h2></div>
       <div className="beside-actions">
         {item && <button type="button" onClick={() => onChange({ kind: 'pick' })}>Change</button>}
-        {item && <a href={besideUrl(storyId, item)} target="_blank" rel="noopener noreferrer" title="Open in a new window, e.g. on a second screen">New window ↗</a>}
+        {item && storyId !== SANDBOX_ID && <a href={besideUrl(storyId, item)} target="_blank" rel="noopener noreferrer" title="Open in a new window, e.g. on a second screen">New window ↗</a>}
         {onClose && <button type="button" aria-label="Close the beside panel" onClick={onClose}>✕</button>}
       </div>
     </header>
