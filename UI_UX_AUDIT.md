@@ -679,3 +679,14 @@ Items stay [~] until the user confirms them; these record what was verified on p
   latter read-only); Design → History version preview → "Compare prose word by word" for
   scenes whose content differs (VersionChange now carries `entity_id`). Works in /try.
   Diff/merge checked in Node; UI not yet seen rendered [unverified].
+- 2026-10-22 (deploy 8e266ad), by Claude in Chrome:
+  - /try shows TKs (1), Evaluate (TK placeholders, Smart consistency), Placeholders (1),
+    Pacing and the Write tip. Smart consistency finds "'Maia' (once) is probably Maya (9×)"
+    with Replace / Add alias / Keep both; TK check finds the mainland-port TK. Right-click
+    "Maya" offers "Open Maya beside"; the panel shows Maya read-only (no New window in /try).
+  - Draft compare in /try: typing created a "Writing checkpoint"; Compare showed 1 change,
+    Take all + Apply restored scene 1 exactly (407 words) and added "Before taking changes
+    from Writing checkpoint". Side by side shows both columns.
+  - History (Echoes of the Endless Path, v151): preview carries entity_id; "Compare prose word
+    by word" opened "Morning Chores: v151 and now" with 2 changes (not applied).
+  - Roadmap: Draft compare moved to Delivered.
