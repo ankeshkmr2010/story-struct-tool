@@ -530,20 +530,19 @@ Open / not done:
 - [~] 2026-10-18 import formats: Word's paragraph planning moved to shared `block_import.py` (Block, BlockPlan, inspect_blocks, read_blocks, block_adapter); `docx_import.py` now only reads paragraphs. New adapters `text_import.py` (Markdown/plain text: blank-line paragraphs, # and underlined headings, form-feed page breaks, ---/___ count as separators) and `epub_import.py` (spine order, h1/h2/h3, new page per spine document, nav/linear=no skipped, DRM refused, size limits). Library Create ▾ gains From Markdown or text… and From EPUB…; same preview, plan options and AI planning. Privacy: reader-AI paragraph. Pure tests 8/8; no DB run. Awaiting deploy.
 - [~] 2026-10-18 L14 fixed: Render log evidence via API (key in `.env.local` RENDER_API_KEY, read-only use) showed the socket peer is a rotating Render proxy (different per request), `X-Forwarded-For` accepts a client-prepended value, `CF-Connecting-IP`/`True-Client-IP` carry the real client, Cloudflare rejects a client-supplied `CF-Connecting-IP` (403) and overwrites `True-Client-IP`. `hint_controller.visitor_address` now keys /try limits on `CF-Connecting-IP`, falling back to the peer; the L14-DIAG logging is removed. Awaiting deploy.
 
-## Status summary — 2026-10-21 (for a fresh session)
+## Status summary — 2026-10-22 (for a fresh session)
 
-Everything marked [~] is built and deployed but not yet confirmed by the user on prod; items
-Claude has checked on prod in Chrome are listed under "Prod checks by Claude" at the end.
-Roadmap (live, admin API): Delivered this week: TK placeholders, Smart consistency, Split view
-(Beside), Pacing view. Still open: Planned: Latin-script language support (the en-US/en-GB
-setting is its first step), Draft compare, Setups and payoffs (Evaluate already has an AI
-"Setups and payoffs" thread review; the roadmap item is line-level setup→payoff links).
-Exploring: View counts on shared stories (T25, define first), Series bible (T44).
-Other open, not started: T62 v2 `beta:comment`; fast local DB tests (DB-backed tests for the
-prose:read gate, migration c4e8a1f6d209 and run_story_check not run); T50 word-level
-authorship; T45/T52 languages beyond en-US/en-GB; T46 monetisation; T9 heroine choice and
-redesign CSS cleanup (both waiting on the user). Chrome screenshots time out in this
-environment; prod checks use DOM measurement instead.
+Everything marked [~] is built and deployed (or pushed, see below) but not yet confirmed by the
+user on prod; Claude's own prod checks are listed under "Prod checks by Claude".
+Deployed: up to `8e266ad`. Pushed, not yet deployed: `76f4c14` (rename everywhere),
+`052bc33` (glossary rename, find_name_uses, sheet-follows-prose, merge), `350b6f0` (landing).
+Roadmap (live): Delivered TK placeholders, Smart consistency, Split view, Pacing view, Draft
+compare; In progress Rename everywhere, Merge duplicate characters; Planned Latin-script
+language support, Setups and payoffs; Exploring View counts (T25), Series bible (T44).
+Other open: T62 v2 `beta:comment`; fast local DB tests (`test_merge.py` and DB-backed paths not
+run); T50 word-level authorship; T45/T52 languages beyond en-US/en-GB; T46 monetisation; T9
+heroine and redesign CSS cleanup (waiting on the user); header-bars reduction (waiting on the
+reviewer's list). Chrome screenshots time out here; prod checks use DOM measurement.
 
 ## External review fixes — 2026-10-19 (`eed5f9f`, pushed; awaiting deploy + user check)
 
