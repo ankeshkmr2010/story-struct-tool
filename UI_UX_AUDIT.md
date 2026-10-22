@@ -699,3 +699,14 @@ Items stay [~] until the user confirms them; these record what was verified on p
   sandbox mirrors it (`sandbox/checks.ts sandboxNameUses`). Tests: `test_rename.py` 4 passed;
   sandbox version checked in Node. UI not yet seen [unverified]. Agent (MCP) renames do not
   trigger the offer.
+- [~] Rename follow-ups (2026-10-22): glossary terms get the same rename offer (alias option
+  too); MCP `find_name_uses` lists an old name's uses for the AI to propose edits;
+  Smart consistency "names.sheet_differs" offers `rename_entity` ("Rename Maya Torres to 'Maia
+  Torres' to match the prose").
+- [~] Merge duplicate characters (2026-10-22): `domain/cast/merge.py`, `GET …/characters/{id}/
+  merge-preview?into_id=` and `POST …/merge` (browser only; agent tokens cannot POST it).
+  Moves POV (scenes, chapters), mentions (stronger record kept), events, relationships (the
+  one between them removed), arcs, thread ownership, suggestions, image attachments; adds the
+  duplicate's names as aliases; deletes it. UI `MergeCharacter` (preview, explicit confirm,
+  then the prose rename offer); hidden in /try. `test_merge.py` written, not run (needs
+  Postgres) [unverified]; SQL compiled for Postgres.

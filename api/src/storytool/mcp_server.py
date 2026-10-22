@@ -1202,6 +1202,22 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
             return {"checks": await call(ctx, "/evaluations", story_id=story_id)}
         return await call(ctx, f"/evaluations/{evaluator_id}", story_id=story_id)
 
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def find_name_uses(
+        ctx: Context, old_name: str, new_name: str, story_id: UUID | None = None
+    ) -> dict[str, Any]:
+        """After renaming a character, place or glossary term (or before proposing it), list
+        every use of the old name in placed scenes with the text to write instead: whole
+        words, case kept (MAYA -> KATE), possessives kept, full name first then each changed
+        word (group "part", e.g. a first name on its own). Each use has a passage {scene_id,
+        paragraph, find, start, end, excerpt}. To apply, read each scene's prose and stage one
+        proposal of write_prose operations with expected_content_hash; ask the author before
+        replacing "part" uses, which may refer to someone else. Needs prose:read."""
+        from urllib.parse import urlencode
+
+        query = urlencode({"name": old_name, "replacement": new_name})
+        return await call(ctx, f"/name-uses?{query}", story_id=story_id)
+
     @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
     async def submit_evaluation_report(
         ctx: Context,

@@ -403,12 +403,22 @@ export default function HowToUse() {
                   It shows read only in the side panel’s place until you close it, stays open while you
                   change chapters, and New window ↗ moves it to its own window, e.g. on a second screen.
                 </Item>
-                <Item title="Rename a character or place everywhere">
-                  Change a character’s or place’s name on its card and StoryTool lists every use of the
+                <Item title="Rename a character, place or term everywhere">
+                  Change a character’s, place’s or glossary term’s name on its card and StoryTool lists every use of the
                   old name in the prose: whole words only (Mayan is left alone), capitals and possessives
                   kept (Maya’s becomes Kate’s), and for a two-word name the full name first, then each
                   changed word on its own. Untick any to leave as written, optionally keep the old name as
-                  a character alias, and Replace; each changed scene is snapshotted first.
+                  an alias, and Replace; each changed scene is snapshotted first. Your connected AI can list
+                  the same uses with find_name_uses and propose the edits for your approval. When the prose
+                  never uses the sheet’s spelling at all, Smart consistency offers the reverse: rename the
+                  sheet to match the prose.
+                </Item>
+                <Item title="Merge a duplicate character">
+                  If one person ended up as two characters (Mags and Maya), choose Merge… on the duplicate’s
+                  card and pick the character to keep. A preview lists what will move (POVs, scene
+                  appearances, events, relationships, arcs, threads, reference images) and the aliases it
+                  adds; nothing changes until you confirm. The story is checkpointed first, and you can
+                  then update the old name in the prose.
                 </Item>
                 <Item title="Compare drafts and take changes back">
                   In Write → Context, open Revisions and choose Compare on any snapshot: the scene is

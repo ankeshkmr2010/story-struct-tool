@@ -269,3 +269,16 @@ def test_closing_quotes_and_calendar_words_are_not_capitalisation_slips() -> Non
         "It was the fourth of May. On May 14th he left. You may go. We may stay. They may not."
     )
     assert [f for f in consistency(g) if f.code == "variants.capitalisation"] == []
+
+
+def test_when_the_prose_never_uses_the_sheet_name_the_sheet_can_follow_the_prose() -> None:
+    maya = with_id(Character(story_id=None, name="Maya Torres"))
+    g = graph("Maia ran. Maia slept. Maia woke.", characters=(maya,))
+    [finding] = [f for f in consistency(g) if f.code.startswith("names.")]
+    assert finding.code == "names.sheet_differs"
+    rename = finding.actions[0]
+    assert (rename.kind, rename.value, rename.entity_id) == (
+        "rename_entity",
+        "Maia Torres",
+        maya.id,
+    )

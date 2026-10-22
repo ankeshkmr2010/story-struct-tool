@@ -424,6 +424,11 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
         if (!entry) throw new Error('That glossary term no longer exists.')
         await api.updateGlossaryEntry(storyId, entry.id, { aliases: [...(entry.aliases ?? []), action.value] })
         await qc.invalidateQueries({ queryKey: ['glossary', storyId] })
+      } else if (action.kind === 'rename_entity' && action.entity_id) {
+        if (action.entity_type === 'character') await api.updateCharacter(storyId, action.entity_id, { name: action.value })
+        else if (action.entity_type === 'location') await api.updateLocation(storyId, action.entity_id, { name: action.value })
+        else if (action.entity_type === 'glossary_entry') await api.updateGlossaryEntry(storyId, action.entity_id, { term: action.value })
+        await Promise.all(['characters', 'locations', 'glossary'].map(key => qc.invalidateQueries({ queryKey: [key, storyId] })))
       } else if (action.kind === 'add_character') {
         await api.createCharacter(storyId, { name: action.value })
         await qc.invalidateQueries({ queryKey: ['characters', storyId] })

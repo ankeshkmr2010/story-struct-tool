@@ -439,6 +439,8 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  mergePreview: (storyId: string, characterId: string, intoId: string) => request<S['MergePreview']>(`/api/stories/${storyId}/characters/${characterId}/merge-preview?${new URLSearchParams({ into_id: intoId })}`),
+  mergeCharacter: (storyId: string, characterId: string, intoId: string) => request<S['MergePreview']>(`/api/stories/${storyId}/characters/${characterId}/merge`, { method: 'POST', body: JSON.stringify({ into_id: intoId }) }),
   nameUses: (storyId: string, name: string, replacement: string) => request<S['NameUsesOut']>(`/api/stories/${storyId}/name-uses?${new URLSearchParams({ name, replacement })}`),
   listRevisions: (storyId: string, sceneId: string) =>
     request<SceneRevision[]>(`/api/stories/${storyId}/scenes/${sceneId}/revisions`),

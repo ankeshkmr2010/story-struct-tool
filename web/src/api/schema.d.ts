@@ -1775,6 +1775,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/characters/{character_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merge this character into another, then delete it */
+        post: operations["ApiStoriesStoryIdCharactersCharacterIdMergeMergeCharacter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/characters/{character_id}/merge-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What merging this character into another would move */
+        get: operations["ApiStoriesStoryIdCharactersCharacterIdMergePreviewMergePreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/shoutouts": {
         parameters: {
             query?: never;
@@ -4234,6 +4268,30 @@ export interface components {
         MentionUpdate: {
             source?: string | null;
             is_rejected?: boolean | null;
+        };
+        /** MergeIn */
+        MergeIn: {
+            /** Format: uuid */
+            into_id: string;
+        };
+        /** MergePreview */
+        MergePreview: {
+            /** Format: uuid */
+            source_id: string;
+            /** Format: uuid */
+            target_id: string;
+            source_name: string;
+            target_name: string;
+            pov_scenes: number;
+            pov_chapters: number;
+            mentions: number;
+            events: number;
+            relationships: number;
+            relationships_removed: number;
+            arcs: number;
+            threads: number;
+            images: number;
+            aliases_added: string[];
         };
         /** MessageIn */
         MessageIn: {
@@ -10144,6 +10202,88 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NameUsesOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdCharactersCharacterIdMergeMergeCharacter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                character_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MergePreview"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdCharactersCharacterIdMergePreviewMergePreview: {
+        parameters: {
+            query: {
+                into_id: string;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+                character_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MergePreview"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

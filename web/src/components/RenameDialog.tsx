@@ -35,8 +35,11 @@ export function RenameDialog({ storyId, beforeEdit }: { storyId: string; beforeE
       if (keepAlias && rename.kind === 'character') {
         const character = (await api.listCharacters(storyId)).find(item => item.id === rename.id)
         if (character && !(character.aliases ?? []).includes(rename.from)) await api.updateCharacter(storyId, character.id, { aliases: [...(character.aliases ?? []), rename.from] })
+      } else if (keepAlias && rename.kind === 'glossary_entry') {
+        const entry = (await api.listGlossary(storyId)).find(item => item.id === rename.id)
+        if (entry && !(entry.aliases ?? []).includes(rename.from)) await api.updateGlossaryEntry(storyId, entry.id, { aliases: [...(entry.aliases ?? []), rename.from] })
       }
-      await Promise.all(['content', 'characters', 'placeholders', 'scenes', 'progress'].map(key => qc.invalidateQueries({ queryKey: [key, storyId] })))
+      await Promise.all(['content', 'characters', 'glossary', 'placeholders', 'scenes', 'progress'].map(key => qc.invalidateQueries({ queryKey: [key, storyId] })))
       if (stale) throw new Error(`${stale} ${stale === 1 ? 'use' : 'uses'} changed since this list loaded and ${stale === 1 ? 'was' : 'were'} left alone.`)
     },
     onSuccess: () => setRename(null),
@@ -51,7 +54,7 @@ export function RenameDialog({ storyId, beforeEdit }: { storyId: string; beforeE
     {uses.isPending ? <p className="writer-help">Looking for “{rename?.from}” in the prose…</p>
       : uses.isError ? <p role="alert">{errorText(uses.error)}</p>
       : rename && <>
-        <p className="writer-help">The {rename.kind === 'character' ? 'character' : 'place'} is renamed. “{rename.from}” still appears {list.length} {list.length === 1 ? 'time' : 'times'} in {new Set(list.map(use => use.passage.scene_id)).size} {new Set(list.map(use => use.passage.scene_id)).size === 1 ? 'scene' : 'scenes'}. Untick any to leave as written; each changed scene is snapshotted first.</p>
+        <p className="writer-help">The {rename.kind === 'character' ? 'character' : rename.kind === 'location' ? 'place' : 'glossary term'} is renamed. “{rename.from}” still appears {list.length} {list.length === 1 ? 'time' : 'times'} in {new Set(list.map(use => use.passage.scene_id)).size} {new Set(list.map(use => use.passage.scene_id)).size === 1 ? 'scene' : 'scenes'}. Untick any to leave as written; each changed scene is snapshotted first.</p>
         {groups.map(group => {
           const indexes = list.flatMap((use, index) => `${use.passage.find} → ${use.replacement}` === group ? [index] : [])
           const all = indexes.every(index => !skipped.has(index))
@@ -60,7 +63,7 @@ export function RenameDialog({ storyId, beforeEdit }: { storyId: string; beforeE
             <ul>{indexes.map(index => <li key={index}><label><input type="checkbox" checked={!skipped.has(index)} onChange={event => toggle([index], event.target.checked)} /> <span className="rename-scene">{title(list[index].passage.scene_id)}</span> {list[index].passage.excerpt}</label></li>)}</ul>
           </section>
         })}
-        {rename.kind === 'character' && <label className="rename-alias"><input type="checkbox" checked={keepAlias} onChange={event => setKeepAlias(event.target.checked)} /> Keep “{rename.from}” as an alias (some characters may still call them that)</label>}
+        {rename.kind !== 'location' && <label className="rename-alias"><input type="checkbox" checked={keepAlias} onChange={event => setKeepAlias(event.target.checked)} /> Keep “{rename.from}” as an alias{rename.kind === 'character' ? ' (some characters may still call them that)' : ''}</label>}
         <div className="rename-actions">
           <button type="button" className="ui-btn ui-btn-ghost" onClick={close}>Leave the prose as it is</button>
           <button type="button" className="ui-btn ui-btn-primary" disabled={!kept.length || apply.isPending} onClick={() => apply.mutate()}>{apply.isPending ? 'Replacing…' : `Replace ${kept.length}`}</button>

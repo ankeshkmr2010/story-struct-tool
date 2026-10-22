@@ -48,7 +48,9 @@ class FindingAction:
 
     Kinds: "add_alias" adds `value` to the aliases of the entity; "add_character" creates a
     character named `value`; "replace" applies `edits` to the prose; "keep" records `value`
-    in the story's consistency exceptions so the finding stops appearing.
+    in the story's consistency exceptions so the finding stops appearing; "rename_entity"
+    renames the entity to `value` (the sheet follows the prose); "set_language" sets the
+    story's language to `value`.
     """
 
     kind: str

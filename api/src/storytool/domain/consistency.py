@@ -476,6 +476,19 @@ def _names(g: StoryGraph, index: _Index, kept: set[str]) -> list[EvaluationFindi
                 f"'{variant}' ({_times(n_variant)}) may be {written} ({_times(n_known)}): {why}."
             )
         actions = [_replace(f"Replace every '{variant}' with {written}", words, written)]
+        # The prose never uses the sheet's spelling: perhaps the sheet is the one to change.
+        renamed = re.sub(rf"(?<![^\W_]){re.escape(written)}(?![^\W_])", variant, source.name)
+        if code == "names.sheet_differs" and renamed != source.name:
+            actions.insert(
+                0,
+                FindingAction(
+                    kind="rename_entity",
+                    label=f"Rename {source.name} to '{renamed}' to match the prose",
+                    value=renamed,
+                    entity_type=source.entity_type,
+                    entity_id=source.entity_id,
+                ),
+            )
         if source.entity_type in {"character", "glossary_entry"}:
             actions.append(
                 FindingAction(
