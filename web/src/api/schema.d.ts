@@ -1758,6 +1758,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/name-uses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where an old name still appears in the prose, with its replacement */
+        get: operations["ApiStoriesStoryIdNameUsesUses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/shoutouts": {
         parameters: {
             query?: never;
@@ -4249,6 +4266,18 @@ export interface components {
             sort_key: number;
             rebalanced: boolean;
             chapter_id?: string | null;
+        };
+        /** NameUseOut */
+        NameUseOut: {
+            passage: components["schemas"]["PassageOut"];
+            replacement: string;
+            group: string;
+        };
+        /** NameUsesOut */
+        NameUsesOut: {
+            name: string;
+            replacement: string;
+            uses: components["schemas"]["NameUseOut"][];
         };
         /** NoticerInfoOut */
         NoticerInfoOut: {
@@ -10075,6 +10104,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CraftReading"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdNameUsesUses: {
+        parameters: {
+            query: {
+                name: string;
+                replacement: string;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NameUsesOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

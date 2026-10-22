@@ -1055,3 +1055,14 @@ ol.showcase-list { list-style: decimal; }
 .draft-compare-side h3 { margin: 0 0 6px; color: var(--muted); font-size: var(--text-sm); font-weight: 600; }
 @media (max-width: 700px) { .draft-compare-side { grid-template-columns: 1fr; } }
 .draft-compare-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+
+/* After a rename: every use of the old name, grouped, each tickable. */
+.rename-dialog { width: min(720px, calc(100vw - 32px)); }
+.rename-group { margin-top: 12px; }
+.rename-group-head { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm); }
+.rename-group-head span { color: var(--muted); }
+.rename-group ul { max-height: 30vh; margin: 6px 0 0; padding: 0 0 0 4px; overflow-y: auto; list-style: none; }
+.rename-group li label { display: flex; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: var(--text-sm); line-height: 1.5; }
+.rename-scene { flex: none; color: var(--muted); font-size: var(--text-xs); }
+.rename-alias { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: var(--text-sm); }
+.rename-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 14px; }

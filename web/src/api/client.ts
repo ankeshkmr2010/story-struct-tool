@@ -439,6 +439,7 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  nameUses: (storyId: string, name: string, replacement: string) => request<S['NameUsesOut']>(`/api/stories/${storyId}/name-uses?${new URLSearchParams({ name, replacement })}`),
   listRevisions: (storyId: string, sceneId: string) =>
     request<SceneRevision[]>(`/api/stories/${storyId}/scenes/${sceneId}/revisions`),
   snapshot: (storyId: string, sceneId: string, label?: string) =>

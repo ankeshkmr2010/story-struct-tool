@@ -112,6 +112,29 @@ export function sandboxEvaluation(s: Sandbox, id: string | undefined) {
   return { story_id: SANDBOX_ID, evaluator_id: id, ready: true, missing: [], ...run(s) }
 }
 
+/** The server's rename plan (domain/rename.py): full name, then each changed word, plus upper case. */
+function renamePlan(from: string, to: string) {
+  const before = from.split(/\s+/).filter(Boolean), after = to.split(/\s+/).filter(Boolean)
+  const old = before.join(' '), next = after.join(' ')
+  if (!old || !next || old === next) return []
+  const plan: [string, string, string][] = [[old, next, 'full']]
+  if (before.length > 1) {
+    const pairs = before.length === after.length ? before.map((word, index) => [word, after[index]]) : [[before[0], after[0]]]
+    for (const [a, b] of pairs) if (a !== b && a.length > 1 && !a.endsWith('.')) plan.push([a, b, 'part'])
+  }
+  return plan.flatMap(([find, replace, group]) => find.toUpperCase() === find ? [[find, replace, group]] : [[find, replace, group], [find.toUpperCase(), replace.toUpperCase(), group]]).sort((a, b) => b[0].length - a[0].length)
+}
+
+/** GET /name-uses: where an old name still appears, with its replacement (same shape as the server). */
+export function sandboxNameUses(s: Sandbox, name: string, replacement: string) {
+  const plan = renamePlan(name, replacement)
+  const lookup = new Map(plan.map(([find, replace, group]) => [find, { replace, group }]))
+  const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const pattern = new RegExp(`(?<![\\p{L}\\p{N}])(?<![-\\u2010])(?:${plan.map(([find]) => escape(find)).join('|')})(?![-\\u2010]?[\\p{L}\\p{N}])`, 'gu')
+  const uses = plan.length ? matches(s, pattern).map(match => ({ passage: match.passage, replacement: lookup.get(match.text)!.replace, group: lookup.get(match.text)!.group })) : []
+  return { name, replacement, uses }
+}
+
 /** The server's rule: a save replacing over half of 200+ characters snapshots first. */
 export function replacesMostOf(previous: string, next: string) {
   if (previous.length < 200 || previous === next) return false

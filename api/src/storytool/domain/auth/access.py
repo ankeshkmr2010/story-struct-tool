@@ -324,6 +324,7 @@ class StoryAccessMiddleware:
                     or suffix.endswith(
                         (
                             "/content",
+                            "/name-uses",
                             "/annotations",
                             "/mentions",
                             "/revisions",

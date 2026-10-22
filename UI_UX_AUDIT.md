@@ -690,3 +690,12 @@ Items stay [~] until the user confirms them; these record what was verified on p
   - History (Echoes of the Endless Path, v151): preview carries entity_id; "Compare prose word
     by word" opened "Morning Chores: v151 and now" with 2 changes (not applied).
   - Roadmap: Draft compare moved to Delivered.
+- [~] Rename everywhere (2026-10-22): renaming a character (Characters) or place (Places) offers
+  to update the prose. `domain/rename.py` + `GET /api/stories/{id}/name-uses` (prose:read):
+  whole-word, case-aware (MAYA → KATE), possessives kept, full name then each changed word
+  ("part", separate group); placed scenes in reading order with exact passages.
+  `RenameDialog` lists uses grouped with per-use ticks, optional "keep old name as alias"
+  (characters), applies via `applyPassageEdits` with a "Rename A → B" snapshot per scene. The
+  sandbox mirrors it (`sandbox/checks.ts sandboxNameUses`). Tests: `test_rename.py` 4 passed;
+  sandbox version checked in Node. UI not yet seen [unverified]. Agent (MCP) renames do not
+  trigger the offer.

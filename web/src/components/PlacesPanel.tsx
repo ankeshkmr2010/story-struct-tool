@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { DeleteButton, InlineText } from './fields'
+import { offerRename } from './rename'
 
 /**
  * Locations, and where they are actually used.
@@ -92,7 +93,7 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
           return (
             <li key={location.id} id={`search-location-${location.id}`} className="py-2.5 scroll-mt-4">
               <div className="flex items-baseline gap-2">
-                <div className="min-w-0 flex-1"><InlineText value={location.name} placeholder="Place name" onSave={(name) => update.mutateAsync({ id: location.id, body: { name } })} className="font-medium" /></div>
+                <div className="min-w-0 flex-1"><InlineText value={location.name} placeholder="Place name" onSave={async (name) => { await update.mutateAsync({ id: location.id, body: { name } }); offerRename({ kind: 'location', id: location.id, from: location.name, to: name ?? '' }) }} className="font-medium" /></div>
                 {used && used.scene_count > 0 ? (
                   <span className="text-xs text-slate-500 dark:text-slate-400">
                     {used.scene_count} scene{used.scene_count === 1 ? '' : 's'}

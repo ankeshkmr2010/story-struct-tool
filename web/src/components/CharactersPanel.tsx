@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { AddForm, Chip, DeleteButton, InlineSelect, InlineText } from './fields'
 import { OpenBesideButton } from './BesidePanel'
+import { offerRename } from './rename'
 import { HelpTip } from './HelpTip'
 import { ReferenceImages } from './StoryImages'
 
@@ -120,7 +121,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                   <InlineText
                     value={character.name}
                     placeholder="name"
-                    onSave={set('name')}
+                    onSave={async (name) => { await set('name')(name); offerRename({ kind: 'character', id: character.id, from: character.name, to: name ?? '' }) }}
                     className="section-title"
                   />
                 </div>

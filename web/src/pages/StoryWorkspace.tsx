@@ -25,6 +25,7 @@ import { StoryEvaluation } from '../components/StoryEvaluation'
 import { PlaceholderList } from '../components/PlaceholderList'
 import { usePlaceholders } from '../components/usePlaceholders'
 import { BesidePanel } from '../components/BesidePanel'
+import { RenameDialog } from '../components/RenameDialog'
 import { OPEN_BESIDE_EVENT, isBesideItem, type BesideTarget } from '../components/beside'
 import { LANGUAGES, languageLabel } from '../components/languages'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
@@ -735,6 +736,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         </>}
       </aside>
       </div>
+      <RenameDialog storyId={storyId} beforeEdit={() => writerFlush.current()} />
       <SearchDialog storyId={storyId} initialQuery={sandboxStep === 5 ? 'lantern' : undefined} context={searchContext} active={searchOpen} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={async hit => { await openSearchHit(hit); if (sandbox) tourEvent('search') }} />
     </main>
   )
