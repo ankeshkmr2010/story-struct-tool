@@ -4551,6 +4551,7 @@ export interface components {
         ProductFeedbackOut: {
             /** Format: uuid */
             id: string;
+            user_id: string | null;
             category: string;
             message: string;
             /** Format: date-time */

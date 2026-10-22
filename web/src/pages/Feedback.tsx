@@ -57,7 +57,7 @@ export default function Feedback() {
           {feedback.isPending && <p className="mt-4 text-sm">Loading feedback…</p>}
           {feedback.error && <p role="alert" className="mt-4 text-sm">{errorText(feedback.error)}</p>}
           {feedback.data?.length === 0 && <p className="mt-4 text-sm text-[var(--muted)]">No feedback yet.</p>}
-          <ul className="mt-4 space-y-3">{feedback.data?.map((item) => <li key={item.id} className="rounded-lg border border-[var(--line)] p-4"><p className="text-xs text-[var(--muted)]">{item.category} · {new Date(item.created_at).toLocaleString()}</p><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6">{item.message}</p></li>)}</ul>
+          <ul className="mt-4 space-y-3">{feedback.data?.map((item) => <li key={item.id} className="rounded-lg border border-[var(--line)] p-4"><p className="text-xs text-[var(--muted)]">{item.category} · {new Date(item.created_at).toLocaleString()} · {item.user_id ?? 'deleted user'}</p><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6">{item.message}</p></li>)}</ul>
         </section>
       </>}
       <p className="mt-12 text-sm text-[var(--muted)]"><Link to="/library" className="underline">← Your stories</Link></p>
