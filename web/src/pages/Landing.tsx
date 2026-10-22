@@ -9,6 +9,9 @@ const plan = [
   ['01', 'Eight levels, at your pace', 'Premise, arc, characters, acts, beats, threads, chapters, scenes. Plan top-down as a plotter, discover as a pantser, or mix both. The plan guides; it never locks.'],
   ['02', 'One timeline, two orders', 'See events in the order they happen and in the order your reader meets them, so flashbacks stay straight. Add an event exactly where it belongs.'],
   ['03', 'Gaps flagged, never blocked', 'Each level shows what it still needs, in plain words, with a link to fix it. You decide when, or whether, to act.'],
+  ['04', 'Pacing at a glance', 'Scene length, value shift and point of view for the whole book on one chart. Spot the long middle and the run of scenes from one head, then open the scene.'],
+  ['05', 'Rename once, everywhere', 'Rename a character, place or term and every use in the prose follows, with each one shown first so you can keep any as written.'],
+  ['06', 'Merge the duplicate', 'When one person became two characters, merge them after a preview of what moves. The old name stays as an alias.'],
 ] as const
 
 const craft = [
@@ -67,7 +70,7 @@ export default function Landing() {
     <section className="landing-writing" aria-labelledby="write-title">
       <div className="section-intro"><p className="eyebrow">WRITE</p><h2 id="write-title">Start with the words.</h2><p>Open a story and type. Chapters, scenes and structure can come later, or never.</p></div>
       <div className="writing-workspaces">
-        <article><span className="writing-tab-label">Write</span><h3>One page per chapter.</h3><p>A single scrolling manuscript for each chapter. Name scenes if it helps, or just keep typing into the next one. Select text for editing actions, set US or UK English per story, and reopen on any device where you stopped.</p></article>
+        <article><span className="writing-tab-label">Write</span><h3>One page per chapter.</h3><p>A single scrolling manuscript for each chapter. Name scenes if it helps, or just keep typing into the next one. Select text for editing actions, check a scene, character or place open beside the page, and reopen on any device where you stopped.</p></article>
         <article><span className="writing-tab-label">Read</span><h3>Read it like a book.</h3><p>Read across chapters by page or by scroll, set your own type, and pick up where you left off. Click an illustration for a larger preview and its caption.</p></article>
         <article><span className="writing-tab-label">Focus</span><h3>Nothing but the words.</h3><p>Hide everything around the manuscript. Autosave shows when your words are safe, and a failed save keeps your draft for a retry.</p></article>
       </div>
@@ -82,7 +85,7 @@ export default function Landing() {
       <div className="writing-workspaces">
         <article><span className="writing-tab-label">Context</span><h3>It knows the whole story.</h3><p>Characters, arcs, timeline, places and glossary, not just the page in front of it.</p></article>
         <article><span className="writing-tab-label">Agent changes</span><h3>It proposes. You choose.</h3><p>Every edit arrives as a proposal. Keep all of it, some of it or none, and undo what you applied.</p></article>
-        <article><span className="writing-tab-label">History</span><h3>Every change on record.</h3><p>Restore any saved version, and see who wrote what: you, the assistant or a connected AI.</p></article>
+        <article><span className="writing-tab-label">History</span><h3>Every change on record.</h3><p>Compare any draft with today’s word by word and take back only the changes you want. Restore any version, and see who wrote what: you, the assistant or a connected AI.</p></article>
       </div>
     </section>
     <section className="landing-writing" aria-labelledby="search-title">
