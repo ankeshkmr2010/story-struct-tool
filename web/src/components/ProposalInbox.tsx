@@ -61,7 +61,7 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
       </header>
       <div className="flex flex-wrap items-center gap-2">
         {(['pending', 'applied', 'closed', 'all'] as StatusFilter[]).map((key) => (
-          <button key={key} type="button" aria-pressed={status === key} onClick={() => setStatus(key)} className={`rounded-full border px-3 py-1 text-xs capitalize ${status === key ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-200 dark:text-slate-950' : 'border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-300'}`}>
+          <button key={key} type="button" aria-pressed={status === key} onClick={() => setStatus(key)} className={`rounded-full border px-3 py-1 text-xs ${status === key ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-200 dark:text-slate-950' : 'border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-300'}`}>
             {key === 'closed' ? t('Dismissed / undone') : valueLabel(key)} · {count(key)}
           </button>
         ))}

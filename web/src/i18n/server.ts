@@ -15,7 +15,7 @@ const VALUES: Record<string, string> = {
   placeholder: tx('Placeholder'), outlined: tx('Outlined'), drafted: tx('Drafted'), revised: tx('Revised'),
   pending: tx('Pending'), proposed: tx('Pending'), applied: tx('Applied'), dismissed: tx('Dismissed'), undone: tx('Undone'), invalid: tx('Invalid'), all: tx('All'),
   story: tx('Story'), character: tx('Character'), location: tx('Location'), act: tx('Act'), beat: tx('Beat'), thread: tx('Thread'),
-  relationship: tx('Relationship'), chapter: tx('Chapter'), scene: tx('Scene'), glossary_entry: tx('Glossary entry'), event: tx('Event'), arc: tx('Arc'),
+  relationship: tx('Relationship'), chapter: tx('Chapter'), scene: tx('Scene'), glossary_entry: tx('Glossary entry'), event: tx('Event'), arc: tx('Arc'), arc_stage: tx('Arc stage'),
   create: tx('Created'), update: tx('Updated'), delete: tx('Deleted'), link: tx('Linked'),
 }
 
