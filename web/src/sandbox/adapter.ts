@@ -1,6 +1,7 @@
 import { rows, SANDBOX_ID, transact, type Row, type Sandbox } from './storage'
 import { replacesMostOf, sandboxEvaluation, sandboxNameUses } from './checks'
 import { foldAccents } from '../components/languages'
+import { t } from '../i18n'
 
 const kinds: Record<string, string> = { characters: 'character', relationships: 'relationship', arcs: 'arc', stages: 'arc_stage', acts: 'act', beats: 'beat', threads: 'thread', chapters: 'chapter', scenes: 'scene', events: 'event', locations: 'location', glossary: 'glossary_entry' }
 const required: Record<string, string[]> = { story: ['title', 'premise'], character: ['name', 'role', 'want', 'need'], arc: ['resolution'], arc_stage: ['label'], act: ['summary'], beat: ['label'], thread: ['type'], chapter: ['title'], scene: ['summary', 'goal', 'conflict', 'outcome'], event: ['label'], location: ['name'], glossary_entry: ['term'] }
@@ -83,7 +84,7 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
     if (collection === 'timeline') return timeline(s)
     if (collection === 'search') {
       if (id === 'capabilities') return { semantic_available: false }
-      if (id === 'target') { const row = rows(s, url.searchParams.get('entity')!).find(r => r.id === url.searchParams.get('id')); if (!row) throw new Error('This item was removed.'); return row }
+      if (id === 'target') { const row = rows(s, url.searchParams.get('entity')!).find(r => r.id === url.searchParams.get('id')); if (!row) throw new Error(t('This item was removed.')); return row }
       return search(s, url.searchParams)
     }
     if (collection === 'ladder') {
@@ -104,7 +105,7 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
       return { location_id: place.id, scene_count: scenes.length, chapter_numbers: [...new Set(rows(s, 'chapter').filter(chapter => scenes.some(scene => scene.chapter_id === chapter.id)).map(chapter => chapter.number))], first_story_time: times.length ? Math.min(...times) : null, last_story_time: times.length ? Math.max(...times) : null }
     })
     const kind = kinds[collection]
-    if (!kind) throw new Error('Available with a free account')
+    if (!kind) throw new Error(t('Available with a free account'))
     const list = rows(s, kind)
     if (!s.backup.state[kind]) s.backup.state[kind] = list
     const row = list.find(r => r.id === id)
@@ -113,7 +114,7 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
       if (method === 'GET') return sorted(list.filter(stage => stage.arc_id === id)).map(stage => out(stage, kind))
       if (method === 'POST') { const created = { ...body, arc_id: id, id: crypto.randomUUID() }; list.push(created); return out(created, kind) }
       const stage = list.find(item => item.id === stageId)
-      if (!stage) throw new Error('Stage not found')
+      if (!stage) throw new Error(t('Stage not found'))
       if (method === 'PATCH') Object.assign(stage, body)
       if (method === 'DELETE') deleteEntity(s, kind, stageId)
       return out(stage, kind)
@@ -122,11 +123,11 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
       if (method === 'GET') return sorted(list).map(r => out(r, kind))
       if (method === 'POST') { const created = { type: kind === 'thread' ? 'a_story' : 'scene', status: 'placeholder', sort_key: 100, ...body, id: crypto.randomUUID(), story_id: SANDBOX_ID, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }; if (kind !== 'scene' && kind !== 'thread') delete (created as Row).type; if (kind !== 'scene' && kind !== 'chapter') delete (created as Row).status; if (!['scene', 'chapter', 'act', 'beat', 'thread'].includes(kind)) delete (created as Row).sort_key; list.push(created); return out(created, kind) }
     }
-    if (!row) throw new Error('This item no longer exists.')
+    if (!row) throw new Error(t('This item no longer exists.'))
     if (action === 'brief') return brief(s, id)
     if (action === 'content') {
       if (method === 'GET') return { scene_id: id, content: row.content ?? null, word_count: wordCount(row.content) }
-      if ('expected_content' in body && String(row.content ?? '') !== String(body.expected_content ?? '')) throw new Error('Your scene changed in another tab. Reload the saved draft before retrying.')
+      if ('expected_content' in body && String(row.content ?? '') !== String(body.expected_content ?? '')) throw new Error(t('Your scene changed in another tab. Reload the saved draft before retrying.'))
       const revisions = rows(s, 'scene_revision')
       // As on the server: replacing most of a scene always keeps the previous text first.
       if (!body.snapshot && replacesMostOf(String(row.content ?? ''), String(body.content ?? ''))) { body.snapshot = true; body.snapshot_label = 'Before a large change' }
@@ -149,7 +150,7 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
       const records = rows(s, table)
       if (method === 'GET') return records.filter(r => r.scene_id === id)
       if (method === 'DELETE') { s.backup.state[table] = records.filter(r => r.id !== linkedId); return }
-      if (action === 'revisions' && parts[4] === 'restore') { const revision = records.find(r => r.id === linkedId); if (!revision) throw new Error('Revision not found'); const moment = new Date().toISOString(); records.push({ id: crypto.randomUUID(), scene_id: id, content: row.content, label: 'Before restore', word_count: wordCount(row.content), created_at: moment }); s.backup.state.scene_revision = records; row.content = revision.content; s.editedScene = id; s.edits.push({ scene_id: id, content: String(row.content ?? ''), created_at: moment }); return { word_count: wordCount(row.content), revision_created: true, annotations_reanchored: 0, annotations_orphaned: 0 } }
+      if (action === 'revisions' && parts[4] === 'restore') { const revision = records.find(r => r.id === linkedId); if (!revision) throw new Error(t('Revision not found')); const moment = new Date().toISOString(); records.push({ id: crypto.randomUUID(), scene_id: id, content: row.content, label: 'Before restore', word_count: wordCount(row.content), created_at: moment }); s.backup.state.scene_revision = records; row.content = revision.content; s.editedScene = id; s.edits.push({ scene_id: id, content: String(row.content ?? ''), created_at: moment }); return { word_count: wordCount(row.content), revision_created: true, annotations_reanchored: 0, annotations_orphaned: 0 } }
       const created = { ...body, ...(action === 'revisions' ? { content: row.content, label: url.searchParams.get('label'), word_count: wordCount(row.content) } : {}), id: crypto.randomUUID(), scene_id: id, created_at: new Date().toISOString() }; records.push(created); s.backup.state[table] = records; return created
     }
     if (action === 'usage') return { scenes: rows(s, 'scene').filter(scene => scene.location_id === id), events: rows(s, 'event').filter(event => event.location_id === id) }
@@ -159,6 +160,6 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
       deleteEntity(s, kind, id)
       return
     }
-    throw new Error('Available with a free account')
+    throw new Error(t('Available with a free account'))
   }, method !== 'GET')
 }

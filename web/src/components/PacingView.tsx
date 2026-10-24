@@ -3,10 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { api, type Scene } from '../api/client'
 import { orderScenes } from '../api/ordering'
 import { openBeside } from './beside'
+import { t, tx } from '../i18n'
 
 const MAX_POV = 8
 type Shift = 'shift' | 'flat' | 'missing'
-const SHIFT_LABEL: Record<Shift, string> = { shift: 'Value shifts', flat: 'No shift', missing: 'Not set' }
+const SHIFT_LABEL: Record<Shift, string> = { shift: tx('Value shifts'), flat: tx('No shift'), missing: tx('Not set') }
 
 const shiftOf = (scene: Scene): Shift => {
   const from = scene.emotional_value_from?.trim().toLowerCase()
@@ -28,9 +29,9 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
   const [hovered, setHovered] = useState<number | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
 
-  if (chapters.isPending || scenes.isPending) return <p className="writer-help">Loading scenes…</p>
+  if (chapters.isPending || scenes.isPending) return <p className="writer-help">{t('Loading scenes…')}</p>
   const ordered = (chapters.data ?? []).flatMap(chapter => orderScenes((scenes.data ?? []).filter(scene => scene.chapter_id === chapter.id)).map(scene => ({ scene, chapter })))
-  if (!ordered.length) return <p className="writer-help">Place scenes in chapters to see the book’s pacing.</p>
+  if (!ordered.length) return <p className="writer-help">{t('Place scenes in chapters to see the book’s pacing.')}</p>
 
   const name = (id: string | null | undefined) => characters.data?.find(character => character.id === id)?.name ?? null
   // POV colour follows the character (first appearance order), never its rank, and folds
@@ -48,11 +49,11 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
   const chosen = selected !== null ? ordered[selected] ?? null : null
   const marked = (index: number) => `${hovered === index ? ' is-hovered' : ''}${selected === index ? ' is-selected' : ''}`
   const describe = ({ scene, chapter }: (typeof ordered)[number]) =>
-    `${scene.title || 'Untitled scene'}, chapter ${chapter.number}: ${scene.word_count.toLocaleString()} words, ${SHIFT_LABEL[shiftOf(scene)].toLowerCase()}${scene.pov_character_id ? `, POV ${name(scene.pov_character_id) ?? 'unknown'}` : ''}`
+    t('{0}, chapter {1}: {2} words, {3}{4}', scene.title || 'Untitled scene', chapter.number, scene.word_count.toLocaleString(), t(SHIFT_LABEL[shiftOf(scene)]).toLowerCase(), scene.pov_character_id ? `, POV ${name(scene.pov_character_id) ?? 'unknown'}` : '')
 
-  return <section className="pacing-root" aria-label="Pacing">
+  return <section className="pacing-root" aria-label={t('Pacing')}>
     <p className="pacing-summary">
-      {ordered.length} scenes · {total.toLocaleString()} words · average {Math.round(total / ordered.length).toLocaleString()} per scene · value shifts in {shifting} of {ordered.length}{flat ? ` (${flat} flat)` : ''} · POV set in {withPov}
+      {t('{0} scenes · {1} words · average {2} per scene · value shifts in {3} of {4}{5} · POV set in {6}', ordered.length, total.toLocaleString(), Math.round(total / ordered.length).toLocaleString(), shifting, ordered.length, flat ? t(' ({0} flat)', flat) : '', withPov)}
     </p>
 
     <div className="pacing-scroll">
@@ -61,62 +62,62 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
           {ordered.map(({ scene, chapter }, index) => <span key={scene.id} className={index === 0 || ordered[index - 1].chapter.id !== chapter.id ? 'is-start' : ''}>{index === 0 || ordered[index - 1].chapter.id !== chapter.id ? chapter.number : ''}</span>)}
         </div>
 
-        <p className="pacing-row-label">Scene length <span>longest {longest.toLocaleString()} words</span></p>
+        <p className="pacing-row-label">{t('Scene length')}{' '}<span>{t('longest {0} words', longest.toLocaleString())}</span></p>
         <div className="pacing-row pacing-lengths" style={columns}>
           {ordered.map(({ scene }, index) => <span key={scene.id} className={marked(index)}><i style={{ height: `${Math.max(scene.word_count ? 6 : 0, (scene.word_count / longest) * 100)}%` }} /></span>)}
         </div>
 
-        <p className="pacing-row-label">Value shift</p>
+        <p className="pacing-row-label">{t('Value shift')}</p>
         <div className="pacing-row pacing-shifts" style={columns}>
           {ordered.map(({ scene }, index) => <span key={scene.id} className={`is-${shiftOf(scene)}${marked(index)}`}><i /></span>)}
         </div>
 
-        <p className="pacing-row-label">Point of view</p>
+        <p className="pacing-row-label">{t('Point of view')}</p>
         <div className="pacing-row pacing-povs" style={columns}>
           {ordered.map(({ scene }, index) => { const slot = povSlot(scene.pov_character_id); return <span key={scene.id} className={marked(index)}><i className={slot === null ? 'is-none' : slot === 'other' ? 'is-other' : ''} style={typeof slot === 'number' ? { background: `var(--pov-${slot})` } : undefined} /></span> })}
         </div>
 
         {/* One hit target per scene spans all three rows, so hover and click never miss a thin mark. */}
         <div className="pacing-hits" style={columns}>
-          {ordered.map((entry, index) => <button key={entry.scene.id} type="button" aria-pressed={selected === index} aria-label={`Select ${describe(entry)}`} onMouseEnter={() => setHovered(index)} onFocus={() => setHovered(index)} onBlur={() => setHovered(null)} onClick={() => setSelected(index)} onDoubleClick={() => onOpenScene(entry.scene)} />)}
+          {ordered.map((entry, index) => <button key={entry.scene.id} type="button" aria-pressed={selected === index} aria-label={t('Select {0}', describe(entry))} onMouseEnter={() => setHovered(index)} onFocus={() => setHovered(index)} onBlur={() => setHovered(null)} onClick={() => setSelected(index)} onDoubleClick={() => onOpenScene(entry.scene)} />)}
         </div>
       </div>
     </div>
 
     <div className="pacing-tooltip" aria-hidden="true">
       {active ? <>
-        <strong>{active.scene.title || 'Untitled scene'}</strong>
-        <span>Chapter {active.chapter.number}{active.chapter.title ? `: ${active.chapter.title}` : ''}</span>
-        <span>{active.scene.word_count.toLocaleString()} words · {active.scene.type === 'sequel' ? 'Sequel' : 'Scene'}</span>
-        <span>{SHIFT_LABEL[shiftOf(active.scene)]}{active.scene.emotional_value_from || active.scene.emotional_value_to ? `: ${active.scene.emotional_value_from || '?'} → ${active.scene.emotional_value_to || '?'}` : ''}</span>
-        <span>POV: {name(active.scene.pov_character_id) ?? 'not set'}</span>
-      </> : <span>Hover or tab to a scene for details; click to select it.</span>}
+        <strong>{active.scene.title || t('Untitled scene')}</strong>
+        <span>{t('Chapter {0}{1}', active.chapter.number, active.chapter.title ? `: ${active.chapter.title}` : '')}</span>
+        <span>{t('{0} words · {1}', active.scene.word_count.toLocaleString(), active.scene.type === 'sequel' ? t('Sequel') : t('Scene'))}</span>
+        <span>{t(SHIFT_LABEL[shiftOf(active.scene)])}{active.scene.emotional_value_from || active.scene.emotional_value_to ? `: ${active.scene.emotional_value_from || '?'} → ${active.scene.emotional_value_to || '?'}` : ''}</span>
+        <span>{t('POV: {0}', name(active.scene.pov_character_id) ?? t('not set'))}</span>
+      </> : <span>{t('Hover or tab to a scene for details; click to select it.')}</span>}
     </div>
     {chosen && <div className="pacing-selected">
-      <span>Selected: <strong>{chosen.scene.title || 'Untitled scene'}</strong></span>
-      <button type="button" className="ui-btn ui-btn-primary ui-btn-sm" onClick={() => onOpenScene(chosen.scene)}>Open scene</button>
-      <button type="button" className="ui-btn ui-btn-secondary ui-btn-sm" onClick={() => openBeside({ kind: 'scene', id: chosen.scene.id })}>Open beside</button>
-      <button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" onClick={() => setSelected(null)}>Clear</button>
+      <span>{t('Selected:')}{' '}<strong>{chosen.scene.title || t('Untitled scene')}</strong></span>
+      <button type="button" className="ui-btn ui-btn-primary ui-btn-sm" onClick={() => onOpenScene(chosen.scene)}>{t('Open scene')}</button>
+      <button type="button" className="ui-btn ui-btn-secondary ui-btn-sm" onClick={() => openBeside({ kind: 'scene', id: chosen.scene.id })}>{t('Open beside')}</button>
+      <button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" onClick={() => setSelected(null)}>{t('Clear')}</button>
     </div>}
 
-    <ul className="pacing-legend" aria-label="Legend">
-      <li><i className="pacing-key is-shift" />Value shifts</li>
-      <li><i className="pacing-key is-flat" />No shift</li>
-      <li><i className="pacing-key is-missing" />Not set</li>
-      {povOrder.slice(0, MAX_POV).map((id, index) => <li key={id}><i className="pacing-key is-pov" style={{ background: `var(--pov-${index + 1})` }} />{name(id) ?? 'Unknown'}</li>)}
-      {povOrder.length > MAX_POV && <li><i className="pacing-key is-pov is-other" />Other POV</li>}
-      <li><i className="pacing-key is-pov is-none" />No POV</li>
+    <ul className="pacing-legend" aria-label={t('Legend')}>
+      <li><i className="pacing-key is-shift" />{t('Value shifts')}</li>
+      <li><i className="pacing-key is-flat" />{t('No shift')}</li>
+      <li><i className="pacing-key is-missing" />{t('Not set')}</li>
+      {povOrder.slice(0, MAX_POV).map((id, index) => <li key={id}><i className="pacing-key is-pov" style={{ background: `var(--pov-${index + 1})` }} />{name(id) ?? t('Unknown')}</li>)}
+      {povOrder.length > MAX_POV && <li><i className="pacing-key is-pov is-other" />{t('Other POV')}</li>}
+      <li><i className="pacing-key is-pov is-none" />{t('No POV')}</li>
     </ul>
 
     <details className="pacing-table">
-      <summary>Table view</summary>
+      <summary>{t('Table view')}</summary>
       <table>
-        <thead><tr><th scope="col">Ch.</th><th scope="col">Scene</th><th scope="col">Words</th><th scope="col">Value shift</th><th scope="col">POV</th></tr></thead>
+        <thead><tr><th scope="col">{t('Ch.')}</th><th scope="col">{t('Scene')}</th><th scope="col">{t('Words')}</th><th scope="col">{t('Value shift')}</th><th scope="col">{t('POV')}</th></tr></thead>
         <tbody>{ordered.map(({ scene, chapter }) => <tr key={scene.id}>
           <td>{chapter.number}</td>
-          <td><button type="button" className="underline" onClick={() => onOpenScene(scene)}>{scene.title || 'Untitled scene'}</button> <button type="button" className="pacing-beside" onClick={() => openBeside({ kind: 'scene', id: scene.id })}>Beside</button></td>
+          <td><button type="button" className="underline" onClick={() => onOpenScene(scene)}>{scene.title || t('Untitled scene')}</button> <button type="button" className="pacing-beside" onClick={() => openBeside({ kind: 'scene', id: scene.id })}>{t('Beside')}</button></td>
           <td>{scene.word_count.toLocaleString()}</td>
-          <td>{SHIFT_LABEL[shiftOf(scene)]}{scene.emotional_value_from || scene.emotional_value_to ? ` (${scene.emotional_value_from || '?'} → ${scene.emotional_value_to || '?'})` : ''}</td>
+          <td>{t(SHIFT_LABEL[shiftOf(scene)])}{scene.emotional_value_from || scene.emotional_value_to ? ` (${scene.emotional_value_from || '?'} → ${scene.emotional_value_to || '?'})` : ''}</td>
           <td>{name(scene.pov_character_id) ?? '—'}</td>
         </tr>)}</tbody>
       </table>

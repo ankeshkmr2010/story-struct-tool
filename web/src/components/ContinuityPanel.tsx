@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
+import { t } from '../i18n'
 
 /**
  * Contradictions and possible anomalies, visually distinct on purpose.
@@ -26,10 +27,10 @@ export function ContinuityPanel({ storyId }: { storyId: string }) {
     return (
       <section>
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Continuity
+          {t('Continuity')}
         </h2>
         <p className="rounded-md bg-emerald-50 dark:bg-emerald-950 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-300">
-          Nothing contradicts itself.
+          {t('Nothing contradicts itself.')}
         </p>
       </section>
     )
@@ -39,13 +40,12 @@ export function ContinuityPanel({ storyId }: { storyId: string }) {
     <section>
       <div className="mb-2 flex items-baseline justify-between">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Continuity
+          {t('Continuity')}
         </h2>
         <span className="text-[11px] text-slate-500 dark:text-slate-400">
-          {report.contradiction_count} contradiction
-          {report.contradiction_count === 1 ? '' : 's'}
-          {report.possible_count > 0 && ` · ${report.possible_count} to check`}
-          {report.anomalies.some(item => item.kind === 'planned') && ` · ${report.anomalies.filter(item => item.kind === 'planned').length} planned`}
+          {t('{0} contradiction{1}', report.contradiction_count, report.contradiction_count === 1 ? '' : t('s'))}
+          {report.possible_count > 0 && t(' · {0} to check', report.possible_count)}
+          {report.anomalies.some(item => item.kind === 'planned') && t(' · {0} planned', report.anomalies.filter(item => item.kind === 'planned').length)}
         </span>
       </div>
 
@@ -65,7 +65,7 @@ export function ContinuityPanel({ storyId }: { storyId: string }) {
                 <span className="font-mono text-[10px] text-slate-400">{anomaly.code}</span>
                 {!proven && anomaly.confidence !== null && (
                   <span className="text-[10px] text-violet-700 dark:text-violet-300">
-                    {Math.round(anomaly.confidence * 100)}% sure
+                    {t('{0}% sure', Math.round(anomaly.confidence * 100))}
                   </span>
                 )}
               </div>

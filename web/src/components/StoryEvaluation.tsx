@@ -5,6 +5,7 @@ import { api, type CraftReading, type Evaluation, type Evaluator, type StoryUpda
 import { applyPassageEdits } from './passageEdits'
 import { besideKind, openBeside } from './beside'
 import { errorText } from '../api/errors'
+import { t, tx } from '../i18n'
 
 /**
  * Evaluate: on-demand craft checks, separate from the live health findings. Pick an
@@ -12,10 +13,10 @@ import { errorText } from '../api/errors'
  */
 
 const MICE = [
-  ['milieu', 'Milieu', 'a place: opens on arrival, closes on leaving'],
-  ['idea', 'Idea', 'a question: opens when asked, closes when answered'],
-  ['character', 'Character', 'who someone is: opens on dissatisfaction, closes on change'],
-  ['event', 'Event', 'order disrupted: opens on the disruption, closes when order returns'],
+  ['milieu', tx('Milieu'), tx('a place: opens on arrival, closes on leaving')],
+  ['idea', tx('Idea'), tx('a question: opens when asked, closes when answered')],
+  ['character', tx('Character'), tx('who someone is: opens on dissatisfaction, closes on change')],
+  ['event', tx('Event'), tx('order disrupted: opens on the disruption, closes when order returns')],
 ] as const
 
 type RhythmVisual = { sequence: { scene_id: string; title: string | null; type: string }[]; runs: { type: string; start: number; length: number }[]; run_limit: number }
@@ -26,19 +27,19 @@ function RhythmStrip({ visual }: { visual: RhythmVisual }) {
   for (const run of visual.runs) if (run.length >= visual.run_limit) for (let i = run.start; i < run.start + run.length; i += 1) long.add(i)
   return (
     <div>
-      <div className="flex flex-wrap gap-1" role="img" aria-label="Scene and sequel sequence in reading order">
+      <div className="flex flex-wrap gap-1" role="img" aria-label={t('Scene and sequel sequence in reading order')}>
         {visual.sequence.map((scene, index) => (
           <span
             key={scene.scene_id}
-            title={`${index + 1}. ${scene.title ?? 'Untitled'} (${scene.type})`}
+            title={`${index + 1}. ${scene.title ?? t('Untitled')} (${scene.type})`}
             className={`h-6 w-4 rounded-sm ${scene.type === 'sequel' ? 'bg-sky-400' : 'bg-amber-400'} ${long.has(index) ? 'ring-2 ring-rose-500 ring-offset-1 dark:ring-offset-slate-900' : ''}`}
           />
         ))}
       </div>
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" />Scene
-        <span className="ml-3 mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-sky-400" />Sequel
-        <span className="ml-3">Ringed: a run of {visual.run_limit} or more</span>
+        <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" />{t('Scene')}
+        <span className="ml-3 mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-sky-400" />{t('Sequel')}
+        <span className="ml-3">{t('Ringed: a run of {0} or more', visual.run_limit)}</span>
       </p>
     </div>
   )
@@ -59,7 +60,7 @@ function MiceSpans({ visual }: { visual: MiceVisual }) {
           </div>
         </div>
       ))}
-      <p className="text-xs text-slate-500 dark:text-slate-400">Each bar runs from a thread's first scene to its last, in reading order.</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">{t('Each bar runs from a thread\'s first scene to its last, in reading order.')}</p>
     </div>
   )
 }
@@ -100,31 +101,31 @@ function MiceInputs({ storyId, onOpenInbox }: { storyId: string; onOpenInbox: ()
   if (!threads.data || missing.length === 0) return null
   return (
     <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/60 dark:bg-amber-950/30">
-      <h3 className="text-sm font-semibold">{missing.length} thread{missing.length === 1 ? '' : 's'} without a MICE category</h3>
-      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Fill them in here, or ask an AI to propose them for you to review.</p>
+      <h3 className="text-sm font-semibold">{t('{0} thread{1} without a MICE category', missing.length, missing.length === 1 ? '' : t('s'))}</h3>
+      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{t('Fill them in here, or ask an AI to propose them for you to review.')}</p>
       <ul className="mt-3 space-y-2">
         {missing.map((thread) => (
           <li key={thread.id} className="flex flex-wrap items-center gap-2 text-sm">
             <span className="min-w-0 flex-1 truncate">{thread.title || thread.type.replace('_', '-')}</span>
             <select
-              aria-label={`MICE category for ${thread.title || thread.type}`}
+              aria-label={t('MICE category for {0}', thread.title || thread.type)}
               defaultValue=""
               disabled={save.isPending}
               onChange={(event) => { if (event.target.value) save.mutate({ id: thread.id, mice: event.target.value }) }}
               className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900"
             >
-              <option value="">Choose…</option>
-              {MICE.map(([value, label, help]) => <option key={value} value={value} title={help}>{label}</option>)}
+              <option value="">{t('Choose…')}</option>
+              {MICE.map(([value, label, help]) => <option key={value} value={value} title={t(help)}>{t(label)}</option>)}
             </select>
           </li>
         ))}
       </ul>
       <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? 'Copied' : 'Copy prompt for your agent'}</button>
-        <button type="button" disabled={!connection || ask.isPending} title={connection ? undefined : 'Connect Claude or OpenAI in the assistant first'} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? 'Asking the assistant…' : 'Ask the assistant'}</button>
+        <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? t('Copied') : t('Copy prompt for your agent')}</button>
+        <button type="button" disabled={!connection || ask.isPending} title={connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? t('Asking the assistant…') : t('Ask the assistant')}</button>
       </div>
-      {!connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.</p>}
-      {ask.isSuccess && <p className="mt-2 text-xs">Proposal ready. <button type="button" className="underline" onClick={onOpenInbox}>Review it in Agent changes →</button></p>}
+      {!connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.')}</p>}
+      {ask.isSuccess && <p className="mt-2 text-xs">{t('Proposal ready.')}{' '}<button type="button" className="underline" onClick={onOpenInbox}>{t('Review it in Agent changes →')}</button></p>}
       {(ask.error || save.error) && <p role="alert" className="mt-2 text-xs text-rose-700 dark:text-rose-300">{errorText(ask.error ?? save.error)}</p>}
     </div>
   )
@@ -182,23 +183,23 @@ function ReviewInputs({ storyId, evaluatorId, ready, onOpenInbox }: {
   if (!missing && !ask.isSuccess && !ask.error) return null
   return (
     <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/60 dark:bg-amber-950/30">
-      <h3 className="text-sm font-semibold">Fill missing {valueShift ? 'value shifts' : 'misbelief and midpoint inputs'}</h3>
-      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Ask an AI to propose missing inputs from your story. Accept them in Agent changes, then return here to run the AI review. Existing inputs are preserved.</p>
+      <h3 className="text-sm font-semibold">{t('Fill missing {0}', valueShift ? t('value shifts') : t('misbelief and midpoint inputs'))}</h3>
+      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{t('Ask an AI to propose missing inputs from your story. Accept them in Agent changes, then return here to run the AI review. Existing inputs are preserved.')}</p>
       <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? 'Copied' : 'Copy prompt for your agent'}</button>
-        <button type="button" disabled={!connection || ask.isPending} title={connection ? undefined : 'Connect Claude or OpenAI in the assistant first'} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? 'Asking the assistant…' : 'Ask the assistant'}</button>
+        <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? t('Copied') : t('Copy prompt for your agent')}</button>
+        <button type="button" disabled={!connection || ask.isPending} title={connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? t('Asking the assistant…') : t('Ask the assistant')}</button>
       </div>
-      {!connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.</p>}
-      {ask.isSuccess && <p className="mt-2 text-xs">Proposal ready. <button type="button" className="underline" onClick={onOpenInbox}>Review it in Agent changes →</button></p>}
+      {!connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.')}</p>}
+      {ask.isSuccess && <p className="mt-2 text-xs">{t('Proposal ready.')}{' '}<button type="button" className="underline" onClick={onOpenInbox}>{t('Review it in Agent changes →')}</button></p>}
       {ask.error && <p role="alert" className="mt-2 text-xs text-rose-700 dark:text-rose-300">{errorText(ask.error)}</p>}
     </div>
   )
 }
 
 const VERDICT: Record<string, { icon: string; label: string; border: string }> = {
-  works: { icon: '✅', label: 'Works', border: 'border-emerald-400' },
-  consider: { icon: '🟡', label: 'Consider', border: 'border-amber-400' },
-  needs_change: { icon: '🔴', label: 'Needs change', border: 'border-rose-500' },
+  works: { icon: '✅', label: tx('Works'), border: 'border-emerald-400' },
+  consider: { icon: '🟡', label: tx('Consider'), border: 'border-amber-400' },
+  needs_change: { icon: '🔴', label: tx('Needs change'), border: 'border-rose-500' },
 }
 
 function reviewTimestamp(value: string) {
@@ -240,33 +241,33 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
     try { await navigator.clipboard.writeText(agentPrompt); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch { setCopied(false) }
   }
   const report = reports.data?.find((item) => item.id === shownId) ?? reports.data?.[0]
-  const threadName = (id: string) => { const thread = threads.data?.find((item) => item.id === id); return thread ? thread.title || thread.type.replace('_', '-') : 'A thread' }
+  const threadName = (id: string) => { const thread = threads.data?.find((item) => item.id === id); return thread ? thread.title || thread.type.replace('_', '-') : t('A thread') }
   const sceneOf = (id: string) => scenes.data?.find((item) => item.id === id)
   const subjectLink = (type: string, id: string) => {
     if (type === 'scene') {
       const scene = sceneOf(id)
-      return scene ? <button type="button" className="underline" onClick={() => onOpenScene({ id: scene.id, chapter_id: scene.chapter_id ?? null })}>{scene.title || 'Untitled scene'}</button> : 'A scene'
+      return scene ? <button type="button" className="underline" onClick={() => onOpenScene({ id: scene.id, chapter_id: scene.chapter_id ?? null })}>{scene.title || t('Untitled scene')}</button> : t('A scene')
     }
-    if (type === 'character') return <button type="button" className="underline" onClick={() => onOpenCharacters(id)}>{characters.data?.find((item) => item.id === id)?.name ?? 'A character'}</button>
+    if (type === 'character') return <button type="button" className="underline" onClick={() => onOpenCharacters(id)}>{characters.data?.find((item) => item.id === id)?.name ?? t('A character')}</button>
     return <button type="button" className="underline" onClick={() => onOpenThreads(id)}>{threadName(id)}</button>
   }
-  const source = (item: { source: string; model: string | null }) => item.source === 'assistant' ? `Assistant${item.model ? ` (${item.model})` : ''}` : item.source === 'mcp' ? 'Your agent (MCP)' : 'You'
+  const source = (item: { source: string; model: string | null }) => item.source === 'assistant' ? t('Assistant{0}', item.model ? ` (${item.model})` : '') : item.source === 'mcp' ? t('Your agent (MCP)') : t('You')
 
   return (
-    <section className="space-y-4 rounded-lg border border-slate-200 p-5 dark:border-slate-700" aria-label="AI review">
+    <section className="space-y-4 rounded-lg border border-slate-200 p-5 dark:border-slate-700" aria-label={t('AI review')}>
       <div>
-        <h3 className="text-lg font-semibold">AI review</h3>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">An AI reviews the supplied story material and says what works, what to consider, and what needs to change. Nothing in your story is edited.</p>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">This is a separate second opinion. It reads the story independently of the check above, so the two can disagree; where they do, read the cited scenes and decide.</p>
+        <h3 className="text-lg font-semibold">{t('AI review')}</h3>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t('An AI reviews the supplied story material and says what works, what to consider, and what needs to change. Nothing in your story is edited.')}</p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('This is a separate second opinion. It reads the story independently of the check above, so the two can disagree; where they do, read the cited scenes and decide.')}</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? 'Copied' : 'Copy prompt for your agent'}</button>
-        <button type="button" disabled={!ready || !connection || ask.isPending} title={!ready ? 'Fill in the missing inputs above first' : connection ? undefined : 'Connect Claude or OpenAI in the assistant first'} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? 'Reviewing…' : 'Ask the assistant'}</button>
-        <button type="button" onClick={() => void reports.refetch()} className="rounded-md px-3 py-1.5 text-xs underline">Check for new reports</button>
+        <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? t('Copied') : t('Copy prompt for your agent')}</button>
+        <button type="button" disabled={!ready || !connection || ask.isPending} title={!ready ? t('Fill in the missing inputs above first') : connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? t('Reviewing…') : t('Ask the assistant')}</button>
+        <button type="button" onClick={() => void reports.refetch()} className="rounded-md px-3 py-1.5 text-xs underline">{t('Check for new reports')}</button>
       </div>
-      {ready && !connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.</p>}
+      {ready && !connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.')}</p>}
       {ask.error && <p role="alert" className="text-xs text-rose-700 dark:text-rose-300">{errorText(ask.error)}</p>}
-      {reports.data?.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">No reviews yet.</p>}
+      {reports.data?.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{t('No reviews yet.')}</p>}
 
       {report && (
         <div className="space-y-3">
@@ -274,10 +275,10 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
             {reviewTimestamp(report.created_at)} · {source(report)}
           </p>
           {report.stale && <div role="status" className="rounded-md bg-amber-100 p-3 text-sm text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-            <p>Story edited since this review. Re-run?</p>
+            <p>{t('Story edited since this review. Re-run?')}</p>
             <div className="mt-2 flex flex-wrap gap-3">
-              {connection && <button type="button" disabled={!ready || ask.isPending} title={!ready ? 'Fill in the missing inputs above first' : undefined} onClick={() => ask.mutate()} className="underline disabled:opacity-40">{ask.isPending ? 'Reviewing…' : 'Re-run with the assistant'}</button>}
-              <button type="button" onClick={() => void copy()} className="underline">{copied ? 'Copied' : 'Copy re-run prompt for your agent'}</button>
+              {connection && <button type="button" disabled={!ready || ask.isPending} title={!ready ? t('Fill in the missing inputs above first') : undefined} onClick={() => ask.mutate()} className="underline disabled:opacity-40">{ask.isPending ? t('Reviewing…') : t('Re-run with the assistant')}</button>}
+              <button type="button" onClick={() => void copy()} className="underline">{copied ? t('Copied') : t('Copy re-run prompt for your agent')}</button>
             </div>
           </div>}
           <p className="text-sm leading-6"><ReviewText text={report.summary} /></p>
@@ -288,12 +289,12 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
               const sceneIds = (item.scene_ids as string[] | undefined) ?? []
               return (
                 <li key={String(item.entity_id)} className={`rounded-md border-l-4 bg-white p-3 text-sm dark:bg-slate-900 ${verdict.border}`}>
-                  <p className="font-semibold"><span aria-hidden="true">{verdict.icon}</span> {verdict.label}: {subjectLink(String(item.entity_type), String(item.entity_id))}</p>
+                  <p className="font-semibold"><span aria-hidden="true">{verdict.icon}</span> {t(verdict.label)}: {subjectLink(String(item.entity_type), String(item.entity_id))}</p>
                   <p className="mt-1 leading-6"><ReviewText text={String(item.evidence)} /></p>
                   {fixes.length > 0 && <ul className="mt-2 list-disc pl-5">{fixes.map((fix) => <li key={fix}><ReviewText text={fix} /></li>)}</ul>}
                   {sceneIds.length > 0 && (
                     <p className="mt-2 flex flex-wrap gap-x-3 text-xs">
-                      {sceneIds.map((id) => { const scene = sceneOf(id); return scene ? <button key={id} type="button" className="underline" onClick={() => onOpenScene({ id: scene.id, chapter_id: scene.chapter_id ?? null })}>{scene.title || 'Untitled scene'} →</button> : null })}
+                      {sceneIds.map((id) => { const scene = sceneOf(id); return scene ? <button key={id} type="button" className="underline" onClick={() => onOpenScene({ id: scene.id, chapter_id: scene.chapter_id ?? null })}>{scene.title || t('Untitled scene')} →</button> : null })}
                     </p>
                   )}
                 </li>
@@ -305,12 +306,12 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
 
       {reports.data && reports.data.length > 1 && (
         <details>
-          <summary className="cursor-pointer text-xs text-slate-600 dark:text-slate-300">Earlier reviews ({reports.data.length - 1})</summary>
+          <summary className="cursor-pointer text-xs text-slate-600 dark:text-slate-300">{t('Earlier reviews ({0})', reports.data.length - 1)}</summary>
           <ul className="mt-2 space-y-1 text-xs">
             {reports.data.map((item) => (
               <li key={item.id}>
                 <button type="button" onClick={() => setShownId(item.id)} className={`text-left underline ${item.id === report?.id ? 'font-semibold' : ''}`}>
-                  {reviewTimestamp(item.created_at)} · {source(item)}{item.stale ? ' · stale' : ''}
+                  {reviewTimestamp(item.created_at)} · {source(item)}{item.stale ? t(' · stale') : ''}
                 </button>
               </li>
             ))}
@@ -339,28 +340,28 @@ function EvaluationOverview({ evaluators, results, reading, readerShared, runnin
     const certain = reading?.findings.filter((finding) => finding.check === item.id && !finding.uncertain).length ?? 0
     const uncertain = reading?.findings.filter((finding) => finding.check === item.id && finding.uncertain).length ?? 0
     const parts: string[] = []
-    if (item.missing.length) parts.push('Needs inputs')
+    if (item.missing.length) parts.push(t('Needs inputs'))
     if (reading?.check_missing[item.id]) parts.push(reading.check_missing[item.id])
-    const source = item.reads_prose ? 'prose' : 'outline'
-    if (outline) parts.push(outline.findings.length ? `${outline.findings.length} ${source} ${outline.findings.length === 1 ? 'note' : 'notes'}` : `${source[0].toUpperCase()}${source.slice(1)}: nothing to flag`)
-    if (reading && READER_CHECKS.includes(item.id)) parts.push(certain ? `${certain} from the prose` : 'Prose: nothing confident to flag')
-    if (uncertain) parts.push(`${uncertain} uncertain`)
-    if (!parts.length) parts.push(item.kind === 'deterministic' || READER_CHECKS.includes(item.id) ? 'Not run yet' : 'AI review only')
+    const notes = outline?.findings.length ?? 0
+    if (outline) parts.push(notes ? (item.reads_prose ? (notes === 1 ? t('{0} prose note', notes) : t('{0} prose notes', notes)) : (notes === 1 ? t('{0} outline note', notes) : t('{0} outline notes', notes))) : item.reads_prose ? t('Prose: nothing to flag') : t('Outline: nothing to flag'))
+    if (reading && READER_CHECKS.includes(item.id)) parts.push(certain ? t('{0} from the prose', certain) : t('Prose: nothing confident to flag'))
+    if (uncertain) parts.push(t('{0} uncertain', uncertain))
+    if (!parts.length) parts.push(item.kind === 'deterministic' || READER_CHECKS.includes(item.id) ? t('Not run yet') : t('AI review only'))
     const attention = (outline?.findings.some((finding) => finding.severity === 'warning') ?? false) || certain > 0
     return { text: parts.join(' · '), attention }
   }
-  return <section className="space-y-4 rounded-lg border border-slate-200 p-5 dark:border-slate-700" aria-label="All checks">
+  return <section className="space-y-4 rounded-lg border border-slate-200 p-5 dark:border-slate-700" aria-label={t('All checks')}>
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <p className="text-sm text-slate-600 dark:text-slate-300">Run every ready check at once{readerShared ? ', including one shared read of your saved prose' : ''}. Open a check for details, inputs and AI reviews.</p>
-      <button type="button" className="ui-btn ui-btn-primary" disabled={running} onClick={onRunAll}>{running ? 'Running all…' : 'Run all'}</button>
+      <p className="text-sm text-slate-600 dark:text-slate-300">{t('Run every ready check at once{0}. Open a check for details, inputs and AI reviews.', readerShared ? t(', including one shared read of your saved prose') : '')}</p>
+      <button type="button" className="ui-btn ui-btn-primary" disabled={running} onClick={onRunAll}>{running ? t('Running all…') : t('Run all')}</button>
     </div>
     {error != null && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(error)}</p>}
     <ul className="divide-y divide-[var(--line)]">
       {evaluators.map((item) => {
         const { text, attention } = status(item)
         return <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-          <div className="min-w-0"><p className="text-sm font-medium">{attention && <span className="mr-1 text-amber-600" aria-label="Has findings">●</span>}{item.name}</p><p className="text-xs text-slate-500 dark:text-slate-400">{text}</p></div>
-          <button type="button" className="ui-btn ui-btn-secondary" onClick={() => onOpen(item.id)}>Open</button>
+          <div className="min-w-0"><p className="text-sm font-medium">{attention && <span className="mr-1 text-amber-600" aria-label={t('Has findings')}>●</span>}{item.name}</p><p className="text-xs text-slate-500 dark:text-slate-400">{text}</p></div>
+          <button type="button" className="ui-btn ui-btn-secondary" onClick={() => onOpen(item.id)}>{t('Open')}</button>
         </li>
       })}
     </ul>
@@ -370,7 +371,7 @@ function EvaluationOverview({ evaluators, results, reading, readerShared, runnin
 type Finding = Evaluation['findings'][number]
 type FindingAction = Finding['actions'][number]
 // What part of a check a finding comes from, by code prefix (shown as a small tag).
-const FINDING_TAGS: [string, string][] = [['names.', 'Names'], ['spelling.', 'Spelling'], ['variants.hyphenation', 'Hyphenation'], ['variants.capitalisation', 'Capitals'], ['tk.', 'TK']]
+const FINDING_TAGS: [string, string][] = [['names.', tx('Names')], ['spelling.', tx('Spelling')], ['variants.hyphenation', tx('Hyphenation')], ['variants.capitalisation', tx('Capitals')], ['tk.', 'TK']]
 
 export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpenInbox, onOpenScene, onOpenThreads, onOpenCharacters, onOpenStory, onOpenPassage }: {
   storyId: string
@@ -411,17 +412,17 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
   const applyAction = useMutation({
     mutationFn: async (action: FindingAction) => {
       if (action.kind === 'replace') {
-        const { stale } = await applyPassageEdits(storyId, action.edits, beforeEdit, `Consistency: ${action.value}`)
+        const { stale } = await applyPassageEdits(storyId, action.edits, beforeEdit, t('Consistency: {0}', action.value))
         await Promise.all([qc.invalidateQueries({ queryKey: ['content', storyId] }), qc.invalidateQueries({ queryKey: ['placeholders', storyId] })])
-        if (stale) throw new Error(`${stale} of ${action.edits.length} changed since the check ran and were left alone. The check has run again.`)
+        if (stale) throw new Error(t('{0} of {1} changed since the check ran and were left alone. The check has run again.', stale, action.edits.length))
       } else if (action.kind === 'add_alias' && action.entity_type === 'character') {
         const character = (await api.listCharacters(storyId)).find((item) => item.id === action.entity_id)
-        if (!character) throw new Error('That character no longer exists.')
+        if (!character) throw new Error(t('That character no longer exists.'))
         await api.updateCharacter(storyId, character.id, { aliases: [...(character.aliases ?? []), action.value] })
         await qc.invalidateQueries({ queryKey: ['characters', storyId] })
       } else if (action.kind === 'add_alias' && action.entity_type === 'glossary_entry') {
         const entry = (await api.listGlossary(storyId)).find((item) => item.id === action.entity_id)
-        if (!entry) throw new Error('That glossary term no longer exists.')
+        if (!entry) throw new Error(t('That glossary term no longer exists.'))
         await api.updateGlossaryEntry(storyId, entry.id, { aliases: [...(entry.aliases ?? []), action.value] })
         await qc.invalidateQueries({ queryKey: ['glossary', storyId] })
       } else if (action.kind === 'rename_entity' && action.entity_id) {
@@ -460,12 +461,12 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
     const busy = applyAction.isPending
     return (
       <li key={`${finding.code}-${index}`} className={`rounded-md border-l-4 bg-white p-3 text-sm dark:bg-slate-900 ${finding.severity === 'warning' ? 'border-amber-400' : 'border-slate-300 dark:border-slate-600'}`}>
-        <p>{tag && <span className="eval-finding-tag">{tag}</span>}{finding.message}</p>
+        <p>{tag && <span className="eval-finding-tag">{t(tag)}</span>}{finding.message}</p>
         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-          {finding.passage && onOpenPassage && <button type="button" onClick={() => onOpenPassage(finding.passage!.scene_id, finding.passage!.find, finding.passage!.paragraph)} className="underline">Open in Write →</button>}
-          {open && <button type="button" onClick={open} className="underline">Open {finding.entity_type === 'story' ? 'story' : finding.entity_type} in Plan →</button>}
-          {finding.passage ? <button type="button" onClick={() => openBeside({ kind: 'scene', id: finding.passage!.scene_id })} className="underline">Open scene beside</button>
-            : besideKind(finding.entity_type) && finding.entity_id && <button type="button" onClick={() => openBeside({ kind: besideKind(finding.entity_type)!, id: finding.entity_id! })} className="underline">Open beside</button>}
+          {finding.passage && onOpenPassage && <button type="button" onClick={() => onOpenPassage(finding.passage!.scene_id, finding.passage!.find, finding.passage!.paragraph)} className="underline">{t('Open in Write →')}</button>}
+          {open && <button type="button" onClick={open} className="underline">{t('Open {0} in Plan →', finding.entity_type === 'story' ? t('story') : finding.entity_type)}</button>}
+          {finding.passage ? <button type="button" onClick={() => openBeside({ kind: 'scene', id: finding.passage!.scene_id })} className="underline">{t('Open scene beside')}</button>
+            : besideKind(finding.entity_type) && finding.entity_id && <button type="button" onClick={() => openBeside({ kind: besideKind(finding.entity_type)!, id: finding.entity_id! })} className="underline">{t('Open beside')}</button>}
           {finding.actions.filter((action) => action.kind !== 'replace' || action.edits.length > 0).map((action) => <button key={`${action.kind}-${action.value}`} type="button" disabled={busy} onClick={() => applyAction.mutate(action)} className="underline disabled:opacity-50">
             {action.label}{action.kind === 'replace' && action.edits.length > 1 ? ` (${action.edits.length})` : ''}
           </button>)}
@@ -477,16 +478,16 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
   return (
     <div className="space-y-5">
       <header className="eval-header">
-        <h2 className="text-2xl font-semibold">Evaluate</h2>
-        <details className="ws-help"><summary aria-label="About Evaluate">?</summary><p>Run a craft check when you want one. Results are suggestions to consider, never rules, and nothing here changes your story unless you fill in an input.</p></details>
+        <h2 className="text-2xl font-semibold">{t('Evaluate')}</h2>
+        <details className="ws-help"><summary aria-label={t('About Evaluate')}>?</summary><p>{t('Run a craft check when you want one. Results are suggestions to consider, never rules, and nothing here changes your story unless you fill in an input.')}</p></details>
       </header>
 
       {evaluators.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(evaluators.error)}</p>}
-      {!evaluators.data && !evaluators.error && <p className="text-sm text-slate-500 dark:text-slate-400">Loading evaluators…</p>}
+      {!evaluators.data && !evaluators.error && <p className="text-sm text-slate-500 dark:text-slate-400">{t('Loading evaluators…')}</p>}
 
       {evaluators.data && <div className="eval-layout">
-        <div role="tablist" aria-label="Evaluators" className="eval-checks">
-          <button type="button" role="tab" aria-selected={overview} onClick={() => setChosen(null)} className="eval-check"><span>Overview</span><small>All checks</small></button>
+        <div role="tablist" aria-label={t('Evaluators')} className="eval-checks">
+          <button type="button" role="tab" aria-selected={overview} onClick={() => setChosen(null)} className="eval-check"><span>{t('Overview')}</span><small>{t('All checks')}</small></button>
           {evaluators.data.map((item) => (
             <button
               key={item.id}
@@ -496,7 +497,7 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
               onClick={() => setChosen(item.id)}
               className="eval-check"
             >
-              <span>{item.name}</span>{item.missing.length > 0 && <small>Needs inputs</small>}
+              <span>{item.name}</span>{item.missing.length > 0 && <small>{t('Needs inputs')}</small>}
             </button>
           ))}
         </div>
@@ -505,8 +506,8 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
         {selected && <>
         <section className="space-y-4 rounded-lg border border-slate-200 p-5 dark:border-slate-700">
           <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{selected.description}</p>
-          {selected.id === 'mice_nesting' && <p className="text-xs text-slate-500 dark:text-slate-400">MICE means Milieu, Idea, Character and Event: four kinds of story thread, from Orson Scott Card and taught by Mary Robinette Kowal.</p>}
-          {selected.id === 'misbelief_midpoint' && <p className="text-xs text-slate-500 dark:text-slate-400">A misbelief is a false conviction that drives a character’s choices, from Lisa Cron’s Story Genius.</p>}
+          {selected.id === 'mice_nesting' && <p className="text-xs text-slate-500 dark:text-slate-400">{t('MICE means Milieu, Idea, Character and Event: four kinds of story thread, from Orson Scott Card and taught by Mary Robinette Kowal.')}</p>}
+          {selected.id === 'misbelief_midpoint' && <p className="text-xs text-slate-500 dark:text-slate-400">{t('A misbelief is a false conviction that drives a character’s choices, from Lisa Cron’s Story Genius.')}</p>}
           {selected.missing.length > 0 && (
             <ul className="list-disc pl-5 text-sm text-amber-800 dark:text-amber-300">
               {selected.missing.map((item) => <li key={item}>{item}</li>)}
@@ -514,8 +515,8 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
           )}
           {selected.id === 'mice_nesting' && <MiceInputs storyId={storyId} onOpenInbox={onOpenInbox} />}
           {(selected.id === 'value_shift' || selected.id === 'misbelief_midpoint') && <ReviewInputs key={selected.id} storyId={storyId} evaluatorId={selected.id} ready={selected.ready} onOpenInbox={onOpenInbox} />}
-          {usesReader && <><p className="writer-help">Run reads saved scene prose with the shared reader; no personal AI key is needed. Outline inputs below remain useful for deeper reviews.</p><button type="button" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950" disabled={reader.isPending || !noticer.data?.shared || !scenes.data?.some(scene => scene.word_count > 0)} onClick={() => reader.mutate()}>{reader.isPending ? 'Reading scene evidence…' : reader.data ? 'Run again' : 'Run'}</button></>}
-          {usesReader && !noticer.isPending && !noticer.data?.shared && <p className="writer-help">The shared scene reader is not configured yet. Available outline checks and your own AI reviews remain below.</p>}
+          {usesReader && <><p className="writer-help">{t('Run reads saved scene prose with the shared reader; no personal AI key is needed. Outline inputs below remain useful for deeper reviews.')}</p><button type="button" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950" disabled={reader.isPending || !noticer.data?.shared || !scenes.data?.some(scene => scene.word_count > 0)} onClick={() => reader.mutate()}>{reader.isPending ? t('Reading scene evidence…') : reader.data ? t('Run again') : t('Run')}</button></>}
+          {usesReader && !noticer.isPending && !noticer.data?.shared && <p className="writer-help">{t('The shared scene reader is not configured yet. Available outline checks and your own AI reviews remain below.')}</p>}
           {reader.error && <p role="alert">{errorText(reader.error)}</p>}
           {selected.kind === 'deterministic' && <button
             type="button"
@@ -523,24 +524,24 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
             onClick={() => run.mutate(selected.id)}
             className={usesReader ? 'share-story-button' : 'rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950'}
           >
-            {run.isPending ? 'Running…' : usesReader ? 'Run outline-only check' : shown ? 'Run again' : 'Run'}
+            {run.isPending ? t('Running…') : usesReader ? t('Run outline-only check') : shown ? t('Run again') : t('Run')}
           </button>}
           {run.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(run.error)}</p>}
         </section>
 
         {reader.data && selected && usesReader && <SceneReaderResults key={selected.id} storyId={storyId} reading={reader.data} check={selected.id} onOpenPassage={onOpenPassage} onOpenScene={id => { const scene = scenes.data?.find(scene => scene.id === id); if (scene) onOpenScene({ id, chapter_id: scene.chapter_id ?? null }) }} />}
         {shown && (
-          <section className="space-y-4" aria-label="Results">
-            <h3 className="text-lg font-semibold">Results</h3>
+          <section className="space-y-4" aria-label={t('Results')}>
+            <h3 className="text-lg font-semibold">{t('Results')}</h3>
             {selected.id === 'scene_rhythm' && <RhythmStrip visual={shown.visual as unknown as RhythmVisual} />}
             {selected.id === 'mice_nesting' && <MiceSpans visual={shown.visual as unknown as MiceVisual} />}
             {applyAction.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(applyAction.error)}</p>}
             {shown.findings.length === 0 ? (
-              <p className="text-sm text-emerald-700 dark:text-emerald-300">Nothing to flag.</p>
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">{t('Nothing to flag.')}</p>
             ) : <>
               {shown.findings.some((finding) => !finding.uncertain) && <ul className="space-y-2">{shown.findings.filter((finding) => !finding.uncertain).map(renderFinding)}</ul>}
               {shown.findings.some((finding) => finding.uncertain) && <details className="eval-worth-a-look">
-                <summary>Worth a look ({shown.findings.filter((finding) => finding.uncertain).length}): may be intended</summary>
+                <summary>{t('Worth a look ({0}): may be intended', shown.findings.filter((finding) => finding.uncertain).length)}</summary>
                 <ul className="mt-2 space-y-2">{shown.findings.filter((finding) => finding.uncertain).map(renderFinding)}</ul>
               </details>}
             </>}

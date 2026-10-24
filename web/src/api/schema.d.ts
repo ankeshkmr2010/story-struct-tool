@@ -4562,6 +4562,8 @@ export interface components {
             author_name?: string | null;
             /** @description Default writing language for stories that do not set one. */
             language?: components["schemas"]["Language"] | null;
+            /** @description Language of the app's interface; null follows the browser. */
+            ui_language?: components["schemas"]["UiLanguage"] | null;
         };
         /** ProgressIn */
         ProgressIn: {
@@ -5403,6 +5405,12 @@ export interface components {
             visitor_id: string;
             events: ("try_start" | "try_step_1" | "try_step_2" | "try_step_3" | "try_step_4" | "try_step_5" | "try_step_6" | "try_step_7" | "try_skip" | "try_keep_click" | "try_imported")[];
         };
+        /**
+         * UiLanguage
+         * @description Language of the app's own interface (menus, buttons, help), not of a story.
+         * @enum {string}
+         */
+        UiLanguage: "en" | "fr" | "de" | "es" | "pt-BR" | "it";
         /** UploadOut */
         UploadOut: {
             /** Format: uuid */
@@ -5429,6 +5437,7 @@ export interface components {
             author_name: string | null;
             picture_url: string | null;
             language: string;
+            ui_language?: string | null;
         };
         /** ValidatorCreate */
         ValidatorCreate: {

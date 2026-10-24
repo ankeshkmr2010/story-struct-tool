@@ -1,4 +1,5 @@
 import { api, type Evaluation } from '../api/client'
+import { t } from '../i18n'
 
 export type Passage = NonNullable<Evaluation['findings'][number]['passage']>
 export type PassageEdit = { passage: Passage; replacement: string }
@@ -17,7 +18,7 @@ function splice(content: string, start: number, end: number, replacement: string
  * scene, guarded by `expected_content`; a labelled snapshot makes larger fixes easy to undo.
  */
 export async function applyPassageEdits(storyId: string, edits: PassageEdit[], beforeEdit: () => Promise<boolean>, label?: string) {
-  if (!await beforeEdit()) throw new Error('Save your writing before changing the text.')
+  if (!await beforeEdit()) throw new Error(t('Save your writing before changing the text.'))
   const byScene = new Map<string, PassageEdit[]>()
   for (const edit of edits) byScene.set(edit.passage.scene_id, [...(byScene.get(edit.passage.scene_id) ?? []), edit])
   let applied = 0, stale = 0

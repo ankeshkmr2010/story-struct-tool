@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet, Route, Routes, useLocation } from 'react-router-
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from 'react'
 import Landing from './pages/Landing'
 import { ThemeProvider, ThemeToggle } from './components/Theme'
+import { LanguageToggle } from './components/LanguageToggle'
 import { AccountMenu, AuthGate } from './components/AuthGate'
 import StoryList from './pages/StoryList'
 import StoryWorkspace from './pages/StoryWorkspace'
@@ -24,24 +25,26 @@ import BetaOwner from './pages/BetaOwner'
 import BetaPolls from './pages/BetaPolls'
 import BetaReaderPage, { BetaInvitePage } from './pages/BetaReader'
 import BetaThreadPage from './pages/BetaThread'
+import { t, tx, useUiLanguage } from './i18n'
 const TryStory = lazy(() => import('./pages/TryStory'))
 const TryKeep = lazy(() => import('./pages/TryStory').then(m => ({ default: m.TryKeep })))
 const TryLocked = lazy(() => import('./pages/TryStory').then(m => ({ default: m.TryLocked })))
 
 // Browser tab titles by route; story pages refine theirs once the story's title loads.
 const PAGE_TITLES: [RegExp, string][] = [
-  [/^\/$/, 'StoryTool — From idea to story'], [/^\/try/, 'Try StoryTool'], [/^\/how-to-use/, 'How to use · StoryTool'],
-  [/^\/roadmap/, 'Roadmap · StoryTool'], [/^\/thanks/, 'Shoutouts · StoryTool'], [/^\/about/, 'About the developer · StoryTool'], [/^\/pricing/, 'Pricing · StoryTool'],
-  [/^\/privacy/, 'Privacy · StoryTool'], [/^\/library/, 'Your stories · StoryTool'], [/^\/settings/, 'Settings · StoryTool'],
-  [/^\/checks/, 'Writing checks · StoryTool'], [/^\/feedback/, 'Feedback · StoryTool'], [/^\/oauth/, 'Connect AI · StoryTool'],
-  [/^\/stories\/[^/]+\/images/, 'Images · StoryTool'], [/^\/stories\/[^/]+\/beside/, 'Beside · StoryTool'], [/^\/stories\/[^/]+\/beta/, 'Beta readers · StoryTool'],
-  [/^\/stories\/[^/]+\/polls/, 'Reader polls · StoryTool'], [/^\/stories\//, 'Story · StoryTool'], [/^\/shared\//, 'Shared story · StoryTool'],
-  [/^\/beta\//, 'Beta manuscript · StoryTool'], [/^\/showcase\//, 'Showcase · StoryTool'],
+  [/^\/$/, tx('StoryTool — From idea to story')], [/^\/try/, tx('Try StoryTool')], [/^\/how-to-use/, tx('How to use · StoryTool')],
+  [/^\/roadmap/, tx('Roadmap · StoryTool')], [/^\/thanks/, tx('Shoutouts · StoryTool')], [/^\/about/, tx('About the developer · StoryTool')], [/^\/pricing/, tx('Pricing · StoryTool')],
+  [/^\/privacy/, tx('Privacy · StoryTool')], [/^\/library/, tx('Your stories · StoryTool')], [/^\/settings/, tx('Settings · StoryTool')],
+  [/^\/checks/, tx('Writing checks · StoryTool')], [/^\/feedback/, tx('Feedback · StoryTool')], [/^\/oauth/, tx('Connect AI · StoryTool')],
+  [/^\/stories\/[^/]+\/images/, tx('Images · StoryTool')], [/^\/stories\/[^/]+\/beside/, tx('Beside · StoryTool')], [/^\/stories\/[^/]+\/beta/, tx('Beta readers · StoryTool')],
+  [/^\/stories\/[^/]+\/polls/, tx('Reader polls · StoryTool')], [/^\/stories\//, tx('Story · StoryTool')], [/^\/shared\//, tx('Shared story · StoryTool')],
+  [/^\/beta\//, tx('Beta manuscript · StoryTool')], [/^\/showcase\//, tx('Showcase · StoryTool')],
 ]
 
 export default function App() {
   const location = useLocation()
-  useLayoutEffect(() => { document.title = PAGE_TITLES.find(([pattern]) => pattern.test(location.pathname))?.[1] ?? 'StoryTool' }, [location.pathname])
+  const language = useUiLanguage()
+  useLayoutEffect(() => { document.title = t(PAGE_TITLES.find(([pattern]) => pattern.test(location.pathname))?.[1] ?? 'StoryTool') }, [location.pathname, language])
   const header = useRef<HTMLElement>(null)
   useLayoutEffect(() => {
     const element = header.current
@@ -60,29 +63,29 @@ export default function App() {
   return (
     <ThemeProvider>
       <header ref={header} className={`site-header${location.pathname.startsWith('/stories/') || sandbox ? ' is-compact' : ''}`}>
-        <Link to="/" className="site-brand"><img src="/branding/storytool.svg" alt="" width="32" height="32" />StoryTool</Link>
-        {!sandbox && <nav aria-label="Main navigation">
-          <NavLink to="/library" className={`site-nav-link ${location.pathname.startsWith('/stories/') ? 'is-active' : ''}`}>Your stories</NavLink>
-          <NavLink to="/how-to-use" className="site-nav-link">How to use</NavLink>
-          <NavLink to="/roadmap" className="site-nav-link">Roadmap</NavLink>
-          <NavLink to="/about" className="site-nav-link">About</NavLink>
-          <a href="/#mcp" className={`site-nav-link ${location.hash === '#mcp' ? 'is-active' : ''}`}>Connect AI</a>
-          <NavLink to="/feedback" className="site-nav-link site-feedback-link">Feedback</NavLink>
+        <Link to="/" className="site-brand"><img src="/branding/storytool.svg" alt="" width="32" height="32" />{t('StoryTool')}</Link>
+        {!sandbox && <nav aria-label={t('Main navigation')}>
+          <NavLink to="/library" className={`site-nav-link ${location.pathname.startsWith('/stories/') ? 'is-active' : ''}`}>{t('Your stories')}</NavLink>
+          <NavLink to="/how-to-use" className="site-nav-link">{t('How to use')}</NavLink>
+          <NavLink to="/roadmap" className="site-nav-link">{t('Roadmap')}</NavLink>
+          <NavLink to="/about" className="site-nav-link">{t('About')}</NavLink>
+          <a href="/#mcp" className={`site-nav-link ${location.hash === '#mcp' ? 'is-active' : ''}`}>{t('Connect AI')}</a>
+          <NavLink to="/feedback" className="site-nav-link site-feedback-link">{t('Feedback')}</NavLink>
         </nav>}
-        <div className="site-header-actions"><ThemeToggle />{!sandbox && <AccountMenu />}</div>
+        <div className="site-header-actions"><LanguageToggle signedIn={!sandbox} /><ThemeToggle />{!sandbox && <AccountMenu />}</div>
       </header>
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route path="/try" element={<Suspense fallback={<p className="p-8">Opening sandbox…</p>}><TryStory /></Suspense>} />
-      <Route path="/try/keep" element={<Suspense fallback={<p className="p-8">Preparing sign-in…</p>}><TryKeep /></Suspense>} />
-      <Route path="/try/*" element={<Suspense fallback={<p className="p-8">Opening…</p>}><TryLocked /></Suspense>} />
+      <Route path="/try" element={<Suspense fallback={<p className="p-8">{t('Opening sandbox…')}</p>}><TryStory /></Suspense>} />
+      <Route path="/try/keep" element={<Suspense fallback={<p className="p-8">{t('Preparing sign-in…')}</p>}><TryKeep /></Suspense>} />
+      <Route path="/try/*" element={<Suspense fallback={<p className="p-8">{t('Opening…')}</p>}><TryLocked /></Suspense>} />
       <Route path="/how-to-use" element={<HowToUse />} />
       <Route path="/roadmap" element={<Roadmap />} />
       <Route path="/thanks" element={<Shoutouts />} />
       <Route path="/about" element={<About />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/privacy" element={<Privacy />} />
-      <Route path="/showcase/:token" element={<Suspense fallback={<p className="p-8">Loading showcase…</p>}><StoryShowcase /></Suspense>} />
+      <Route path="/showcase/:token" element={<Suspense fallback={<p className="p-8">{t('Loading showcase…')}</p>}><StoryShowcase /></Suspense>} />
       <Route element={<AuthGate><Outlet /></AuthGate>}>
         <Route path="/library" element={<StoryList />} />
         <Route path="/settings" element={<UserSettings />} />
@@ -94,9 +97,9 @@ export default function App() {
         <Route path="/stories/:storyId/beside/:kind/:id" element={<BesidePage />} />
         <Route path="/stories/:storyId/beta" element={<BetaOwner />} />
         <Route path="/stories/:storyId/polls" element={<BetaPolls />} />
-        <Route path="/shared/:storyId" element={<Suspense fallback={<p className="p-8">Loading reader…</p>}><SharedStoryReader /></Suspense>} />
+        <Route path="/shared/:storyId" element={<Suspense fallback={<p className="p-8">{t('Loading reader…')}</p>}><SharedStoryReader /></Suspense>} />
       </Route>
-      <Route element={<AuthGate prompt="Sign in with Google to read and discuss this beta manuscript."><Outlet /></AuthGate>}>
+      <Route element={<AuthGate prompt={t('Sign in with Google to read and discuss this beta manuscript.')}><Outlet /></AuthGate>}>
         <Route path="/beta/join/:token" element={<BetaInvitePage />} />
         <Route path="/beta/rounds/:roundId" element={<BetaReaderPage />} />
         <Route path="/beta/rounds/:roundId/threads/:threadId" element={<BetaThreadPage />} />

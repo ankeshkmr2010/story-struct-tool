@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { t } from '../i18n'
 
 /**
  * Inline editing primitives.
@@ -78,13 +79,13 @@ export function InlineText({
         <input {...shared} />
       )}
       {state === 'saving' && (
-        <span className="absolute -top-3 right-0 text-[10px] text-slate-400">saving…</span>
+        <span className="absolute -top-3 right-0 text-[10px] text-slate-400">{t('saving…')}</span>
       )}
       {state === 'saved' && (
-        <span className="absolute -top-3 right-0 text-[10px] text-emerald-600 dark:text-emerald-300">saved</span>
+        <span className="absolute -top-3 right-0 text-[10px] text-emerald-600 dark:text-emerald-300">{t('saved')}</span>
       )}
       {state === 'error' && (
-        <span className="absolute -top-3 right-0 text-[10px] text-red-600 dark:text-red-300">save failed</span>
+        <span className="absolute -top-3 right-0 text-[10px] text-red-600 dark:text-red-300">{t('save failed')}</span>
       )}
     </span>
   )
@@ -94,7 +95,7 @@ export function InlineSelect({
   value,
   options,
   onSave,
-  placeholder = '— not set —',
+  placeholder = t('— not set —'),
   highlight = false,
 }: {
   value: string | null
@@ -133,7 +134,7 @@ export function InlineSelect({
         <span className="absolute -top-3 right-0 text-[10px] text-slate-400">…</span>
       )}
       {state === 'error' && (
-        <span className="absolute -top-3 right-0 text-[10px] text-red-600 dark:text-red-300">save failed</span>
+        <span className="absolute -top-3 right-0 text-[10px] text-red-600 dark:text-red-300">{t('save failed')}</span>
       )}
     </span>
   )
@@ -169,7 +170,7 @@ export function InlineNumber({
           }
         }}
       />
-      {state === 'error' && <span className="text-[10px] text-red-600 dark:text-red-300">save failed</span>}
+      {state === 'error' && <span className="text-[10px] text-red-600 dark:text-red-300">{t('save failed')}</span>}
     </span>
   )
 }
@@ -193,13 +194,13 @@ export function DeleteButton({
           onClick={onConfirm}
           className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] text-white"
         >
-          delete {what}
+          {t('delete {0}', what)}
         </button>
         <button
           onClick={() => setArmed(false)}
           className="text-[10px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
         >
-          cancel
+          {t('cancel')}
         </button>
       </span>
     )
@@ -209,7 +210,7 @@ export function DeleteButton({
     <button
       onClick={() => setArmed(true)}
       className="text-xs text-slate-300 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-300"
-      aria-label={`Delete ${what}`}
+      aria-label={t('Delete {0}', what)}
     >
       ×
     </button>
@@ -217,26 +218,26 @@ export function DeleteButton({
 }
 
 export function Chip({ complete, missing = [] }: { complete: boolean; missing?: readonly string[] }) {
-  const label = (field: string) => field === 'pov_character_id' ? 'POV character' : field.replaceAll('_', ' ')
+  const label = (field: string) => field === 'pov_character_id' ? t('POV character') : field.replaceAll('_', ' ')
   if (!complete) return (
     <details className="relative shrink-0 text-[10px]">
-      <summary aria-label="Placeholder — show missing details" className="cursor-pointer list-none rounded bg-amber-100 dark:bg-amber-950 px-1.5 py-0.5 uppercase tracking-wide text-amber-700 dark:text-amber-300 [&::-webkit-details-marker]:hidden">placeholder ⓘ</summary>
+      <summary aria-label={t('Placeholder — show missing details')} className="cursor-pointer list-none rounded bg-amber-100 dark:bg-amber-950 px-1.5 py-0.5 uppercase tracking-wide text-amber-700 dark:text-amber-300 [&::-webkit-details-marker]:hidden">{t('placeholder ⓘ')}</summary>
       <div className="absolute right-0 top-full z-30 mt-2 w-60 rounded-lg border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 p-3 text-xs normal-case leading-5 text-slate-600 dark:text-slate-300 shadow-lg">
-        <p className="font-semibold text-slate-800 dark:text-slate-100">Required details are still missing</p>
-        {missing.length > 0 && <p className="mt-1">Fill in: {missing.map(label).join(', ')}.</p>}
-        <p className="mt-2">Edit the fields on this card. The badge changes automatically when those details are filled. Draft status is a separate choice.</p>
+        <p className="font-semibold text-slate-800 dark:text-slate-100">{t('Required details are still missing')}</p>
+        {missing.length > 0 && <p className="mt-1">{t('Fill in: {0}.', missing.map(label).join(', '))}</p>}
+        <p className="mt-2">{t('Edit the fields on this card. The badge changes automatically when those details are filled. Draft status is a separate choice.')}</p>
       </div>
     </details>
   )
   return (
     <span
-      title="Required structural details are filled. This does not mean the story or draft is finished."
+      title={t('Required structural details are filled. This does not mean the story or draft is finished.')}
       className={[
         'shrink-0 rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
         complete ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300',
       ].join(' ')}
     >
-      {complete ? 'complete' : 'placeholder'}
+      {complete ? t('complete') : t('placeholder')}
     </span>
   )
 }
@@ -273,7 +274,7 @@ export function AddForm({
     >
       <input
         className="min-w-0 flex-1 rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
-        placeholder={error ? 'Could not add; try again' : placeholder}
+        placeholder={error ? t('Could not add; try again') : placeholder}
         value={value}
         onChange={(event) => setValue(event.target.value)}
       />
@@ -282,7 +283,7 @@ export function AddForm({
         disabled={!value.trim() || pending}
         className="rounded bg-slate-900 dark:bg-slate-200 px-3 py-1.5 text-sm text-white dark:text-slate-950 disabled:opacity-40"
       >
-        Add
+        {t('Add')}
       </button>
     </form>
   )

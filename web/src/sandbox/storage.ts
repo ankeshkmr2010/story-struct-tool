@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 export const SANDBOX_ID = '00000000-0000-4000-8000-000000000001'
 export const FIRST_SCENE = '00000000-0000-4000-8000-000000000010'
 export type Row = Record<string, unknown> & { id?: string }
@@ -12,7 +13,7 @@ function database() {
     const open = indexedDB.open('storytool-sandbox', 1)
     open.onupgradeneeded = () => open.result.createObjectStore('stories')
     open.onsuccess = () => resolve(open.result)
-    open.onerror = () => { connection = undefined; reject(new Error('Browser storage is unavailable. Enable site storage and try again.')) }
+    open.onerror = () => { connection = undefined; reject(new Error(t('Browser storage is unavailable. Enable site storage and try again.'))) }
   })
 }
 async function read(): Promise<Sandbox | undefined> {
@@ -29,15 +30,15 @@ async function write(value: Sandbox) {
     const transaction = db.transaction('stories', 'readwrite')
     transaction.objectStore('stories').put(value, key)
     transaction.oncomplete = () => resolve()
-    transaction.onerror = () => reject(new Error('Your changes could not be saved in this browser. Free up storage and retry.'))
-    transaction.onabort = () => reject(new Error('Browser save interrupted. Please retry.'))
+    transaction.onerror = () => reject(new Error(t('Your changes could not be saved in this browser. Free up storage and retry.')))
+    transaction.onabort = () => reject(new Error(t('Browser save interrupted. Please retry.')))
   })
 }
 async function load() {
   const saved = await read()
   if (saved && Date.now() - saved.created < 7 * 24 * 60 * 60 * 1000) return saved
   const response = await fetch('/sandbox/last-lantern-v1.json')
-  if (!response.ok) throw new Error('The sample story could not load. Please retry.')
+  if (!response.ok) throw new Error(t('The sample story could not load. Please retry.'))
   const backup = await response.json() as Backup
   const fresh: Sandbox = { backup, created: Date.now(), step: 1, skipped: false, completed: false, editedScene: FIRST_SCENE, edits: [], events: ['try_start'], importId: crypto.randomUUID() }
   await write(fresh)

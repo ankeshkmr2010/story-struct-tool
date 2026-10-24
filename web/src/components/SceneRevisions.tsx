@@ -4,6 +4,7 @@ import { api, type SceneRevision } from '../api/client'
 import { errorText } from '../api/errors'
 import { Dialog } from '../ui/Dialog'
 import { DraftCompare } from './DraftCompare'
+import { t } from '../i18n'
 
 /**
  * Prose snapshots for one scene. Restoring is itself undoable: the API snapshots the
@@ -31,8 +32,8 @@ export function SceneRevisions({
 
   const snapshot = useMutation({
     mutationFn: async () => {
-      if (!(await flush())) throw new Error('Save your draft before taking a snapshot.')
-      const label = window.prompt('Snapshot label (optional)')
+      if (!(await flush())) throw new Error(t('Save your draft before taking a snapshot.'))
+      const label = window.prompt(t('Snapshot label (optional)'))
       if (label === null) return null
       return api.snapshot(storyId, sceneId, label.trim() || undefined)
     },
@@ -41,8 +42,8 @@ export function SceneRevisions({
 
   const restore = useMutation({
     mutationFn: async (revision: SceneRevision) => {
-      if (!(await flush())) throw new Error('Save your draft before restoring.')
-      if (!window.confirm('Replace this scene’s prose with the snapshot? The current text is kept as a “before restore” snapshot.')) return null
+      if (!(await flush())) throw new Error(t('Save your draft before restoring.'))
+      if (!window.confirm(t('Replace this scene’s prose with the snapshot? The current text is kept as a “before restore” snapshot.'))) return null
       const result = await api.restoreRevision(storyId, sceneId, revision.id)
       return { scene_id: sceneId, content: revision.content ?? '', word_count: result.word_count }
     },
@@ -57,14 +58,14 @@ export function SceneRevisions({
   })
 
   const current = useQuery({ queryKey: ['content', storyId, sceneId], queryFn: () => api.getContent(storyId, sceneId), enabled: compareId !== null })
-  const label = (revision: SceneRevision) => `${revision.label || 'Snapshot'}, ${new Date(revision.created_at).toLocaleString()}`
+  const label = (revision: SceneRevision) => `${revision.label || t('Snapshot')}, ${new Date(revision.created_at).toLocaleString()}`
   const comparing = revisions.data?.find(revision => revision.id === compareId)
   const other = against === 'current' ? null : revisions.data?.find(revision => revision.id === against)
   const error = snapshot.error ?? restore.error ?? revisions.error
   return (
     <details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/60 px-3 py-2 text-xs" onToggle={(e) => setOpen(e.currentTarget.open)}>
       <summary className="cursor-pointer font-medium text-slate-600 dark:text-slate-300">
-        Revisions{revisions.data ? ` · ${revisions.data.length}` : ''}
+        {t('Revisions{0}', revisions.data ? ` · ${revisions.data.length}` : '')}
       </summary>
       <div className="mt-3 space-y-2 border-t border-slate-200 dark:border-slate-700 pt-3">
         <button
@@ -73,44 +74,44 @@ export function SceneRevisions({
           onClick={() => snapshot.mutate()}
           className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950 disabled:opacity-40"
         >
-          {snapshot.isPending ? 'Saving snapshot…' : 'Save snapshot now'}
+          {snapshot.isPending ? t('Saving snapshot…') : t('Save snapshot now')}
         </button>
         {error && <p role="alert" className="text-red-700 dark:text-red-300">{errorText(error)}</p>}
-        {revisions.isPending && open && <p className="text-slate-400">Loading revisions…</p>}
-        {revisions.data?.length === 0 && <p className="text-slate-400">No revisions yet. One is kept when you click away after editing.</p>}
+        {revisions.isPending && open && <p className="text-slate-400">{t('Loading revisions…')}</p>}
+        {revisions.data?.length === 0 && <p className="text-slate-400">{t('No revisions yet. One is kept when you click away after editing.')}</p>}
         <ul className="space-y-1.5">
           {revisions.data?.map((revision) => (
             <li key={revision.id} className="rounded border-l-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-950 px-2 py-1.5">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="text-slate-700 dark:text-slate-200">{new Date(revision.created_at).toLocaleString()}</span>
                 {revision.label && <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 text-slate-600 dark:text-slate-300">{revision.label}</span>}
-                <span className="text-slate-400">{revision.word_count} words</span>
+                <span className="text-slate-400">{t('{0} words', revision.word_count)}</span>
                 <span className="sm:ml-auto flex gap-3">
                   <button type="button" onClick={() => setPreviewId(previewId === revision.id ? null : revision.id)} className="text-slate-500 dark:text-slate-400 hover:underline">
-                    {previewId === revision.id ? 'Hide' : 'Preview'}
+                    {previewId === revision.id ? t('Hide') : t('Preview')}
                   </button>
                   <button type="button" onClick={() => { setAgainst('current'); setCompareId(revision.id) }} className="text-slate-500 dark:text-slate-400 hover:underline">
-                    Compare
+                    {t('Compare')}
                   </button>
                   <button type="button" disabled={restore.isPending} onClick={() => restore.mutate(revision)} className="text-slate-500 dark:text-slate-400 hover:underline disabled:opacity-40">
-                    Restore
+                    {t('Restore')}
                   </button>
                 </span>
               </div>
-              {previewId === revision.id && <pre className="writer-latest mt-2">{revision.content || '(Empty passage)'}</pre>}
+              {previewId === revision.id && <pre className="writer-latest mt-2">{revision.content || t('(Empty passage)')}</pre>}
             </li>
           ))}
         </ul>
       </div>
-      <Dialog open={comparing !== undefined} onClose={() => setCompareId(null)} title="Compare drafts" className="draft-compare-dialog">
+      <Dialog open={comparing !== undefined} onClose={() => setCompareId(null)} title={t('Compare drafts')} className="draft-compare-dialog">
         {comparing && <>
-          <label className="draft-compare-against">Compare {label(comparing)} with
+          <label className="draft-compare-against">{t('Compare {0} with', label(comparing))}
             <select value={against} onChange={event => setAgainst(event.target.value)}>
-              <option value="current">the current text</option>
+              <option value="current">{t('the current text')}</option>
               {revisions.data?.filter(revision => revision.id !== comparing.id).map(revision => <option key={revision.id} value={revision.id}>{label(revision)}</option>)}
             </select>
           </label>
-          {against === 'current' && current.isPending ? <p className="writer-help">Loading the current text…</p>
+          {against === 'current' && current.isPending ? <p className="writer-help">{t('Loading the current text…')}</p>
             : current.error && against === 'current' ? <p role="alert">{errorText(current.error)}</p>
             : <DraftCompare
               key={`${comparing.id}:${against}`}

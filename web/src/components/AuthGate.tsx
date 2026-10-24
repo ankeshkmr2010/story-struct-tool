@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { Link } from 'react-router-dom'
+import { t } from '../i18n'
 
 type GoogleIdentity = {
   accounts: {
@@ -18,7 +19,7 @@ declare global {
   }
 }
 
-export function AuthGate({ children, prompt = 'Sign in with Google to open your stories.' }: { children: React.ReactNode; prompt?: string }) {
+export function AuthGate({ children, prompt = t('Sign in with Google to open your stories.') }: { children: React.ReactNode; prompt?: string }) {
   const qc = useQueryClient()
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, retry: false })
   const config = useQuery({ queryKey: ['auth-config'], queryFn: api.authConfig, enabled: me.isError })
@@ -66,21 +67,21 @@ export function AuthGate({ children, prompt = 'Sign in with Google to open your 
     }
   }, [clientId])
 
-  if (me.isPending) return <p className="p-8 text-sm text-slate-500 dark:text-slate-400">Loading your account…</p>
+  if (me.isPending) return <p className="p-8 text-sm text-slate-500 dark:text-slate-400">{t('Loading your account…')}</p>
   if (me.data) return children
 
   return (
     <main className="flex min-h-[calc(100dvh-73px)] items-center justify-center bg-slate-50 dark:bg-slate-950 p-5">
       <section className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">StoryTool</h1>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{t('StoryTool')}</h1>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{prompt}</p>
-        <Link to="/how-to-use" className="mt-3 inline-block text-sm text-slate-600 dark:text-slate-300 underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-100">New here? Learn how StoryTool works</Link>
-        {config.isPending && <p className="mt-6 text-sm text-slate-400">Preparing sign-in…</p>}
+        <Link to="/how-to-use" className="mt-3 inline-block text-sm text-slate-600 dark:text-slate-300 underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-100">{t('New here? Learn how StoryTool works')}</Link>
+        {config.isPending && <p className="mt-6 text-sm text-slate-400">{t('Preparing sign-in…')}</p>}
         {clientId && <div ref={buttonRef} className="mt-6 min-h-10" />}
-        {config.data && !clientId && <p className="mt-6 text-sm text-amber-700 dark:text-amber-300">Google sign-in is being configured.</p>}
+        {config.data && !clientId && <p className="mt-6 text-sm text-amber-700 dark:text-amber-300">{t('Google sign-in is being configured.')}</p>}
         {(config.isError || scriptError || login.isError) && (
           <p className="mt-4 text-sm text-red-600 dark:text-red-300">
-            {login.isError ? 'Sign-in failed. Please try again.' : 'Google sign-in is unavailable right now.'}
+            {login.isError ? t('Sign-in failed. Please try again.') : t('Google sign-in is unavailable right now.')}
           </p>
         )}
       </section>
@@ -108,8 +109,8 @@ export function AccountMenu() {
   if (!me.data) return null
   return (
     <details ref={menu} className="account-dropdown">
-      <summary aria-label="Account menu"><span className="account-avatar" aria-hidden="true">{(me.data.name ?? me.data.email).slice(0, 1).toUpperCase()}</span><span className="account-name">{me.data.name?.split(' ')[0] ?? 'Account'}</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m6 9 6 6 6-6" /></svg></summary>
-      <div className="account-popover"><div className="account-identity"><strong>{me.data.name ?? 'Your account'}</strong><span>{me.data.email}</span></div><Link to="/checks" onClick={() => { if (menu.current) menu.current.open = false }}>Writing checks</Link><Link to="/settings" onClick={() => { if (menu.current) menu.current.open = false }}>Settings</Link><button type="button" onClick={() => logout.mutate()} disabled={logout.isPending}>{logout.isPending ? 'Signing out…' : 'Sign out'}</button>{logout.isError && <p role="alert">Could not sign out. Try again.</p>}</div>
+      <summary aria-label={t('Account menu')}><span className="account-avatar" aria-hidden="true">{(me.data.name ?? me.data.email).slice(0, 1).toUpperCase()}</span><span className="account-name">{me.data.name?.split(' ')[0] ?? t('Account')}</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m6 9 6 6 6-6" /></svg></summary>
+      <div className="account-popover"><div className="account-identity"><strong>{me.data.name ?? t('Your account')}</strong><span>{me.data.email}</span></div><Link to="/checks" onClick={() => { if (menu.current) menu.current.open = false }}>{t('Writing checks')}</Link><Link to="/settings" onClick={() => { if (menu.current) menu.current.open = false }}>{t('Settings')}</Link><button type="button" onClick={() => logout.mutate()} disabled={logout.isPending}>{logout.isPending ? t('Signing out…') : t('Sign out')}</button>{logout.isError && <p role="alert">{t('Could not sign out. Try again.')}</p>}</div>
     </details>
   )
 }

@@ -4,6 +4,7 @@ import { besideKind, openBeside } from './beside'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { api, type SearchContext, type LibrarySearchContext, type SearchHit } from '../api/client'
 import { errorText } from '../api/errors'
+import { t, tx } from '../i18n'
 
 const CONTEXT_FIELDS: Record<SearchContext, string[]> = {
   prose: ['content'],
@@ -19,12 +20,12 @@ const CONTEXT_FIELDS: Record<SearchContext, string[]> = {
 }
 const FIELDS: Record<LibrarySearchContext, string[]> = { ...CONTEXT_FIELDS, all: [...new Set(Object.values(CONTEXT_FIELDS).flat())] }
 const SEARCH_LABELS: Record<LibrarySearchContext, string> = {
-  prose: 'Prose', story: 'Premise and story planning', scene: 'Scenes', character: 'Characters',
-  location: 'Places', glossary_entry: 'Glossary', chapter: 'Chapters', event: 'Arc skeleton',
-  act: 'Acts', beat: 'Beats', thread: 'Threads', timeline: 'Timeline', all: 'your stories',
+  prose: tx('Prose'), story: tx('Premise and story planning'), scene: tx('Scenes'), character: tx('Characters'),
+  location: tx('Places'), glossary_entry: tx('Glossary'), chapter: tx('Chapters'), event: tx('Arc skeleton'),
+  act: tx('Acts'), beat: tx('Beats'), thread: tx('Threads'), timeline: tx('Timeline'), all: tx('your stories'),
 }
 const types = (context: LibrarySearchContext) => context === 'all' ? Object.keys(CONTEXT_FIELDS).filter(kind => !['prose', 'timeline'].includes(kind)) : context === 'timeline' ? ['scene', 'event'] : []
-const fieldLabel = (field: string) => field === 'content' ? 'Prose' : field.replaceAll('_', ' ').replace(/^./, c => c.toUpperCase())
+const fieldLabel = (field: string) => field === 'content' ? t('Prose') : field.replaceAll('_', ' ').replace(/^./, c => c.toUpperCase())
 
 function Highlight({ text, query }: { text: string; query: string }) {
   // Accents are ignored, as in the search itself: "Jose" marks "José".
@@ -69,7 +70,7 @@ export function SearchDialog({ onClose, onReopen, ...props }: SearchProps & { on
     const bounds = event.currentTarget.getBoundingClientRect()
     if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) event.currentTarget.close()
   }}>
-    <header className="story-search-dialog-head"><h2 id={titleId}>Search</h2><button type="button" aria-label="Close search" onClick={() => dialog.current?.close()}>✕</button></header>
+    <header className="story-search-dialog-head"><h2 id={titleId}>{t('Search')}</h2><button type="button" aria-label={t('Close search')} onClick={() => dialog.current?.close()}>✕</button></header>
     {props.storyId === '00000000-0000-4000-8000-000000000001' && <div id="try-search-coach" />}
     {dialogError && <p role="alert" className="writer-error">{dialogError}</p>}
     <StorySearch {...props} onOpen={async hit => {
@@ -80,7 +81,7 @@ export function SearchDialog({ onClose, onReopen, ...props }: SearchProps & { on
   </dialog>
 }
 export function StorySearch({ context, ...props }: SearchProps) {
-  if (!context) return <p className="writer-help">Select a story section, Timeline, Places or Glossary to search its saved content.</p>
+  if (!context) return <p className="writer-help">{t('Select a story section, Timeline, Places or Glossary to search its saved content.')}</p>
   return <SearchResults key={`${props.storyId || props.accountId}:${context}`} {...props} context={context} />
 }
 
@@ -140,29 +141,29 @@ function SearchResults({ storyId, accountId, context, active, onOpen, initialQue
     try { await onOpen(hit) } catch (error) { setNavigationError(errorText(error)) }
     finally { setOpening(null) }
   }
-  return <section className="story-search" aria-label={`Search ${SEARCH_LABELS[context]}`}>
-    <p className="story-search-context">In {SEARCH_LABELS[context]} <span>· Saved text</span></p>
+  return <section className="story-search" aria-label={t('Search {0}', t(SEARCH_LABELS[context]))}>
+    <p className="story-search-context">{t('In {0}', t(SEARCH_LABELS[context]))}{' '}<span>{t('· Saved text')}</span></p>
     <form role="search" onSubmit={event => { event.preventDefault(); setNavigationError(null); if (input.trim() === query) refresh(); else setQuery(input.trim()) }}>
-      <div className="story-search-input"><input ref={searchInput} autoFocus type="search" enterKeyHint="search" aria-label="Search text" placeholder="Find a name, phrase or idea…" maxLength={300} value={input} onChange={event => { setInput(event.target.value); setNavigationError(null) }} /></div>
+      <div className="story-search-input"><input ref={searchInput} autoFocus type="search" enterKeyHint="search" aria-label={t('Search text')} placeholder={t('Find a name, phrase or idea…')} maxLength={300} value={input} onChange={event => { setInput(event.target.value); setNavigationError(null) }} /></div>
       <div className="story-search-filters">
-        {types(context).length > 0 && <label>Type<select aria-label="Search entity type" value={entity} onChange={event => { setEntity(event.target.value); setField('') }}>
-          <option value="">{context === 'timeline' ? 'All timeline entries' : 'All types'}</option>{types(context).map(kind => <option key={kind} value={kind}>{SEARCH_LABELS[kind as LibrarySearchContext]}</option>)}
+        {types(context).length > 0 && <label>{t('Type')}<select aria-label={t('Search entity type')} value={entity} onChange={event => { setEntity(event.target.value); setField('') }}>
+          <option value="">{context === 'timeline' ? t('All timeline entries') : t('All types')}</option>{types(context).map(kind => <option key={kind} value={kind}>{t(SEARCH_LABELS[kind as LibrarySearchContext])}</option>)}
         </select></label>}
-        {FIELDS[context].length > 1 && <label>Field<select aria-label="Search field" value={field} onChange={event => setField(event.target.value)}><option value="">All fields</option>{FIELDS[context].filter(name => !entity || (context === 'timeline' ? (entity === 'scene' ? ['title', 'summary'] : ['label', 'description', 'display_label']) : entity === 'scene' ? [...FIELDS.scene, 'content'] : FIELDS[entity as LibrarySearchContext]).includes(name)).map(name => <option key={name} value={name}>{fieldLabel(name)}</option>)}</select></label>}
+        {FIELDS[context].length > 1 && <label>{t('Field')}<select aria-label={t('Search field')} value={field} onChange={event => setField(event.target.value)}><option value="">{t('All fields')}</option>{FIELDS[context].filter(name => !entity || (context === 'timeline' ? (entity === 'scene' ? ['title', 'summary'] : ['label', 'description', 'display_label']) : entity === 'scene' ? [...FIELDS.scene, 'content'] : FIELDS[entity as LibrarySearchContext]).includes(name)).map(name => <option key={name} value={name}>{fieldLabel(name)}</option>)}</select></label>}
       </div>
     </form>
-    {!input.trim() && <p className="writer-help">Start typing to search.</p>}
-    {input.trim() && (searching || (indexing && hits.length === 0)) && <p role="status" className="writer-help">Searching…</p>}
-    {(failed || navigationError) && <div role="alert" className="writer-error"><p>{navigationError || 'Search could not finish. Please retry.'}</p><button type="button" className="share-story-button" onClick={() => { setNavigationError(null); refresh() }}>Retry</button></div>}
-    {query && fresh && textResults.isSuccess && hits.length === 0 && !searching && !indexing && <p role="status" className="writer-help">No matches in {SEARCH_LABELS[context]}. Try another phrase or field.</p>}
+    {!input.trim() && <p className="writer-help">{t('Start typing to search.')}</p>}
+    {input.trim() && (searching || (indexing && hits.length === 0)) && <p role="status" className="writer-help">{t('Searching…')}</p>}
+    {(failed || navigationError) && <div role="alert" className="writer-error"><p>{navigationError || t('Search could not finish. Please retry.')}</p><button type="button" className="share-story-button" onClick={() => { setNavigationError(null); refresh() }}>{t('Retry')}</button></div>}
+    {query && fresh && textResults.isSuccess && hits.length === 0 && !searching && !indexing && <p role="status" className="writer-help">{t('No matches in {0}. Try another phrase or field.', t(SEARCH_LABELS[context]))}</p>}
     <ul className="story-search-results">{hits.map(({ hit, related }) => <li key={`${hit.story_id}:${hit.entity}:${hit.id}`}>
       {!storyId && <p className="story-search-story">{hit.story_title}</p>}
-      <p className="story-search-kind">{SEARCH_LABELS[hit.entity as SearchContext] ?? hit.entity}{hit.chapter_id ? ` · ${hit.chapter_title || 'Untitled chapter'}` : hit.entity === 'scene' ? ' · Unfiled writing' : ''}</p>
-      <h3>{hit.title}<span className="story-search-related" title={related ? 'Matches a related idea' : 'Matches your search text'}>{related ? 'Related' : 'Exact'}</span></h3>
+      <p className="story-search-kind">{t(SEARCH_LABELS[hit.entity as SearchContext]) ?? hit.entity}{hit.chapter_id ? ` · ${hit.chapter_title || t('Untitled chapter')}` : hit.entity === 'scene' ? t(' · Unfiled writing') : ''}</p>
+      <h3>{hit.title}<span className="story-search-related" title={related ? t('Matches a related idea') : t('Matches your search text')}>{related ? t('Related') : t('Exact')}</span></h3>
       {hit.matches.map(match => <p key={match.field} className="story-search-excerpt"><strong>{fieldLabel(match.field)}:</strong> <Highlight text={match.excerpt} query={query} /></p>)}
-      {storyId && hit.story_id === storyId && besideKind(hit.entity) && <button type="button" className="share-story-button" title="Show it read-only beside the manuscript" onClick={event => { openBeside({ kind: besideKind(hit.entity)!, id: hit.id }); event.currentTarget.closest('dialog')?.close() }}>Open beside</button>}
-      <button type="button" className="share-story-button" disabled={opening !== null} onClick={() => { void open(hit) }}>{opening === hit.id ? 'Opening…' : hit.matches.some(match => match.field === 'content') ? 'Open passage' : 'Open item'}</button>
+      {storyId && hit.story_id === storyId && besideKind(hit.entity) && <button type="button" className="share-story-button" title={t('Show it read-only beside the manuscript')} onClick={event => { openBeside({ kind: besideKind(hit.entity)!, id: hit.id }); event.currentTarget.closest('dialog')?.close() }}>{t('Open beside')}</button>}
+      <button type="button" className="share-story-button" disabled={opening !== null} onClick={() => { void open(hit) }}>{opening === hit.id ? t('Opening…') : hit.matches.some(match => match.field === 'content') ? t('Open passage') : t('Open item')}</button>
     </li>)}</ul>
-    {(textResults.hasNextPage || semanticResults.hasNextPage) && <button type="button" className="share-story-button" disabled={searching} onClick={() => { if (textResults.hasNextPage) void textResults.fetchNextPage(); if (semanticResults.hasNextPage) void semanticResults.fetchNextPage() }}>{searching ? 'Loading…' : 'Load more'}</button>}
+    {(textResults.hasNextPage || semanticResults.hasNextPage) && <button type="button" className="share-story-button" disabled={searching} onClick={() => { if (textResults.hasNextPage) void textResults.fetchNextPage(); if (semanticResults.hasNextPage) void semanticResults.fetchNextPage() }}>{searching ? t('Loading…') : t('Load more')}</button>}
   </section>
 }

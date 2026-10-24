@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { t } from '../i18n'
 
 // Native modal dialog: focus trap, Escape and backdrop come from the browser.
 export function Dialog({ open, onClose, title, children, className = '' }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; className?: string }) {
@@ -11,7 +12,7 @@ export function Dialog({ open, onClose, title, children, className = '' }: { ope
   }, [open])
   return <dialog ref={dialog} className={`ui-dialog ${className}`} onClose={onClose} aria-label={typeof title === 'string' ? title : undefined}>
     {open && <>
-      <div className="ui-dialog-head"><h2>{title}</h2><button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" onClick={onClose}>Close</button></div>
+      <div className="ui-dialog-head"><h2>{title}</h2><button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" onClick={onClose}>{t('Close')}</button></div>
       {children}
     </>}
   </dialog>

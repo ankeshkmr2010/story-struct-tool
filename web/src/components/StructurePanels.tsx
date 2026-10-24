@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { AddForm, Chip, DeleteButton, Field, InlineNumber, InlineSelect, InlineText } from './fields'
 import { HelpTip } from './HelpTip'
+import { t } from '../i18n'
 
 function useRefresh(storyId: string, collection: string) {
   const qc = useQueryClient()
@@ -34,32 +35,32 @@ export function EventsPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="level-title">Arc skeleton<HelpTip label="a turning point">A turning point is a timeline event that changes the story's direction, such as the inciting incident, the midpoint or the climax. Mark three to five of them; they become the skeleton the rest of the plan hangs on.</HelpTip></h2>
-      <p className="help-text mb-3">Map three to five major turning points, then refine their order and place on the page.</p>
-      <AddForm placeholder="Turning point…" onAdd={(label) => create.mutateAsync(label)} pending={create.isPending} />
+      <h2 className="level-title">{t('Arc skeleton')}<HelpTip label={t('a turning point')}>{t('A turning point is a timeline event that changes the story\'s direction, such as the inciting incident, the midpoint or the climax. Mark three to five of them; they become the skeleton the rest of the plan hangs on.')}</HelpTip></h2>
+      <p className="help-text mb-3">{t('Map three to five major turning points, then refine their order and place on the page.')}</p>
+      <AddForm placeholder={t('Turning point…')} onAdd={(label) => create.mutateAsync(label)} pending={create.isPending} />
       <ul className="mt-4 space-y-3">
         {events.data?.map((event) => (
           <li key={event.id} id={`search-event-${event.id}`} className="scroll-mt-4 rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1">
-                <InlineText value={event.label} placeholder="event label" onSave={(v) => save(event.id, 'label', v)} className="section-title" />
+                <InlineText value={event.label} placeholder={t('event label')} onSave={(v) => save(event.id, 'label', v)} className="section-title" />
               </div>
               <Chip complete={event.completeness.is_complete} missing={event.completeness.missing} />
               <DeleteButton onConfirm={() => remove.mutate(event.id)} what="event" />
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Field label="Story order"><InlineNumber value={event.sort_ordinal} onSave={(v) => save(event.id, 'sort_ordinal', v)} /></Field>
-              <Field label="Time label"><InlineText value={event.display_label} placeholder="e.g. the following morning" onSave={(v) => save(event.id, 'display_label', v)} /></Field>
-              <Field label="Turning point"><InlineSelect value={String(event.is_turning_point)} options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]} onSave={(v) => save(event.id, 'is_turning_point', v === 'true')} /></Field>
-              <Field label="On the page"><InlineSelect value={String(event.is_on_page)} options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]} onSave={(v) => save(event.id, 'is_on_page', v === 'true')} /></Field>
-              <Field label="Depicted in scene"><InlineSelect value={event.scene_id} options={(scenes.data ?? []).map((scene) => ({ value: scene.id, label: scene.title ?? 'Untitled scene' }))} onSave={(v) => save(event.id, 'scene_id', v)} /></Field>
-              <Field label="Location"><InlineSelect value={event.location_id} options={(locations.data ?? []).map((location) => ({ value: location.id, label: location.name }))} onSave={(v) => save(event.id, 'location_id', v)} /></Field>
+              <Field label={t('Story order')}><InlineNumber value={event.sort_ordinal} onSave={(v) => save(event.id, 'sort_ordinal', v)} /></Field>
+              <Field label={t('Time label')}><InlineText value={event.display_label} placeholder={t('e.g. the following morning')} onSave={(v) => save(event.id, 'display_label', v)} /></Field>
+              <Field label={t('Turning point')}><InlineSelect value={String(event.is_turning_point)} options={[{ value: 'true', label: t('Yes') }, { value: 'false', label: t('No') }]} onSave={(v) => save(event.id, 'is_turning_point', v === 'true')} /></Field>
+              <Field label={t('On the page')}><InlineSelect value={String(event.is_on_page)} options={[{ value: 'true', label: t('Yes') }, { value: 'false', label: t('No') }]} onSave={(v) => save(event.id, 'is_on_page', v === 'true')} /></Field>
+              <Field label={t('Depicted in scene')}><InlineSelect value={event.scene_id} options={(scenes.data ?? []).map((scene) => ({ value: scene.id, label: scene.title ?? t('Untitled scene') }))} onSave={(v) => save(event.id, 'scene_id', v)} /></Field>
+              <Field label={t('Location')}><InlineSelect value={event.location_id} options={(locations.data ?? []).map((location) => ({ value: location.id, label: location.name }))} onSave={(v) => save(event.id, 'location_id', v)} /></Field>
             </div>
-            <div className="mt-2"><Field label="Description"><InlineText value={event.description} placeholder="What changes here?" onSave={(v) => save(event.id, 'description', v)} multiline /></Field></div>
+            <div className="mt-2"><Field label={t('Description')}><InlineText value={event.description} placeholder={t('What changes here?')} onSave={(v) => save(event.id, 'description', v)} multiline /></Field></div>
           </li>
         ))}
       </ul>
-      {events.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">No events yet.</p>}
+      {events.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">{t('No events yet.')}</p>}
     </div>
   )
 }
@@ -87,33 +88,33 @@ export function ActsPanel({ storyId, framework }: { storyId: string; framework: 
 
   return (
     <div>
-      <h2 className="level-title">Acts<HelpTip label="an act">An act is a large movement of the story, ending on a turning point. Each act should shift the emotional state: something must be different by its end.</HelpTip></h2>
-      <p className="help-text mb-3">What changes in each act?</p>
+      <h2 className="level-title">{t('Acts')}<HelpTip label={t('an act')}>{t('An act is a large movement of the story, ending on a turning point. Each act should shift the emotional state: something must be different by its end.')}</HelpTip></h2>
+      <p className="help-text mb-3">{t('What changes in each act?')}</p>
       <div className="flex flex-wrap gap-2">
-        <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40">Seed {framework.replaceAll('_', ' ')}</button>
-        {scaffold.data && <span className="self-center text-xs text-slate-500 dark:text-slate-400">{scaffold.data.changed ? `Added ${scaffold.data.acts_created} acts and ${scaffold.data.beats_created} beats.` : 'Already seeded.'}</span>}
+        <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40">{t('Seed {0}', framework.replaceAll('_', ' '))}</button>
+        {scaffold.data && <span className="self-center text-xs text-slate-500 dark:text-slate-400">{scaffold.data.changed ? t('Added {0} acts and {1} beats.', scaffold.data.acts_created, scaffold.data.beats_created) : t('Already seeded.')}</span>}
       </div>
-      <div className="mt-3"><AddForm placeholder="New act title…" onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} /></div>
+      <div className="mt-3"><AddForm placeholder={t('New act title…')} onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} /></div>
       <ul className="mt-4 space-y-3">
         {acts.data?.map((act) => (
           <li key={act.id} id={`search-act-${act.id}`} className="scroll-mt-4 rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
               <InlineNumber value={act.number} min={1} onSave={(v) => save(act.id, 'number', v)} />
-              <div className="min-w-0 flex-1"><InlineText value={act.title} placeholder="act title" onSave={(v) => save(act.id, 'title', v)} className="section-title" /></div>
+              <div className="min-w-0 flex-1"><InlineText value={act.title} placeholder={t('act title')} onSave={(v) => save(act.id, 'title', v)} className="section-title" /></div>
               <Chip complete={act.completeness.is_complete} missing={act.completeness.missing} />
               <DeleteButton onConfirm={() => remove.mutate(act.id)} what="act" />
             </div>
-            <div className="mt-2"><Field label="Summary"><InlineText value={act.summary} placeholder="What changes across this act?" onSave={(v) => save(act.id, 'summary', v)} multiline /></Field></div>
+            <div className="mt-2"><Field label={t('Summary')}><InlineText value={act.summary} placeholder={t('What changes across this act?')} onSave={(v) => save(act.id, 'summary', v)} multiline /></Field></div>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Field label="Emotional shift from"><InlineText value={act.emotional_shift_from} placeholder="from" onSave={(v) => save(act.id, 'emotional_shift_from', v)} /></Field>
-              <Field label="Emotional shift to"><InlineText value={act.emotional_shift_to} placeholder="to" onSave={(v) => save(act.id, 'emotional_shift_to', v)} /></Field>
-              <Field label="Opening turning point"><InlineSelect value={act.opening_turning_point_id} options={eventOptions} onSave={(v) => save(act.id, 'opening_turning_point_id', v)} /></Field>
-              <Field label="Closing turning point"><InlineSelect value={act.closing_turning_point_id} options={eventOptions} onSave={(v) => save(act.id, 'closing_turning_point_id', v)} /></Field>
+              <Field label={t('Emotional shift from')}><InlineText value={act.emotional_shift_from} placeholder={t('from')} onSave={(v) => save(act.id, 'emotional_shift_from', v)} /></Field>
+              <Field label={t('Emotional shift to')}><InlineText value={act.emotional_shift_to} placeholder={t('to')} onSave={(v) => save(act.id, 'emotional_shift_to', v)} /></Field>
+              <Field label={t('Opening turning point')}><InlineSelect value={act.opening_turning_point_id} options={eventOptions} onSave={(v) => save(act.id, 'opening_turning_point_id', v)} /></Field>
+              <Field label={t('Closing turning point')}><InlineSelect value={act.closing_turning_point_id} options={eventOptions} onSave={(v) => save(act.id, 'closing_turning_point_id', v)} /></Field>
             </div>
           </li>
         ))}
       </ul>
-      {acts.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">No acts yet.</p>}
+      {acts.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">{t('No acts yet.')}</p>}
     </div>
   )
 }
@@ -137,27 +138,27 @@ export function BeatsPanel({ storyId, framework }: { storyId: string; framework:
 
   return (
     <div>
-      <h2 className="level-title">Beats<HelpTip label="a beat">A beat is a moment the story must reach, such as "the hero refuses the call". Beats sit inside acts; chapters and scenes then fulfil them.</HelpTip></h2>
-      <p className="help-text mb-3">What must happen to fulfil each act? Seeded beats are ordinary editable rows.</p>
+      <h2 className="level-title">{t('Beats')}<HelpTip label={t('a beat')}>{t('A beat is a moment the story must reach, such as "the hero refuses the call". Beats sit inside acts; chapters and scenes then fulfil them.')}</HelpTip></h2>
+      <p className="help-text mb-3">{t('What must happen to fulfil each act? Seeded beats are ordinary editable rows.')}</p>
       <div className="flex flex-wrap gap-2">
-        <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40">Seed {framework.replaceAll('_', ' ')}</button>
-        {scaffold.data && <span className="self-center text-xs text-slate-500 dark:text-slate-400">{scaffold.data.changed ? `Added ${scaffold.data.acts_created} acts and ${scaffold.data.beats_created} beats.` : 'Already seeded.'}</span>}
+        <button onClick={() => scaffold.mutate()} disabled={scaffold.isPending} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40">{t('Seed {0}', framework.replaceAll('_', ' '))}</button>
+        {scaffold.data && <span className="self-center text-xs text-slate-500 dark:text-slate-400">{scaffold.data.changed ? t('Added {0} acts and {1} beats.', scaffold.data.acts_created, scaffold.data.beats_created) : t('Already seeded.')}</span>}
       </div>
-      <div className="mt-3"><AddForm placeholder="New beat label…" onAdd={(label) => create.mutateAsync(label)} pending={create.isPending} /></div>
+      <div className="mt-3"><AddForm placeholder={t('New beat label…')} onAdd={(label) => create.mutateAsync(label)} pending={create.isPending} /></div>
       <ul className="mt-4 space-y-3">
         {beats.data?.map((beat) => (
           <li key={beat.id} id={`search-beat-${beat.id}`} className="scroll-mt-4 rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1"><InlineText value={beat.label} placeholder="beat label" onSave={(v) => save(beat.id, 'label', v)} className="section-title" /></div>
+              <div className="min-w-0 flex-1"><InlineText value={beat.label} placeholder={t('beat label')} onSave={(v) => save(beat.id, 'label', v)} className="section-title" /></div>
               <Chip complete={beat.completeness.is_complete} missing={beat.completeness.missing} />
               <DeleteButton onConfirm={() => remove.mutate(beat.id)} what="beat" />
             </div>
-            <div className="mt-2"><Field label="Act"><InlineSelect value={beat.act_id} options={(acts.data ?? []).map((act) => ({ value: act.id, label: `${act.number}. ${act.title ?? 'Untitled'}` }))} onSave={(v) => save(beat.id, 'act_id', v)} /></Field></div>
-            <div className="mt-2"><Field label="Description"><InlineText value={beat.description} placeholder="What must happen?" onSave={(v) => save(beat.id, 'description', v)} multiline /></Field></div>
+            <div className="mt-2"><Field label={t('Act')}><InlineSelect value={beat.act_id} options={(acts.data ?? []).map((act) => ({ value: act.id, label: `${act.number}. ${act.title ?? t('Untitled')}` }))} onSave={(v) => save(beat.id, 'act_id', v)} /></Field></div>
+            <div className="mt-2"><Field label={t('Description')}><InlineText value={beat.description} placeholder={t('What must happen?')} onSave={(v) => save(beat.id, 'description', v)} multiline /></Field></div>
           </li>
         ))}
       </ul>
-      {beats.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">No beats yet.</p>}
+      {beats.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">{t('No beats yet.')}</p>}
     </div>
   )
 }
@@ -176,25 +177,25 @@ export function ThreadsPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="level-title">Threads<HelpTip label="a thread">A thread is one storyline running through the book. The A-story is the main plot; B and C stories are subplots. Scenes move threads forward.</HelpTip></h2>
-      <p className="help-text mb-3">Which storylines carry the scenes?</p>
-      <AddForm placeholder="Thread title…" onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} />
+      <h2 className="level-title">{t('Threads')}<HelpTip label={t('a thread')}>{t('A thread is one storyline running through the book. The A-story is the main plot; B and C stories are subplots. Scenes move threads forward.')}</HelpTip></h2>
+      <p className="help-text mb-3">{t('Which storylines carry the scenes?')}</p>
+      <AddForm placeholder={t('Thread title…')} onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} />
       <ul className="mt-4 space-y-3">
         {threads.data?.map((thread) => (
           <li key={thread.id} id={`search-thread-${thread.id}`} className="scroll-mt-4 rounded border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1"><InlineText value={thread.title} placeholder="thread title" onSave={(v) => save(thread.id, 'title', v)} className="section-title" /></div>
+              <div className="min-w-0 flex-1"><InlineText value={thread.title} placeholder={t('thread title')} onSave={(v) => save(thread.id, 'title', v)} className="section-title" /></div>
               <Chip complete={thread.completeness.is_complete} missing={thread.completeness.missing} />
               <DeleteButton onConfirm={() => remove.mutate(thread.id)} what="thread" />
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Field label="Storyline type"><InlineSelect value={thread.type} options={TYPE_OPTIONS} onSave={(v) => save(thread.id, 'type', v)} /></Field>
-              <Field label="Owner"><InlineSelect value={thread.owner_character_id} options={(characters.data ?? []).map((c) => ({ value: c.id, label: c.name }))} onSave={(v) => save(thread.id, 'owner_character_id', v)} /></Field>
+              <Field label={t('Storyline type')}><InlineSelect value={thread.type} options={TYPE_OPTIONS} onSave={(v) => save(thread.id, 'type', v)} /></Field>
+              <Field label={t('Owner')}><InlineSelect value={thread.owner_character_id} options={(characters.data ?? []).map((c) => ({ value: c.id, label: c.name }))} onSave={(v) => save(thread.id, 'owner_character_id', v)} /></Field>
             </div>
           </li>
         ))}
       </ul>
-      {threads.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">No threads yet.</p>}
+      {threads.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">{t('No threads yet.')}</p>}
     </div>
   )
 }

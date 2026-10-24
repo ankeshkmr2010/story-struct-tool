@@ -51,6 +51,17 @@ class Language(StrEnum):
 DEFAULT_LANGUAGE = Language.EN_US
 
 
+class UiLanguage(StrEnum):
+    """Language of the app's own interface (menus, buttons, help), not of a story."""
+
+    EN = "en"
+    FR = "fr"
+    DE = "de"
+    ES = "es"
+    PT_BR = "pt-BR"
+    IT = "it"
+
+
 def base_language(language: str) -> str:
     """The language without its region: "en-GB" -> "en", "pt-BR" -> "pt"."""
     return language.split("-", 1)[0].lower()

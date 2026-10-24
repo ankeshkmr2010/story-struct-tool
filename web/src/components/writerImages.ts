@@ -1,5 +1,6 @@
 import { Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from '@codemirror/view'
 import type { StoryImage } from '../api/client'
+import { t } from '../i18n'
 
 /** Display illustrations in place while retaining their portable manuscript markers. */
 export function writerImages(images: StoryImage[], onPreview: (image: StoryImage) => void) {
@@ -19,23 +20,23 @@ export function writerImages(images: StoryImage[], onPreview: (image: StoryImage
       wrapper.className = 'writer-image-thumbnail'; wrapper.contentEditable = 'false'
       const preview = document.createElement('button')
       preview.type = 'button'; preview.className = 'writer-image-preview-button'
-      preview.setAttribute('aria-label', `Preview ${this.image?.name || this.label || 'image'}`)
+      preview.setAttribute('aria-label', t('Preview {0}', this.image?.name || this.label || 'image'))
       if (this.image) {
         const img = document.createElement('img')
         img.src = this.image.url; img.alt = this.image.alt || this.label
         img.onload = () => view.requestMeasure()
-        img.onerror = () => { img.hidden = true; preview.title = 'Image unavailable. Click to open the preview and retry.'; view.requestMeasure() }
+        img.onerror = () => { img.hidden = true; preview.title = t('Image unavailable. Click to open the preview and retry.'); view.requestMeasure() }
         preview.append(img); preview.onclick = () => onPreview(this.image!)
       } else { preview.disabled = true }
       const name = document.createElement('span')
-      name.textContent = this.image?.name || this.label || 'Image unavailable'
+      name.textContent = this.image?.name || this.label || t('Image unavailable')
       preview.append(name); wrapper.append(preview)
       if (this.image?.caption) {
         const caption = document.createElement('span'); caption.className = 'writer-image-caption'; caption.textContent = this.image.caption; wrapper.append(caption)
       }
       const remove = document.createElement('button')
-      remove.type = 'button'; remove.className = 'writer-image-remove'; remove.textContent = 'Remove'
-      remove.setAttribute('aria-label', `Remove this placement of ${this.image?.name || this.label || 'image'}`)
+      remove.type = 'button'; remove.className = 'writer-image-remove'; remove.textContent = t('Remove')
+      remove.setAttribute('aria-label', t('Remove this placement of {0}', this.image?.name || this.label || 'image'))
       remove.onclick = () => { view.dispatch({ changes: { from: this.from, to: this.to }, selection: { anchor: this.from }, scrollIntoView: true }); view.focus() }
       wrapper.append(remove)
       return wrapper

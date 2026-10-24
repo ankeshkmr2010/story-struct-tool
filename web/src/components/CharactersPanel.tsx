@@ -9,6 +9,7 @@ import { MergeCharacter } from './MergeCharacter'
 import { SANDBOX_ID } from '../sandbox/storage'
 import { HelpTip } from './HelpTip'
 import { ReferenceImages } from './StoryImages'
+import { t } from '../i18n'
 
 const ROLES = ['protagonist', 'antagonist', 'mentor', 'foil', 'supporting', 'minor'] as const
 const ARC_TYPES = ['positive', 'negative', 'flat'] as const
@@ -75,9 +76,9 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="level-title">Characters<HelpTip label="this level">Who the story is about. Each character has a want (what they chase) and a need (what they actually lack); the gap between the two drives their arc.</HelpTip></h2>
+      <h2 className="level-title">{t('Characters')}<HelpTip label={t('this level')}>{t('Who the story is about. Each character has a want (what they chase) and a need (what they actually lack); the gap between the two drives their arc.')}</HelpTip></h2>
       <p className="help-text mb-3">
-        Who wants what, and what do they actually need? A name is enough to start.
+        {t('Who wants what, and what do they actually need? A name is enough to start.')}
       </p>
 
       <form
@@ -89,7 +90,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
       >
         <input
           className="flex-1 rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
-          placeholder="Character name…"
+          placeholder={t('Character name…')}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -98,18 +99,18 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
           disabled={!name.trim() || create.isPending}
           className="rounded bg-slate-900 dark:bg-slate-200 px-3 py-1.5 text-sm text-white dark:text-slate-950 disabled:opacity-40"
         >
-          Add
+          {t('Add')}
         </button>
       </form>
 
       {characters.data && characters.data.length > 0 && protagonists === 0 && (
         <p className="mt-2 rounded bg-amber-50 dark:bg-amber-950 px-2 py-1 text-xs text-amber-800 dark:text-amber-300">
-          No one is marked protagonist yet — set a role below to unlock Acts.
+          {t('No one is marked protagonist yet — set a role below to unlock Acts.')}
         </p>
       )}
       {protagonists > 1 && (
         <p className="mt-2 rounded bg-amber-50 dark:bg-amber-950 px-2 py-1 text-xs text-amber-800 dark:text-amber-300">
-          {protagonists} characters are marked protagonist.
+          {t('{0} characters are marked protagonist.', protagonists)}
         </p>
       )}
 
@@ -122,7 +123,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                 <div className="min-w-[9rem] flex-1">
                   <InlineText
                     value={character.name}
-                    placeholder="name"
+                    placeholder={t('name')}
                     onSave={async (name) => { await set('name')(name); offerRename({ kind: 'character', id: character.id, from: character.name, to: name ?? '' }) }}
                     className="section-title"
                   />
@@ -131,14 +132,14 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                   value={character.role}
                   options={ROLES}
                   onSave={set('role')}
-                  placeholder="— role —"
+                  placeholder={t('— role —')}
                   highlight={character.role === 'protagonist'}
                 />
                 <InlineSelect
                   value={character.arc_type}
                   options={ARC_TYPES}
                   onSave={set('arc_type')}
-                  placeholder="— arc —"
+                  placeholder={t('— arc —')}
                 />
                 <Chip complete={character.completeness.is_complete} missing={character.completeness.missing} />
                 <OpenBesideButton item={{ kind: 'character', id: character.id }} label={character.name} />
@@ -149,30 +150,30 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
               <OriginSummary storyId={storyId} entityId={character.id} entityType="character" />
               <ReferenceImages storyId={storyId} entity="character" entityId={character.id} />
               <div className="mt-3 space-y-2">
-                <label className="block text-xs"><span className="field-label">Description</span><InlineText value={character.description} placeholder="Who are they?" onSave={set('description')} multiline /></label>
-                <label className="block text-xs"><span className="field-label">Aliases</span> (one per line)<InlineText value={character.aliases?.join('\n') ?? null} placeholder="Other names or titles" onSave={value => set('aliases')(value ? value.split('\n').map(item => item.trim()).filter(Boolean) : [])} multiline /></label>
-                <label className="block text-xs"><span className="field-label">Relation to the protagonist</span><InlineText value={character.relation_to_protagonist} placeholder="How are they connected?" onSave={set('relation_to_protagonist')} multiline /></label>
-                <label className="block text-xs"><span className="field-label">Private notes</span><InlineText value={character.notes} placeholder="Working notes" onSave={set('notes')} multiline /></label>
-                <p className="writer-help">Want and need are required for a protagonist, antagonist, or positive/negative arc. Supporting and minor characters can stay simple. Wounds and misbeliefs are optional.</p>
+                <label className="block text-xs"><span className="field-label">{t('Description')}</span><InlineText value={character.description} placeholder={t('Who are they?')} onSave={set('description')} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Aliases')}</span>{' '}{t('(one per line)')}<InlineText value={character.aliases?.join('\n') ?? null} placeholder={t('Other names or titles')} onSave={value => set('aliases')(value ? value.split('\n').map(item => item.trim()).filter(Boolean) : [])} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Relation to the protagonist')}</span><InlineText value={character.relation_to_protagonist} placeholder={t('How are they connected?')} onSave={set('relation_to_protagonist')} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Private notes')}</span><InlineText value={character.notes} placeholder={t('Working notes')} onSave={set('notes')} multiline /></label>
+                <p className="writer-help">{t('Want and need are required for a protagonist, antagonist, or positive/negative arc. Supporting and minor characters can stay simple. Wounds and misbeliefs are optional.')}</p>
               </div>
               <div className="mt-1.5 grid grid-cols-2 gap-2">
                 <label className="block">
                   <span className="field-label">
-                    Want (external)
+                    {t('Want (external)')}
                   </span>
                   <InlineText
                     value={character.want}
-                    placeholder="what they are chasing"
+                    placeholder={t('what they are chasing')}
                     onSave={set('want')}
                   />
                 </label>
                 <label className="block">
                   <span className="field-label">
-                    Need (actual)
+                    {t('Need (actual)')}
                   </span>
                   <InlineText
                     value={character.need}
-                    placeholder="what would actually help"
+                    placeholder={t('what would actually help')}
                     onSave={set('need')}
                   />
                 </label>
@@ -180,24 +181,24 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
 
               <details className="mt-1.5">
                 <summary className="cursor-pointer text-[10px] uppercase tracking-wide text-slate-400">
-                  Backstory
+                  {t('Backstory')}
                 </summary>
                 <div className="mt-1 space-y-1.5">
                   <InlineText
                     value={character.wound}
-                    placeholder="wound — the formative injury"
+                    placeholder={t('wound — the formative injury')}
                     onSave={set('wound')}
                     multiline
                   />
                   <InlineText
                     value={character.misbelief}
-                    placeholder="misbelief — the lie they believe"
+                    placeholder={t('misbelief — the lie they believe')}
                     onSave={set('misbelief')}
                     multiline
                   />
                   <InlineText
                     value={character.voice_notes}
-                    placeholder="voice notes"
+                    placeholder={t('voice notes')}
                     onSave={set('voice_notes')}
                     multiline
                   />
@@ -206,7 +207,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
 
               {!character.completeness.is_complete && (
                 <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-300">
-                  needs: {character.completeness.missing.join(', ')}
+                  {t('needs: {0}', character.completeness.missing.join(', '))}
                 </p>
               )}
               {arcs.data?.filter((arc) => arc.character_id === character.id).map((arc) => (
@@ -218,7 +219,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                   disabled={createArc.isPending}
                   className="mt-2 text-xs text-sky-700 dark:text-sky-300 hover:underline disabled:opacity-40"
                 >
-                  + Define an arc
+                  {t('+ Define an arc')}
                 </button>
               )}
             </li>
@@ -227,7 +228,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
       </ul>
 
       {characters.data?.length === 0 && (
-        <p className="mt-4 text-sm text-slate-400">No characters yet.</p>
+        <p className="mt-4 text-sm text-slate-400">{t('No characters yet.')}</p>
       )}
       <RelationshipsSection storyId={storyId} characters={characters.data ?? []} />
     </div>
@@ -253,22 +254,22 @@ function RelationshipsSection({ storyId, characters }: { storyId: string; charac
   })
   const remove = useMutation({ mutationFn: (id: string) => api.deleteRelationship(storyId, id), onSuccess: refresh })
   const options = characters.map((character) => ({ value: character.id, label: character.name }))
-  const nameOf = (id: string) => characters.find((character) => character.id === id)?.name ?? 'Unknown character'
+  const nameOf = (id: string) => characters.find((character) => character.id === id)?.name ?? t('Unknown character')
 
   return (
     <section className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
-      <h2 className="section-title">Relationships</h2>
-      <p className="mt-1 text-xs text-slate-400">Define how two characters relate, and how that changes.</p>
+      <h2 className="section-title">{t('Relationships')}</h2>
+      <p className="mt-1 text-xs text-slate-400">{t('Define how two characters relate, and how that changes.')}</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <InlineSelect value={first} options={options} onSave={setFirst} placeholder="First character" />
-        <InlineSelect value={second} options={options} onSave={setSecond} placeholder="Second character" />
+        <InlineSelect value={first} options={options} onSave={setFirst} placeholder={t('First character')} />
+        <InlineSelect value={second} options={options} onSave={setSecond} placeholder={t('Second character')} />
         <button
           onClick={() => create.mutate()}
           disabled={!first || !second || first === second || create.isPending}
           className="rounded bg-slate-900 dark:bg-slate-200 px-2 py-1 text-xs text-white dark:text-slate-950 disabled:opacity-40"
-        >Add relationship</button>
+        >{t('Add relationship')}</button>
       </div>
-      {create.isError && <p className="mt-1 text-xs text-red-600 dark:text-red-300">Could not add this relationship.</p>}
+      {create.isError && <p className="mt-1 text-xs text-red-600 dark:text-red-300">{t('Could not add this relationship.')}</p>}
       <ul className="mt-3 space-y-2">
         {relationships.data?.map((relationship) => (
           <li key={relationship.id} className="rounded border border-slate-200 dark:border-slate-700 p-3">
@@ -277,9 +278,9 @@ function RelationshipsSection({ storyId, characters }: { storyId: string; charac
               <DeleteButton onConfirm={() => remove.mutate(relationship.id)} what="relationship" />
             </div>
             <div className="mt-2 space-y-2">
-              <label className="block text-xs"><span className="field-label">History</span><InlineText value={relationship.history} placeholder="What happened before?" onSave={(history) => update.mutateAsync({ id: relationship.id, body: { history } })} multiline /></label>
-              <label className="block text-xs"><span className="field-label">Current dynamic</span><InlineText value={relationship.current_dynamic} placeholder="How do they relate now?" onSave={(current_dynamic) => update.mutateAsync({ id: relationship.id, body: { current_dynamic } })} multiline /></label>
-              <label className="block text-xs"><span className="field-label">Tension</span><InlineText value={relationship.tension_notes} placeholder="What is unresolved?" onSave={(tension_notes) => update.mutateAsync({ id: relationship.id, body: { tension_notes } })} multiline /></label>
+              <label className="block text-xs"><span className="field-label">{t('History')}</span><InlineText value={relationship.history} placeholder={t('What happened before?')} onSave={(history) => update.mutateAsync({ id: relationship.id, body: { history } })} multiline /></label>
+              <label className="block text-xs"><span className="field-label">{t('Current dynamic')}</span><InlineText value={relationship.current_dynamic} placeholder={t('How do they relate now?')} onSave={(current_dynamic) => update.mutateAsync({ id: relationship.id, body: { current_dynamic } })} multiline /></label>
+              <label className="block text-xs"><span className="field-label">{t('Tension')}</span><InlineText value={relationship.tension_notes} placeholder={t('What is unresolved?')} onSave={(tension_notes) => update.mutateAsync({ id: relationship.id, body: { tension_notes } })} multiline /></label>
             </div>
           </li>
         ))}
@@ -322,24 +323,24 @@ function CharacterArc({
   return (
     <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-2">
       <div className="flex items-center justify-between">
-        <h3 className="section-title">Character arc</h3>
+        <h3 className="section-title">{t('Character arc')}</h3>
         <DeleteButton onConfirm={() => remove.mutate()} what="arc" />
       </div>
-      <label className="mt-1 block text-xs"><span className="field-label">Resolution</span>
-        <InlineText value={resolution} placeholder="How does this arc resolve?" onSave={(value) => update.mutateAsync(value)} multiline />
+      <label className="mt-1 block text-xs"><span className="field-label">{t('Resolution')}</span>
+        <InlineText value={resolution} placeholder={t('How does this arc resolve?')} onSave={(value) => update.mutateAsync(value)} multiline />
       </label>
       <ul className="mt-2 space-y-1">
         {stages.data?.map((stage) => (
           <li key={stage.id} className="rounded bg-slate-50 dark:bg-slate-950 p-1">
             <div className="flex items-center gap-1">
-              <div className="min-w-0 flex-1"><InlineText value={stage.label} placeholder="Stage" onSave={(label) => updateStage.mutateAsync({ id: stage.id, body: { label } })} /></div>
+              <div className="min-w-0 flex-1"><InlineText value={stage.label} placeholder={t('Stage')} onSave={(label) => updateStage.mutateAsync({ id: stage.id, body: { label } })} /></div>
               <DeleteButton onConfirm={() => removeStage.mutate(stage.id)} what="stage" />
             </div>
-            <InlineText value={stage.description} placeholder="What changes in this stage?" onSave={(description) => updateStage.mutateAsync({ id: stage.id, body: { description } })} />
+            <InlineText value={stage.description} placeholder={t('What changes in this stage?')} onSave={(description) => updateStage.mutateAsync({ id: stage.id, body: { description } })} />
           </li>
         ))}
       </ul>
-      <div className="mt-2"><AddForm placeholder="Next arc stage…" onAdd={(label) => addStage.mutateAsync(label)} pending={addStage.isPending} /></div>
+      <div className="mt-2"><AddForm placeholder={t('Next arc stage…')} onAdd={(label) => addStage.mutateAsync(label)} pending={addStage.isPending} /></div>
     </div>
   )
 }

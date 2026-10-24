@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Health } from '../api/client'
+import { t } from '../i18n'
 
 // Long lists bury the page on phones; the rest stays one tap away.
 const SHOWN = 5
@@ -17,13 +18,13 @@ export function HealthPanel({ health, level, levelNames, onOpenLevel }: {
 }) {
   const [all, setAll] = useState(false)
   if (health.findings.length === 0) {
-    return <p className="text-sm text-slate-500 dark:text-slate-400">Nothing to fix at this level.</p>
+    return <p className="text-sm text-slate-500 dark:text-slate-400">{t('Nothing to fix at this level.')}</p>
   }
 
   return (
     <div className="space-y-2">
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        {health.warning_count} to fix · {health.info_count} suggestion{health.info_count === 1 ? '' : 's'}
+        {t('{0} to fix · {1} suggestion{2}', health.warning_count, health.info_count, health.info_count === 1 ? '' : t('s'))}
       </p>
       <ul className="space-y-1.5">
         {(all ? health.findings : health.findings.slice(0, SHOWN)).map((finding, index) => (
@@ -37,13 +38,13 @@ export function HealthPanel({ health, level, levelNames, onOpenLevel }: {
             <p className="text-sm leading-5 text-slate-700 dark:text-slate-200">{finding.message}</p>
             {onOpenLevel && finding.level !== level && (
               <button type="button" onClick={() => onOpenLevel(finding.level)} className="mt-1 text-xs font-medium text-[var(--accent)] hover:underline">
-                Fix in {levelNames?.[finding.level] ?? `level ${finding.level}`} →
+                {t('Fix in {0} →', levelNames?.[finding.level] ?? t('level {0}', finding.level))}
               </button>
             )}
           </li>
         ))}
       </ul>
-      {health.findings.length > SHOWN && <button type="button" onClick={() => setAll(!all)} className="text-xs font-medium text-[var(--accent)] hover:underline">{all ? 'Show fewer' : `Show all ${health.findings.length}`}</button>}
+      {health.findings.length > SHOWN && <button type="button" onClick={() => setAll(!all)} className="text-xs font-medium text-[var(--accent)] hover:underline">{all ? t('Show fewer') : t('Show all {0}', health.findings.length)}</button>}
     </div>
   )
 }

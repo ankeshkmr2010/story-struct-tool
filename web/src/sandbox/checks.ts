@@ -1,4 +1,5 @@
 import { rows, SANDBOX_ID, type Row, type Sandbox } from './storage'
+import { t } from '../i18n'
 
 // The sandbox's own versions of two Evaluate checks, run on the story in this browser. They
 // return the server's shapes (passages with offsets, actions with edits), so the TKs tab,
@@ -107,7 +108,7 @@ export function sandboxEvaluation(s: Sandbox, id: string | undefined) {
   const missingNow = missing(s)
   if (!id) return EVALUATORS.map(evaluator => ({ ...evaluator, kind: 'deterministic', has_review: false, reads_prose: true, inputs: ['scene.content'], ready: !missingNow.length, missing: missingNow }))
   const run = id === 'tk_placeholders' ? tk : id === 'consistency' ? consistency : null
-  if (!run) throw new Error('Available with a free account')
+  if (!run) throw new Error(t('Available with a free account'))
   if (missingNow.length) return { story_id: SANDBOX_ID, evaluator_id: id, ready: false, missing: missingNow, findings: [], visual: {} }
   return { story_id: SANDBOX_ID, evaluator_id: id, ready: true, missing: [], ...run(s) }
 }

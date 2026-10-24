@@ -4,6 +4,7 @@ import { api, type Authorship, type Scene } from '../api/client'
 import { orderScenes } from '../api/ordering'
 import { InlineSelect, InlineText } from './fields'
 import { SceneDetails } from './SceneDetails'
+import { t } from '../i18n'
 
 const STATUSES = ['placeholder', 'outlined', 'drafted', 'revised']
 const STATUS_DOT: Record<string, string> = {
@@ -56,7 +57,7 @@ function Shift({ scene }: { scene: Scene }) {
   const to = scene.emotional_value_to?.trim()
   if (!from && !to) return null
   const flat = shiftKind(scene) === 'flat'
-  return <span title={flat ? 'Value does not change in this scene' : undefined} className={`inline-block rounded-full px-2 text-[11px] ${flat ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{from || '?'} → {to || '?'}{flat ? ' · no shift' : ''}</span>
+  return <span title={flat ? t('Value does not change in this scene') : undefined} className={`inline-block rounded-full px-2 text-[11px] ${flat ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{from || '?'} → {to || '?'}{flat ? t(' · no shift') : ''}</span>
 }
 
 type Column = {
@@ -148,26 +149,26 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
   const has = (value: unknown) => typeof value === 'string' ? value.trim() !== '' : value != null
 
   const columns: Column[] = [
-    { key: 'pov', label: 'POV', width: 'w-28', fields: ['pov_character_id'], filled: (s) => has(s.pov_character_id), view: (s) => text(name(characterOptions, s.pov_character_id)), edit: (s) => <InlineSelect value={s.pov_character_id} options={characterOptions} onSave={save(s.id, 'pov_character_id')} /> },
-    { key: 'place', label: 'Place', width: 'w-36', fields: ['location_id'], filled: (s) => has(s.location_id), view: (s) => text(name(locationOptions, s.location_id)), edit: (s) => <InlineSelect value={s.location_id} options={locationOptions} onSave={save(s.id, 'location_id')} /> },
-    { key: 'time', label: 'Time', width: 'w-24', fields: ['time_label'], filled: (s) => has(s.time_label), view: (s) => text(s.time_label), edit: (s) => <InlineText value={s.time_label} placeholder="—" onSave={save(s.id, 'time_label')} /> },
-    { key: 'goal', label: 'Goal', fields: ['goal'], filled: (s) => has(s.goal), view: (s) => text(s.goal), edit: (s) => <InlineText value={s.goal} placeholder="—" multiline onSave={save(s.id, 'goal')} /> },
-    { key: 'conflict', label: 'Conflict', fields: ['conflict'], filled: (s) => has(s.conflict), view: (s) => text(s.conflict), edit: (s) => <InlineText value={s.conflict} placeholder="—" multiline onSave={save(s.id, 'conflict')} /> },
-    { key: 'outcome', label: 'Outcome', fields: ['outcome'], filled: (s) => has(s.outcome), view: (s) => text(s.outcome), edit: (s) => <InlineText value={s.outcome} placeholder="—" multiline onSave={save(s.id, 'outcome')} /> },
+    { key: 'pov', label: t('POV'), width: 'w-28', fields: ['pov_character_id'], filled: (s) => has(s.pov_character_id), view: (s) => text(name(characterOptions, s.pov_character_id)), edit: (s) => <InlineSelect value={s.pov_character_id} options={characterOptions} onSave={save(s.id, 'pov_character_id')} /> },
+    { key: 'place', label: t('Place'), width: 'w-36', fields: ['location_id'], filled: (s) => has(s.location_id), view: (s) => text(name(locationOptions, s.location_id)), edit: (s) => <InlineSelect value={s.location_id} options={locationOptions} onSave={save(s.id, 'location_id')} /> },
+    { key: 'time', label: t('Time'), width: 'w-24', fields: ['time_label'], filled: (s) => has(s.time_label), view: (s) => text(s.time_label), edit: (s) => <InlineText value={s.time_label} placeholder="—" onSave={save(s.id, 'time_label')} /> },
+    { key: 'goal', label: t('Goal'), fields: ['goal'], filled: (s) => has(s.goal), view: (s) => text(s.goal), edit: (s) => <InlineText value={s.goal} placeholder="—" multiline onSave={save(s.id, 'goal')} /> },
+    { key: 'conflict', label: t('Conflict'), fields: ['conflict'], filled: (s) => has(s.conflict), view: (s) => text(s.conflict), edit: (s) => <InlineText value={s.conflict} placeholder="—" multiline onSave={save(s.id, 'conflict')} /> },
+    { key: 'outcome', label: t('Outcome'), fields: ['outcome'], filled: (s) => has(s.outcome), view: (s) => text(s.outcome), edit: (s) => <InlineText value={s.outcome} placeholder="—" multiline onSave={save(s.id, 'outcome')} /> },
     {
-      key: 'shift', label: 'Value shift', width: 'w-36', fields: ['emotional_value_from', 'emotional_value_to'], filled: (s) => shiftKind(s) === 'shift',
+      key: 'shift', label: t('Value shift'), width: 'w-36', fields: ['emotional_value_from', 'emotional_value_to'], filled: (s) => shiftKind(s) === 'shift',
       view: (s) => <Shift scene={s} />,
-      edit: (s) => <div className="flex flex-col gap-1"><InlineText value={s.emotional_value_from} placeholder="from" onSave={save(s.id, 'emotional_value_from')} /><InlineText value={s.emotional_value_to} placeholder="to" onSave={save(s.id, 'emotional_value_to')} /><Shift scene={s} /></div>,
+      edit: (s) => <div className="flex flex-col gap-1"><InlineText value={s.emotional_value_from} placeholder={t('from')} onSave={save(s.id, 'emotional_value_from')} /><InlineText value={s.emotional_value_to} placeholder={t('to')} onSave={save(s.id, 'emotional_value_to')} /><Shift scene={s} /></div>,
     },
-    { key: 'words', label: 'Words', width: 'w-16', fields: [], filled: (s) => (s.word_count ?? 0) > 0, view: (s) => <span className="block text-right tabular-nums text-slate-500">{s.word_count ?? 0}</span>, edit: (s) => <span className="block text-right tabular-nums text-slate-500">{s.word_count ?? 0}</span> },
+    { key: 'words', label: t('Words'), width: 'w-16', fields: [], filled: (s) => (s.word_count ?? 0) > 0, view: (s) => <span className="block text-right tabular-nums text-slate-500">{s.word_count ?? 0}</span>, edit: (s) => <span className="block text-right tabular-nums text-slate-500">{s.word_count ?? 0}</span> },
   ]
   const shown = columns.filter((column) => !prefs.hidden.includes(column.key))
   const flexible = shown.filter((column) => !column.width).length
 
   const all = scenes.data ?? []
   const groupsAll = [
-    ...(chapters.data ?? []).map((chapter) => ({ id: chapter.id as string | null, label: `${chapter.number}. ${chapter.title ?? 'Untitled'}` })),
-    { id: null as string | null, label: 'Unfiled scenes' },
+    ...(chapters.data ?? []).map((chapter) => ({ id: chapter.id as string | null, label: `${chapter.number}. ${chapter.title ?? t('Untitled')}` })),
+    { id: null as string | null, label: t('Unfiled scenes') },
   ].map((group) => ({ ...group, key: group.id ?? 'unfiled', all: orderScenes(all.filter((scene) => (scene.chapter_id ?? null) === group.id)) }))
   const numbers = new Map(groupsAll.flatMap((group) => group.all).map((scene, index) => [scene.id, index + 1]))
   const matches = (scene: Scene) =>
@@ -236,35 +237,35 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
 
   return (
     <div className="min-w-0">
-      <p className="eyebrow">STORY GRID</p>
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Every scene at a glance</h2>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Click a row to edit<span className="hidden sm:inline"> · ↑ ↓ Enter Esc · drag rows to reorder</span> · click a title for details.</p>
+      <p className="eyebrow">{t('STORY GRID')}</p>
+      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('Every scene at a glance')}</h2>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t('Click a row to edit')}<span className="hidden sm:inline">{' '}{t('· ↑ ↓ Enter Esc · drag rows to reorder')}</span>{' '}{t('· click a title for details.')}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <select aria-label="Filter by status" value={prefs.status} onChange={(event) => setPrefs({ status: event.target.value })} className={filter}>
-          <option value="">All statuses</option>
+        <select aria-label={t('Filter by status')} value={prefs.status} onChange={(event) => setPrefs({ status: event.target.value })} className={filter}>
+          <option value="">{t('All statuses')}</option>
           {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
         </select>
-        <select aria-label="Filter by POV" value={prefs.pov} onChange={(event) => setPrefs({ pov: event.target.value })} className={filter}>
-          <option value="">All POVs</option>
-          <option value="none">No POV set</option>
+        <select aria-label={t('Filter by POV')} value={prefs.pov} onChange={(event) => setPrefs({ pov: event.target.value })} className={filter}>
+          <option value="">{t('All POVs')}</option>
+          <option value="none">{t('No POV set')}</option>
           {characterOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
-        <button type="button" aria-pressed={prefs.noShift} onClick={() => setPrefs({ noShift: !prefs.noShift })} className={toolButton(prefs.noShift)}>No value shift</button>
+        <button type="button" aria-pressed={prefs.noShift} onClick={() => setPrefs({ noShift: !prefs.noShift })} className={toolButton(prefs.noShift)}>{t('No value shift')}</button>
         <span className="mx-1 h-5 w-px bg-slate-300 dark:bg-slate-600" />
-        <button type="button" aria-pressed={prefs.gaps} onClick={() => setPrefs({ gaps: !prefs.gaps })} className={toolButton(prefs.gaps)} title="Fade filled cells and highlight empty ones">Gaps</button>
-        <button type="button" aria-pressed={prefs.compact} onClick={() => setPrefs({ compact: !prefs.compact })} className={toolButton(prefs.compact)}>Compact</button>
+        <button type="button" aria-pressed={prefs.gaps} onClick={() => setPrefs({ gaps: !prefs.gaps })} className={toolButton(prefs.gaps)} title={t('Fade filled cells and highlight empty ones')}>{t('Gaps')}</button>
+        <button type="button" aria-pressed={prefs.compact} onClick={() => setPrefs({ compact: !prefs.compact })} className={toolButton(prefs.compact)}>{t('Compact')}</button>
         <details className="relative">
-          <summary className={`${toolButton(false)} cursor-pointer list-none`}>Columns ▾</summary>
+          <summary className={`${toolButton(false)} cursor-pointer list-none`}>{t('Columns ▾')}</summary>
           <div className="absolute z-30 mt-1 w-44 rounded-md border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
             {columns.map((column) => <label key={column.key} className="flex items-center gap-2 py-0.5 text-sm text-slate-700 dark:text-slate-200"><input type="checkbox" checked={!prefs.hidden.includes(column.key)} onChange={() => toggleColumn(column.key)} />{column.label}</label>)}
           </div>
         </details>
-        <button type="button" onClick={() => setPrefs({ collapsed: prefs.collapsed.length ? [] : groupsAll.map((group) => group.key) })} className={toolButton(false)}>{prefs.collapsed.length ? 'Expand' : 'Collapse'} all</button>
-        {moving && <span role="status" className="flex items-center gap-1 text-xs text-slate-500"><span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600 dark:border-slate-600 dark:border-t-slate-200" />Saving order…</span>}
-        {agentEdits.size > 0 && <button type="button" onClick={onOpenInbox} className="ml-auto rounded-full border border-[var(--accent)] px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">{agentEdits.size} agent edits since your last visit →</button>}
+        <button type="button" onClick={() => setPrefs({ collapsed: prefs.collapsed.length ? [] : groupsAll.map((group) => group.key) })} className={toolButton(false)}>{t('{0} all', prefs.collapsed.length ? t('Expand') : t('Collapse'))}</button>
+        {moving && <span role="status" className="flex items-center gap-1 text-xs text-slate-500"><span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600 dark:border-slate-600 dark:border-t-slate-200" />{t('Saving order…')}</span>}
+        {agentEdits.size > 0 && <button type="button" onClick={onOpenInbox} className="ml-auto rounded-full border border-[var(--accent)] px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">{t('{0} agent edits since your last visit →', agentEdits.size)}</button>}
       </div>
-      {scenes.isLoading && <p className="mt-4 text-sm text-slate-500">Loading scenes…</p>}
-      {scenes.data && all.length === 0 && <p className="mt-4 text-sm text-slate-500">No scenes yet.</p>}
+      {scenes.isLoading && <p className="mt-4 text-sm text-slate-500">{t('Loading scenes…')}</p>}
+      {scenes.data && all.length === 0 && <p className="mt-4 text-sm text-slate-500">{t('No scenes yet.')}</p>}
       {all.length > 0 && (
         <div tabIndex={0} onKeyDown={onKeyDown} className="mt-4 max-h-[calc(100vh-10rem)] overflow-auto rounded-md border border-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:border-slate-700">
           <table className="w-full table-fixed border-collapse text-left text-sm" style={{ minWidth: 560 + flexible * 200 }}>
@@ -275,8 +276,8 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
             <thead className="text-[10px] uppercase tracking-wide text-slate-400">
               <tr>
                 <th className={headCell}>#</th>
-                <th className={headCell}>Scene</th>
-                <th className={headCell} title="Draft status — click a dot to advance">St</th>
+                <th className={headCell}>{t('Scene')}</th>
+                <th className={headCell} title={t('Draft status — click a dot to advance')}>{t('St')}</th>
                 {shown.map((column) => <th key={column.key} className={`${headCell} ${column.key === 'words' ? 'text-right' : ''}`}>{column.label}</th>)}
               </tr>
             </thead>
@@ -294,9 +295,9 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                     <span className="flex items-center gap-2">
                       <span className="inline-block w-3">{group.shut ? '▸' : '▾'}</span>
                       <span className="truncate">{group.label}</span>
-                      <span className="font-normal text-slate-400">{group.scenes.length} scenes · {group.scenes.reduce((sum, scene) => sum + (scene.word_count ?? 0), 0)} words</span>
-                      <span className="ml-auto flex gap-0.5" aria-label="Value shift per scene">
-                        {group.scenes.map((scene) => <span key={scene.id} title={`${scene.title ?? 'Untitled'}: ${shiftKind(scene) === 'shift' ? 'value shifts' : shiftKind(scene) === 'flat' ? 'no shift' : 'not set'}`} className={`h-3 w-1.5 rounded-sm ${SHIFT_COLOR[shiftKind(scene)]}`} />)}
+                      <span className="font-normal text-slate-400">{t('{0} scenes · {1} words', group.scenes.length, group.scenes.reduce((sum, scene) => sum + (scene.word_count ?? 0), 0))}</span>
+                      <span className="ml-auto flex gap-0.5" aria-label={t('Value shift per scene')}>
+                        {group.scenes.map((scene) => <span key={scene.id} title={`${scene.title ?? t('Untitled')}: ${shiftKind(scene) === 'shift' ? t('value shifts') : shiftKind(scene) === 'flat' ? t('no shift') : t('not set')}`} className={`h-3 w-1.5 rounded-sm ${SHIFT_COLOR[shiftKind(scene)]}`} />)}
                       </span>
                     </span>
                   </th>
@@ -322,15 +323,15 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                         dragging === scene.id ? 'opacity-40' : moving === scene.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : '',
                       ].join(' ')}
                     >
-                      <td className={`px-2 ${pad} text-xs text-slate-400`}>{moving === scene.id ? <span aria-label="Saving order" className="mt-0.5 block h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-600 dark:border-slate-600 dark:border-t-emerald-300" /> : numbers.get(scene.id)}</td>
+                      <td className={`px-2 ${pad} text-xs text-slate-400`}>{moving === scene.id ? <span aria-label={t('Saving order')} className="mt-0.5 block h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-600 dark:border-slate-600 dark:border-t-emerald-300" /> : numbers.get(scene.id)}</td>
                       <td className={`px-2 ${pad}`}>
-                        <button type="button" onClick={(event) => { event.stopPropagation(); setDrawer(scene.id) }} className="text-left font-medium text-slate-800 hover:underline dark:text-slate-100">{scene.title || 'Untitled scene'}</button>
-                        {scene.is_flashback && <span className="ml-1 rounded bg-indigo-100 px-1 text-[10px] text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">flashback</span>}
-                        {agent && <span title="Changed by an agent since your last visit" className="ml-1 rounded border border-[var(--accent)] px-1 text-[10px] text-slate-500">agent</span>}
-                        {isEditing && <button type="button" onClick={(event) => { event.stopPropagation(); setEditing(null) }} className="workspace-shortcut mt-2 block rounded px-2 text-xs">Done</button>}
+                        <button type="button" onClick={(event) => { event.stopPropagation(); setDrawer(scene.id) }} className="text-left font-medium text-slate-800 hover:underline dark:text-slate-100">{scene.title || t('Untitled scene')}</button>
+                        {scene.is_flashback && <span className="ml-1 rounded bg-indigo-100 px-1 text-[10px] text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">{t('flashback')}</span>}
+                        {agent && <span title={t('Changed by an agent since your last visit')} className="ml-1 rounded border border-[var(--accent)] px-1 text-[10px] text-slate-500">{t('agent')}</span>}
+                        {isEditing && <button type="button" onClick={(event) => { event.stopPropagation(); setEditing(null) }} className="workspace-shortcut mt-2 block rounded px-2 text-xs">{t('Done')}</button>}
                       </td>
                       <td className={`px-2 ${pad}`}>
-                        <button type="button" aria-label={`Status ${scene.status}, click to advance`} title={`${scene.status} — click to advance`} onClick={(event) => { event.stopPropagation(); advanceStatus(scene) }} className={`mt-0.5 block h-4 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/20 ${STATUS_DOT[scene.status] ?? 'bg-slate-300'}`} />
+                        <button type="button" aria-label={t('Status {0}, click to advance', scene.status)} title={t('{0} — click to advance', scene.status)} onClick={(event) => { event.stopPropagation(); advanceStatus(scene) }} className={`mt-0.5 block h-4 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/20 ${STATUS_DOT[scene.status] ?? 'bg-slate-300'}`} />
                       </td>
                       {shown.map((column) => {
                         const edit = agentEdit(scene, column.fields)
@@ -351,7 +352,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
               <tr>
                 <td colSpan={span} className="px-2 py-2">
                   <span className="flex flex-wrap items-center gap-3">
-                    <span>{visible.length} of {all.length} scenes · {words} words</span>
+                    <span>{t('{0} of {1} scenes · {2} words', visible.length, all.length, words)}</span>
                     {STATUSES.map((status) => <span key={status} className="flex items-center gap-1"><span className={`h-2.5 w-2.5 rounded-full ${STATUS_DOT[status]}`} />{visible.filter((scene) => scene.status === status).length} {status}</span>)}
                   </span>
                 </td>
@@ -360,18 +361,18 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
           </table>
         </div>
       )}
-      {(update.isError || move.isError) && <p className="mt-2 text-sm text-red-600">Could not save: {((update.error ?? move.error) as Error).message}</p>}
+      {(update.isError || move.isError) && <p className="mt-2 text-sm text-red-600">{t('Could not save: {0}', ((update.error ?? move.error) as Error).message)}</p>}
       {drawerScene && (
-        <aside aria-label="Scene details" className="fixed inset-y-0 right-0 z-40 w-full max-w-md overflow-y-auto border-l border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+        <aside aria-label={t('Scene details')} className="fixed inset-y-0 right-0 z-40 w-full max-w-md overflow-y-auto border-l border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="eyebrow">SCENE {numbers.get(drawerScene.id)}</p>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{drawerScene.title || 'Untitled scene'}</h3>
+              <p className="eyebrow">{t('SCENE {0}', numbers.get(drawerScene.id))}</p>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{drawerScene.title || t('Untitled scene')}</h3>
             </div>
-            <button type="button" onClick={() => setDrawer(null)} aria-label="Close details" className="workspace-shortcut rounded px-2">✕</button>
+            <button type="button" onClick={() => setDrawer(null)} aria-label={t('Close details')} className="workspace-shortcut rounded px-2">✕</button>
           </div>
           {drawerScene.summary && <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{drawerScene.summary}</p>}
-          <button type="button" onClick={() => onOpenScene(drawerScene)} className="workspace-shortcut mt-3 rounded-md px-3 py-1 text-sm">Open scene →</button>
+          <button type="button" onClick={() => onOpenScene(drawerScene)} className="workspace-shortcut mt-3 rounded-md px-3 py-1 text-sm">{t('Open scene →')}</button>
           <SceneDetails key={drawerScene.id} storyId={storyId} scene={drawerScene} onDeleted={() => setDrawer(null)} />
         </aside>
       )}

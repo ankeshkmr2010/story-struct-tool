@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type OutlineMatch } from '../api/client'
 import { errorText } from '../api/errors'
+import { t } from '../i18n'
 
 const reasonLabels: Record<string, string> = {
   no_summary: 'no summary',
@@ -45,34 +46,34 @@ export function OutlineCatchup({ storyId, onOpenInbox }: { storyId: string; onOp
   return (
     <div className="space-y-5">
       <header>
-        <h2 className="text-2xl font-semibold">Catch up outline</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Builds the outline from prose you've already written. An agent reads the scenes whose outline is behind and proposes summaries, cast, places and events in one batch. Nothing changes until you accept it in Agent changes, where you can keep all, some or none.</p>
+        <h2 className="text-2xl font-semibold">{t('Catch up outline')}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">{t('Builds the outline from prose you\'ve already written. An agent reads the scenes whose outline is behind and proposes summaries, cast, places and events in one batch. Nothing changes until you accept it in Agent changes, where you can keep all, some or none.')}</p>
       </header>
-      {catchup.isPending && <p className="text-sm text-slate-500 dark:text-slate-400">Checking scenes…</p>}
+      {catchup.isPending && <p className="text-sm text-slate-500 dark:text-slate-400">{t('Checking scenes…')}</p>}
       {catchup.isError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(catchup.error)}</p>}
-      {data?.stale && <p role="status" className="text-sm text-amber-700 dark:text-amber-300">The story changed during the reading. <button type="button" className="underline" onClick={() => { void catchup.refetch() }}>Refresh catch-up</button></p>}
-      {data && data.drafted_scenes === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">No scene has prose yet. Write some first; this works from what's on the page.</p>}
+      {data?.stale && <p role="status" className="text-sm text-amber-700 dark:text-amber-300">{t('The story changed during the reading.')}{' '}<button type="button" className="underline" onClick={() => { void catchup.refetch() }}>{t('Refresh catch-up')}</button></p>}
+      {data && data.drafted_scenes === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{t('No scene has prose yet. Write some first; this works from what\'s on the page.')}</p>}
       {data && data.drafted_scenes > 0 && <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <h3 className="text-sm font-semibold">Scenes</h3>
+          <h3 className="text-sm font-semibold">{t('Scenes')}</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {data.pending_scenes === 0 ? `No current catch-up flags across ${data.drafted_scenes} drafted scenes.` : `${data.pending_scenes} of ${data.drafted_scenes} drafted scenes may need outline catch-up.`}
+            {data.pending_scenes === 0 ? t('No current catch-up flags across {0} drafted scenes.', data.drafted_scenes) : t('{0} of {1} drafted scenes may need outline catch-up.', data.pending_scenes, data.drafted_scenes)}
           </p>
         </div>
         {data.pending_scenes > 0 && <>
-          <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? 'Copied' : 'Copy prompt for your agent'}</button>
-          <button type="button" disabled={!connection || run.isPending} title={connection ? undefined : 'Connect Claude or OpenAI in the assistant first'} onClick={() => run.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{run.isPending ? 'Asking the assistant…' : 'Ask the assistant'}</button>
+          <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? t('Copied') : t('Copy prompt for your agent')}</button>
+          <button type="button" disabled={!connection || run.isPending} title={connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => run.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{run.isPending ? t('Asking the assistant…') : t('Ask the assistant')}</button>
         </>}
       </div>
       {data.pending_scenes > 0 && (
         <details className="mt-3 text-xs">
-          <summary className="cursor-pointer text-slate-600 dark:text-slate-300">What the agent prompt says</summary>
+          <summary className="cursor-pointer text-slate-600 dark:text-slate-300">{t('What the agent prompt says')}</summary>
           <pre className="mt-2 whitespace-pre-wrap rounded bg-slate-50 p-2 font-sans text-slate-700 dark:bg-slate-950 dark:text-slate-200">{agentPrompt}</pre>
         </details>
       )}
       {run.isError && <p role="alert" className="mt-2 text-xs text-red-600 dark:text-red-300">{errorText(run.error)}</p>}
-      {run.isSuccess && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{run.data.status === 'invalid' ? `The assistant's batch couldn't be validated: ${String(run.data.result?.validation_error ?? '')}` : <>The assistant's batch is ready for review. <button type="button" onClick={onOpenInbox} className="font-medium underline">Open Agent changes</button></>}</p>}
+      {run.isSuccess && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{run.data.status === 'invalid' ? t('The assistant\'s batch couldn\'t be validated: {0}', String(run.data.result?.validation_error ?? '')) : <>{t('The assistant\'s batch is ready for review.')}{' '}<button type="button" onClick={onOpenInbox} className="font-medium underline">{t('Open Agent changes')}</button></>}</p>}
     </section>}
       <OutlineView storyId={storyId} readings={data?.reader_status ?? {}} behind={new Map(data?.pending_reasons ? Object.entries(data.pending_reasons) : (data?.scenes ?? []).map((scene) => [scene.id, scene.reasons]))} />
     </div>
@@ -83,21 +84,21 @@ export function OutlineCatchup({ storyId, onOpenInbox }: { storyId: string; onOp
 function OutlineView({ storyId, behind, readings }: { storyId: string; behind: Map<string, string[]>; readings: Record<string, OutlineMatch> }) {
   const timeline = useQuery({ queryKey: ['timeline', storyId], queryFn: () => api.getTimeline(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
-  if (timeline.isPending || scenes.isPending) return <p className="text-sm text-slate-500 dark:text-slate-400">Loading the outline…</p>
+  if (timeline.isPending || scenes.isPending) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('Loading the outline…')}</p>
   if (timeline.isError) return <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(timeline.error)}</p>
   const words = new Map((scenes.data ?? []).map((scene) => [scene.id, scene.word_count]))
   const entries = timeline.data.entries
   const sceneEntries = entries.filter((entry) => entry.kind === 'scene').sort((a, b) => (a.reading_order ?? Infinity) - (b.reading_order ?? Infinity))
-  if (sceneEntries.length === 0) return <p className="text-sm text-slate-500 dark:text-slate-400">No scenes yet.</p>
+  if (sceneEntries.length === 0) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('No scenes yet.')}</p>
   const chapters: { title: string; scenes: typeof sceneEntries }[] = []
   for (const scene of sceneEntries) {
-    const title = scene.chapter_title ?? 'Not in a chapter'
+    const title = scene.chapter_title ?? t('Not in a chapter')
     const group = chapters.find((item) => item.title === title) ?? chapters[chapters.push({ title, scenes: [] }) - 1]
     group.scenes.push(scene)
   }
   return (
-    <section className="space-y-5" aria-label="Outline">
-      <h3 className="text-lg font-semibold">Outline</h3>
+    <section className="space-y-5" aria-label={t('Outline')}>
+      <h3 className="text-lg font-semibold">{t('Outline')}</h3>
       {chapters.map((chapter) => (
         <div key={chapter.title} className="space-y-2">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{chapter.title}</h4>
@@ -109,15 +110,15 @@ function OutlineView({ storyId, behind, readings }: { storyId: string; behind: M
             return (
               <li key={scene.id} className={`rounded-lg border p-3 ${reasons ? 'border-amber-300 bg-amber-50/40 dark:border-amber-800 dark:bg-amber-950/40' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-sm font-semibold">{scene.title || 'Untitled scene'}</p>
-                  <span className={`text-[11px] ${reasons ? 'font-medium text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'}`}>{reasons ? `Outline behind: ${reasons.map((reason) => reasonLabels[reason] ?? reason).join(', ')}` : drafted ? reading?.status === 'match' ? 'No likely outline mismatch' : reading?.status === 'uncertain' ? 'Outline match uncertain' : 'Outline not assessed' : 'No prose yet'}</span>
+                  <p className="text-sm font-semibold">{scene.title || t('Untitled scene')}</p>
+                  <span className={`text-[11px] ${reasons ? 'font-medium text-amber-800 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'}`}>{reasons ? t('Outline behind: {0}', reasons.map((reason) => reasonLabels[reason] ?? reason).join(', ')) : drafted ? reading?.status === 'match' ? t('No likely outline mismatch') : reading?.status === 'uncertain' ? t('Outline match uncertain') : t('Outline not assessed') : t('No prose yet')}</span>
                 </div>
-                <p className={`mt-1 text-sm leading-6 ${scene.summary ? 'text-slate-700 dark:text-slate-200' : 'italic text-slate-400'}`}>{scene.summary || 'No summary'}</p>
-                {Boolean(reading?.stale_beat_labels?.length) && <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">Possible stale beats: {reading.stale_beat_labels!.join(', ')}</p>}
+                <p className={`mt-1 text-sm leading-6 ${scene.summary ? 'text-slate-700 dark:text-slate-200' : 'italic text-slate-400'}`}>{scene.summary || t('No summary')}</p>
+                {Boolean(reading?.stale_beat_labels?.length) && <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">{t('Possible stale beats: {0}', reading.stale_beat_labels!.join(', '))}</p>}
                 <dl className="mt-2 grid gap-1 text-xs text-slate-600 sm:grid-cols-[5rem_1fr] dark:text-slate-300">
-                  <dt className="text-slate-400">People</dt><dd>{scene.participants.map((person) => person.name).join(', ') || '—'}</dd>
-                  <dt className="text-slate-400">Place</dt><dd>{scene.location_name || '—'}</dd>
-                  <dt className="text-slate-400">Events</dt><dd>{events.map((event) => event.title).join(' · ') || '—'}</dd>
+                  <dt className="text-slate-400">{t('People')}</dt><dd>{scene.participants.map((person) => person.name).join(', ') || '—'}</dd>
+                  <dt className="text-slate-400">{t('Place')}</dt><dd>{scene.location_name || '—'}</dd>
+                  <dt className="text-slate-400">{t('Events')}</dt><dd>{events.map((event) => event.title).join(' · ') || '—'}</dd>
                 </dl>
                 <SceneImages storyId={storyId} sceneId={scene.id} />
               </li>

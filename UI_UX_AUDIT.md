@@ -726,3 +726,20 @@ Items stay [~] until the user confirms them; these record what was verified on p
     search fold accents too.
   - Tests: `tests/test_languages.py` 11 passed (pure). Not run: DB-backed search and the
     migration (no local Postgres) [unverified]. Interface translation is part 2, not started.
+
+## Interface languages — 2026-10-25 (built; awaiting deploy + user check)
+
+- [~] Site-wide interface language (writing languages part 2): flag menu beside the theme toggle
+  (`components/LanguageToggle.tsx`, inline SVG flags) for English, Français, Deutsch, Español,
+  Português (pt-BR) and Italiano. Choice kept in the browser and on the account
+  (`app_user.ui_language`, migration `e7b3c1d9a425`; PATCH /api/auth/profile).
+  - `web/src/i18n`: `t(text, ...args)` keyed by the English text with `{0}` placeholders (element
+    args return a fragment), `tx()` marks module-level text shown later through `t(value)`,
+    lazy per-language JSON in `i18n/locales/`. A language change re-renders from the root
+    (`LanguageRoot`), so no state is lost.
+  - About 2,800 strings wrapped (codemod for JSX, manual pass for literals); all five languages
+    translated. Left in English on purpose: prompts copied for AI agents and messages the server
+    generates (Evaluate findings, API errors). New strings fall back to English until translated.
+  - The /try tour finds two buttons by aria-label; those selectors now use the translated text.
+  - Work files (codemod, extractor, builder, numbered translations): `.claude/i18n-work/`.
+  - Not verified on screen [unverified]; DB-backed auth tests not run (no local Postgres).

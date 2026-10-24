@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
+import { t } from '../i18n'
 
 /**
  * Pantser mode's surface: things the tool has noticed about the draft.
@@ -31,14 +32,14 @@ export function SuggestionsPanel({ storyId }: { storyId: string }) {
     <section>
       <div className="mb-2 flex items-baseline justify-between">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-          Noticed
+          {t('Noticed')}
         </h2>
         <button
           onClick={() => runPass.mutate()}
           disabled={runPass.isPending}
           className="rounded border border-slate-300 dark:border-slate-600 px-2 py-0.5 text-[11px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950 disabled:opacity-40"
         >
-          {runPass.isPending ? 'reading…' : 'read prose'}
+          {runPass.isPending ? t('reading…') : t('read prose')}
         </button>
       </div>
 
@@ -46,26 +47,23 @@ export function SuggestionsPanel({ storyId }: { storyId: string }) {
       {noticer.data && (
         <p className="mb-2 text-[11px] text-slate-400">
           {noticer.data.noticer === 'deterministic'
-            ? 'Local name matching · no semantic reader active'
-            : noticer.data.shared ? `${noticer.data.model} · provided by StoryTool · noticing only, never writing` : `${noticer.data.model} — noticing only, never writing`}
+            ? t('Local name matching · no semantic reader active')
+            : noticer.data.shared ? t('{0} · provided by StoryTool · noticing only, never writing', noticer.data.model) : t('{0} — noticing only, never writing', noticer.data.model)}
         </p>
       )}
 
       {runPass.data && (
         <p className="mb-2 text-[11px] text-slate-500 dark:text-slate-400">
-          Reader: {runPass.data.noticed_by}. Read {runPass.data.scenes_read} scene
-          {runPass.data.scenes_read === 1 ? '' : 's'};{' '}
+          {t('Reader: {0}. Read {1} scene{2};{3}', runPass.data.noticed_by, runPass.data.scenes_read, runPass.data.scenes_read === 1 ? '' : t('s'), ' ')}
           {runPass.data.suggestions_added === 0
-            ? 'nothing new.'
-            : `${runPass.data.suggestions_added} new observation${
-                runPass.data.suggestions_added === 1 ? '' : 's'
-              }.`}
+            ? t('nothing new.')
+            : t('{0} new observation{1}.', runPass.data.suggestions_added, runPass.data.suggestions_added === 1 ? '' : t('s'))}
         </p>
       )}
 
       {suggestions.data?.length === 0 && (
         <p className="text-sm text-slate-400">
-          Nothing noticed yet. Write some prose, then read it.
+          {t('Nothing noticed yet. Write some prose, then read it.')}
         </p>
       )}
 
@@ -77,13 +75,13 @@ export function SuggestionsPanel({ storyId }: { storyId: string }) {
           >
             <p className="text-sm text-slate-800 dark:text-slate-100">{suggestion.message}</p>
             <div className="mt-1 flex items-center gap-2">
-              <span className="text-[10px] text-slate-500">{suggestion.noticed_by === 'deterministic' ? 'Local name matcher' : suggestion.noticed_by}</span>
+              <span className="text-[10px] text-slate-500">{suggestion.noticed_by === 'deterministic' ? t('Local name matcher') : suggestion.noticed_by}</span>
               <span className="font-mono text-[10px] text-slate-400">{suggestion.code}</span>
               <button
                 onClick={() => dismiss.mutate(suggestion.id)}
                 className="ml-auto text-[10px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               >
-                dismiss
+                {t('dismiss')}
               </button>
             </div>
           </li>

@@ -1,5 +1,6 @@
 import { RangeSetBuilder } from '@codemirror/state'
 import { Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from '@codemirror/view'
+import { t } from '../i18n'
 
 export type ReaderComment = { id: string; quote: string }
 export const OPEN_FEEDBACK_EVENT = 'storytool:open-feedback'
@@ -17,8 +18,8 @@ export function readerComments(comments: ReaderComment[]) {
       const button = document.createElement('button')
       button.type = 'button'; button.className = 'writer-reader-comment'; button.contentEditable = 'false'
       button.textContent = this.ids.length > 1 ? String(this.ids.length) : ''
-      button.title = this.ids.length > 1 ? `${this.ids.length} reader comments` : 'Reader comment'
-      button.setAttribute('aria-label', `Open ${button.title.toLowerCase()} in the Feedback panel`)
+      button.title = this.ids.length > 1 ? t('{0} reader comments', this.ids.length) : t('Reader comment')
+      button.setAttribute('aria-label', t('Open {0} in the Feedback panel', button.title.toLowerCase()))
       button.onmousedown = event => event.preventDefault()
       button.onclick = () => window.dispatchEvent(new CustomEvent(OPEN_FEEDBACK_EVENT, { detail: this.ids[0] }))
       return button

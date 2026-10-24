@@ -22,6 +22,7 @@ import { LiveWritingHints } from './LiveWritingHints'
 import { readerComments } from './readerComments'
 import { writerPlaceholders } from './writerPlaceholders'
 import { openBeside, type BesideItem } from './beside'
+import { t } from '../i18n'
 
 type Named = { label: string; item: BesideItem }
 const WRITE_TIP_KEY = 'storytool-write-tip'
@@ -111,7 +112,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openScene, scenes.data])
   const chooseChapter = async (id: string) => {
-    if (!await flushWriter(prefix)) { setError('Your draft is still here. Resolve the save error before switching chapters.'); return false }
+    if (!await flushWriter(prefix)) { setError(t('Your draft is still here. Resolve the save error before switching chapters.')); return false }
     setError(null); remember(id)
     return true
   }
@@ -143,7 +144,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
   const addScene = async () => {
     setAdding(true); setError(null)
     try {
-      if (!await flushWriter(prefix)) throw new Error('Save the current draft before adding a scene break.')
+      if (!await flushWriter(prefix)) throw new Error(t('Save the current draft before adding a scene break.'))
       const scene = await createScene()
       onCreated(scene, '')
     } catch (error) { setError(errorText(error)) }
@@ -152,7 +153,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
   const addChapter = async () => {
     setAdding(true); setError(null)
     try {
-      if (!await flushWriter(prefix)) throw new Error('Save the current draft before adding a chapter.')
+      if (!await flushWriter(prefix)) throw new Error(t('Save the current draft before adding a chapter.'))
       const created = await api.createChapter(storyId, {
         number: Math.max(0, ...orderedChapters.map(item => item.number)) + 1,
         sort_key: Math.max(0, ...orderedChapters.map(item => item.sort_key)) + 100,
@@ -163,42 +164,42 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
     finally { setAdding(false) }
   }
 
-  if (chapters.isPending || scenes.isPending || me.isPending) return <p className="p-6">Loading manuscript…</p>
+  if (chapters.isPending || scenes.isPending || me.isPending) return <p className="p-6">{t('Loading manuscript…')}</p>
   if (chapters.isError || scenes.isError || me.isError) return <p role="alert">{errorText(chapters.error ?? scenes.error ?? me.error)}</p>
 
   return <div className={`story-writer ${focus ? 'writer-focus' : ''}`}>
-    {focus && <div className="writer-toolbar"><span className="writer-toolbar-spacer" /><button type="button" onClick={() => onFocusChange(false)}>Exit focus</button></div>}
-    {tipShown && !focus && <p className="writer-tip" role="note"><span>Tip: right-click the prose, or select text and click <strong>⋯</strong>, for editing actions, Insert image, Add TK here and Open beside.</span><button type="button" onClick={dismissTip}>Got it</button></p>}
+    {focus && <div className="writer-toolbar"><span className="writer-toolbar-spacer" /><button type="button" onClick={() => onFocusChange(false)}>{t('Exit focus')}</button></div>}
+    {tipShown && !focus && <p className="writer-tip" role="note"><span>{t('Tip: right-click the prose, or select text and click')}{' '}<strong>⋯</strong>{t(', for editing actions, Insert image, Add TK here and Open beside.')}</span><button type="button" onClick={dismissTip}>{t('Got it')}</button></p>}
     {error && <p role="alert" className="writer-error">{error}</p>}
     <div className={`writer-layout ${!showNavigation || focus ? 'writer-no-navigation' : ''}`}>
-      {!focus && <nav aria-label="Manuscript chapters" className={`writer-navigation ${showNavigation ? 'writer-navigation-open' : ''}`}>
-        <div className="writer-navigation-head"><p className="eyebrow">MANUSCRIPT</p><button type="button" aria-label="Hide chapters" title="Hide chapters" onClick={() => setShowNavigation(false)}>‹</button></div>
-        {orderedChapters.map(item => <button key={item.id} type="button" aria-current={chapter?.id === item.id && !unfiled ? 'page' : undefined} onClick={() => { void chooseChapter(item.id) }}><span>Chapter {item.number}</span><strong>{item.title || 'Untitled'}</strong></button>)}
-        {(scenes.data ?? []).some(scene => scene.chapter_id === null) && <button type="button" aria-current={unfiled ? 'page' : undefined} onClick={() => { void chooseChapter('unfiled') }}>Unfiled writing</button>}
-        <button type="button" disabled={adding} onClick={() => { void addChapter() }}>+ New chapter</button>
+      {!focus && <nav aria-label={t('Manuscript chapters')} className={`writer-navigation ${showNavigation ? 'writer-navigation-open' : ''}`}>
+        <div className="writer-navigation-head"><p className="eyebrow">{t('MANUSCRIPT')}</p><button type="button" aria-label={t('Hide chapters')} title={t('Hide chapters')} onClick={() => setShowNavigation(false)}>‹</button></div>
+        {orderedChapters.map(item => <button key={item.id} type="button" aria-current={chapter?.id === item.id && !unfiled ? 'page' : undefined} onClick={() => { void chooseChapter(item.id) }}><span>{t('Chapter {0}', item.number)}</span><strong>{item.title || t('Untitled')}</strong></button>)}
+        {(scenes.data ?? []).some(scene => scene.chapter_id === null) && <button type="button" aria-current={unfiled ? 'page' : undefined} onClick={() => { void chooseChapter('unfiled') }}>{t('Unfiled writing')}</button>}
+        <button type="button" disabled={adding} onClick={() => { void addChapter() }}>{t('+ New chapter')}</button>
       </nav>}
-      <article className="writer-manuscript" aria-label="Chapter manuscript">
-        {!showNavigation && !focus && <button type="button" className="writer-rail-open" onClick={() => setShowNavigation(true)}>☰ Chapters</button>}
+      <article className="writer-manuscript" aria-label={t('Chapter manuscript')}>
+        {!showNavigation && !focus && <button type="button" className="writer-rail-open" onClick={() => setShowNavigation(true)}>{t('☰ Chapters')}</button>}
         <header className="writer-chapter-heading">
-          <p className="eyebrow">{unfiled ? 'UNFILED WRITING' : `CHAPTER ${chapter?.number ?? 1}`}</p>
-          {!unfiled && (chapter ? <InlineText value={chapter.title} placeholder="Chapter title (optional)" className="writer-title-input" onSave={async title => { await api.updateChapter(storyId, chapter.id, { title }); refresh() }} /> : <input aria-label="Chapter title" placeholder="Chapter title (optional)" className="writer-title-input" onChange={event => { titleRef.current = event.target.value }} />)}
-          <p className="writer-help">Write freely. Scene names and structure can come later.</p>
+          <p className="eyebrow">{unfiled ? t('UNFILED WRITING') : t('CHAPTER {0}', chapter?.number ?? 1)}</p>
+          {!unfiled && (chapter ? <InlineText value={chapter.title} placeholder={t('Chapter title (optional)')} className="writer-title-input" onSave={async title => { await api.updateChapter(storyId, chapter.id, { title }); refresh() }} /> : <input aria-label={t('Chapter title')} placeholder={t('Chapter title (optional)')} className="writer-title-input" onChange={event => { titleRef.current = event.target.value }} />)}
+          <p className="writer-help">{t('Write freely. Scene names and structure can come later.')}</p>
         </header>
-        {!unfiled && chapter && <div className="writer-chapter-extras" key={`top-${chapter.id}`}><ChapterExtra label="Epigraph" add="Add epigraph" value={chapter.epigraph} placeholder="Opening quote" onSave={async epigraph => { await api.updateChapter(storyId, chapter.id, { epigraph }); refresh() }} /><ChapterExtra label="Opening note" add="Add opening note" value={chapter.opening_note} placeholder="Opening flavour text" onSave={async opening_note => { await api.updateChapter(storyId, chapter.id, { opening_note }); refresh() }} /></div>}
+        {!unfiled && chapter && <div className="writer-chapter-extras" key={`top-${chapter.id}`}><ChapterExtra label={t('Epigraph')} add={t('Add epigraph')} value={chapter.epigraph} placeholder={t('Opening quote')} onSave={async epigraph => { await api.updateChapter(storyId, chapter.id, { epigraph }); refresh() }} /><ChapterExtra label={t('Opening note')} add={t('Add opening note')} value={chapter.opening_note} placeholder={t('Opening flavour text')} onSave={async opening_note => { await api.updateChapter(storyId, chapter.id, { opening_note }); refresh() }} /></div>}
         {chapterScenes.map((scene, index) => <Passage key={scene.id} {...{ storyId, prefix, scene, hintsSlot }} liveHints={liveHints && contextScene?.id === scene.id} separator={index > 0} focus={focusTarget === scene.id} onFocus={() => setActiveScene(scene.id)} refresh={refresh} />)}
         {chapterScenes.length === 0 && <Passage key={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} {...{ storyId, prefix }} draftKey={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} focus={focusTarget === 'blank'} createScene={createScene} onCreated={onCreated} onFocus={() => {}} refresh={refresh} />}
-        {!unfiled && chapter && <div className="writer-chapter-extras" key={`end-${chapter.id}`}><ChapterExtra label="Closing note" add="Add closing note" value={chapter.closing_note} placeholder="Closing flavour text" onSave={async closing_note => { await api.updateChapter(storyId, chapter.id, { closing_note }); refresh() }} /></div>}
+        {!unfiled && chapter && <div className="writer-chapter-extras" key={`end-${chapter.id}`}><ChapterExtra label={t('Closing note')} add={t('Add closing note')} value={chapter.closing_note} placeholder={t('Closing flavour text')} onSave={async closing_note => { await api.updateChapter(storyId, chapter.id, { closing_note }); refresh() }} /></div>}
         <div className="writer-continuation">
-          {chapterScenes.length > 0 && <button type="button" disabled={adding} onClick={() => { void addScene() }}>+ Scene break at end</button>}
-          <button type="button" disabled={adding} onClick={() => { void addChapter() }}>+ Next chapter</button>
-          {adding && <span role="status">Preparing…</span>}
+          {chapterScenes.length > 0 && <button type="button" disabled={adding} onClick={() => { void addScene() }}>{t('+ Scene break at end')}</button>}
+          <button type="button" disabled={adding} onClick={() => { void addChapter() }}>{t('+ Next chapter')}</button>
+          {adding && <span role="status">{t('Preparing…')}</span>}
         </div>
       </article>
-      {contextSlot && !focus && createPortal(<div className="writer-context" aria-label="Writing context">
+      {contextSlot && !focus && createPortal(<div className="writer-context" aria-label={t('Writing context')}>
         {brief.data && <ChapterBriefCard brief={brief.data} />}
-        {contextScene ? <SceneDetails key={contextScene.id} storyId={storyId} scene={contextScene} essentials onDeleted={() => { setActiveScene(null); refresh() }} /> : <p>Start writing to add scene details. Beats, characters, and locations are optional.</p>}
+        {contextScene ? <SceneDetails key={contextScene.id} storyId={storyId} scene={contextScene} essentials onDeleted={() => { setActiveScene(null); refresh() }} /> : <p>{t('Start writing to add scene details. Beats, characters, and locations are optional.')}</p>}
         {contextScene && <SceneRevisions key={`rev-${contextScene.id}`} storyId={storyId} sceneId={contextScene.id} flush={() => flushWriter(prefix)} onRestored={text => writerDraft(prefix + contextScene.id, text).useLatest(text)} />}
-        <p className="writer-help">Timeline, places, glossary and the assistant are tabs in this panel; Design holds the full outline.</p>
+        <p className="writer-help">{t('Timeline, places, glossary and the assistant are tabs in this panel; Design holds the full outline.')}</p>
       </div>, contextSlot)}
     </div>
   </div>
@@ -209,8 +210,8 @@ function Passage({ storyId, prefix, scene, draftKey, separator = false, focus = 
   createScene?: () => Promise<Scene>; onCreated?: (scene: Scene, content: string) => void; onFocus: () => void; refresh: () => void
 }) {
   const content = useQuery({ queryKey: ['content', storyId, scene?.id], queryFn: () => api.getContent(storyId, scene!.id), enabled: Boolean(scene) })
-  if (scene && content.isPending) return <p className="writer-help">Loading passage…</p>
-  if (content.isError) return <p role="alert" className="writer-error">{errorText(content.error)} <button type="button" onClick={() => { void content.refetch() }}>Retry</button></p>
+  if (scene && content.isPending) return <p className="writer-help">{t('Loading passage…')}</p>
+  if (content.isError) return <p role="alert" className="writer-error">{errorText(content.error)} <button type="button" onClick={() => { void content.refetch() }}>{t('Retry')}</button></p>
   return <PassageEditor {...{ storyId, prefix, scene, draftKey, separator, focus, liveHints, hintsSlot, createScene, onCreated, onFocus, refresh }} initial={content.data?.content ?? ''} />
 }
 
@@ -263,7 +264,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     const current = realScene.current
     draft.adopt(prefix + current.id)
     const snapshot = Date.now() - lastCheckpoint.current >= 60_000
-    await api.saveContent(storyId, current.id, { content: text, expected_content: base, snapshot, snapshot_label: 'Writing checkpoint' })
+    await api.saveContent(storyId, current.id, { content: text, expected_content: base, snapshot, snapshot_label: t('Writing checkpoint') })
     if (snapshot) lastCheckpoint.current = Date.now()
     qc.setQueryData(['content', storyId, current.id], { scene_id: current.id, content: text, word_count: proseWords(text) })
     void qc.invalidateQueries({ queryKey: ['placeholders', storyId] })
@@ -321,18 +322,18 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
         if (action === 'cut') editor.dispatch({ changes: { from: selection.from, to: selection.to }, selection: { anchor: selection.from } })
       }
       setContext(null); editor.focus()
-    } catch { setClipboardError(`Clipboard access unavailable. Close this menu and use ${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+${action === 'paste' ? 'V' : action === 'cut' ? 'X' : 'C'}.`) }
+    } catch { setClipboardError(t('Clipboard access unavailable. Close this menu and use {0}+{1}.', navigator.platform.includes('Mac') ? '⌘' : 'Ctrl', action === 'paste' ? 'V' : action === 'cut' ? 'X' : 'C')) }
   }
   const words = proseWords(state.text)
-  return <section className="writer-passage" data-writing-scene={scene?.id} aria-label={scene?.title ?? 'Writing passage'}>
-    {separator && <div className="writer-scene-break" aria-label="Scene break">⁂</div>}
+  return <section className="writer-passage" data-writing-scene={scene?.id} aria-label={scene?.title ?? t('Writing passage')}>
+    {separator && <div className="writer-scene-break" aria-label={t('Scene break')}>⁂</div>}
     <div className="writer-passage-heading">
-      {scene ? <InlineText value={scene.title} placeholder="Scene name (optional)" onSave={async title => { await api.updateScene(storyId, scene.id, { title }); refresh() }} /> : <span className="writer-help">Start writing…</span>}
-      <span className="writer-passage-status" role="status">{words} words · {state.status === 'error' ? 'Not saved' : state.status === 'saving' ? 'Saving…' : state.status === 'unsaved' ? 'Unsaved' : storyId === SANDBOX_ID ? 'Saved in this browser' : 'Saved'}</span>
+      {scene ? <InlineText value={scene.title} placeholder={t('Scene name (optional)')} onSave={async title => { await api.updateScene(storyId, scene.id, { title }); refresh() }} /> : <span className="writer-help">{t('Start writing…')}</span>}
+      <span className="writer-passage-status" role="status">{t('{0} words · {1}', words, state.status === 'error' ? t('Not saved') : state.status === 'saving' ? t('Saving…') : state.status === 'unsaved' ? t('Unsaved') : storyId === SANDBOX_ID ? t('Saved in this browser') : t('Saved'))}</span>
       {scene && <SceneDelete storyId={storyId} scene={scene} onDeleted={refresh} />}
 
     </div>
-    {state.status === 'error' && <div role="alert" className="writer-error"><p>{state.error}</p><p>Your draft is preserved in this browser tab.</p><button type="button" onClick={() => { void draft.flush() }}>Retry save</button> <button type="button" onClick={() => { void review() }}>Review latest text</button>{reviewError && <p>{reviewError}</p>}{latest !== null && <div><h3>Latest saved text</h3><pre className="writer-latest">{latest || '(Empty passage)'}</pre><button type="button" onClick={() => { if (window.confirm('Replace your local draft with the latest saved text?')) { draft.useLatest(latest); setLatest(null) } }}>Use latest text</button> <button type="button" onClick={() => { if (window.confirm('Save your draft over the latest text? A prose revision will preserve the previous text.')) { lastCheckpoint.current = 0; draft.rebase(latest); setLatest(null); void draft.flush() } }}>Keep my draft</button></div>}</div>}
+    {state.status === 'error' && <div role="alert" className="writer-error"><p>{state.error}</p><p>{t('Your draft is preserved in this browser tab.')}</p><button type="button" onClick={() => { void draft.flush() }}>{t('Retry save')}</button> <button type="button" onClick={() => { void review() }}>{t('Review latest text')}</button>{reviewError && <p>{reviewError}</p>}{latest !== null && <div><h3>{t('Latest saved text')}</h3><pre className="writer-latest">{latest || t('(Empty passage)')}</pre><button type="button" onClick={() => { if (window.confirm(t('Replace your local draft with the latest saved text?'))) { draft.useLatest(latest); setLatest(null) } }}>{t('Use latest text')}</button> <button type="button" onClick={() => { if (window.confirm(t('Save your draft over the latest text? A prose revision will preserve the previous text.'))) { lastCheckpoint.current = 0; draft.rebase(latest); setLatest(null); void draft.flush() } }}>{t('Keep my draft')}</button></div>}</div>}
     <div className={liveHints && scene ? "writer-hint-layout" : undefined}>
     <CodeMirror onUpdate={update => {
       if (update.selectionSet || update.docChanged || update.focusChanged) {
@@ -345,7 +346,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       const parts = [...update.state.doc.toString().matchAll(/(?:^|\n\s*\n)([\s\S]*?)(?=\n\s*\n|$)/g)].filter(part => part[1].replace(/!\[[^\]\n]*\]\([^\n)]*\)/g, '').trim())
       const index = parts.findIndex(part => cursor <= part.index! + part[0].length)
       setHintParagraph(index >= 0 ? index + 1 : Math.max(1, parts.length))
-    }} value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder="Start writing your story…" onChange={(text, update) => { draft.change(text); if (storyId === SANDBOX_ID && update.transactions.some(transaction => transaction.isUserEvent('input'))) tourEvent('write') }} onCreateEditor={editor => { view.current = editor; if (focus) { if (storyId === SANDBOX_ID) editor.dispatch({ selection: { anchor: editor.state.doc.length } }); editor.focus(); editor.dom.scrollIntoView({ block: 'center' }) } }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[
+    }} value={state.text} theme={theme} width="100%" minHeight={state.text ? undefined : '180px'} placeholder={t('Start writing your story…')} onChange={(text, update) => { draft.change(text); if (storyId === SANDBOX_ID && update.transactions.some(transaction => transaction.isUserEvent('input'))) tourEvent('write') }} onCreateEditor={editor => { view.current = editor; if (focus) { if (storyId === SANDBOX_ID) editor.dispatch({ selection: { anchor: editor.state.doc.length } }); editor.focus(); editor.dom.scrollIntoView({ block: 'center' }) } }} onFocus={onFocus} onBlur={() => { if (draft.state.status !== 'error') void draft.flush() }} extensions={[
       markdown(), EditorView.lineWrapping,
       writerImages(images.data?.images ?? [], setPreviewImage),
       readerComments(comments),
@@ -367,7 +368,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
         },
       }),
       keymap.of([{ key: 'Shift-F10', run: editor => { const coords = editor.coordsAtPos(editor.state.selection.main.head); openContext(editor, coords?.left ?? 20, coords?.bottom ?? 100, false); return true } }]),
-      EditorView.contentAttributes.of({ 'aria-label': scene?.title ? `Prose: ${scene.title}` : 'Story prose', spellcheck: 'true', autocapitalize: 'sentences' }),
+      EditorView.contentAttributes.of({ 'aria-label': scene?.title ? t('Prose: {0}', scene.title) : t('Story prose'), spellcheck: 'true', autocapitalize: 'sentences' }),
       keymap.of([{ key: 'Mod-s', run: () => { void draft.flush(); return true } }]),
       keymap.of(['ArrowDown', 'ArrowUp'].map(key => ({ key, run: (editor: EditorView) => {
         const selection = editor.state.selection.main
@@ -400,25 +401,25 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     }} />}
     </div>
     {previewImage && <ImagePreview url={previewImage.url} alt={previewImage.alt} caption={previewImage.caption} onClose={() => { setPreviewImage(null); view.current?.focus() }} />}
-    {selectionChip && !context && <button type="button" className="writer-selection-chip" aria-label="Writing actions for selection" title="Writing actions (or right-click)" style={{ left: Math.max(8, Math.min(selectionChip.x + 4, window.innerWidth - 48)), top: Math.max(8, Math.min(selectionChip.y + 6, window.innerHeight - 40)) }} onMouseDown={event => event.preventDefault()} onClick={() => { const editor = view.current; if (editor) openContext(editor, selectionChip.x, selectionChip.y + 6, false); setSelectionChip(null) }}>⋯</button>}
-    {context && <div ref={menu} className="writer-context-menu" role="menu" aria-label="Writing actions" style={{ left: Math.max(8, Math.min(context.x, window.innerWidth - 208)), top: Math.max(8, Math.min(context.y, window.innerHeight - 284)) }} onKeyDown={event => {
+    {selectionChip && !context && <button type="button" className="writer-selection-chip" aria-label={t('Writing actions for selection')} title={t('Writing actions (or right-click)')} style={{ left: Math.max(8, Math.min(selectionChip.x + 4, window.innerWidth - 48)), top: Math.max(8, Math.min(selectionChip.y + 6, window.innerHeight - 40)) }} onMouseDown={event => event.preventDefault()} onClick={() => { const editor = view.current; if (editor) openContext(editor, selectionChip.x, selectionChip.y + 6, false); setSelectionChip(null) }}>⋯</button>}
+    {context && <div ref={menu} className="writer-context-menu" role="menu" aria-label={t('Writing actions')} style={{ left: Math.max(8, Math.min(context.x, window.innerWidth - 208)), top: Math.max(8, Math.min(context.y, window.innerHeight - 284)) }} onKeyDown={event => {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault(); const buttons = Array.from(menu.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a') ?? []); const index = buttons.indexOf(document.activeElement as HTMLElement)
         buttons[(index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length]?.focus()
       }
     }}>
-      <button type="button" role="menuitem" onClick={addPlaceholder}>Add TK here</button>
-      {context.named && <button type="button" role="menuitem" onClick={() => { openBeside(context.named!.item); setContext(null) }}>Open {context.named.label} beside</button>}
-      <button type="button" role="menuitem" onClick={() => { openBeside({ kind: 'pick' }); setContext(null) }}>Open scene beside…</button>
-      <button type="button" role="menuitem" onClick={() => { const anchor = context; setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor(anchor) }}>Insert image…</button>
-      {(['cut', 'copy', 'paste', 'select'] as const).map(action => <button type="button" role="menuitem" key={action} disabled={(action === 'cut' || action === 'copy') && !context.hasSelection} onClick={() => { void editClipboard(action) }}>{({ cut: 'Cut', copy: 'Copy', paste: 'Paste', select: 'Select all' })[action]}</button>)}
-      <a role="menuitem" href="https://emojidb.org/" target="_blank" rel="noopener noreferrer" onClick={() => setContext(null)}>Find emojis ↗</a>
+      <button type="button" role="menuitem" onClick={addPlaceholder}>{t('Add TK here')}</button>
+      {context.named && <button type="button" role="menuitem" onClick={() => { openBeside(context.named!.item); setContext(null) }}>{t('Open {0} beside', context.named.label)}</button>}
+      <button type="button" role="menuitem" onClick={() => { openBeside({ kind: 'pick' }); setContext(null) }}>{t('Open scene beside…')}</button>
+      <button type="button" role="menuitem" onClick={() => { const anchor = context; setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor(anchor) }}>{t('Insert image…')}</button>
+      {(['cut', 'copy', 'paste', 'select'] as const).map(action => <button type="button" role="menuitem" key={action} disabled={(action === 'cut' || action === 'copy') && !context.hasSelection} onClick={() => { void editClipboard(action) }}>{({ cut: t('Cut'), copy: t('Copy'), paste: t('Paste'), select: t('Select all') })[action]}</button>)}
+      <a role="menuitem" href="https://emojidb.org/" target="_blank" rel="noopener noreferrer" onClick={() => setContext(null)}>{t('Find emojis ↗')}</a>
       {clipboardError && <p role="alert">{clipboardError}</p>}
     </div>}
     {imageAnchor && <ImageInsertionPicker storyId={storyId} anchor={imageAnchor} onClose={() => { setImageAnchor(null); view.current?.focus() }} onInsert={async image => {
-      if (!await draft.flush()) throw new Error('Save your writing before inserting an image.')
+      if (!await draft.flush()) throw new Error(t('Save your writing before inserting an image.'))
       const editor = view.current
-      if (!editor) throw new Error('The writing passage is no longer open.')
+      if (!editor) throw new Error(t('The writing passage is no longer open.'))
       const at = Math.min(imageAnchor.at, editor.state.doc.length)
       const insert = `\n\n${imageMarkdown(image)}\n\n`
       editor.dispatch({ changes: { from: at, insert }, selection: { anchor: at + insert.length }, effects: EditorView.scrollIntoView(at, { y: 'center' }) })

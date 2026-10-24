@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from storytool.config import get_settings
 from storytool.domain.auth.access import SESSION_COOKIE, session_token
 from storytool.domain.auth.models import User, UserSession
-from storytool.domain.enums import Language
+from storytool.domain.enums import Language, UiLanguage
 from storytool.domain.story.models import Story
 from storytool.examples.provision import ensure_starter_examples
 
@@ -40,6 +40,7 @@ class UserOut(BaseModel):
     author_name: str | None
     picture_url: str | None
     language: str
+    ui_language: str | None = None
 
     @classmethod
     def from_user(cls, user: User) -> "UserOut":
@@ -50,6 +51,7 @@ class UserOut(BaseModel):
             author_name=user.author_name,
             picture_url=user.picture_url,
             language=user.language,
+            ui_language=user.ui_language,
         )
 
 
@@ -59,6 +61,9 @@ class ProfileIn(BaseModel):
     author_name: str | None = Field(default=None, max_length=200)
     language: Language | None = Field(
         default=None, description="Default writing language for stories that do not set one."
+    )
+    ui_language: UiLanguage | None = Field(
+        default=None, description="Language of the app's interface; null follows the browser."
     )
 
 
@@ -163,6 +168,8 @@ class AuthController(Controller):
             user.author_name = " ".join((data.author_name or "").split()) or None
         if data.language is not None:
             user.language = data.language
+        if "ui_language" in data.model_fields_set:
+            user.ui_language = data.ui_language
         await db_session.flush()
         return UserOut.from_user(user)
 

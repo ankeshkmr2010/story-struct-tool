@@ -3,6 +3,7 @@ import type { components, operations } from './schema'
 import { orderChapters, orderScenes } from './ordering'
 import { getVisitorId } from './visitor'
 import { isSandboxRequest, sandboxRequest } from '../sandbox/adapter'
+import { t } from '../i18n'
 
 // Types come from the backend's OpenAPI schema, so Pydantic stays the single source of
 // truth. Never hand-write these -- run `npm run gen:api`.
@@ -112,10 +113,10 @@ export async function uploadStoryImage(storyId: string, uploadId: string, file: 
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     const xhr = new XMLHttpRequest()
-    const abort = () => { reader.abort(); xhr.abort(); reject(new Error('Upload cancelled')) }
+    const abort = () => { reader.abort(); xhr.abort(); reject(new Error(t('Upload cancelled'))) }
     signal.addEventListener('abort', abort, { once: true })
     const cleanup = () => signal.removeEventListener('abort', abort)
-    reader.onerror = () => { cleanup(); reject(new Error('Could not read this image')) }
+    reader.onerror = () => { cleanup(); reject(new Error(t('Could not read this image'))) }
     reader.onload = () => {
       if (signal.aborted) { abort(); cleanup(); return }
       xhr.open('POST', `/api/stories/${storyId}/images`)
@@ -125,11 +126,11 @@ export async function uploadStoryImage(storyId: string, uploadId: string, file: 
         cleanup()
         try {
           const result = JSON.parse(xhr.responseText)
-          if (xhr.status < 200 || xhr.status >= 300) reject(new Error(result.detail || 'Image upload failed'))
+          if (xhr.status < 200 || xhr.status >= 300) reject(new Error(result.detail || t('Image upload failed')))
           else resolve(result as StoryImage)
-        } catch { reject(new Error('Image upload failed. Please retry.')) }
+        } catch { reject(new Error(t('Image upload failed. Please retry.'))) }
       }
-      xhr.onerror = () => { cleanup(); reject(new Error('Image upload failed. Please retry.')) }
+      xhr.onerror = () => { cleanup(); reject(new Error(t('Image upload failed. Please retry.'))) }
       xhr.onabort = cleanup
       xhr.send(JSON.stringify({ ...description, upload_id: uploadId, data: String(reader.result).split(',')[1] }))
     }

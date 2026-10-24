@@ -1,4 +1,5 @@
 import { errorText } from '../api/errors'
+import { t } from '../i18n'
 
 export type DraftState = { text: string; base: string; status: 'saved' | 'unsaved' | 'saving' | 'error'; error?: string }
 
@@ -19,7 +20,7 @@ export class WriterDraft {
     try {
       const recovered = JSON.parse(sessionStorage.getItem(key) ?? 'null') as DraftState | null
       if (recovered && typeof recovered.text === 'string' && typeof recovered.base === 'string' && recovered.text !== text) {
-        this.state = { text: recovered.text, base: recovered.base, status: 'error', error: 'An unsaved draft was recovered from this browser tab. Review it, then retry saving.' }
+        this.state = { text: recovered.text, base: recovered.base, status: 'error', error: t('An unsaved draft was recovered from this browser tab. Review it, then retry saving.') }
       }
     } catch { /* Writing still works when browser storage is unavailable. */ }
   }
@@ -43,7 +44,7 @@ export class WriterDraft {
     if (this.running || text === this.state.base) return
     if (this.state.text !== this.state.base) {
       clearTimeout(this.timer)
-      this.publish({ ...this.state, status: 'error', error: 'This passage changed elsewhere. Your unsaved draft is preserved. Review the latest text before saving.' })
+      this.publish({ ...this.state, status: 'error', error: t('This passage changed elsewhere. Your unsaved draft is preserved. Review the latest text before saving.') })
     } else this.publish({ text, base: text, status: 'saved' })
   }
   adopt(key: string) {

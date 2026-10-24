@@ -1,4 +1,6 @@
+import { t } from '../i18n'
+
 export function errorText(error: unknown) {
-  const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.'
+  const message = error instanceof Error ? error.message : t('Something went wrong. Please try again.')
   try { return JSON.parse(message.slice(message.indexOf('{'))).detail ?? message } catch { return message }
 }

@@ -1068,3 +1068,11 @@ ol.showcase-list { list-style: decimal; }
 .rename-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .merge-preview { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); font-size: var(--text-sm); }
 .merge-preview ul { margin: 6px 0 0; padding-left: 18px; }
+
+/* Interface language toggle (site header) */
+.language-toggle { position: relative; }
+.language-flag { width: 20px; height: 14px; flex: none; border-radius: 2px; box-shadow: 0 0 0 1px var(--line); }
+.language-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 60; display: grid; min-width: 168px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 10px 30px rgb(0 0 0 / 0.14); }
+.language-menu button { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 7px; font-size: 13px; text-align: left; color: var(--ink); }
+.language-menu button:hover, .language-menu button.is-active { background: var(--accent-soft); color: var(--accent); }
+@media (max-width: 640px) { .language-toggle .theme-toggle span { display: none; } }

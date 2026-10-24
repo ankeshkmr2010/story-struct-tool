@@ -5,6 +5,7 @@ import { api, type BetaFeedback } from '../api/client'
 import { errorText } from '../api/errors'
 import { orderChapters, orderScenes } from '../api/ordering'
 import { quoteNeedle } from './readerComments'
+import { t } from '../i18n'
 
 /** Submitted beta-reader feedback for the author, grouped by chapter and scene. */
 export function BetaFeedbackPanel({ storyId, focusId, onShowInWrite }: { storyId: string; focusId?: string | null; onShowInWrite: (sceneId: string, find: string) => void }) {
@@ -32,33 +33,33 @@ export function BetaFeedbackPanel({ storyId, focusId, onShowInWrite }: { storyId
   const place = (item: BetaFeedback) => {
     const scene = scenes.data?.find(scene => scene.id === item.scene_id)
     const chapter = chapters.data?.find(chapter => chapter.id === (scene?.chapter_id ?? item.chapter_id))
-    return [chapter ? chapter.title || `Chapter ${chapter.number}` : null, scene ? scene.title || 'Untitled scene' : null].filter(Boolean).join(' · ') || 'Whole story'
+    return [chapter ? chapter.title || t('Chapter {0}', chapter.number) : null, scene ? scene.title || t('Untitled scene') : null].filter(Boolean).join(' · ') || t('Whole story')
   }
   const items = [...(feedback.data ?? [])].sort((a, b) => rank(a) - rank(b))
 
   return <div className="space-y-3">
     <div className="flex items-center justify-between gap-2">
-      <div className="flex gap-1" role="group" aria-label="Feedback filter">
-        {(['open', 'all'] as const).map(value => <button key={value} type="button" className="ui-btn ui-btn-secondary" aria-pressed={status === value} onClick={() => setStatus(value)}>{value === 'open' ? 'Open' : 'All'}</button>)}
+      <div className="flex gap-1" role="group" aria-label={t('Feedback filter')}>
+        {(['open', 'all'] as const).map(value => <button key={value} type="button" className="ui-btn ui-btn-secondary" aria-pressed={status === value} onClick={() => setStatus(value)}>{value === 'open' ? t('Open') : t('All')}</button>)}
       </div>
-      <Link className="text-sm underline" to={`/stories/${storyId}/beta`}>Beta readers</Link>
+      <Link className="text-sm underline" to={`/stories/${storyId}/beta`}>{t('Beta readers')}</Link>
     </div>
-    {feedback.isPending && <p className="text-sm text-[var(--muted)]">Loading feedback…</p>}
+    {feedback.isPending && <p className="text-sm text-[var(--muted)]">{t('Loading feedback…')}</p>}
     {feedback.error && <p role="alert" className="writer-error">{errorText(feedback.error)}</p>}
-    {feedback.data?.length === 0 && <p className="text-sm text-[var(--muted)]">{status === 'open' ? 'No open reader feedback.' : 'No reader feedback yet.'}</p>}
+    {feedback.data?.length === 0 && <p className="text-sm text-[var(--muted)]">{status === 'open' ? t('No open reader feedback.') : t('No reader feedback yet.')}</p>}
     {resolve.error && <p role="alert" className="writer-error">{errorText(resolve.error)}</p>}
     {items.map(item => {
       const [first, ...replies] = item.messages
       return <article key={item.id} id={`feedback-${item.id}`} className={`ui-card space-y-2 ${focusId === item.id ? 'feedback-focused' : ''}`}>
-        <p className="text-xs text-[var(--muted)]">{place(item)} · {item.round_title}{item.resolved && ' · Addressed'}</p>
+        <p className="text-xs text-[var(--muted)]">{place(item)} · {item.round_title}{item.resolved && t(' · Addressed')}</p>
         {item.quote && <blockquote className="line-clamp-3 border-l-2 border-[var(--accent)] pl-2 text-sm italic">{item.quote}</blockquote>}
         {first && <p className="whitespace-pre-wrap text-sm"><strong>{first.name}:</strong> {first.body}</p>}
-        {replies.length > 0 && <p className="text-xs text-[var(--muted)]">{replies.length} more {replies.length === 1 ? 'reply' : 'replies'}</p>}
-        {(item.draft_replies ?? 0) > 0 && <p className="text-xs font-medium text-[var(--accent)]">{item.draft_replies === 1 ? 'A draft reply is' : `${item.draft_replies} draft replies are`} waiting. Open Conversation to review and send.</p>}
+        {replies.length > 0 && <p className="text-xs text-[var(--muted)]">{t('{0} more {1}', replies.length, replies.length === 1 ? t('reply') : t('replies'))}</p>}
+        {(item.draft_replies ?? 0) > 0 && <p className="text-xs font-medium text-[var(--accent)]">{t('{0} waiting. Open Conversation to review and send.', item.draft_replies === 1 ? t('A draft reply is') : t('{0} draft replies are', item.draft_replies))}</p>}
         <div className="flex flex-wrap gap-2">
-          {item.scene_id && <button type="button" className="ui-btn ui-btn-secondary" onClick={() => onShowInWrite(item.scene_id!, quoteNeedle(item.quote))}>Show in Write</button>}
-          <Link className="ui-btn ui-btn-secondary" to={item.url}>Conversation</Link>
-          <button type="button" className="ui-btn ui-btn-secondary" disabled={resolve.isPending} onClick={() => resolve.mutate(item)}>{item.resolved ? 'Reopen' : 'Mark addressed'}</button>
+          {item.scene_id && <button type="button" className="ui-btn ui-btn-secondary" onClick={() => onShowInWrite(item.scene_id!, quoteNeedle(item.quote))}>{t('Show in Write')}</button>}
+          <Link className="ui-btn ui-btn-secondary" to={item.url}>{t('Conversation')}</Link>
+          <button type="button" className="ui-btn ui-btn-secondary" disabled={resolve.isPending} onClick={() => resolve.mutate(item)}>{item.resolved ? t('Reopen') : t('Mark addressed')}</button>
         </div>
       </article>
     })}

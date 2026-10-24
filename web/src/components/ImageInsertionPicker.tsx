@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, uploadStoryImage, type StoryImage } from '../api/client'
 import { errorText } from '../api/errors'
+import { t } from '../i18n'
 
 export function ImageInsertionPicker({ storyId, anchor, onInsert, onClose, sampleImages }: {
   storyId: string; anchor: { x: number; y: number }; onInsert: (image: StoryImage) => Promise<void>; onClose: () => void; sampleImages?: StoryImage[]
@@ -39,17 +40,17 @@ export function ImageInsertionPicker({ storyId, anchor, onInsert, onClose, sampl
   }
   const assets = sampleImages ?? library.data?.images.filter(image => !image.archived) ?? []
   const width = Math.min(340, window.innerWidth - 16)
-  return <div ref={panel} className="image-insertion-picker" role="dialog" aria-label="Insert image at this position" style={{ width, left: Math.max(8, Math.min(anchor.x, window.innerWidth - width - 8)), top: Math.max(8, Math.min(anchor.y, window.innerHeight - Math.min(440, window.innerHeight * .7) - 8)) }}>
-    <header className="story-images-head"><h3>Insert image here</h3><button type="button" disabled={busy} onClick={onClose}>Close</button></header>
-    <p className="writer-help">Your writing position is kept. Choose an image to insert it.</p>
+  return <div ref={panel} className="image-insertion-picker" role="dialog" aria-label={t('Insert image at this position')} style={{ width, left: Math.max(8, Math.min(anchor.x, window.innerWidth - width - 8)), top: Math.max(8, Math.min(anchor.y, window.innerHeight - Math.min(440, window.innerHeight * .7) - 8)) }}>
+    <header className="story-images-head"><h3>{t('Insert image here')}</h3><button type="button" disabled={busy} onClick={onClose}>{t('Close')}</button></header>
+    <p className="writer-help">{t('Your writing position is kept. Choose an image to insert it.')}</p>
     {error && <p role="alert" className="writer-error">{error}</p>}
     {!uploading ? <>
-      {!sampleImages && <button type="button" className="share-story-button" disabled={busy || !library.data || library.data.retained_count >= library.data.max_images || library.data.retained_bytes >= library.data.max_story_bytes} onClick={() => setUploading(true)}>Upload new image</button>}
-      {library.isPending && !sampleImages && <p role="status">Loading images…</p>}
-      {library.isError && !sampleImages && <p role="alert">{errorText(library.error)} <button type="button" onClick={() => { void library.refetch() }}>Retry</button></p>}
-      {(sampleImages || library.data) && !assets.length && <p>No saved images yet. Upload one above.</p>}
-      <div className="image-insertion-grid">{assets.map(image => <button type="button" key={image.id} disabled={busy} aria-label={`Insert ${image.name}`} onClick={() => { void insert(image) }}><img src={image.url} alt={image.alt || image.name} /><strong>{image.name}</strong>{image.caption && <small>{image.caption}</small>}<span>Insert →</span></button>)}</div>
-      {busy && <p role="status">Inserting…</p>}
+      {!sampleImages && <button type="button" className="share-story-button" disabled={busy || !library.data || library.data.retained_count >= library.data.max_images || library.data.retained_bytes >= library.data.max_story_bytes} onClick={() => setUploading(true)}>{t('Upload new image')}</button>}
+      {library.isPending && !sampleImages && <p role="status">{t('Loading images…')}</p>}
+      {library.isError && !sampleImages && <p role="alert">{errorText(library.error)} <button type="button" onClick={() => { void library.refetch() }}>{t('Retry')}</button></p>}
+      {(sampleImages || library.data) && !assets.length && <p>{t('No saved images yet. Upload one above.')}</p>}
+      <div className="image-insertion-grid">{assets.map(image => <button type="button" key={image.id} disabled={busy} aria-label={t('Insert {0}', image.name)} onClick={() => { void insert(image) }}><img src={image.url} alt={image.alt || image.name} /><strong>{image.name}</strong>{image.caption && <small>{image.caption}</small>}<span>{t('Insert →')}</span></button>)}</div>
+      {busy && <p role="status">{t('Inserting…')}</p>}
     </> : <form onSubmit={event => {
       event.preventDefault(); if (!file) return
       setBusy(true); setError(''); setProgress(0)
@@ -60,19 +61,19 @@ export function ImageInsertionPicker({ storyId, anchor, onInsert, onClose, sampl
         await insert(image)
       }).catch(error => { setError(errorText(error)); setBusy(false) }).finally(() => { cancel.current = null })
     }}>
-      <p className="writer-help">JPEG, PNG or WebP · large photos resized locally to WebP, up to 2,400 px and 5 MB.</p>
-      <label>Image file<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={event => {
+      <p className="writer-help">{t('JPEG, PNG or WebP · large photos resized locally to WebP, up to 2,400 px and 5 MB.')}</p>
+      <label>{t('Image file')}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={event => {
         const next = event.target.files?.[0]; if (!next) return
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(next.type)) { setError('Choose a JPEG, PNG or WebP.'); return }
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(next.type)) { setError(t('Choose a JPEG, PNG or WebP.')); return }
         setError(''); uploadId.current = crypto.randomUUID(); setFile(next); setName(next.name.slice(0, 200)); setPreview(URL.createObjectURL(next))
       }} /></label>
-      {preview && <img className="image-upload-preview" src={preview} alt="Upload preview" />}
-      <label>Name<input required maxLength={200} value={name} disabled={busy} onChange={event => setName(event.target.value)} /></label>
-      <label>Description (alt text)<input aria-describedby={!alt.trim() ? altHelpId : undefined} placeholder="Describe what the image shows" maxLength={500} value={alt} disabled={busy} onChange={event => setAlt(event.target.value)} /></label>
-      {!alt.trim() && <p id={altHelpId} className="writer-help">A short description helps screen-reader users and makes your EPUB more accessible. Optional, but recommended.</p>}
-      <label>Caption<textarea maxLength={1000} value={caption} disabled={busy} onChange={event => setCaption(event.target.value)} /></label>
-      <div className="story-images-actions"><button type="submit" disabled={busy || !file || !name.trim()}>Upload & insert</button><button type="button" disabled={busy} onClick={() => setUploading(false)}>Saved images</button>{busy && <button type="button" onClick={() => cancel.current?.abort()}>Cancel upload</button>}</div>
-      {busy && <p role="status">{progress < 100 ? progress === 0 ? 'Preparing image for upload…' : `Uploading… ${progress}%` : 'Validating and saving…'}</p>}
+      {preview && <img className="image-upload-preview" src={preview} alt={t('Upload preview')} />}
+      <label>{t('Name')}<input required maxLength={200} value={name} disabled={busy} onChange={event => setName(event.target.value)} /></label>
+      <label>{t('Description (alt text)')}<input aria-describedby={!alt.trim() ? altHelpId : undefined} placeholder={t('Describe what the image shows')} maxLength={500} value={alt} disabled={busy} onChange={event => setAlt(event.target.value)} /></label>
+      {!alt.trim() && <p id={altHelpId} className="writer-help">{t('A short description helps screen-reader users and makes your EPUB more accessible. Optional, but recommended.')}</p>}
+      <label>{t('Caption')}<textarea maxLength={1000} value={caption} disabled={busy} onChange={event => setCaption(event.target.value)} /></label>
+      <div className="story-images-actions"><button type="submit" disabled={busy || !file || !name.trim()}>{t('Upload & insert')}</button><button type="button" disabled={busy} onClick={() => setUploading(false)}>{t('Saved images')}</button>{busy && <button type="button" onClick={() => cancel.current?.abort()}>{t('Cancel upload')}</button>}</div>
+      {busy && <p role="status">{progress < 100 ? progress === 0 ? t('Preparing image for upload…') : t('Uploading… {0}%', progress) : t('Validating and saving…')}</p>}
     </form>}
   </div>
 }

@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { t } from '../i18n'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
@@ -19,8 +20,8 @@ export function EmptyState({ title, children, action }: { title: ReactNode; chil
 }
 
 // In-page confirmation: never a blocking browser dialog.
-export function ConfirmInline({ message, confirmLabel, onConfirm, onCancel, cancelLabel = 'Cancel', danger = false }: { message: ReactNode; confirmLabel: string; onConfirm: () => void; onCancel: () => void; cancelLabel?: string; danger?: boolean }) {
-  return <span role="group" aria-label="Confirm" className="ui-confirm">
+export function ConfirmInline({ message, confirmLabel, onConfirm, onCancel, cancelLabel = t('Cancel'), danger = false }: { message: ReactNode; confirmLabel: string; onConfirm: () => void; onCancel: () => void; cancelLabel?: string; danger?: boolean }) {
+  return <span role="group" aria-label={t('Confirm')} className="ui-confirm">
     <span>{message}</span>
     <Button size="sm" variant={danger ? 'danger' : 'primary'} onClick={onConfirm}>{confirmLabel}</Button>
     <Button size="sm" variant="ghost" onClick={onCancel}>{cancelLabel}</Button>

@@ -42,29 +42,31 @@ import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
 import { SANDBOX_ID, FIRST_SCENE, tourEvent, type Sandbox } from '../sandbox/storage'
 import { SandboxHistory } from '../sandbox/History'
+import { t, tx } from '../i18n'
 const StoryWriter = lazy(() => import('../components/StoryWriter').then(m => ({ default: m.StoryWriter })))
 const StoryReader = lazy(() => import('./SharedStoryReader').then(m => ({ default: m.StoryReader })))
 
 // Premise settings in plain words: a label for each choice and one line on what it means (T5).
 type Choice = { value: string; label: string; description: string }
 const POV_OPTIONS: Choice[] = [
-  { value: 'first', label: 'First person', description: '"I" tells the story; readers know only what the narrator knows.' },
-  { value: 'third_limited', label: 'Third person, close', description: '"She" or "he", staying inside one character at a time.' },
-  { value: 'third_omniscient', label: 'Third person, all-knowing', description: 'A narrator who can see into anyone\'s head.' },
-  { value: 'second', label: 'Second person', description: '"You" are the main character.' },
-  { value: 'mixed', label: 'Mixed', description: 'Different viewpoints in different parts of the book.' },
+  { value: 'first', label: tx('First person'), description: tx('"I" tells the story; readers know only what the narrator knows.') },
+  { value: 'third_limited', label: tx('Third person, close'), description: tx('"She" or "he", staying inside one character at a time.') },
+  { value: 'third_omniscient', label: tx('Third person, all-knowing'), description: tx('A narrator who can see into anyone\'s head.') },
+  { value: 'second', label: tx('Second person'), description: tx('"You" are the main character.') },
+  { value: 'mixed', label: tx('Mixed'), description: tx('Different viewpoints in different parts of the book.') },
 ]
 const FRAMEWORK_OPTIONS: Choice[] = [
-  { value: 'three_act', label: 'Three acts', description: 'Setup, confrontation, resolution: the classic story shape.' },
-  { value: 'save_the_cat', label: 'Save the Cat', description: '15 named beats, from Opening Image to Final Image.' },
-  { value: 'custom', label: 'Custom', description: 'Your own acts and beats; nothing is pre-filled.' },
+  { value: 'three_act', label: tx('Three acts'), description: tx('Setup, confrontation, resolution: the classic story shape.') },
+  { value: 'save_the_cat', label: tx('Save the Cat'), description: tx('15 named beats, from Opening Image to Final Image.') },
+  { value: 'custom', label: tx('Custom'), description: tx('Your own acts and beats; nothing is pre-filled.') },
 ]
 const MODE_OPTIONS: Choice[] = [
-  { value: 'plotter', label: 'Plotter (plan first)', description: 'Levels after the first unfinished one are dimmed and show what they still need. Nothing is locked.' },
-  { value: 'hybrid', label: 'Hybrid', description: 'Every level is open; gaps show as gentle nudges.' },
-  { value: 'pantser', label: 'Pantser (write first)', description: 'Gaps are hidden. Work on whatever you like.' },
+  { value: 'plotter', label: tx('Plotter (plan first)'), description: tx('Levels after the first unfinished one are dimmed and show what they still need. Nothing is locked.') },
+  { value: 'hybrid', label: tx('Hybrid'), description: tx('Every level is open; gaps show as gentle nudges.') },
+  { value: 'pantser', label: tx('Pantser (write first)'), description: tx('Gaps are hidden. Work on whatever you like.') },
 ]
 const describe = (choices: Choice[], value: string | null) => choices.find((choice) => choice.value === value)?.description
+const localized = (choices: Choice[]): Choice[] => choices.map((choice) => ({ ...choice, label: t(choice.label), description: t(choice.description) }))
 const choiceList = (choices: Choice[]) => <ul className="space-y-1">{choices.map((choice) => <li key={choice.value}><strong>{choice.label}:</strong> {choice.description}</li>)}</ul>
 
 // Places are reference data, not a rung. The sentinel keeps them out of the ladder's
@@ -81,7 +83,7 @@ const PACING_VIEW = 110
 
 // One docked side panel; which tabs it offers depends on the mode (Context and Hints belong to Write).
 type RefPanel = 'context' | 'hints' | 'insights' | 'feedback' | 'placeholders' | 'timeline' | 'places' | 'glossary' | 'assistant'
-const REF_PANELS: [RefPanel, string][] = [['context', 'Context'], ['hints', 'Hints'], ['insights', 'Insights'], ['feedback', 'Feedback'], ['placeholders', 'TKs'], ['timeline', 'Timeline'], ['places', 'Places'], ['glossary', 'Glossary'], ['assistant', 'Assistant']]
+const REF_PANELS: [RefPanel, string][] = [['context', tx('Context')], ['hints', tx('Hints')], ['insights', tx('Insights')], ['feedback', tx('Feedback')], ['placeholders', tx('TKs')], ['timeline', tx('Timeline')], ['places', tx('Places')], ['glossary', tx('Glossary')], ['assistant', tx('Assistant')]]
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
@@ -90,8 +92,8 @@ export default function StoryWorkspace() {
 
 function SavedWorkspace({ storyId }: { storyId: string }) {
   const position = useQuery({ queryKey: ['workspace-position', storyId], queryFn: () => api.getWorkspacePosition(storyId), retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false, staleTime: 0, gcTime: 0 })
-  if (position.isPending) return <p className="p-6">Opening your story…</p>
-  return <><Workspace storyId={storyId} initialPosition={position.data} syncPosition={!position.isError} />{position.isError && <p role="status" className="p-4">Your synced place could not be loaded. This session will not overwrite it. Reopen the story to retry.</p>}</>
+  if (position.isPending) return <p className="p-6">{t('Opening your story…')}</p>
+  return <><Workspace storyId={storyId} initialPosition={position.data} syncPosition={!position.isError} />{position.isError && <p role="status" className="p-4">{t('Your synced place could not be loaded. This session will not overwrite it. Reopen the story to retry.')}</p>}</>
 }
 
 export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, initialPosition, syncPosition = false }: { storyId: string; sandboxStep?: number; sandboxRun?: number; sandboxHistory?: Sandbox; initialPosition?: WorkspacePlace | null; syncPosition?: boolean }) {
@@ -143,7 +145,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const registerFlush = useCallback((flush: () => Promise<boolean>) => { writerFlush.current = flush }, [])
   const changeTab = async (next: 'write' | 'read' | 'design') => {
     if (next === tab) return true
-    if (tab === 'write' && !await writerFlush.current()) { setTabError('Your writing has not saved yet. Retry the save before switching workspaces.'); return false }
+    if (tab === 'write' && !await writerFlush.current()) { setTabError(t('Your writing has not saved yet. Retry the save before switching workspaces.')); return false }
     setTabError(null); setTab(next)
     if (next === 'write') {
       setWriterOpened(true)
@@ -175,7 +177,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [searchParams] = useSearchParams()
   const handledSearchTarget = useRef('')
   const navigate = useNavigate()
-  const panelTabs = REF_PANELS.filter(([key]) => key === 'context' || key === 'hints' ? tab === 'write' : key === 'placeholders' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' || key === 'feedback' ? !sandbox : true)
+  const panelTabs = REF_PANELS.map(([key, label]): [RefPanel, string] => [key, t(label)]).filter(([key]) => key === 'context' || key === 'hints' ? tab === 'write' : key === 'placeholders' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' || key === 'feedback' ? !sandbox : true)
   const modePanel: RefPanel | null = tab === 'write' ? 'context' : tab === 'design' && !sandbox ? 'insights' : null
   const preferredPanel = panelTabs.some(([key]) => key === refPanel) ? refPanel : modePanel
   const activePanel = panelHidden ? null : preferredPanel
@@ -202,7 +204,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [hintsSlot, setHintsSlot] = useState<HTMLElement | null>(null)
   const selectPanel = (key: RefPanel) => { setRefPanel(key); if (key === 'context') { setSearchOpen(false); if (sandbox) tourEvent('context') } }
   const togglePanel = () => { if (beside) setBeside(null); else if (hasPanel) setRefPanel(null); else selectPanel(preferredPanel ?? 'timeline') }
-  const openImages = async () => { if (!await writerFlush.current()) { setTabError('Save your writing before managing images.'); return } navigate(`/stories/${storyId}/images`) }
+  const openImages = async () => { if (!await writerFlush.current()) { setTabError(t('Save your writing before managing images.')); return } navigate(`/stories/${storyId}/images`) }
   useEffect(() => {
     const open = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setSearchOpen(true) } }
     window.addEventListener('keydown', open)
@@ -234,10 +236,10 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       }
       await new Promise(resolve => setTimeout(resolve, 100))
     }
-    throw new Error('Could not open this item. Refresh results and try again.')
+    throw new Error(t('Could not open this item. Refresh results and try again.'))
   }
   const openSearchHit = async (hit: SearchHit) => {
-    if (tab === 'write' && !await writerFlush.current()) throw new Error('Your writing has not saved yet. Retry the save before opening a result.')
+    if (tab === 'write' && !await writerFlush.current()) throw new Error(t('Your writing has not saved yet. Retry the save before opening a result.'))
     const target = await api.searchTarget(storyId, hit)
     document.querySelector<HTMLDialogElement>('dialog.story-search-dialog')?.close()
     const narrow = window.matchMedia('(max-width: 1100px)').matches
@@ -257,8 +259,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       return
     }
     const destination = ({ story: 1, event: 2, character: 3, act: 4, beat: 5, thread: 6, chapter: 7, scene: 8 } as Record<string, number>)[hit.entity]
-    if (!destination) throw new Error('This item has no editing destination.')
-    if (!await changeTab('design')) throw new Error('Save your writing before opening this item.')
+    if (!destination) throw new Error(t('This item has no editing destination.'))
+    if (!await changeTab('design')) throw new Error(t('Save your writing before opening this item.'))
     setLevel(destination)
     if (hit.entity === 'chapter') setChapterId(hit.id)
     if (hit.entity === 'scene') { setChapterId(target.chapter_id ?? null); setSceneId(hit.id) }
@@ -476,7 +478,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   })
 
   if (story.isPending || ladder.isPending) {
-    return <p className="p-8 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
+    return <p className="p-8 text-sm text-slate-500 dark:text-slate-400">{t('Loading…')}</p>
   }
   if (story.isError) {
     return <p className="p-8 text-sm text-red-600 dark:text-red-300">{(story.error as Error).message}</p>
@@ -484,12 +486,12 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
 
   return (
     <main data-workspace-story={storyId} data-workspace-ready={!chapters.isPending && !scenes.isPending ? true : undefined} className="workspace-page ws-page">
-      {searchParams.get('sandbox_saved') === '1' && <p role="status" className="try-saved">Your Last Lantern is saved. <Link to="/library">Start your own story →</Link></p>}
+      {searchParams.get('sandbox_saved') === '1' && <p role="status" className="try-saved">{t('Your Last Lantern is saved.')}{' '}<Link to="/library">{t('Start your own story →')}</Link></p>}
       <header className="ws-bar">
-        <Link to="/" className="ws-brand" aria-label="StoryTool home" title="StoryTool home"><img src="/branding/storytool.svg" alt="" width="26" height="26" /></Link>
-        {!sandbox && <Link to="/library" className="ws-back" aria-label="All stories" title="All stories">‹</Link>}
-        <div className="ws-title"><h1>{story.data.title}</h1>{progress.data && <span>{progress.data.word_count.toLocaleString()} words · {progress.data.drafted_scene_count}/{progress.data.scene_count} scenes drafted</span>}</div>
-      <div className="story-workspace-tabs" role="tablist" aria-label="Story workspace" onKeyDown={event => {
+        <Link to="/" className="ws-brand" aria-label={t('StoryTool home')} title={t('StoryTool home')}><img src="/branding/storytool.svg" alt="" width="26" height="26" /></Link>
+        {!sandbox && <Link to="/library" className="ws-back" aria-label={t('All stories')} title={t('All stories')}>‹</Link>}
+        <div className="ws-title"><h1>{story.data.title}</h1>{progress.data && <span>{t('{0} words · {1}/{2} scenes drafted', progress.data.word_count.toLocaleString(), progress.data.drafted_scene_count, progress.data.scene_count)}</span>}</div>
+      <div className="story-workspace-tabs" role="tablist" aria-label={t('Story workspace')} onKeyDown={event => {
         if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
           event.preventDefault()
           const tabs = ['write', 'read', 'design'] as const
@@ -498,22 +500,22 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           document.getElementById(`workspace-tab-${next}`)?.focus()
         }
       }}>
-        {(['write', 'read', 'design'] as const).map(item => <button key={item} id={`workspace-tab-${item}`} type="button" role="tab" aria-selected={tab === item} aria-controls={`workspace-panel-${item}`} tabIndex={tab === item ? 0 : -1} onClick={() => { void changeTab(item) }}>{item === 'write' ? 'Write' : item === 'read' ? 'Read' : 'Design'}</button>)}
+        {(['write', 'read', 'design'] as const).map(item => <button key={item} id={`workspace-tab-${item}`} type="button" role="tab" aria-selected={tab === item} aria-controls={`workspace-panel-${item}`} tabIndex={tab === item ? 0 : -1} onClick={() => { void changeTab(item) }}>{item === 'write' ? t('Write') : item === 'read' ? t('Read') : t('Design')}</button>)}
       </div>
         <button id="story-search-toggle" type="button" className="workspace-search-entry search-launcher" aria-haspopup="dialog" onClick={() => setSearchOpen(true)} disabled={!searchContext}>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg><span>Search this section…</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg><span>{t('Search this section…')}</span>
         </button>
-        <p className={`live-update-status in-bar${live.activity.isError ? ' is-paused' : ''}`} role="status">{live.activity.isError ? <>Live updates paused.<button type="button" onClick={() => { void live.activity.refetch() }}>Retry</button></> : <><span className="group relative inline-flex cursor-help items-center p-1.5 -m-1.5" tabIndex={0} aria-label="Live updates on"><span className="live-dot" /><span role="tooltip" className="pointer-events-none absolute left-0 top-6 z-30 hidden w-64 rounded-md border border-slate-200 bg-white p-2 text-xs leading-5 text-slate-700 shadow-lg group-hover:block group-focus:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">Live: changes from agents and other tabs appear here on their own. No need to refresh.</span></span>{justUpdated && <span className="live-updated">Updated just now</span>}</>}</p>
-          {pendingRuns > 0 && <button type="button" className="workspace-ref-alert" onClick={() => { void openView(INBOX_VIEW) }}>Agent changes<span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span></button>}
+        <p className={`live-update-status in-bar${live.activity.isError ? ' is-paused' : ''}`} role="status">{live.activity.isError ? <>{t('Live updates paused.')}<button type="button" onClick={() => { void live.activity.refetch() }}>{t('Retry')}</button></> : <><span className="group relative inline-flex cursor-help items-center p-1.5 -m-1.5" tabIndex={0} aria-label={t('Live updates on')}><span className="live-dot" /><span role="tooltip" className="pointer-events-none absolute left-0 top-6 z-30 hidden w-64 rounded-md border border-slate-200 bg-white p-2 text-xs leading-5 text-slate-700 shadow-lg group-hover:block group-focus:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">{t('Live: changes from agents and other tabs appear here on their own. No need to refresh.')}</span></span>{justUpdated && <span className="live-updated">{t('Updated just now')}</span>}</>}</p>
+          {pendingRuns > 0 && <button type="button" className="workspace-ref-alert" onClick={() => { void openView(INBOX_VIEW) }}>{t('Agent changes')}<span className="workspace-nav-badge" aria-label={t('{0} pending', pendingRuns)}>{pendingRuns}</span></button>}
         <div className="ws-bar-actions">
-          {tab === 'write' && <IconButton label="Focus mode" onClick={() => setWriterFocus(true)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></IconButton>}
-          <IconButton label="History" aria-pressed={tab === 'design' && level === HISTORY_VIEW} onClick={() => { void openView(HISTORY_VIEW).then(() => { if (sandbox) tourEvent('history') }) }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l3 2" /></svg></IconButton>
-          <IconButton label={hasPanel ? 'Hide side panel' : tab === 'write' ? 'Show context and side panel' : 'Show side panel'} aria-pressed={hasPanel} className={tab === 'write' && !hasPanel ? 'writer-context-toggle' : ''} onClick={togglePanel}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg></IconButton>
-          {!sandbox && <StorySharing menu betaOpen={openFeedback.data?.length ?? 0} storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>Images</MenuItem>} />}
+          {tab === 'write' && <IconButton label={t('Focus mode')} onClick={() => setWriterFocus(true)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></IconButton>}
+          <IconButton label={t('History')} aria-pressed={tab === 'design' && level === HISTORY_VIEW} onClick={() => { void openView(HISTORY_VIEW).then(() => { if (sandbox) tourEvent('history') }) }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l3 2" /></svg></IconButton>
+          <IconButton label={hasPanel ? t('Hide side panel') : tab === 'write' ? t('Show context and side panel') : t('Show side panel')} aria-pressed={hasPanel} className={tab === 'write' && !hasPanel ? 'writer-context-toggle' : ''} onClick={togglePanel}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg></IconButton>
+          {!sandbox && <StorySharing menu betaOpen={openFeedback.data?.length ?? 0} storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>{t('Images')}</MenuItem>} />}
           {/* Export is first-class: the words must always be able to leave. */}
           {!sandbox && <DownloadMenu storyId={storyId} onShowPlaceholders={() => { void openView(PLACEHOLDERS_VIEW) }} />}
           {/* The site header is hidden while a workspace is open; its links live here. */}
-          {!sandbox && <Menu label="⋯" ariaLabel="Site menu" triggerClassName="share-story-button"><MenuItem onSelect={() => navigate('/library')}>Your stories</MenuItem><MenuItem onSelect={() => navigate('/how-to-use')}>How to use</MenuItem><MenuItem onSelect={() => navigate('/roadmap')}>Roadmap</MenuItem><MenuItem onSelect={() => navigate('/about')}>About</MenuItem><MenuItem onSelect={() => navigate('/#mcp')}>Connect AI</MenuItem><MenuItem onSelect={() => navigate('/feedback')}>Feedback</MenuItem></Menu>}
+          {!sandbox && <Menu label="⋯" ariaLabel={t('Site menu')} triggerClassName="share-story-button"><MenuItem onSelect={() => navigate('/library')}>{t('Your stories')}</MenuItem><MenuItem onSelect={() => navigate('/how-to-use')}>{t('How to use')}</MenuItem><MenuItem onSelect={() => navigate('/roadmap')}>{t('Roadmap')}</MenuItem><MenuItem onSelect={() => navigate('/about')}>{t('About')}</MenuItem><MenuItem onSelect={() => navigate('/#mcp')}>{t('Connect AI')}</MenuItem><MenuItem onSelect={() => navigate('/feedback')}>{t('Feedback')}</MenuItem></Menu>}
           <ThemeToggle />
           {!sandbox && <AccountMenu />}
         </div>
@@ -522,61 +524,61 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       <div className={`ws-body${hasPanel ? ' has-panel' : ''}`}>
       <div className="min-w-0">
       <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>
-        {writerOpened && <Suspense fallback={<p className="p-6">Loading writing workspace…</p>}><StoryWriter storyId={storyId} focus={writerFocus} onFocusChange={setWriterFocus} liveHints={liveHints} contextSlot={activePanel === 'context' ? contextSlot : null} hintsSlot={activePanel === 'hints' ? hintsSlot : null} initialChapter={initialPosition?.write_chapter_id} onChapterChange={rememberChapter} registerFlush={registerFlush} openScene={writerScene} /></Suspense>}
+        {writerOpened && <Suspense fallback={<p className="p-6">{t('Loading writing workspace…')}</p>}><StoryWriter storyId={storyId} focus={writerFocus} onFocusChange={setWriterFocus} liveHints={liveHints} contextSlot={activePanel === 'context' ? contextSlot : null} hintsSlot={activePanel === 'hints' ? hintsSlot : null} initialChapter={initialPosition?.write_chapter_id} onChapterChange={rememberChapter} registerFlush={registerFlush} openScene={writerScene} /></Suspense>}
       </div>
       <div id="workspace-panel-read" role="tabpanel" aria-labelledby="workspace-tab-read" hidden={tab !== 'read'}>
-        {tab === 'read' && <Suspense fallback={<p className="p-6">Loading reader…</p>}><StoryReader storyId={storyId} owned embedded initialPosition={readerResume} onPosition={rememberReading} openTarget={readerScene} /></Suspense>}
+        {tab === 'read' && <Suspense fallback={<p className="p-6">{t('Loading reader…')}</p>}><StoryReader storyId={storyId} owned embedded initialPosition={readerResume} onPosition={rememberReading} openTarget={readerScene} /></Suspense>}
       </div>
       <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design" hidden={tab !== 'design'}>
       <div className="ws-design">
-        <nav aria-label="Story design" className="workspace-nav ws-rail">
-          <h2>Plan</h2>
+        <nav aria-label={t('Story design')} className="workspace-nav ws-rail">
+          <h2>{t('Plan')}</h2>
           {ladder.data && <Ladder ladder={ladder.data} mode={story.data.authoring_mode as AuthoringMode} activeLevel={level} onSelect={selectLevel} />}
-          <h2>Review</h2>
-          {viewItem(GRID_VIEW, 'Grid')}
-          {viewItem(PACING_VIEW, 'Pacing')}
-          {!sandbox && viewItem(INBOX_VIEW, <>Agent changes{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={`${pendingRuns} pending`}>{pendingRuns}</span>}</>)}
-          {!sandbox && viewItem(CATCHUP_VIEW, 'Catch up')}
-          {viewItem(EVALUATE_VIEW, 'Evaluate')}
-          {viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>Placeholders<span className="workspace-nav-badge" aria-label={`${placeholderCount} left`}>{placeholderCount}</span></> : 'Placeholders')}
-          {viewItem(HISTORY_VIEW, 'History')}
+          <h2>{t('Review')}</h2>
+          {viewItem(GRID_VIEW, t('Grid'))}
+          {viewItem(PACING_VIEW, t('Pacing'))}
+          {!sandbox && viewItem(INBOX_VIEW, <>{t('Agent changes')}{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={t('{0} pending', pendingRuns)}>{pendingRuns}</span>}</>)}
+          {!sandbox && viewItem(CATCHUP_VIEW, t('Catch up'))}
+          {viewItem(EVALUATE_VIEW, t('Evaluate'))}
+          {viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>{t('Placeholders')}<span className="workspace-nav-badge" aria-label={t('{0} left', placeholderCount)}>{placeholderCount}</span></> : t('Placeholders'))}
+          {viewItem(HISTORY_VIEW, t('History'))}
         </nav>
         <div className="min-w-0">
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setRefPanel('timeline')} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
         <section ref={levelSection} id="story-search-design-section" className="min-w-0 scroll-mt-4">
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
-          {level === PLACEHOLDERS_VIEW && <section><h2 className="level-title">Placeholders</h2><PlaceholderList storyId={storyId} beforeEdit={() => writerFlush.current()} onOpen={openPassage} /></section>}
+          {level === PLACEHOLDERS_VIEW && <section><h2 className="level-title">{t('Placeholders')}</h2><PlaceholderList storyId={storyId} beforeEdit={() => writerFlush.current()} onOpen={openPassage} /></section>}
           {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} beforeEdit={() => writerFlush.current()} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
-          {level === PACING_VIEW && <section><h2 className="level-title">Pacing</h2><PacingView storyId={storyId} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8); setBackToPacing(true) }} /></section>}
-          {level === 8 && backToPacing && <button type="button" className="ws-back-link" onClick={() => { setBackToPacing(false); setLevel(PACING_VIEW) }}>← Back to Pacing</button>}
+          {level === PACING_VIEW && <section><h2 className="level-title">{t('Pacing')}</h2><PacingView storyId={storyId} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8); setBackToPacing(true) }} /></section>}
+          {level === 8 && backToPacing && <button type="button" className="ws-back-link" onClick={() => { setBackToPacing(false); setLevel(PACING_VIEW) }}>{t('← Back to Pacing')}</button>}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
           {level === HISTORY_VIEW && sandboxHistory && <SandboxHistory value={sandboxHistory} />}
           {level === HISTORY_VIEW && !sandbox && <div>
-            <div className="history-tabs" role="tablist" aria-label="History">
-              <button type="button" role="tab" aria-selected={historyTab === 'versions'} onClick={() => setHistoryTab('versions')}>Versions</button>
-              <button type="button" role="tab" aria-selected={historyTab === 'authorship'} onClick={() => setHistoryTab('authorship')}>Who wrote what</button>
+            <div className="history-tabs" role="tablist" aria-label={t('History')}>
+              <button type="button" role="tab" aria-selected={historyTab === 'versions'} onClick={() => setHistoryTab('versions')}>{t('Versions')}</button>
+              <button type="button" role="tab" aria-selected={historyTab === 'authorship'} onClick={() => setHistoryTab('authorship')}>{t('Who wrote what')}</button>
             </div>
             {historyTab === 'versions' ? <StoryVersions storyId={storyId} beforeEdit={() => writerFlush.current()} /> : <><DisclosureCard storyId={storyId} /><AuthorshipPanel storyId={storyId} /></>}
           </div>}
           {level === 1 && (
-            <Panel title="Premise" hint="The story's starting point and settings." help="The premise is the core idea: who wants what, what stands in the way, and why it matters. Every later level builds on it.">
+            <Panel title={t('Premise')} hint={t('The story\'s starting point and settings.')} help={t('The premise is the core idea: who wants what, what stands in the way, and why it matters. Every later level builds on it.')}>
               <div className="space-y-5">
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Title</span><InlineText value={story.data.title} placeholder="Story title" onSave={(title) => updateStory.mutateAsync({ title })} /></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Blurb · shown to readers</span><InlineText value={story.data.blurb} placeholder="A reader-facing pitch for your story" onSave={(blurb) => updateStory.mutateAsync({ blurb })} multiline /></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Premise</span><InlineText value={story.data.premise} placeholder="What is this story?" onSave={(premise) => updateStory.mutateAsync({ premise })} multiline /></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Genre</span><InlineText value={story.data.genre} placeholder="Genre" onSave={(genre) => updateStory.mutateAsync({ genre })} /></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Point of view</span><HelpTip label="point of view">Whose eyes the reader sees the story through.{choiceList(POV_OPTIONS)}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.pov_style} options={POV_OPTIONS} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></span><span className="help-text mt-1 block">{describe(POV_OPTIONS, story.data.pov_style)}</span></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Framework</span><HelpTip label="a framework">The story shape used to seed your acts and beats. You can change any of them afterwards.{choiceList(FRAMEWORK_OPTIONS)}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.structure_framework} options={FRAMEWORK_OPTIONS} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /></span><span className="help-text mt-1 block">{describe(FRAMEWORK_OPTIONS, story.data.structure_framework)}</span></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Mode</span><HelpTip label="mode">How much the plan guides you. It only changes what is flagged; nothing is ever blocked.{choiceList(MODE_OPTIONS)}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.authoring_mode} options={MODE_OPTIONS} onSave={(authoring_mode) => updateStory.mutateAsync({ authoring_mode })} /></span><span className="help-text mt-1 block">{describe(MODE_OPTIONS, story.data.authoring_mode)}</span></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Language</span><HelpTip label="language">The spelling convention for this story. Smart consistency in Evaluate flags spellings from the other variety (colour in a US story, color in a UK one). Leave it on the default to follow your account setting.</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.language} options={LANGUAGES.map(language => ({ value: language.id, label: language.label }))} placeholder={`Account default (${languageLabel(me.data?.language)})`} onSave={(language) => updateStory.mutateAsync({ language: language as StoryUpdate['language'] })} /></span></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Title')}</span><InlineText value={story.data.title} placeholder={t('Story title')} onSave={(title) => updateStory.mutateAsync({ title })} /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Blurb · shown to readers')}</span><InlineText value={story.data.blurb} placeholder={t('A reader-facing pitch for your story')} onSave={(blurb) => updateStory.mutateAsync({ blurb })} multiline /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Premise')}</span><InlineText value={story.data.premise} placeholder={t('What is this story?')} onSave={(premise) => updateStory.mutateAsync({ premise })} multiline /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Genre')}</span><InlineText value={story.data.genre} placeholder={t('Genre')} onSave={(genre) => updateStory.mutateAsync({ genre })} /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Point of view')}</span><HelpTip label={t('point of view')}>{t('Whose eyes the reader sees the story through.{0}', choiceList(localized(POV_OPTIONS)))}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.pov_style} options={localized(POV_OPTIONS)} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></span><span className="help-text mt-1 block">{describe(localized(POV_OPTIONS), story.data.pov_style)}</span></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Framework')}</span><HelpTip label={t('a framework')}>{t('The story shape used to seed your acts and beats. You can change any of them afterwards.{0}', choiceList(localized(FRAMEWORK_OPTIONS)))}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.structure_framework} options={localized(FRAMEWORK_OPTIONS)} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /></span><span className="help-text mt-1 block">{describe(localized(FRAMEWORK_OPTIONS), story.data.structure_framework)}</span></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Mode')}</span><HelpTip label={t('mode')}>{t('How much the plan guides you. It only changes what is flagged; nothing is ever blocked.{0}', choiceList(localized(MODE_OPTIONS)))}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.authoring_mode} options={localized(MODE_OPTIONS)} onSave={(authoring_mode) => updateStory.mutateAsync({ authoring_mode })} /></span><span className="help-text mt-1 block">{describe(localized(MODE_OPTIONS), story.data.authoring_mode)}</span></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Language')}</span><HelpTip label={t('language')}>{t('The spelling convention for this story. Smart consistency in Evaluate flags spellings from the other variety (colour in a US story, color in a UK one). Leave it on the default to follow your account setting.')}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.language} options={LANGUAGES.map(language => ({ value: language.id, label: t(language.label) }))} placeholder={t('Account default ({0})', languageLabel(me.data?.language))} onSave={(language) => updateStory.mutateAsync({ language: language as StoryUpdate['language'] })} /></span></label>
               </div>
-              <details className="mt-5 rounded border border-slate-200 p-3 dark:border-slate-700"><summary className="cursor-pointer text-sm font-medium">World, style, theme, and notes</summary><div className="mt-3 space-y-3">
-                <label className="block text-xs"><span className="field-label">World rules</span> (one per line)<InlineText value={story.data.world_rules?.join('\n') ?? null} placeholder="What is possible in this world?" onSave={value => updateStory.mutateAsync({ world_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
-                <label className="block text-xs"><span className="field-label">Style rules</span> (one per line)<InlineText value={story.data.style_rules?.join('\n') ?? null} placeholder="Voice, tense, prose constraints" onSave={value => updateStory.mutateAsync({ style_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
-                <label className="block text-xs"><span className="field-label">Thematic statement</span><InlineText value={story.data.thematic_statement} placeholder="What does this story explore?" onSave={thematic_statement => updateStory.mutateAsync({ thematic_statement })} multiline /></label>
-                <label className="block text-xs"><span className="field-label">Motifs</span> (one per line)<InlineText value={story.data.motifs?.join('\n') ?? null} placeholder="Recurring images or ideas" onSave={value => updateStory.mutateAsync({ motifs: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
-                <label className="block text-xs"><span className="field-label">Private story notes</span><InlineText value={story.data.notes} placeholder="Reference and working notes; keep the premise one sentence" onSave={notes => updateStory.mutateAsync({ notes })} multiline /></label>
+              <details className="mt-5 rounded border border-slate-200 p-3 dark:border-slate-700"><summary className="cursor-pointer text-sm font-medium">{t('World, style, theme, and notes')}</summary><div className="mt-3 space-y-3">
+                <label className="block text-xs"><span className="field-label">{t('World rules')}</span>{' '}{t('(one per line)')}<InlineText value={story.data.world_rules?.join('\n') ?? null} placeholder={t('What is possible in this world?')} onSave={value => updateStory.mutateAsync({ world_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Style rules')}</span>{' '}{t('(one per line)')}<InlineText value={story.data.style_rules?.join('\n') ?? null} placeholder={t('Voice, tense, prose constraints')} onSave={value => updateStory.mutateAsync({ style_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Thematic statement')}</span><InlineText value={story.data.thematic_statement} placeholder={t('What does this story explore?')} onSave={thematic_statement => updateStory.mutateAsync({ thematic_statement })} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Motifs')}</span>{' '}{t('(one per line)')}<InlineText value={story.data.motifs?.join('\n') ?? null} placeholder={t('Recurring images or ideas')} onSave={value => updateStory.mutateAsync({ motifs: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Private story notes')}</span><InlineText value={story.data.notes} placeholder={t('Reference and working notes; keep the premise one sentence')} onSave={notes => updateStory.mutateAsync({ notes })} multiline /></label>
               </div></details>
             </Panel>
           )}
@@ -588,45 +590,45 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {level === 6 && <ThreadsPanel storyId={storyId} />}
 
           {level === 7 && (
-            <Panel title="Chapters" hint="Containers that exist to fulfil specific beats." help="Chapters are the units readers see. Each one belongs to an act, has a point-of-view character, and should deliver at least one beat.">
+            <Panel title={t('Chapters')} hint={t('Containers that exist to fulfil specific beats.')} help={t('Chapters are the units readers see. Each one belongs to an act, has a point-of-view character, and should deliver at least one beat.')}>
               <AddForm
-                placeholder="Chapter title…"
+                placeholder={t('Chapter title…')}
                 onAdd={(title) => addChapter.mutateAsync(title)}
                 pending={addChapter.isPending}
               />
 
               {(chapters.data?.length ?? 0) > 0 && (
                 <div className="mt-3 flex min-w-0 items-center gap-2">
-                  <select aria-label="Select chapter" value={selectedChapter ?? ''} onChange={(event) => setChapterId(event.target.value)} className="min-w-0 flex-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200">
-                    {chapters.data?.map((item) => <option key={item.id} value={item.id}>{item.number}. {item.title ?? 'Untitled'}</option>)}
+                  <select aria-label={t('Select chapter')} value={selectedChapter ?? ''} onChange={(event) => setChapterId(event.target.value)} className="min-w-0 flex-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200">
+                    {chapters.data?.map((item) => <option key={item.id} value={item.id}>{item.number}. {item.title ?? t('Untitled')}</option>)}
                   </select>
-                  <button type="button" aria-label="Move chapter up" title="Move chapter up" disabled={!selectedChapter || chapterIndex <= 0 || moveChapter.isPending} onClick={() => moveChapter.mutate({ id: selectedChapter!, before: chapters.data?.[chapterIndex - 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↑</button>
-                  <button type="button" aria-label="Move chapter down" title="Move chapter down" disabled={!selectedChapter || chapterIndex >= (chapters.data?.length ?? 0) - 1 || moveChapter.isPending} onClick={() => moveChapter.mutate({ id: selectedChapter!, after: chapters.data?.[chapterIndex + 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↓</button>
+                  <button type="button" aria-label={t('Move chapter up')} title={t('Move chapter up')} disabled={!selectedChapter || chapterIndex <= 0 || moveChapter.isPending} onClick={() => moveChapter.mutate({ id: selectedChapter!, before: chapters.data?.[chapterIndex - 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↑</button>
+                  <button type="button" aria-label={t('Move chapter down')} title={t('Move chapter down')} disabled={!selectedChapter || chapterIndex >= (chapters.data?.length ?? 0) - 1 || moveChapter.isPending} onClick={() => moveChapter.mutate({ id: selectedChapter!, after: chapters.data?.[chapterIndex + 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↓</button>
                 </div>
               )}
 
               {chapter && (
                 <details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
                   <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-950">
-                    <span>Chapter details</span>
-                    <span className="truncate text-xs font-normal text-slate-400">Draft: {chapter.status} · {chapter.title ?? 'Untitled'}</span>
+                    <span>{t('Chapter details')}</span>
+                    <span className="truncate text-xs font-normal text-slate-400">{t('Draft: {0} · {1}', chapter.status, chapter.title ?? t('Untitled'))}</span>
                   </summary>
                   <div className="border-t border-slate-100 dark:border-slate-800 p-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="section-title">Structure</h3>
+                    <h3 className="section-title">{t('Structure')}</h3>
                     <div className="flex items-center gap-2"><Chip complete={chapter.completeness.is_complete} missing={chapter.completeness.missing} /><DeleteButton onConfirm={() => deleteChapter.mutate()} what="chapter" /></div>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-2">
-                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Number</span><InlineNumber value={chapter.number} min={1} onSave={(number) => updateChapter.mutateAsync({ number })} /></label>
-                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Title</span><InlineText value={chapter.title} placeholder="Chapter title" onSave={(title) => updateChapter.mutateAsync({ title })} /></label>
-                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Act</span><InlineSelect value={chapter.act_id} options={(acts.data ?? []).map((act) => ({ value: act.id, label: `${act.number}. ${act.title ?? 'Untitled'}` }))} onSave={(act_id) => updateChapter.mutateAsync({ act_id })} /></label>
-                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">POV character</span><InlineSelect value={chapter.pov_character_id} options={(characters.data ?? []).map((character) => ({ value: character.id, label: character.name }))} onSave={(pov_character_id) => updateChapter.mutateAsync({ pov_character_id })} /></label>
-                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Draft status</span><InlineSelect value={chapter.status} options={['placeholder', 'outlined', 'drafted', 'revised']} onSave={(status) => updateChapter.mutateAsync({ status })} /></label>
-                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Emotional shift from</span><InlineText value={chapter.emotional_shift_from} placeholder="from" onSave={(emotional_shift_from) => updateChapter.mutateAsync({ emotional_shift_from })} /></label>
-                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Emotional shift to</span><InlineText value={chapter.emotional_shift_to} placeholder="to" onSave={(emotional_shift_to) => updateChapter.mutateAsync({ emotional_shift_to })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Number')}</span><InlineNumber value={chapter.number} min={1} onSave={(number) => updateChapter.mutateAsync({ number })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Title')}</span><InlineText value={chapter.title} placeholder={t('Chapter title')} onSave={(title) => updateChapter.mutateAsync({ title })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Act')}</span><InlineSelect value={chapter.act_id} options={(acts.data ?? []).map((act) => ({ value: act.id, label: `${act.number}. ${act.title ?? t('Untitled')}` }))} onSave={(act_id) => updateChapter.mutateAsync({ act_id })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('POV character')}</span><InlineSelect value={chapter.pov_character_id} options={(characters.data ?? []).map((character) => ({ value: character.id, label: character.name }))} onSave={(pov_character_id) => updateChapter.mutateAsync({ pov_character_id })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Draft status')}</span><InlineSelect value={chapter.status} options={['placeholder', 'outlined', 'drafted', 'revised']} onSave={(status) => updateChapter.mutateAsync({ status })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Emotional shift from')}</span><InlineText value={chapter.emotional_shift_from} placeholder={t('from')} onSave={(emotional_shift_from) => updateChapter.mutateAsync({ emotional_shift_from })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Emotional shift to')}</span><InlineText value={chapter.emotional_shift_to} placeholder={t('to')} onSave={(emotional_shift_to) => updateChapter.mutateAsync({ emotional_shift_to })} /></label>
                   </div>
-                  {(['epigraph', 'opening_note', 'closing_note'] as const).map(field => <label key={field} className="mt-2 block text-xs text-slate-500 dark:text-slate-400">{field === 'epigraph' ? 'Epigraph' : field === 'opening_note' ? 'Opening note' : 'Closing note'}<InlineText value={chapter[field]} placeholder="Optional reader-facing chapter text" onSave={value => updateChapter.mutateAsync({ [field]: value })} multiline /></label>)}
-                  <label className="mt-2 block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">Summary</span><InlineText value={chapter.summary} placeholder="What does this chapter do?" onSave={(summary) => updateChapter.mutateAsync({ summary })} multiline /></label>
+                  {(['epigraph', 'opening_note', 'closing_note'] as const).map(field => <label key={field} className="mt-2 block text-xs text-slate-500 dark:text-slate-400">{field === 'epigraph' ? t('Epigraph') : field === 'opening_note' ? t('Opening note') : t('Closing note')}<InlineText value={chapter[field]} placeholder={t('Optional reader-facing chapter text')} onSave={value => updateChapter.mutateAsync({ [field]: value })} multiline /></label>)}
+                  <label className="mt-2 block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Summary')}</span><InlineText value={chapter.summary} placeholder={t('What does this chapter do?')} onSave={(summary) => updateChapter.mutateAsync({ summary })} multiline /></label>
                   </div>
                 </details>
               )}
@@ -639,13 +641,13 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
                       author makes by hand; everything else is derived from it. */}
                   <details className="mt-3 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
                     <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-950">
-                      Beat assignments · {brief.data.beats.length} linked
+                      {t('Beat assignments · {0} linked', brief.data.beats.length)}
                     </summary>
                     <div className="border-t border-slate-100 dark:border-slate-800 p-3">
-                    <p className="mb-1.5 text-xs text-slate-400">Declare a beat this chapter fulfils:</p>
+                    <p className="mb-1.5 text-xs text-slate-400">{t('Declare a beat this chapter fulfils:')}</p>
                     <div className="mb-2 flex flex-wrap gap-1.5">
                       {brief.data.beats.map((beat) => (
-                        <button key={beat.beat_id} onClick={() => unlinkBeat.mutate(beat.beat_id)} className="rounded bg-slate-100 dark:bg-slate-800 px-2 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-700 dark:hover:text-red-300" title="Remove beat from chapter">
+                        <button key={beat.beat_id} onClick={() => unlinkBeat.mutate(beat.beat_id)} className="rounded bg-slate-100 dark:bg-slate-800 px-2 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-700 dark:hover:text-red-300" title={t('Remove beat from chapter')}>
                           {beat.label} ×
                         </button>
                       ))}
@@ -670,42 +672,42 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
                 </div>
               )}
 
-              {chapters.data?.length === 0 && <Empty>No chapters yet.</Empty>}
+              {chapters.data?.length === 0 && <Empty>{t('No chapters yet.')}</Empty>}
             </Panel>
           )}
 
 
           {level === 8 && (
             <Panel
-              title="Scenes"
-              help="A scene is one continuous moment in one place, where something changes. Scenes sit in chapters and carry the prose you write."
+              title={t('Scenes')}
+              help={t('A scene is one continuous moment in one place, where something changes. Scenes sit in chapters and carry the prose you write.')}
               hint={
                 selectedChapter
-                  ? 'New scenes attach to the chapter selected at level 7.'
-                  : 'No chapter selected — scenes will be created unattached, which is legal.'
+                  ? t('New scenes attach to the chapter selected at level 7.')
+                  : t('No chapter selected — scenes will be created unattached, which is legal.')
               }
             >
               <AddForm
-                placeholder="Scene title…"
+                placeholder={t('Scene title…')}
                 onAdd={(title) => addScene.mutateAsync(title)}
                 pending={addScene.isPending}
               />
               {(scenes.data?.length ?? 0) > 0 && (
                 <div className="mt-3 flex min-w-0 items-center gap-2">
-                  <select aria-label="Select scene" value={selectedScene?.id ?? ''} onChange={(event) => setSceneId(event.target.value)} className="min-w-0 flex-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200">
-                    {scenes.data?.map((item) => <option key={item.id} value={item.id}>{chapters.data?.find((chapter) => chapter.id === item.chapter_id)?.number ?? '—'} · {item.title ?? 'Untitled'}{item.word_count > 0 ? ` · ${item.word_count} words` : ''}</option>)}
+                  <select aria-label={t('Select scene')} value={selectedScene?.id ?? ''} onChange={(event) => setSceneId(event.target.value)} className="min-w-0 flex-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-700 dark:text-slate-200">
+                    {scenes.data?.map((item) => <option key={item.id} value={item.id}>{chapters.data?.find((chapter) => chapter.id === item.chapter_id)?.number ?? '—'} · {item.title ?? t('Untitled')}{item.word_count > 0 ? t(' · {0} words', item.word_count) : ''}</option>)}
                   </select>
-                  <button type="button" aria-label="Move scene up" title="Move scene up within chapter" disabled={!selectedScene || sceneIndex <= 0 || moveScene.isPending} onClick={() => moveScene.mutate({ id: selectedScene!.id, before: sceneSiblings[sceneIndex - 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↑</button>
-                  <button type="button" aria-label="Move scene down" title="Move scene down within chapter" disabled={!selectedScene || sceneIndex >= sceneSiblings.length - 1 || moveScene.isPending} onClick={() => moveScene.mutate({ id: selectedScene!.id, after: sceneSiblings[sceneIndex + 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↓</button>
+                  <button type="button" aria-label={t('Move scene up')} title={t('Move scene up within chapter')} disabled={!selectedScene || sceneIndex <= 0 || moveScene.isPending} onClick={() => moveScene.mutate({ id: selectedScene!.id, before: sceneSiblings[sceneIndex - 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↑</button>
+                  <button type="button" aria-label={t('Move scene down')} title={t('Move scene down within chapter')} disabled={!selectedScene || sceneIndex >= sceneSiblings.length - 1 || moveScene.isPending} onClick={() => moveScene.mutate({ id: selectedScene!.id, after: sceneSiblings[sceneIndex + 1]?.id })} className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm text-slate-600 dark:text-slate-300 disabled:opacity-30">↓</button>
                 </div>
               )}
 
               {selectedScene && <SceneDetails key={selectedScene.id} storyId={storyId} scene={selectedScene} onDeleted={() => setSceneId(null)} />}
 
               {/* Prose is written in Write only; Design keeps the scene's plan. */}
-              {selectedScene && <button type="button" className="share-story-button mt-4" onClick={() => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id: selectedScene.id, at: Date.now() }) }) }}>Open in Write →</button>}
+              {selectedScene && <button type="button" className="share-story-button mt-4" onClick={() => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id: selectedScene.id, at: Date.now() }) }) }}>{t('Open in Write →')}</button>}
 
-              {scenes.data?.length === 0 && <Empty>No scenes yet.</Empty>}
+              {scenes.data?.length === 0 && <Empty>{t('No scenes yet.')}</Empty>}
             </Panel>
           )}
         </section>
@@ -713,17 +715,17 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       </div>
       </div>
       </div>
-      <aside hidden={!hasPanel} className="workspace-ref-panel ws-panel" aria-label="Side panel">
+      <aside hidden={!hasPanel} className="workspace-ref-panel ws-panel" aria-label={t('Side panel')}>
         {beside && <BesidePanel storyId={storyId} target={beside} onChange={setBeside} onClose={() => setBeside(null)} />}
         {!beside && <>
         <div className="workspace-ref-head">
-          <Tabs label="Side panel" value={activePanel ?? panelTabs[0][0]} onChange={selectPanel} items={panelTabs.map(([key, label]) => ({ id: key, label: key === 'feedback' && openFeedback.data?.length ? `${label} (${openFeedback.data.length})` : key === 'placeholders' && placeholderCount ? `${label} (${placeholderCount})` : label, className: key === 'context' ? 'writer-context-toggle' : undefined }))} />
-          <div><button type="button" aria-label="Search this panel" title="Search this panel" onClick={() => setSearchOpen(true)} disabled={!searchContext}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></button><button type="button" aria-label="Close panel" onClick={() => setRefPanel(null)}>✕</button></div>
+          <Tabs label={t('Side panel')} value={activePanel ?? panelTabs[0][0]} onChange={selectPanel} items={panelTabs.map(([key, label]) => ({ id: key, label: key === 'feedback' && openFeedback.data?.length ? `${label} (${openFeedback.data.length})` : key === 'placeholders' && placeholderCount ? `${label} (${placeholderCount})` : label, className: key === 'context' ? 'writer-context-toggle' : undefined }))} />
+          <div><button type="button" aria-label={t('Search this panel')} title={t('Search this panel')} onClick={() => setSearchOpen(true)} disabled={!searchContext}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></button><button type="button" aria-label={t('Close panel')} onClick={() => setRefPanel(null)}>✕</button></div>
         </div>
         {activePanel === 'context' && <div ref={setContextSlot} />}
         {activePanel === 'hints' && <div className="ws-hints">
-          <label className="ws-hints-toggle"><input type="checkbox" checked={liveHints} onChange={event => setLiveHints(event.target.checked)} /> Live hints for the scene you are writing</label>
-          <p className="writer-help">The shared reader reads only the current scene, about two seconds after you stop typing. Hints never change your prose.</p>
+          <label className="ws-hints-toggle"><input type="checkbox" checked={liveHints} onChange={event => setLiveHints(event.target.checked)} />{' '}{t('Live hints for the scene you are writing')}</label>
+          <p className="writer-help">{t('The shared reader reads only the current scene, about two seconds after you stop typing. Hints never change your prose.')}</p>
           <div ref={setHintsSlot} />
         </div>}
         {activePanel === 'insights' && <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, rung.label]))} onOpenLevel={selectLevel} />}

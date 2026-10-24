@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, type Shoutout, type ShoutoutInput } from '../api/client'
+import { t } from '../i18n'
 
 /**
  * The thank-you page. Entries live in the database; only the accounts listed in
@@ -32,17 +33,17 @@ function ShoutoutForm({ initial, onSave, onCancel }: { initial: ShoutoutInput; o
         try { await onSave(value) } finally { setSaving(false) }
       }}
     >
-      <input className={field} placeholder="Name" value={value.name} onChange={(e) => setValue({ ...value, name: e.target.value })} required maxLength={120} />
-      <textarea className={field} placeholder="What you're thanking them for" rows={3} value={value.thanks} onChange={(e) => setValue({ ...value, thanks: e.target.value })} required maxLength={2000} />
+      <input className={field} placeholder={t('Name')} value={value.name} onChange={(e) => setValue({ ...value, name: e.target.value })} required maxLength={120} />
+      <textarea className={field} placeholder={t('What you\'re thanking them for')} rows={3} value={value.thanks} onChange={(e) => setValue({ ...value, thanks: e.target.value })} required maxLength={2000} />
       <div className="flex flex-wrap gap-3">
-        <select className={`${field} w-auto`} value={value.colour} onChange={(e) => setValue({ ...value, colour: e.target.value })} aria-label="Colour">
+        <select className={`${field} w-auto`} value={value.colour} onChange={(e) => setValue({ ...value, colour: e.target.value })} aria-label={t('Colour')}>
           {Object.keys(COLOURS).map((key) => <option key={key} value={key}>{key}</option>)}
         </select>
-        <input className={`${field} w-24`} placeholder="Emoji" value={value.mark} onChange={(e) => setValue({ ...value, mark: e.target.value })} maxLength={16} aria-label="Emoji" />
+        <input className={`${field} w-24`} placeholder={t('Emoji')} value={value.mark} onChange={(e) => setValue({ ...value, mark: e.target.value })} maxLength={16} aria-label={t('Emoji')} />
       </div>
       <div className="flex gap-2">
-        <button type="submit" disabled={saving} className="rounded-lg bg-white px-4 py-2 font-semibold text-slate-900 disabled:opacity-60">{saving ? 'Saving…' : 'Save'}</button>
-        <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 font-semibold text-white ring-1 ring-white/70">Cancel</button>
+        <button type="submit" disabled={saving} className="rounded-lg bg-white px-4 py-2 font-semibold text-slate-900 disabled:opacity-60">{saving ? t('Saving…') : t('Save')}</button>
+        <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 font-semibold text-white ring-1 ring-white/70">{t('Cancel')}</button>
       </div>
     </form>
   )
@@ -54,7 +55,7 @@ export default function Shoutouts() {
   const [editing, setEditing] = useState<string | null>(null) // shoutout id, or 'new'
   const [error, setError] = useState<string | null>(null)
 
-  const load = () => api.listShoutouts().then(setItems).catch(() => setError('Could not load the shoutouts.'))
+  const load = () => api.listShoutouts().then(setItems).catch(() => setError(t('Could not load the shoutouts.')))
   useEffect(() => {
     load()
     api.adminStatus().then((s) => setIsAdmin(s.is_admin)).catch(() => setIsAdmin(false))
@@ -62,7 +63,7 @@ export default function Shoutouts() {
 
   const act = async (action: () => Promise<unknown>) => {
     setError(null)
-    try { await action(); setEditing(null); await load() } catch { setError('That change did not save. Try again.') }
+    try { await action(); setEditing(null); await load() } catch { setError(t('That change did not save. Try again.')) }
   }
   const move = (index: number, step: -1 | 1) => {
     if (!items) return
@@ -80,18 +81,18 @@ export default function Shoutouts() {
       <div className="mx-auto max-w-5xl px-5 py-10 sm:px-8 sm:py-16">
         <header className="text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-fuchsia-600 dark:text-fuchsia-300">
-            Thank you
+            {t('Thank you')}
           </p>
           <h1 className="mt-3 bg-linear-to-r from-rose-500 via-amber-500 to-sky-500 bg-clip-text text-5xl font-black tracking-tight text-transparent sm:text-7xl">
-            Shoutouts
+            {t('Shoutouts')}
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-slate-700 dark:text-slate-300">
-            StoryTool is better because writers took the time to try it, challenge it, and make it better. This page is for them
+            {t('StoryTool is better because writers took the time to try it, challenge it, and make it better. This page is for them')}
           </p>
         </header>
 
         {error && <p role="alert" className="mt-8 text-center text-sm font-semibold text-rose-700 dark:text-rose-300">{error}</p>}
-        {items === null && !error && <p className="mt-12 text-center text-slate-500">Loading…</p>}
+        {items === null && !error && <p className="mt-12 text-center text-slate-500">{t('Loading…')}</p>}
 
         <ul className="mt-12 grid gap-5 sm:grid-cols-2">
           {items?.map((person, index) => (
@@ -119,10 +120,10 @@ export default function Shoutouts() {
                   </p>
                   {isAdmin && (
                     <div className="relative mt-5 flex flex-wrap gap-2">
-                      <button type="button" className={tool} onClick={() => setEditing(person.id)}>Edit</button>
-                      <button type="button" className={tool} disabled={index === 0} onClick={() => move(index, -1)} aria-label={`Move ${person.name} up`}>↑</button>
-                      <button type="button" className={tool} disabled={index === items.length - 1} onClick={() => move(index, 1)} aria-label={`Move ${person.name} down`}>↓</button>
-                      <button type="button" className={tool} onClick={() => { if (window.confirm(`Remove ${person.name}?`)) void act(() => api.deleteShoutout(person.id)) }}>Delete</button>
+                      <button type="button" className={tool} onClick={() => setEditing(person.id)}>{t('Edit')}</button>
+                      <button type="button" className={tool} disabled={index === 0} onClick={() => move(index, -1)} aria-label={t('Move {0} up', person.name)}>↑</button>
+                      <button type="button" className={tool} disabled={index === items.length - 1} onClick={() => move(index, 1)} aria-label={t('Move {0} down', person.name)}>↓</button>
+                      <button type="button" className={tool} onClick={() => { if (window.confirm(t('Remove {0}?', person.name))) void act(() => api.deleteShoutout(person.id)) }}>{t('Delete')}</button>
                     </div>
                   )}
                 </>
@@ -137,7 +138,7 @@ export default function Shoutouts() {
                 </div>
               ) : (
                 <button type="button" onClick={() => setEditing('new')} className="h-full w-full text-lg font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">
-                  + Add a shoutout
+                  {t('+ Add a shoutout')}
                 </button>
               )}
             </li>
@@ -145,12 +146,12 @@ export default function Shoutouts() {
         </ul>
 
         <h2 className="mx-auto mt-12 max-w-2xl text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-          Built with feedback. Improved by writers. Always a work in progress
+          {t('Built with feedback. Improved by writers. Always a work in progress')}
         </h2>
 
         <p className="mt-12 text-center text-sm text-slate-600 dark:text-slate-400">
           <Link to="/" className="underline underline-offset-4 hover:text-slate-900 dark:hover:text-slate-100">
-            ← Back to StoryTool
+            {t('← Back to StoryTool')}
           </Link>
         </p>
       </div>

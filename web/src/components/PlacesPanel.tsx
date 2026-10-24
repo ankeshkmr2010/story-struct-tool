@@ -52,10 +52,9 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
 
   return (
     <div>
-      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Places</h2>
+      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t('Places')}</h2>
       <p className="mb-3 text-xs text-slate-400">
-        Reference data — a place never gates a level. Linking scenes to places is what makes
-        continuity checking possible.
+        {t('Reference data — a place never gates a level. Linking scenes to places is what makes continuity checking possible.')}
       </p>
 
       <form
@@ -67,7 +66,7 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
       >
         <input
           className="flex-1 rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
-          placeholder="Place name…"
+          placeholder={t('Place name…')}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -76,14 +75,14 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
           disabled={!name.trim() || create.isPending}
           className="rounded bg-slate-900 dark:bg-slate-200 px-3 py-1.5 text-sm text-white dark:text-slate-950 disabled:opacity-40"
         >
-          Add
+          {t('Add')}
         </button>
       </form>
 
       {create.isError && (
         <p className="mt-1.5 text-xs text-red-600 dark:text-red-300">
           {/* The 409 from a duplicate name, which would otherwise break continuity checks. */}
-          A place with that name already exists in this story.
+          {t('A place with that name already exists in this story.')}
         </p>
       )}
 
@@ -93,36 +92,35 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
           return (
             <li key={location.id} id={`search-location-${location.id}`} className="py-2.5 scroll-mt-4">
               <div className="flex items-baseline gap-2">
-                <div className="min-w-0 flex-1"><InlineText value={location.name} placeholder="Place name" onSave={async (name) => { await update.mutateAsync({ id: location.id, body: { name } }); offerRename({ kind: 'location', id: location.id, from: location.name, to: name ?? '' }) }} className="font-medium" /></div>
+                <div className="min-w-0 flex-1"><InlineText value={location.name} placeholder={t('Place name')} onSave={async (name) => { await update.mutateAsync({ id: location.id, body: { name } }); offerRename({ kind: 'location', id: location.id, from: location.name, to: name ?? '' }) }} className="font-medium" /></div>
                 {used && used.scene_count > 0 ? (
                   <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {used.scene_count} scene{used.scene_count === 1 ? '' : 's'}
+                    {t('{0} scene{1}', used.scene_count, used.scene_count === 1 ? '' : t('s'))}
                     {used.chapter_numbers.length > 0 &&
-                      ` · ch ${used.chapter_numbers.join(', ')}`}
+                      t(' · ch {0}', used.chapter_numbers.join(', '))}
                     {used.first_story_time !== null &&
-                      ` · story-time ${used.first_story_time}${
-                        used.last_story_time !== used.first_story_time
+                      t(' · story-time {0}{1}', used.first_story_time, used.last_story_time !== used.first_story_time
                           ? `–${used.last_story_time}`
-                          : ''
-                      }`}
+                          : '')}
                   </span>
                 ) : (
-                  <span className="text-xs text-slate-400 italic">no scenes yet</span>
+                  <span className="text-xs text-slate-400 italic">{t('no scenes yet')}</span>
                 )}
                 <DeleteButton onConfirm={() => remove.mutate(location.id)} what="place" />
               </div>
-              <label className="mt-1 block text-[10px] uppercase text-slate-400">Description<InlineText value={location.description} placeholder="Describe the place" onSave={(description) => update.mutateAsync({ id: location.id, body: { description } })} multiline /></label>
+              <label className="mt-1 block text-[10px] uppercase text-slate-400">{t('Description')}<InlineText value={location.description} placeholder={t('Describe the place')} onSave={(description) => update.mutateAsync({ id: location.id, body: { description } })} multiline /></label>
               <ReferenceImages storyId={storyId} entity="location" entityId={location.id} />
-              <label className="mt-1 block text-[10px] uppercase text-slate-400">Atmosphere<InlineText value={location.atmosphere_notes} placeholder="What does it feel like?" onSave={(atmosphere_notes) => update.mutateAsync({ id: location.id, body: { atmosphere_notes } })} multiline /></label>
+              <label className="mt-1 block text-[10px] uppercase text-slate-400">{t('Atmosphere')}<InlineText value={location.atmosphere_notes} placeholder={t('What does it feel like?')} onSave={(atmosphere_notes) => update.mutateAsync({ id: location.id, body: { atmosphere_notes } })} multiline /></label>
             </li>
           )
         })}
       </ul>
 
       {locations.data?.length === 0 && (
-        <p className="mt-4 text-sm text-slate-400">No places yet.</p>
+        <p className="mt-4 text-sm text-slate-400">{t('No places yet.')}</p>
       )}
     </div>
   )
 }
 import { ReferenceImages } from './StoryImages'
+import { t } from '../i18n'
