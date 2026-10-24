@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type AIRun } from '../api/client'
 import { errorText } from '../api/errors'
 import { t, tx } from '../i18n'
+import { valueLabel } from '../i18n/server'
 
 type Operation = AIRun['proposal']['operations'][number]
 type StatusFilter = 'pending' | 'applied' | 'closed' | 'all'
@@ -61,7 +62,7 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
       <div className="flex flex-wrap items-center gap-2">
         {(['pending', 'applied', 'closed', 'all'] as StatusFilter[]).map((key) => (
           <button key={key} type="button" aria-pressed={status === key} onClick={() => setStatus(key)} className={`rounded-full border px-3 py-1 text-xs capitalize ${status === key ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-200 dark:text-slate-950' : 'border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-300'}`}>
-            {key === 'closed' ? t('Dismissed / undone') : key} · {count(key)}
+            {key === 'closed' ? t('Dismissed / undone') : valueLabel(key)} · {count(key)}
           </button>
         ))}
         <select aria-label={t('Change source')} value={source} onChange={(event) => setSource(event.target.value as SourceFilter)} className="ml-auto rounded border border-slate-300 bg-white p-1.5 text-xs dark:border-slate-600 dark:bg-slate-900">
@@ -88,7 +89,7 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
           return (
             <li key={run.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className={`rounded-full px-2 py-0.5 capitalize ${statusTone[run.status] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{run.status === 'proposed' ? t('pending') : run.status}</span>
+                <span className={`rounded-full px-2 py-0.5 capitalize ${statusTone[run.status] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{valueLabel(run.status)}</span>
                 <span className="text-slate-500 dark:text-slate-400">{t('{0} · {1} · {2} change{3}{4}', run.provider === 'external' ? t('External agent') : t('Assistant'), new Date(run.created_at).toLocaleString(), operations.length, operations.length === 1 ? '' : t('s'), applied && applied.length < operations.length ? t(' · {0} accepted', applied.length) : '')}</span>
               </div>
               <p className={`mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200 ${open ? '' : 'line-clamp-2'}`}>{run.summary}</p>

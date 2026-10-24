@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Health } from '../api/client'
 import { t } from '../i18n'
+import { serverText } from '../i18n/server'
 
 // Long lists bury the page on phones; the rest stays one tap away.
 const SHOWN = 5
@@ -35,7 +36,7 @@ export function HealthPanel({ health, level, levelNames, onOpenLevel }: {
               finding.severity === 'warning' ? 'border-amber-400/70' : 'border-slate-300 dark:border-slate-600',
             ].join(' ')}
           >
-            <p className="text-sm leading-5 text-slate-700 dark:text-slate-200">{finding.message}</p>
+            <p className="text-sm leading-5 text-slate-700 dark:text-slate-200">{serverText(finding.message)}</p>
             {onOpenLevel && finding.level !== level && (
               <button type="button" onClick={() => onOpenLevel(finding.level)} className="mt-1 text-xs font-medium text-[var(--accent)] hover:underline">
                 {t('Fix in {0} →', levelNames?.[finding.level] ?? t('level {0}', finding.level))}

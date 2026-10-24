@@ -5,6 +5,7 @@ import { orderScenes } from '../api/ordering'
 import { InlineSelect, InlineText } from './fields'
 import { SceneDetails } from './SceneDetails'
 import { t } from '../i18n'
+import { valueLabel } from '../i18n/server'
 
 const STATUSES = ['placeholder', 'outlined', 'drafted', 'revised']
 const STATUS_DOT: Record<string, string> = {
@@ -243,7 +244,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <select aria-label={t('Filter by status')} value={prefs.status} onChange={(event) => setPrefs({ status: event.target.value })} className={filter}>
           <option value="">{t('All statuses')}</option>
-          {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
+          {STATUSES.map((status) => <option key={status} value={status}>{valueLabel(status)}</option>)}
         </select>
         <select aria-label={t('Filter by POV')} value={prefs.pov} onChange={(event) => setPrefs({ pov: event.target.value })} className={filter}>
           <option value="">{t('All POVs')}</option>
@@ -331,7 +332,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                         {isEditing && <button type="button" onClick={(event) => { event.stopPropagation(); setEditing(null) }} className="workspace-shortcut mt-2 block rounded px-2 text-xs">{t('Done')}</button>}
                       </td>
                       <td className={`px-2 ${pad}`}>
-                        <button type="button" aria-label={t('Status {0}, click to advance', scene.status)} title={t('{0} — click to advance', scene.status)} onClick={(event) => { event.stopPropagation(); advanceStatus(scene) }} className={`mt-0.5 block h-4 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/20 ${STATUS_DOT[scene.status] ?? 'bg-slate-300'}`} />
+                        <button type="button" aria-label={t('Status {0}, click to advance', valueLabel(scene.status))} title={t('{0} — click to advance', valueLabel(scene.status))} onClick={(event) => { event.stopPropagation(); advanceStatus(scene) }} className={`mt-0.5 block h-4 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/20 ${STATUS_DOT[scene.status] ?? 'bg-slate-300'}`} />
                       </td>
                       {shown.map((column) => {
                         const edit = agentEdit(scene, column.fields)

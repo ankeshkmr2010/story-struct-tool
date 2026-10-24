@@ -42,7 +42,8 @@ import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
 import { SANDBOX_ID, FIRST_SCENE, tourEvent, type Sandbox } from '../sandbox/storage'
 import { SandboxHistory } from '../sandbox/History'
-import { t, tx } from '../i18n'
+import { getUiLanguage, t, tx, useUiLanguage } from '../i18n'
+import { levelLabel, valueLabel } from '../i18n/server'
 const StoryWriter = lazy(() => import('../components/StoryWriter').then(m => ({ default: m.StoryWriter })))
 const StoryReader = lazy(() => import('./SharedStoryReader').then(m => ({ default: m.StoryReader })))
 
@@ -293,7 +294,9 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   }
 
   const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
-  useEffect(() => { if (story.data?.title) document.title = `${story.data.title} · StoryTool` }, [story.data?.title])
+  // Re-run on a language change, after App has reset the tab to the generic route title.
+  const language = useUiLanguage()
+  useEffect(() => { if (story.data?.title) document.title = `${story.data.title} · StoryTool` }, [story.data?.title, language])
   const ladder = useQuery({ queryKey: ['ladder', storyId], queryFn: () => api.getLadder(storyId) })
   const pending = useQuery({ queryKey: ['ai-runs', storyId, 'pending'], queryFn: () => api.listAIRuns(storyId, 'proposed', 200) })
   const pendingRuns = pending.data?.length ?? 0
@@ -490,7 +493,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       <header className="ws-bar">
         <Link to="/" className="ws-brand" aria-label={t('StoryTool home')} title={t('StoryTool home')}><img src="/branding/storytool.svg" alt="" width="26" height="26" /></Link>
         {!sandbox && <Link to="/library" className="ws-back" aria-label={t('All stories')} title={t('All stories')}>‹</Link>}
-        <div className="ws-title"><h1>{story.data.title}</h1>{progress.data && <span>{t('{0} words · {1}/{2} scenes drafted', progress.data.word_count.toLocaleString(), progress.data.drafted_scene_count, progress.data.scene_count)}</span>}</div>
+        <div className="ws-title"><h1>{story.data.title}</h1>{progress.data && <span>{t('{0} words · {1}/{2} scenes drafted', progress.data.word_count.toLocaleString(getUiLanguage()), progress.data.drafted_scene_count, progress.data.scene_count)}</span>}</div>
       <div className="story-workspace-tabs" role="tablist" aria-label={t('Story workspace')} onKeyDown={event => {
         if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
           event.preventDefault()
@@ -623,7 +626,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
                     <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Title')}</span><InlineText value={chapter.title} placeholder={t('Chapter title')} onSave={(title) => updateChapter.mutateAsync({ title })} /></label>
                     <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Act')}</span><InlineSelect value={chapter.act_id} options={(acts.data ?? []).map((act) => ({ value: act.id, label: `${act.number}. ${act.title ?? t('Untitled')}` }))} onSave={(act_id) => updateChapter.mutateAsync({ act_id })} /></label>
                     <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('POV character')}</span><InlineSelect value={chapter.pov_character_id} options={(characters.data ?? []).map((character) => ({ value: character.id, label: character.name }))} onSave={(pov_character_id) => updateChapter.mutateAsync({ pov_character_id })} /></label>
-                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Draft status')}</span><InlineSelect value={chapter.status} options={['placeholder', 'outlined', 'drafted', 'revised']} onSave={(status) => updateChapter.mutateAsync({ status })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Draft status')}</span><InlineSelect value={chapter.status} options={['placeholder', 'outlined', 'drafted', 'revised'].map(value => ({ value, label: valueLabel(value) }))} onSave={(status) => updateChapter.mutateAsync({ status })} /></label>
                     <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Emotional shift from')}</span><InlineText value={chapter.emotional_shift_from} placeholder={t('from')} onSave={(emotional_shift_from) => updateChapter.mutateAsync({ emotional_shift_from })} /></label>
                     <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Emotional shift to')}</span><InlineText value={chapter.emotional_shift_to} placeholder={t('to')} onSave={(emotional_shift_to) => updateChapter.mutateAsync({ emotional_shift_to })} /></label>
                   </div>
@@ -728,7 +731,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           <p className="writer-help">{t('The shared reader reads only the current scene, about two seconds after you stop typing. Hints never change your prose.')}</p>
           <div ref={setHintsSlot} />
         </div>}
-        {activePanel === 'insights' && <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, rung.label]))} onOpenLevel={selectLevel} />}
+        {activePanel === 'insights' && <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, levelLabel(rung.level, rung.label)]))} onOpenLevel={selectLevel} />}
         {activePanel === 'timeline' && <StoryTimeline storyId={storyId} compact allowInsert={tab !== 'read'} onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
         {activePanel === 'places' && <PlacesPanel storyId={storyId} />}
         {activePanel === 'feedback' && <BetaFeedbackPanel storyId={storyId} focusId={feedbackFocus} onShowInWrite={(id, find) => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id, at: Date.now(), find: find || undefined }) }) }} />}

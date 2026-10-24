@@ -7,7 +7,7 @@ import { errorText } from '../api/errors'
 import { orderChapters, orderScenes } from '../api/ordering'
 import { ManuscriptReading } from '../components/ManuscriptReading'
 import { ReadOnlyTimeline } from '../components/ReadOnlyTimeline'
-import { t, tx } from '../i18n'
+import { getUiLanguage, t, tx, useUiLanguage } from '../i18n'
 
 type Row = Record<string, unknown>
 const value = (row: Row | undefined, field: string) => row?.[field] == null ? '' : String(row[field])
@@ -45,7 +45,8 @@ export default function StoryShowcase() {
     document.head.appendChild(meta)
     return () => { meta.remove() }
   }, [])
-  useEffect(() => { if (doc.data) document.title = t('{0} · StoryTool showcase', doc.data.title) }, [doc.data])
+  const language = useUiLanguage()
+  useEffect(() => { if (doc.data) document.title = t('{0} · StoryTool showcase', doc.data.title) }, [doc.data, language])
 
   if (doc.isPending) return <p className="p-8">{t('Loading showcase…')}</p>
   if (doc.isError) return <main className="shared-reader-page"><h1>{t('Showcase unavailable')}</h1><p role="alert" className="writer-help">{errorText(doc.error)}</p><p className="writer-help">{t('The author may have turned this link off or replaced it.')}</p><Link to="/">{t('What is StoryTool?')}</Link></main>
@@ -70,7 +71,7 @@ export default function StoryShowcase() {
       <p className="eyebrow">{t('STORY SHOWCASE · READ ONLY{0}', data.genre ? ` · ${data.genre.toUpperCase()}` : '')}</p>
       <h1>{data.title}</h1>
       {data.blurb && <p className="shared-reader-blurb">{data.blurb.replace(/\\"/g, '"')}</p>}
-      <p className="writer-help">{t('By {0} · updated {1}{2} · {3} chapters · {4} characters · {5} saved versions', data.owner_name, date(data.updated_at), words ? t(' · {0} words', words.toLocaleString()) : '', chapters.length, rows('character').length, data.versions.length)}</p>
+      <p className="writer-help">{t('By {0} · updated {1}{2} · {3} chapters · {4} characters · {5} saved versions', data.owner_name, date(data.updated_at), words ? t(' · {0} words', words.toLocaleString(getUiLanguage())) : '', chapters.length, rows('character').length, data.versions.length)}</p>
     </div></header>
     <div className="reader-toolbar showcase-tabs" role="tablist" aria-label={t('Showcase sections')}>{TABS.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id} aria-pressed={tab === id} className="share-story-button" onClick={() => setTab(id)}>{t(label)}</button>)}</div>
 
@@ -88,9 +89,9 @@ export default function StoryShowcase() {
     </div>}
 
     {tab === 'history' && <div className="showcase-body">
-      <div className="showcase-stats">{([[agentEdits, t('field changes by AI agents')], [totalEdits - agentEdits, 'by the author'], [data.changes.length, 'agent batches reviewed'], [data.versions.length, 'restorable versions']] as const).map(([count, label]) => <div key={label}><strong>{count.toLocaleString()}</strong><span>{label}</span></div>)}</div>
-      <Section title={t('Who wrote what')}><p className="writer-help">{t('Every field change is attributed to whoever made it.')}</p><div className="showcase-bar" aria-hidden="true">{Object.entries(data.authorship).sort((a, b) => b[1] - a[1]).map(([origin, count], i) => <span key={origin} style={{ flexGrow: count, opacity: 1 - i * 0.3 }} />)}</div><ul className="showcase-legend">{Object.entries(data.authorship).sort((a, b) => b[1] - a[1]).map(([origin, count]) => <li key={origin}><strong>{ORIGINS[origin] ? t(ORIGINS[origin]) : human(origin)}</strong> {count.toLocaleString()} ({Math.round(100 * count / Math.max(totalEdits, 1))}%)</li>)}</ul></Section>
-      <Section title={t('Saved versions')} count={data.versions.length}><p className="writer-help">{t('Whole-story checkpoints. Any of them can be previewed and restored by the author.')}</p><table className="showcase-table"><tbody>{shownVersions.map(version => <tr key={version.number}><td>{t('v{0}', version.number)}</td><td>{version.label}</td><td>{human(version.source)}</td><td>{version.word_count != null ? t('{0} words', version.word_count.toLocaleString()) : ''}</td><td>{date(version.created_at)}</td></tr>)}</tbody></table>{data.versions.length > 6 && <button type="button" className="share-story-button" onClick={() => setAllVersions(!allVersions)}>{allVersions ? t('Show fewer') : t('Show all {0}', data.versions.length)}</button>}</Section>
+      <div className="showcase-stats">{([[agentEdits, t('field changes by AI agents')], [totalEdits - agentEdits, 'by the author'], [data.changes.length, 'agent batches reviewed'], [data.versions.length, 'restorable versions']] as const).map(([count, label]) => <div key={label}><strong>{count.toLocaleString(getUiLanguage())}</strong><span>{label}</span></div>)}</div>
+      <Section title={t('Who wrote what')}><p className="writer-help">{t('Every field change is attributed to whoever made it.')}</p><div className="showcase-bar" aria-hidden="true">{Object.entries(data.authorship).sort((a, b) => b[1] - a[1]).map(([origin, count], i) => <span key={origin} style={{ flexGrow: count, opacity: 1 - i * 0.3 }} />)}</div><ul className="showcase-legend">{Object.entries(data.authorship).sort((a, b) => b[1] - a[1]).map(([origin, count]) => <li key={origin}><strong>{ORIGINS[origin] ? t(ORIGINS[origin]) : human(origin)}</strong> {count.toLocaleString(getUiLanguage())} ({Math.round(100 * count / Math.max(totalEdits, 1))}%)</li>)}</ul></Section>
+      <Section title={t('Saved versions')} count={data.versions.length}><p className="writer-help">{t('Whole-story checkpoints. Any of them can be previewed and restored by the author.')}</p><table className="showcase-table"><tbody>{shownVersions.map(version => <tr key={version.number}><td>{t('v{0}', version.number)}</td><td>{version.label}</td><td>{human(version.source)}</td><td>{version.word_count != null ? t('{0} words', version.word_count.toLocaleString(getUiLanguage())) : ''}</td><td>{date(version.created_at)}</td></tr>)}</tbody></table>{data.versions.length > 6 && <button type="button" className="share-story-button" onClick={() => setAllVersions(!allVersions)}>{allVersions ? t('Show fewer') : t('Show all {0}', data.versions.length)}</button>}</Section>
       <Section title={t('Reviewed agent changes')} count={data.changes.length}><p className="writer-help">{t('AI agents propose batches of edits; each one is applied, reviewed, or undone as a unit.')}</p><ul className="showcase-changes">{data.changes.map((change, i) => <li key={i}><span className={`showcase-status showcase-status-${change.status}`}>{human(change.status)}</span><span>{change.summary}</span><small>{date(change.created_at)}</small></li>)}</ul></Section>
     </div>}
 

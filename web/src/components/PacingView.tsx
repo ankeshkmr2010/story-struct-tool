@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api, type Scene } from '../api/client'
 import { orderScenes } from '../api/ordering'
 import { openBeside } from './beside'
-import { t, tx } from '../i18n'
+import { getUiLanguage, t, tx } from '../i18n'
 
 const MAX_POV = 8
 type Shift = 'shift' | 'flat' | 'missing'
@@ -49,11 +49,11 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
   const chosen = selected !== null ? ordered[selected] ?? null : null
   const marked = (index: number) => `${hovered === index ? ' is-hovered' : ''}${selected === index ? ' is-selected' : ''}`
   const describe = ({ scene, chapter }: (typeof ordered)[number]) =>
-    t('{0}, chapter {1}: {2} words, {3}{4}', scene.title || 'Untitled scene', chapter.number, scene.word_count.toLocaleString(), t(SHIFT_LABEL[shiftOf(scene)]).toLowerCase(), scene.pov_character_id ? `, POV ${name(scene.pov_character_id) ?? 'unknown'}` : '')
+    t('{0}, chapter {1}: {2} words, {3}{4}', scene.title || 'Untitled scene', chapter.number, scene.word_count.toLocaleString(getUiLanguage()), t(SHIFT_LABEL[shiftOf(scene)]).toLowerCase(), scene.pov_character_id ? `, POV ${name(scene.pov_character_id) ?? 'unknown'}` : '')
 
   return <section className="pacing-root" aria-label={t('Pacing')}>
     <p className="pacing-summary">
-      {t('{0} scenes · {1} words · average {2} per scene · value shifts in {3} of {4}{5} · POV set in {6}', ordered.length, total.toLocaleString(), Math.round(total / ordered.length).toLocaleString(), shifting, ordered.length, flat ? t(' ({0} flat)', flat) : '', withPov)}
+      {t('{0} scenes · {1} words · average {2} per scene · value shifts in {3} of {4}{5} · POV set in {6}', ordered.length, total.toLocaleString(getUiLanguage()), Math.round(total / ordered.length).toLocaleString(getUiLanguage()), shifting, ordered.length, flat ? t(' ({0} flat)', flat) : '', withPov)}
     </p>
 
     <div className="pacing-scroll">
@@ -62,7 +62,7 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
           {ordered.map(({ scene, chapter }, index) => <span key={scene.id} className={index === 0 || ordered[index - 1].chapter.id !== chapter.id ? 'is-start' : ''}>{index === 0 || ordered[index - 1].chapter.id !== chapter.id ? chapter.number : ''}</span>)}
         </div>
 
-        <p className="pacing-row-label">{t('Scene length')}{' '}<span>{t('longest {0} words', longest.toLocaleString())}</span></p>
+        <p className="pacing-row-label">{t('Scene length')}{' '}<span>{t('longest {0} words', longest.toLocaleString(getUiLanguage()))}</span></p>
         <div className="pacing-row pacing-lengths" style={columns}>
           {ordered.map(({ scene }, index) => <span key={scene.id} className={marked(index)}><i style={{ height: `${Math.max(scene.word_count ? 6 : 0, (scene.word_count / longest) * 100)}%` }} /></span>)}
         </div>
@@ -88,7 +88,7 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
       {active ? <>
         <strong>{active.scene.title || t('Untitled scene')}</strong>
         <span>{t('Chapter {0}{1}', active.chapter.number, active.chapter.title ? `: ${active.chapter.title}` : '')}</span>
-        <span>{t('{0} words · {1}', active.scene.word_count.toLocaleString(), active.scene.type === 'sequel' ? t('Sequel') : t('Scene'))}</span>
+        <span>{t('{0} words · {1}', active.scene.word_count.toLocaleString(getUiLanguage()), active.scene.type === 'sequel' ? t('Sequel') : t('Scene'))}</span>
         <span>{t(SHIFT_LABEL[shiftOf(active.scene)])}{active.scene.emotional_value_from || active.scene.emotional_value_to ? `: ${active.scene.emotional_value_from || '?'} → ${active.scene.emotional_value_to || '?'}` : ''}</span>
         <span>{t('POV: {0}', name(active.scene.pov_character_id) ?? t('not set'))}</span>
       </> : <span>{t('Hover or tab to a scene for details; click to select it.')}</span>}
@@ -116,7 +116,7 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
         <tbody>{ordered.map(({ scene, chapter }) => <tr key={scene.id}>
           <td>{chapter.number}</td>
           <td><button type="button" className="underline" onClick={() => onOpenScene(scene)}>{scene.title || t('Untitled scene')}</button> <button type="button" className="pacing-beside" onClick={() => openBeside({ kind: 'scene', id: scene.id })}>{t('Beside')}</button></td>
-          <td>{scene.word_count.toLocaleString()}</td>
+          <td>{scene.word_count.toLocaleString(getUiLanguage())}</td>
           <td>{t(SHIFT_LABEL[shiftOf(scene)])}{scene.emotional_value_from || scene.emotional_value_to ? ` (${scene.emotional_value_from || '?'} → ${scene.emotional_value_to || '?'})` : ''}</td>
           <td>{name(scene.pov_character_id) ?? '—'}</td>
         </tr>)}</tbody>

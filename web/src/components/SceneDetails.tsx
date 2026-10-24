@@ -5,6 +5,7 @@ import { SceneDelete } from './SceneDelete'
 import { Chip, Field, InlineNumber, InlineSelect, InlineText } from './fields'
 
 const STATUSES = ['placeholder', 'outlined', 'drafted', 'revised']
+const statusOptions = () => STATUSES.map(value => ({ value, label: valueLabel(value) }))
 
 
 /**
@@ -73,7 +74,7 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: 
         <Field label={t('Title')}><InlineText value={scene.title} placeholder={t('Scene title')} onSave={save('title')} /></Field>
         <Field label={t('Chapter')}><InlineSelect value={scene.chapter_id} options={(chapters.data ?? []).map((chapter) => ({ value: chapter.id, label: `${chapter.number}. ${chapter.title ?? t('Untitled')}` }))} onSave={save('chapter_id')} /></Field>
         <Field label={t('Type')}><InlineSelect value={scene.type} options={['scene', 'sequel']} onSave={save('type')} /></Field>
-        <Field label={t('Draft status')}><InlineSelect value={scene.status} options={STATUSES} onSave={save('status')} /></Field>
+        <Field label={t('Draft status')}><InlineSelect value={scene.status} options={statusOptions()} onSave={save('status')} /></Field>
         {!essentials && <>{pov}{place}</>}
         <Field label={t('Story time')}><InlineNumber value={scene.story_time_ordinal} onSave={save('story_time_ordinal')} /></Field>
         <Field label={t('Time label')}><InlineText value={scene.time_label} placeholder={t('e.g. next morning')} onSave={save('time_label')} /></Field>
@@ -99,3 +100,4 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: 
 }
 import { ReferenceImages, SceneImages } from './StoryImages'
 import { t } from '../i18n'
+import { valueLabel } from '../i18n/server'

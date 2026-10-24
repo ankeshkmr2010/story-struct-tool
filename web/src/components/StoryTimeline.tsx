@@ -5,6 +5,7 @@ import { EventDelete } from './EventDelete'
 import { AddForm, InlineNumber, InlineSelect, InlineText } from './fields'
 import { SANDBOX_ID, tourEvent } from '../sandbox/storage'
 import { t } from '../i18n'
+import { valueLabel } from '../i18n/server'
 
 const entryKey = (entry: TimelineEntry) => `${entry.kind}:${entry.id}`
 const isSuggested = (source: string, isPov: boolean) => source === 'inferred' && !isPov
@@ -185,7 +186,7 @@ function EventCard({ entry, active, onSelect, sceneTitle, onOpenScene, onOpenCha
   const go = (event: MouseEvent, action: () => void) => { event.stopPropagation(); action() }
   return (
     <div role="button" tabIndex={0} onClick={onSelect} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onSelect() } }} aria-pressed={active} className={`w-full rounded-xl border bg-white dark:bg-slate-900 p-4 text-left shadow-sm transition hover:border-sky-300 dark:hover:border-sky-800 hover:shadow-md ${active ? 'border-sky-400 ring-2 ring-sky-200' : 'border-slate-200 dark:border-slate-700'}`}>
-      <span className="flex flex-wrap gap-2 text-[10px] uppercase tracking-wide text-slate-400"><span>{entry.kind}</span>{entry.is_turning_point && <span className="text-amber-700 dark:text-amber-300">{t('◆ Turning point')}</span>}{entry.is_flashback && <span className="text-violet-600 dark:text-violet-300">{t('Flashback')}</span>}</span>
+      <span className="flex flex-wrap gap-2 text-[10px] uppercase tracking-wide text-slate-400"><span>{valueLabel(entry.kind)}</span>{entry.is_turning_point && <span className="text-amber-700 dark:text-amber-300">{t('◆ Turning point')}</span>}{entry.is_flashback && <span className="text-violet-600 dark:text-violet-300">{t('Flashback')}</span>}</span>
       {entry.kind === 'scene'
         ? <button type="button" onClick={(event) => go(event, () => onOpenScene(entry.id))} className="mt-2 block text-left text-sm font-semibold leading-5 text-slate-900 hover:underline dark:text-slate-100">{entry.title} →</button>
         : <span className="mt-2 block text-sm font-semibold leading-5 text-slate-900 dark:text-slate-100">{entry.title}</span>}

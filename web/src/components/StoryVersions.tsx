@@ -4,11 +4,11 @@ import { DraftCompare } from './DraftCompare'
 import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type StoryVersion } from '../api/client'
 import { errorText } from '../api/errors'
-import { t } from '../i18n'
+import { getUiLanguage, t } from '../i18n'
 
 function counts(version: StoryVersion) {
   const items = (version.statistics.counts ?? {}) as Record<string, number>
-  return t('{0} words · {1} scenes · {2} beats · {3} events', Number(version.statistics.word_count ?? 0).toLocaleString(), items.scene ?? 0, items.beat ?? 0, items.event ?? 0)
+  return t('{0} words · {1} scenes · {2} beats · {3} events', Number(version.statistics.word_count ?? 0).toLocaleString(getUiLanguage()), items.scene ?? 0, items.beat ?? 0, items.event ?? 0)
 }
 
 export function StoryVersions({ storyId, beforeEdit = async () => true }: { storyId: string; beforeEdit?: () => Promise<boolean> }) {

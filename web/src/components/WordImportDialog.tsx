@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { api, type DocxImport, type ImportFormat, type ImportUpload, type Story } from '../api/client'
 import { errorText } from '../api/errors'
 import { importedStoryPrompt } from './importPrompts'
-import { t, tx } from '../i18n'
+import { getUiLanguage, t, tx } from '../i18n'
 
 type Plan = Record<string, unknown>
 type Option = { value: string | number; count?: number; chapters?: number }
@@ -143,7 +143,7 @@ export function WordImportDialog({ open, format = 'docx', story, defaultTitle, o
       <button type="button" disabled={busy} onClick={onClose} aria-label={t('Close import dialog')} className="rounded border border-[var(--line)] px-3 py-1.5 disabled:opacity-40">{t('Close')}</button>
     </div>
     {selectedStory ? <div className="mt-5 space-y-4">
-      <p role="status" className="text-sm text-[var(--muted)]">{t('{0}{1} words. Choose your next step.', upload.isSuccess ? t('Import complete. ') : '', selectedStory.word_count.toLocaleString())}</p>
+      <p role="status" className="text-sm text-[var(--muted)]">{t('{0}{1} words. Choose your next step.', upload.isSuccess ? t('Import complete. ') : '', selectedStory.word_count.toLocaleString(getUiLanguage()))}</p>
       <div className="flex flex-wrap gap-3">
         <Link to={`/stories/${selectedStory.id}`} onClick={onClose} className="landing-primary">{t('Open this story →')}</Link>
         {(['structure', 'components'] as const).map((mode) => <button key={mode} type="button" className="rounded border border-[var(--line)] px-3 py-2 text-sm" onClick={() => {
@@ -175,8 +175,8 @@ export function WordImportDialog({ open, format = 'docx', story, defaultTitle, o
     </form> : <div className="mt-5 space-y-4">
       <p className="text-sm text-[var(--muted)]">
         {format !== 'scrivener'
-          ? t('Found {0} words in {1} paragraphs: {2} Heading 1, {3} Heading 2, {4} “Chapter” lines, {5} separators and {6} page breaks.', stats.words?.toLocaleString() ?? 0, stats.blocks ?? 0, stats.heading1 ?? 0, stats.heading2 ?? 0, stats.chapter_lines ?? 0, stats.separators ?? 0, stats.page_break ?? 0)
-          : t('Found {0} words in {1} documents and {2} folders, with {3} synopses and {4} notes. {5} items are excluded from compile.', stats.words?.toLocaleString() ?? 0, stats.documents ?? 0, stats.folders ?? 0, stats.synopses ?? 0, stats.notes ?? 0, stats.excluded_from_compile ?? 0)}
+          ? t('Found {0} words in {1} paragraphs: {2} Heading 1, {3} Heading 2, {4} “Chapter” lines, {5} separators and {6} page breaks.', stats.words?.toLocaleString(getUiLanguage()) ?? 0, stats.blocks ?? 0, stats.heading1 ?? 0, stats.heading2 ?? 0, stats.chapter_lines ?? 0, stats.separators ?? 0, stats.page_break ?? 0)
+          : t('Found {0} words in {1} documents and {2} folders, with {3} synopses and {4} notes. {5} items are excluded from compile.', stats.words?.toLocaleString(getUiLanguage()) ?? 0, stats.documents ?? 0, stats.folders ?? 0, stats.synopses ?? 0, stats.notes ?? 0, stats.excluded_from_compile ?? 0)}
       </p>
       <label className="block text-sm">{t('Story title')}<input required maxLength={200} disabled={busy} value={title} onChange={(event) => setTitle(event.target.value)} className="mt-2 block w-full rounded border border-[var(--line)] bg-[var(--surface)] p-3" /></label>
       {format !== 'scrivener' ? <div className="grid gap-3 sm:grid-cols-2">
@@ -200,11 +200,11 @@ export function WordImportDialog({ open, format = 'docx', story, defaultTitle, o
         {preview.isPending && <p className="text-sm text-[var(--muted)]">{t('Previewing…')}</p>}
         {preview.error && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(preview.error)}</p>}
         {preview.data && <>
-          <p className="text-sm font-medium">{t('{0} chapters · {1} scenes · {2} words', preview.data.chapter_count, preview.data.scene_count, preview.data.word_count.toLocaleString())}</p>
+          <p className="text-sm font-medium">{t('{0} chapters · {1} scenes · {2} words', preview.data.chapter_count, preview.data.scene_count, preview.data.word_count.toLocaleString(getUiLanguage()))}</p>
           <ol className="mt-2 max-h-60 space-y-1 overflow-y-auto text-sm">
             {preview.data.chapters.slice(0, 80).map((chapter, index) => <li key={index}>
               <span className="font-medium">{index + 1}. {chapter.title || t('Untitled chapter')}</span>
-              <span className="text-[var(--muted)]">{' '}{t('— {0} scene{1}, {2} words{3}', chapter.scenes.length, chapter.scenes.length === 1 ? '' : t('s'), chapter.scenes.reduce((sum, scene) => sum + scene.words, 0).toLocaleString(), chapter.scenes.some(scene => scene.title) ? `: ${chapter.scenes.map(scene => scene.title || 'untitled').slice(0, 4).join(', ')}${chapter.scenes.length > 4 ? '…' : ''}` : '')}</span>
+              <span className="text-[var(--muted)]">{' '}{t('— {0} scene{1}, {2} words{3}', chapter.scenes.length, chapter.scenes.length === 1 ? '' : t('s'), chapter.scenes.reduce((sum, scene) => sum + scene.words, 0).toLocaleString(getUiLanguage()), chapter.scenes.some(scene => scene.title) ? `: ${chapter.scenes.map(scene => scene.title || 'untitled').slice(0, 4).join(', ')}${chapter.scenes.length > 4 ? '…' : ''}` : '')}</span>
             </li>)}
           </ol>
           {(preview.data.truncated || preview.data.chapters.length > 80) && <p className="mt-1 text-xs text-[var(--muted)]">{t('Showing the first 80 chapters.')}</p>}

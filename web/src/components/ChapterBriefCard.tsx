@@ -1,5 +1,6 @@
 import type { ChapterBrief } from '../api/client'
 import { t } from '../i18n'
+import { valueLabel } from '../i18n/server'
 
 /**
  * The Chapter Context Brief, laid out as the design document specified:
@@ -38,7 +39,7 @@ export function ChapterBriefCard({ brief }: { brief: ChapterBrief }) {
           {brief.title && <span className="font-normal text-slate-500 dark:text-slate-400"> — {brief.title}</span>}
         </h3>
         <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">
-          {brief.status}
+          {valueLabel(brief.status)}
         </span>
       </div>
 

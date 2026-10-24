@@ -6,6 +6,7 @@ import { applyPassageEdits } from './passageEdits'
 import { besideKind, openBeside } from './beside'
 import { errorText } from '../api/errors'
 import { t, tx } from '../i18n'
+import { serverText } from '../i18n/server'
 
 /**
  * Evaluate: on-demand craft checks, separate from the live health findings. Pick an
@@ -360,7 +361,7 @@ function EvaluationOverview({ evaluators, results, reading, readerShared, runnin
       {evaluators.map((item) => {
         const { text, attention } = status(item)
         return <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-          <div className="min-w-0"><p className="text-sm font-medium">{attention && <span className="mr-1 text-amber-600" aria-label={t('Has findings')}>●</span>}{item.name}</p><p className="text-xs text-slate-500 dark:text-slate-400">{text}</p></div>
+          <div className="min-w-0"><p className="text-sm font-medium">{attention && <span className="mr-1 text-amber-600" aria-label={t('Has findings')}>●</span>}{serverText(item.name)}</p><p className="text-xs text-slate-500 dark:text-slate-400">{text}</p></div>
           <button type="button" className="ui-btn ui-btn-secondary" onClick={() => onOpen(item.id)}>{t('Open')}</button>
         </li>
       })}
@@ -497,7 +498,7 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
               onClick={() => setChosen(item.id)}
               className="eval-check"
             >
-              <span>{item.name}</span>{item.missing.length > 0 && <small>{t('Needs inputs')}</small>}
+              <span>{serverText(item.name)}</span>{item.missing.length > 0 && <small>{t('Needs inputs')}</small>}
             </button>
           ))}
         </div>
@@ -547,7 +548,7 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
             </>}
           </section>
         )}
-        {selected.has_review && <AIReview key={selected.id} storyId={storyId} evaluatorId={selected.id} evaluatorName={selected.name} ready={selected.ready} onOpenScene={onOpenScene} onOpenThreads={onOpenThreads} onOpenCharacters={onOpenCharacters} />}
+        {selected.has_review && <AIReview key={selected.id} storyId={storyId} evaluatorId={selected.id} evaluatorName={serverText(selected.name)} ready={selected.ready} onOpenScene={onOpenScene} onOpenThreads={onOpenThreads} onOpenCharacters={onOpenCharacters} />}
         </>}
         </div>
       </div>}

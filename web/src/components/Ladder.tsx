@@ -1,4 +1,5 @@
 import type { Ladder as LadderData, Readiness } from '../api/client'
+import { levelLabel, serverText } from '../i18n/server'
 
 /**
  * The same `readiness` signal rendered under three different policies. This is the whole
@@ -63,7 +64,7 @@ export function Ladder({
               <span className="flex items-center gap-2.5">
                 <span className={`size-2 shrink-0 rounded-full ${dot[status]}`} />
                 <span className="text-xs tabular-nums opacity-60">{rung.level}</span>
-                <span className="text-sm font-medium">{rung.label}</span>
+                <span className="text-sm font-medium">{levelLabel(rung.level, rung.label)}</span>
               </span>
 
               {isActive && status !== 'ready' && rung.blocked_by.length > 0 && (
@@ -73,7 +74,7 @@ export function Ladder({
                       key={reason}
                       className="pl-[26px] text-xs text-slate-300 dark:text-slate-500"
                     >
-                      {reason}
+                      {serverText(reason)}
                     </li>
                   ))}
                 </ul>
