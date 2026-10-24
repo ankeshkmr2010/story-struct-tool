@@ -86,7 +86,7 @@ async def run_noticing_pass(
         scenes_read += 1
 
         notices = await noticer.notice_scene(  # type: ignore[attr-defined]
-            prose, known_characters, known_beats, known_locations
+            prose, known_characters, known_beats, known_locations, graph.language
         )
         sources.add(notices.noticed_by)
         payload = json_value(asdict(notices))
@@ -218,10 +218,19 @@ async def current_unknown_names(session: AsyncSession, story_id: UUID) -> set[st
     """Cheap local revalidation of stored lexical notices; never calls a model."""
     from collections import Counter
 
+    from storytool.domain.auth.models import User
     from storytool.domain.cast.models import Character
+    from storytool.domain.enums import DEFAULT_LANGUAGE
     from storytool.domain.narrative.models import Scene
     from storytool.domain.noticing.deterministic import DeterministicNoticer
+    from storytool.domain.story.models import Story
     from storytool.domain.world.models import Location
+
+    story = await session.get(Story, story_id)
+    language = story.language if story else None
+    if language is None and story is not None and story.user_id is not None:
+        language = await session.scalar(select(User.language).where(User.id == story.user_id))
+    language = language or DEFAULT_LANGUAGE
 
     characters = tuple(
         KnownCharacter(c.id, c.name, tuple(c.aliases or ()))
@@ -233,7 +242,9 @@ async def current_unknown_names(session: AsyncSession, story_id: UUID) -> set[st
     )
     counts: Counter[str] = Counter()
     for prose in await session.scalars(select(Scene.content).where(Scene.story_id == story_id)):
-        notices = await DeterministicNoticer().notice_scene(prose or "", characters, (), locations)
+        notices = await DeterministicNoticer().notice_scene(
+            prose or "", characters, (), locations, language
+        )
         counts.update({notice.name for notice in notices.unknown_names})
     from storytool.domain.noticing.suggestions import MIN_SCENES_FOR_UNKNOWN_NAME
 

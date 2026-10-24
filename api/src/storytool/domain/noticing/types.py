@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from typing import Literal, Protocol
 from uuid import UUID
 
+from storytool.domain.enums import DEFAULT_LANGUAGE
+
 Confidence = Literal["low", "medium", "high"]
 
 
@@ -221,6 +223,7 @@ class Noticer(Protocol):
         known_characters: tuple[KnownCharacter, ...],
         known_beats: tuple[KnownBeat, ...] = (),
         known_locations: tuple["KnownLocation", ...] = (),
+        language: str = DEFAULT_LANGUAGE,
     ) -> SceneNotices: ...
 
 

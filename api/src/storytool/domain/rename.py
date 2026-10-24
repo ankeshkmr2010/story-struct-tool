@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.analysis import load_graph_by_id
+from storytool.domain.enums import base_language
 from storytool.domain.evaluation.controller import PassageOut
 from storytool.domain.graph import StoryGraph
 from storytool.domain.prose_scan import scan
@@ -58,9 +59,11 @@ def name_uses(g: StoryGraph, old: str, new: str) -> list[dict]:
     if not plan:
         return []
     lookup = {find: (replace, group) for find, replace, group in plan}
+    # German adds a bare -s for the genitive (Annas Buch), which then follows the new name.
+    genitive = rf"(?!s(?!{_LETTER}))" if base_language(g.language) == "de" else ""
     pattern = re.compile(
         rf"(?<!{_LETTER})(?<![-\u2010])(?:{'|'.join(re.escape(find) for find, _, _ in plan)})"
-        rf"(?![-\u2010]?{_LETTER})"
+        rf"(?![-\u2010]?{genitive}{_LETTER})"
     )
 
     def matcher(text: str):

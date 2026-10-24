@@ -709,3 +709,20 @@ Items stay [~] until the user confirms them; these record what was verified on p
   duplicate's names as aliases; deletes it. UI `MergeCharacter` (preview, explicit confirm,
   then the prose rename offer); hidden in /try. `test_merge.py` written, not run (needs
   Postgres) [unverified]; SQL compiled for Postgres.
+
+## Writing languages — 2026-10-24 (built; awaiting deploy + user check)
+
+- [~] Latin-script writing languages, part 1 (roadmap "Latin-script language support"): French,
+  German, Spanish, Portuguese (pt-PT, pt-BR) and Italian in `Language` (`domain/enums.py`) and
+  the Design/account pickers (`web/src/components/languages.ts`).
+  - Smart consistency: US/UK spelling only for English; per-language small words, titles and
+    calendar (`domain/language_words.py`); names differing only in accents are "alike"; « » „ “
+    ¿ ¡ and the dialogue dash start sentences; German skips capitalisation and needs a sound-alike
+    for name typos (Haus is not Hans); non-English hyphenation compares closed/hyphenated only.
+  - Rename keeps the German genitive (Annas → Kates); elision (d'Élise) and ÉLISE already worked.
+  - Noticing (new names): accented capitals (Élodie, Zoë) are read; per-language stopwords and
+    person verbs; German needs a person verb beside a lone noun and none after an article.
+  - Search ignores accents (Postgres `unaccent`, migration `d5f1a7b3c902`); highlight and /try
+    search fold accents too.
+  - Tests: `tests/test_languages.py` 11 passed (pure). Not run: DB-backed search and the
+    migration (no local Postgres) [unverified]. Interface translation is part 2, not started.

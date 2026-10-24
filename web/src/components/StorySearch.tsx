@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useId, useRef, useState } from 'react'
+import { foldAccents } from './languages'
 import { besideKind, openBeside } from './beside'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { api, type SearchContext, type LibrarySearchContext, type SearchHit } from '../api/client'
@@ -26,8 +27,15 @@ const types = (context: LibrarySearchContext) => context === 'all' ? Object.keys
 const fieldLabel = (field: string) => field === 'content' ? 'Prose' : field.replaceAll('_', ' ').replace(/^./, c => c.toUpperCase())
 
 function Highlight({ text, query }: { text: string; query: string }) {
-  const pattern = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const parts = query ? text.split(new RegExp(`(${pattern})`, 'gi')) : [text]
+  // Accents are ignored, as in the search itself: "Jose" marks "José".
+  const folded = foldAccents(text), wanted = foldAccents(query)
+  const parts: string[] = []
+  let from = 0
+  for (let at = wanted ? folded.indexOf(wanted) : -1; at >= 0; at = folded.indexOf(wanted, from)) {
+    parts.push(text.slice(from, at), text.slice(at, at + wanted.length))
+    from = at + wanted.length
+  }
+  parts.push(text.slice(from))
   return <>{parts.map((part, index) => index % 2 ? <mark key={index}>{part}</mark> : <Fragment key={index}>{part}</Fragment>)}</>
 }
 

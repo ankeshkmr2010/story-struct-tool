@@ -9,10 +9,15 @@ placed prose (reading order, through `prose_scan`), then four reports read that 
   appear and by who is in the scenes where the variant appears -- the scene's POV, its
   confirmed character mentions, its place, or the known name written nearby. A rare variant
   beside a common name is a likely typo; two spellings in steady use may be two people.
-- Spelling: words spelled for the other side of the Atlantic from the story's language.
+- Spelling: words spelled for the other side of the Atlantic from the story's language
+  (English stories only).
 - Hyphenation: one term written closed, open and hyphenated (lanternkeeper, lantern keeper,
   lantern-keeper).
-- Capitalisation: one word capitalised in some mid-sentence uses and not in others.
+- Capitalisation: one word capitalised in some mid-sentence uses and not in others (not in
+  German, which capitalises every noun).
+
+French, German, Spanish, Portuguese and Italian stories use their own short word lists
+(`language_words`), and names that differ only in accents (Zoe, Zoë) are compared as alike.
 
 Every finding says why it was raised, carries the passage of its first occurrence, and
 offers remedies: replace every occurrence (verified edits), add an alias or character, or
@@ -29,10 +34,11 @@ from uuid import UUID
 from metaphone import doublemetaphone
 from rapidfuzz.distance import OSA, JaroWinkler
 
-from storytool.domain.enums import Language
+from storytool.domain.enums import Language, base_language
 from storytool.domain.evaluation.engine import EvaluationFinding, FindingAction, TextEdit
 from storytool.domain.graph import StoryGraph
 from storytool.domain.health import Severity
+from storytool.domain.language_words import calendar_words, function_words, plain, titles
 from storytool.domain.noticing.deterministic import NOT_NAMES
 from storytool.domain.prose_scan import (
     NameSource,
@@ -52,7 +58,12 @@ TYPO_RATIO = 0.25
 TWO_PEOPLE_RATIO = 0.5
 _HYPHENS = "-\u2010"
 _WORD = re.compile(r"[^\W\d_]+(?:[-\u2010][^\W\d_]+)*")
-_OPENERS = "\"'\u201c\u2018\u201d\u2019()[]*_\u2014\u2013- \t"
+# Quotes and dashes of English, French (« »), German („ “, » «), Spanish (¿ ¡, the dialogue
+# dash), Portuguese and Italian, and the no-break spaces French puts inside « ».
+_OPENERS = (
+    "\"'\u201c\u2018\u201d\u2019\u00ab\u00bb\u2039\u203a\u201e\u201a\u00bf\u00a1"
+    "()[]*_\u2014\u2013- \t\u00a0\u202f"
+)
 _SENTENCE_END = ".!?\u2026\n"
 _NOT_NAMES = frozenset(word.casefold() for word in NOT_NAMES)
 # Closed and open forms that are different words, not inconsistent spellings.
@@ -137,12 +148,20 @@ class _Word:
         )
 
 
-_QUOTES_OPEN = "\"'\u201c\u2018"
+_QUOTES_OPEN = "\"'\u201c\u2018\u00ab\u00bb\u2039\u203a\u201e\u201a\u00bf\u00a1"
+# Openers that close nothing in these languages except German (where « ends a »quote«), so a
+# space may sit between them and the word: French « Viens », Spanish ¿ Qué?
+_SPACED_OPEN = "\u00ab\u2039\u201e\u00bf\u00a1"
 
 
 def _starts_sentence(text: str, start: int) -> bool:
     # Quoted speech opens a sentence even mid-line: he said, "Please come."
     if start > 0 and text[start - 1] in _QUOTES_OPEN:
+        return True
+    index = start - 1
+    while index >= 0 and text[index] in " \t\u00a0\u202f":
+        index -= 1
+    if index >= 0 and text[index] in _SPACED_OPEN:
         return True
     index = start - 1
     while index >= 0 and text[index] in _OPENERS:
@@ -305,7 +324,7 @@ def _canon_tokens(sources: Iterable[NameSource]) -> dict[str, tuple[NameSource, 
 
 @lru_cache(maxsize=16384)
 def _codes(word: str) -> frozenset[str]:
-    return frozenset(code for code in doublemetaphone(word) if len(code) >= 2)
+    return frozenset(code for code in doublemetaphone(plain(word)) if len(code) >= 2)
 
 
 @dataclass(frozen=True, slots=True)
@@ -313,8 +332,11 @@ class _Likeness:
     edits: int
     similarity: float
     sounds_alike: bool
+    accents_only: bool = False
 
     def describe(self) -> str:
+        if self.accents_only:
+            return "differs only in accents"
         parts = [
             "one letter different"
             if self.edits == 1
@@ -327,28 +349,34 @@ class _Likeness:
         return " and ".join(parts)
 
 
-def _likeness(variant: str, known: str) -> _Likeness | None:
+def _likeness(variant: str, known: str, strict: bool = False) -> _Likeness | None:
+    """How alike two lower-case names are, or None. `strict` (German, where every noun is
+    capitalised like a name) drops the letter-count test alone: Haus is not a typo of Hans."""
     if variant in {known + "s", known + "es"} or len(known) < 3:
         return None
+    if plain(variant) == plain(known):
+        return _Likeness(0, 1.0, True, accents_only=True)
+    variant, known = plain(variant), plain(known)
     allowed = 1 if len(known) <= 6 else 2
     edits = OSA.distance(variant, known, score_cutoff=allowed + 1)
     similarity = JaroWinkler.normalized_similarity(variant, known)
     sounds = bool(_codes(variant) & _codes(known))
     if len(known) == 3 and not (sounds and edits <= 1):
         return None
-    if edits <= allowed or similarity >= JW_ALONE or (sounds and similarity >= JW_WITH_SOUND):
+    close = edits <= allowed and (sounds or not strict)
+    if close or similarity >= JW_ALONE or (sounds and similarity >= JW_WITH_SOUND):
         return _Likeness(edits, similarity, sounds)
     return None
 
 
 def _best_match(
-    fold: str, canon: dict[str, tuple[NameSource, str]]
+    fold: str, canon: dict[str, tuple[NameSource, str]], strict: bool = False
 ) -> tuple[str, _Likeness] | None:
     best: tuple[str, _Likeness] | None = None
     for known in canon:
         if abs(len(known) - len(fold)) > 3:
             continue
-        likeness = _likeness(fold, known)
+        likeness = _likeness(fold, known, strict)
         if likeness and (
             best is None
             or (likeness.sounds_alike, likeness.similarity)
@@ -358,14 +386,22 @@ def _best_match(
     return best
 
 
+def _not_names(language: str) -> frozenset[str]:
+    """Capitalised words that are never taken for a misspelt name in this language."""
+    if base_language(language) == "en":
+        return _NOT_NAMES
+    return function_words(language) | titles(language) | calendar_words(language)
+
+
 def resembled_name(name: str, g: StoryGraph) -> str | None:
     """The defined name an unknown name most resembles, for noticing's wording."""
     canon = _canon_tokens(name_sources(g))
+    strict = base_language(g.language) == "de"
     for token in re.findall(r"[^\W\d_]+", name):
         fold = token.casefold()
         if fold in canon:
             continue
-        match = _best_match(fold, canon)
+        match = _best_match(fold, canon, strict)
         if match:
             source, _ = canon[match[0]]
             return source.name
@@ -419,18 +455,20 @@ def _names(g: StoryGraph, index: _Index, kept: set[str]) -> list[EvaluationFindi
     canon = _canon_tokens(name_sources(g))
     if not canon:
         return []
+    not_names = _not_names(g.language)
+    strict = base_language(g.language) == "de"
     findings: list[EvaluationFinding] = []
     for fold, words in index.by_fold.items():
         capitalised = [w for w in words if w.capitalised and not w.acronym and "-" not in w.text]
         if (
             len(fold) < 3
             or fold in canon
-            or fold in _NOT_NAMES
+            or fold in not_names
             or fold in index.lower
             or len(capitalised) != len(words)
         ):
             continue
-        match = _best_match(fold, canon)
+        match = _best_match(fold, canon, strict)
         if match is None:
             continue
         known, likeness = match
@@ -588,16 +626,22 @@ def _hyphenation(g: StoryGraph, index: _Index, kept: set[str]) -> list[Evaluatio
     # Open forms worth looking for: a closed or hyphenated term split into two words the
     # prose also uses (lantern keeper for lanternkeeper). Deriving them from the vocabulary
     # means one search for a few phrases instead of a test of every pair of words.
-    open_forms = {
-        f"{joined[:cut]} {joined[cut:]}"
-        for joined in (hyphenated | vocabulary) - _SEPARATE_WORDS
-        if len(joined) >= 6
-        for cut in range(2, len(joined) - 1)
-        if joined[:cut] in vocabulary
-        and joined[cut:] in vocabulary
-        and joined[:cut] not in _PARTICLES
-        and joined[cut:] not in _PARTICLES
-    }
+    # The word lists that keep this sensible are English, so other languages compare only
+    # closed and hyphenated forms.
+    open_forms = (
+        {
+            f"{joined[:cut]} {joined[cut:]}"
+            for joined in (hyphenated | vocabulary) - _SEPARATE_WORDS
+            if len(joined) >= 6
+            for cut in range(2, len(joined) - 1)
+            if joined[:cut] in vocabulary
+            and joined[cut:] in vocabulary
+            and joined[:cut] not in _PARTICLES
+            and joined[cut:] not in _PARTICLES
+        }
+        if base_language(g.language) == "en"
+        else set()
+    )
 
     groups: dict[str, list[_Word]] = defaultdict(list)
     for fold, words in index.by_fold.items():
@@ -680,9 +724,10 @@ def _proper_names(g: StoryGraph) -> dict[str, str]:
     first word of a character's name (Maya of Maya Torres). Other words of longer names are
     often ordinary words (the City and Suburban Bank), so a lower-case use is no error."""
     names: dict[str, str] = {}
+    skip = _TITLES | titles(g.language)
     for source in name_sources(g):
         for value in (source.name, *source.aliases):
-            words = [w for w in re.findall(r"[^\W\d_]+", value) if w.casefold() not in _TITLES]
+            words = [w for w in re.findall(r"[^\W\d_]+", value) if w.casefold() not in skip]
             if len(words) == 1 or (words and source.entity_type == "character"):
                 names.setdefault(words[0].casefold(), words[0])
     return names
@@ -694,6 +739,10 @@ _TITLES = frozenset(
 
 
 def _capitalisation(g: StoryGraph, index: _Index, kept: set[str]) -> list[EvaluationFinding]:
+    if base_language(g.language) == "de":  # every noun is capitalised: no signal here
+        return []
+    english = base_language(g.language) == "en"
+    small_words = _FUNCTION_WORDS if english else function_words(g.language)
     canon = _canon_tokens(name_sources(g))
     proper = _proper_names(g)
     # Only words capitalised mid-sentence somewhere and also used in lower case can disagree.
@@ -714,8 +763,8 @@ def _capitalisation(g: StoryGraph, index: _Index, kept: set[str]) -> list[Evalua
             not upper
             or not lower
             or len(fold) < 3
-            or fold in _FUNCTION_WORDS
-            or fold in _CALENDAR
+            or fold in small_words
+            or (english and fold in _CALENDAR)
             or "-" in fold
             or key in kept
         ):

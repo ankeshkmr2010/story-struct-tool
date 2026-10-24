@@ -35,6 +35,7 @@ from dataclasses import replace
 from uuid import UUID
 
 from storytool.domain.decisions.types import Choice, Noul
+from storytool.domain.enums import DEFAULT_LANGUAGE
 from storytool.domain.noticing.types import (
     Confidence,
     KnownBeat,
@@ -184,9 +185,10 @@ class JevNoticer:
         known_characters: tuple[KnownCharacter, ...],
         known_beats: tuple[KnownBeat, ...] = (),
         known_locations: tuple[KnownLocation, ...] = (),
+        language: str = DEFAULT_LANGUAGE,
     ) -> SceneNotices:
         base: SceneNotices = await self._deterministic.notice_scene(  # type: ignore[attr-defined]
-            prose, known_characters, known_beats, known_locations
+            prose, known_characters, known_beats, known_locations, language
         )
         if not prose.strip():
             return replace(base, noticed_by=self.name)

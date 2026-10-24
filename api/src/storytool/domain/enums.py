@@ -40,9 +40,20 @@ class Language(StrEnum):
 
     EN_US = "en-US"
     EN_GB = "en-GB"
+    FR = "fr"
+    DE = "de"
+    ES = "es"
+    PT_PT = "pt-PT"
+    PT_BR = "pt-BR"
+    IT = "it"
 
 
 DEFAULT_LANGUAGE = Language.EN_US
+
+
+def base_language(language: str) -> str:
+    """The language without its region: "en-GB" -> "en", "pt-BR" -> "pt"."""
+    return language.split("-", 1)[0].lower()
 
 
 class StoryStatus(StrEnum):

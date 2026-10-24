@@ -175,11 +175,14 @@ async def text_search(
     if entity:
         source = select(source).where(source.c.entity == entity).cte("restricted_fields")
     c = source.c
-    start = func.greatest(1, func.strpos(func.lower(c.value), query.lower()) - 65)
+    # Accents are ignored both ways: "Jose" finds "José" and "José" finds "Jose".
+    plain = func.unaccent(func.lower(c.value))
+    plain_query = func.unaccent(query.lower())
+    start = func.greatest(1, func.strpos(plain, plain_query) - 65)
     window = len(query) + 150
     excerpt = func.substring(c.value, start, window)
     rank = case(
-        (c.field.in_(TITLE_FIELDS) & (func.lower(c.value) == query.lower()), 0),
+        (c.field.in_(TITLE_FIELDS) & (plain == plain_query), 0),
         (c.field.in_(TITLE_FIELDS), 1),
         else_=2,
     )
@@ -210,7 +213,7 @@ async def text_search(
     )
     results = await db.execute(
         select(*columns, matches.label("matches"), func.min(rank).label("rank"))
-        .where(c.value.ilike(literal_pattern(query), escape="\\"))
+        .where(plain.like(func.unaccent(literal_pattern(query.lower())), escape="\\"))
         .group_by(*columns)
         .order_by(
             func.min(rank), c.chapter_sort, c.chapter_number, c.chapter_tie, c.sort, c.entity, c.id

@@ -12,6 +12,8 @@ import re
 from collections import Counter
 from uuid import UUID
 
+from storytool.domain.enums import DEFAULT_LANGUAGE, base_language
+from storytool.domain.language_words import calendar_words, function_words, titles
 from storytool.domain.noticing.types import (
     CharacterNotice,
     KnownBeat,
@@ -31,7 +33,12 @@ from storytool.domain.noticing.types import (
 # Matches a *run* of capitalised words, so "Harbourmaster Enns" is one candidate person
 # rather than two. Matching words individually produced both noise (a title reported as a
 # name) and inaccuracy (one person reported twice).
-CAPITALISED = re.compile(r"\b[A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})*\b")
+#
+# Letters include the accented capitals of French, German, Spanish, Portuguese and Italian
+# (Élise, Özil, Zoë), not only A-Z.
+_UPPER = "A-Z\u00c0-\u00d6\u00d8-\u00de\u0152\u0178"
+_LOWER = "a-z\u00df-\u00f6\u00f8-\u00ff\u0153"
+CAPITALISED = re.compile(rf"\b[{_UPPER}][{_LOWER}]{{2,}}(?:\s+[{_UPPER}][{_LOWER}]{{2,}})*\b")
 
 # Capitalised words that are not names. Needed now that sentence-initial words are in scope.
 NOT_NAMES = frozenset(
@@ -217,20 +224,65 @@ PERSON_ACTION = re.compile(
     r"walked|watched|turned|nodded|smiled|laughed|ran|came|went|looked|thought|felt)\b",
     re.IGNORECASE,
 )
+# The same signal in the other writing languages: a name is usually followed by a verb of
+# speech or action.
+_PERSON_ACTION_VERBS = {
+    "fr": "dit|demanda|répondit|murmura|chuchota|cria|était|est|avait|regarda|sourit|"
+    "hocha|pensa|alla|vint|marcha|attendit|se",
+    # German only: verbs that also follow ordinary nouns (Der Hafen war leer, Der Zug kam)
+    # would turn every noun into a name, so only people's verbs are listed.
+    "de": "sagte|fragte|antwortete|flüsterte|murmelte|rief|schrie|seufzte|lächelte|lachte|"
+    "nickte|dachte",
+    "es": "dijo|preguntó|respondió|contestó|susurró|gritó|era|es|"
+    "estaba|tenía|miró|sonrió|asintió|pensó|fue|vino|caminó|"
+    "esperó|se",
+    "pt": "disse|perguntou|respondeu|sussurrou|gritou|era|é|estava|tinha|olhou|sorriu|"
+    "acenou|pensou|foi|veio|andou|esperou|se",
+    "it": "disse|chiese|rispose|sussurrò|gridò|era|è|aveva|guardò|"
+    "sorrise|annuì|pensò|andò|venne|camminò|aspettò|si",
+}
+_PERSON_ACTION = {
+    language: re.compile(rf"\s+(?:{verbs})\b", re.IGNORECASE)
+    for language, verbs in _PERSON_ACTION_VERBS.items()
+}
+_NOT_NAMES_FOLDED = frozenset(word.casefold() for word in NOT_NAMES)
+# German: a capitalised word right after one of these is a noun (das Haus, am Abend).
+_GERMAN_DETERMINERS = frozenset(
+    """
+    der die das den dem des ein eine einen einem einer eines am im zum zur vom beim ins ans
+    mein meine dein deine sein seine ihr ihre unser unsere kein keine dieser diese dieses
+    jeder jede jedes
+    """.split()  # noqa: SIM905 - a word list reads best as text
+)
+_GERMAN_PERSON_VERBS = frozenset(_PERSON_ACTION_VERBS["de"].split("|"))
+_PREVIOUS_WORD = re.compile(r"([^\W\d_]+)\W*$")
 
 
-def _trim_stopwords(run: str) -> str:
+def _stopwords(language: str) -> frozenset[str]:
+    """Lower-case words that are not names, for this writing language."""
+    if base_language(language) == "en":
+        return _NOT_NAMES_FOLDED
+    return function_words(language) | titles(language) | calendar_words(language)
+
+
+def _trim_stopwords(run: str, stop: frozenset[str] = _NOT_NAMES_FOLDED) -> str:
     """Strip leading and trailing non-name words from a capitalised run.
 
     "The Harbour" -> "Harbour"; "The Tide Then" -> "Tide"; "And But" -> "". Interior words
     are left alone so a genuine multi-word name survives intact.
     """
     words = run.split()
-    while words and words[0] in NOT_NAMES:
+    while words and words[0].casefold() in stop:
         words.pop(0)
-    while words and words[-1] in NOT_NAMES:
+    while words and words[-1].casefold() in stop:
         words.pop()
     return " ".join(words)
+
+
+# Spaces, quotes and dashes that may sit between a sentence's end and its first word.
+_OPENING_MARKS = (
+    ' \t\r\n"\u201c\u201d\u2018\u2019\u00ab\u00bb\u2039\u203a\u201e\u201a\u2014\u2013\u00a0\u202f'
+)
 
 
 def _sentence_around(prose: str, index: int) -> str:
@@ -275,6 +327,7 @@ class DeterministicNoticer:
         known_characters: tuple[KnownCharacter, ...],
         known_beats: tuple[KnownBeat, ...] = (),
         known_locations: tuple[KnownLocation, ...] = (),
+        language: str = DEFAULT_LANGUAGE,
     ) -> SceneNotices:
         if not prose.strip():
             return SceneNotices(noticed_by=self.name)
@@ -305,8 +358,13 @@ class DeterministicNoticer:
 
         # Capitalised words that match no known character: worth asking about, never acting on.
         unknown: dict[str, UnknownNameNotice] = {}
+        stop = _stopwords(language)
+        person_action = _PERSON_ACTION.get(base_language(language), PERSON_ACTION)
+        # German capitalises every noun, so a lone capitalised word is only a name beside a
+        # person's verb (Greta lachte; sagte Greta) and never right after an article.
+        nouns_capitalised = base_language(language) == "de"
         for match in CAPITALISED.finditer(prose):
-            candidate = _trim_stopwords(match.group(0))
+            candidate = _trim_stopwords(match.group(0), stop)
             if not candidate or candidate in matched_words or candidate in unknown:
                 continue
             # A run whose every word is already a known character's is that character, not a
@@ -334,9 +392,18 @@ class DeterministicNoticer:
             if len(candidate.split()) == 1:
                 if re.search(rf"\b{re.escape(folded)}\b", prose):
                     continue  # The same word is used as an ordinary lowercase word.
-                prefix = prose[: match.start()].rstrip(' \t\r\n"“”\u2018\u2019')
-                starts_sentence = not prefix or prefix[-1] in ".!?"
-                if starts_sentence and not PERSON_ACTION.match(tail):
+                if nouns_capitalised:
+                    window = prose[max(0, match.start() - 40) : match.start()]
+                    before = _PREVIOUS_WORD.search(window)
+                    previous = before[1].casefold() if before else ""
+                    first = match.group(0).split()[0].casefold()
+                    if previous in _GERMAN_DETERMINERS or first in _GERMAN_DETERMINERS:
+                        continue
+                    if not person_action.match(tail) and previous not in _GERMAN_PERSON_VERBS:
+                        continue
+                prefix = prose[: match.start()].rstrip(_OPENING_MARKS)
+                starts_sentence = not prefix or prefix[-1] in ".!?\u2026\u00bf\u00a1"
+                if starts_sentence and not person_action.match(tail):
                     continue  # Capitalization alone is insufficient at sentence starts.
             unknown[candidate] = UnknownNameNotice(
                 name=candidate, evidence=_sentence_around(prose, match.start())

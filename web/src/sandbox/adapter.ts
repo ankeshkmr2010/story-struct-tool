@@ -1,5 +1,6 @@
 import { rows, SANDBOX_ID, transact, type Row, type Sandbox } from './storage'
 import { replacesMostOf, sandboxEvaluation, sandboxNameUses } from './checks'
+import { foldAccents } from '../components/languages'
 
 const kinds: Record<string, string> = { characters: 'character', relationships: 'relationship', arcs: 'arc', stages: 'arc_stage', acts: 'act', beats: 'beat', threads: 'thread', chapters: 'chapter', scenes: 'scene', events: 'event', locations: 'location', glossary: 'glossary_entry' }
 const required: Record<string, string[]> = { story: ['title', 'premise'], character: ['name', 'role', 'want', 'need'], arc: ['resolution'], arc_stage: ['label'], act: ['summary'], beat: ['label'], thread: ['type'], chapter: ['title'], scene: ['summary', 'goal', 'conflict', 'outcome'], event: ['label'], location: ['name'], glossary_entry: ['term'] }
@@ -45,13 +46,13 @@ function brief(s: Sandbox, id: string) {
   return { ...chapter, chapter_id: id, act_number: act?.number, act_title: act?.title, beats: rows(s, 'beat').filter(beat => beatIds.includes(beat.id)).map(beat => ({ beat_id: beat.id, label: beat.label, framework_position: beat.framework_position, is_fulfilled: scenes.some(scene => linked(s, 'scene_beat', 'scene_id', scene.id, 'beat_id').includes(beat.id)) })), arcs_advancing: arcs.map(arc => ({ arc_id: arc.id, summary: `${rows(s, 'character').find(c => c.id === arc.character_id)?.name ?? 'Character'} (${sorted(rows(s, 'arc_stage').filter(stage => stage.arc_id === arc.id)).map(stage => stage.label).join(' → ')})` })), threads: rows(s, 'thread').filter(thread => scenes.some(scene => linked(s, 'scene_thread', 'scene_id', scene.id, 'thread_id').includes(thread.id))).map(thread => String(thread.title || String(thread.type).replaceAll('_', '-'))), pov_character_name: rows(s, 'character').find(c => c.id === scenes[0]?.pov_character_id)?.name, emotional_shift_from: act?.emotional_shift_from, emotional_shift_to: act?.emotional_shift_to, emotional_shift_inherited: true, scenes: scenes.map(scene => ({ scene_id: scene.id, title: scene.title, type: scene.type, status: scene.status, is_complete: out(scene, 'scene').completeness.is_complete })), placeholder_scene_count: scenes.filter(scene => !scene.content).length }
 }
 function search(s: Sandbox, params: URLSearchParams) {
-  const query = (params.get('q') ?? '').toLocaleLowerCase()
+  const query = foldAccents(params.get('q') ?? '')
   const context = params.get('context') ?? 'prose'
   const field = params.get('field')
   const entity = params.get('entity')
   const allowed = context === 'prose' ? ['scene'] : context === 'timeline' ? ['scene', 'event'] : [context]
   const hits = allowed.filter(kind => !entity || entity === kind).flatMap(kind => rows(s, kind).flatMap(row => {
-    const matches = Object.entries(row).filter(([name, value]) => typeof value === 'string' && !name.endsWith('_id') && name !== 'id' && (!field || field === name) && (context !== 'prose' || name === 'content') && value.toLocaleLowerCase().includes(query)).map(([name, value]) => { const text = String(value), at = text.toLocaleLowerCase().indexOf(query); return { field: name, excerpt: text.slice(Math.max(0, at - 80), at + query.length + 160) } })
+    const matches = Object.entries(row).filter(([name, value]) => typeof value === 'string' && !name.endsWith('_id') && name !== 'id' && (!field || field === name) && (context !== 'prose' || name === 'content') && foldAccents(value).includes(query)).map(([name, value]) => { const text = String(value), at = foldAccents(text).indexOf(query); return { field: name, excerpt: text.slice(Math.max(0, at - 80), at + query.length + 160) } })
     return matches.length ? [{ story_id: SANDBOX_ID, story_title: rows(s, 'story')[0].title, entity: kind, id: row.id, title: row.title ?? row.name ?? row.label ?? row.term, chapter_id: row.chapter_id, chapter_title: rows(s, 'chapter').find(c => c.id === row.chapter_id)?.title, matches }] : []
   }))
   const offset = Number(params.get('offset') ?? 0)

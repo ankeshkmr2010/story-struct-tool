@@ -25,6 +25,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from storytool.domain.enums import DEFAULT_LANGUAGE
 from storytool.domain.noticing.types import (
     CharacterNotice,
     Confidence,
@@ -104,6 +105,7 @@ class ClaudeNoticer:
         known_characters: tuple[KnownCharacter, ...],
         known_beats: tuple[KnownBeat, ...] = (),
         known_locations: tuple[KnownLocation, ...] = (),
+        language: str = DEFAULT_LANGUAGE,
     ) -> SceneNotices:
         if not prose.strip():
             return SceneNotices(noticed_by=self.name)
@@ -130,7 +132,9 @@ class ClaudeNoticer:
             )
         except Exception:
             logger.warning("Claude noticing failed; falling back to deterministic")
-            return await self._degrade(prose, known_characters, known_beats, known_locations)
+            return await self._degrade(
+                prose, known_characters, known_beats, known_locations, language
+            )
 
         # A safety decline is expected occasionally on fiction. Degrade, do not fail.
         if getattr(response, "stop_reason", None) == "refusal":
@@ -139,11 +143,15 @@ class ClaudeNoticer:
                 "Claude declined to read a scene (category=%s); using deterministic noticing",
                 getattr(details, "category", None),
             )
-            return await self._degrade(prose, known_characters, known_beats, known_locations)
+            return await self._degrade(
+                prose, known_characters, known_beats, known_locations, language
+            )
 
         parsed = getattr(response, "parsed_output", None)
         if parsed is None:
-            return await self._degrade(prose, known_characters, known_beats, known_locations)
+            return await self._degrade(
+                prose, known_characters, known_beats, known_locations, language
+            )
 
         return self._resolve(parsed, prose, known_characters, known_beats)
 
@@ -153,9 +161,10 @@ class ClaudeNoticer:
         known_characters: tuple[KnownCharacter, ...],
         known_beats: tuple[KnownBeat, ...],
         known_locations: tuple[KnownLocation, ...] = (),
+        language: str = DEFAULT_LANGUAGE,
     ) -> SceneNotices:
         return await self._fallback.notice_scene(  # type: ignore[attr-defined]
-            prose, known_characters, known_beats, known_locations
+            prose, known_characters, known_beats, known_locations, language
         )
 
     def _resolve(

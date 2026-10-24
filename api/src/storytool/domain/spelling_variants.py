@@ -240,4 +240,6 @@ def preferred_spellings(language: str) -> dict[str, str]:
     """Lower-case spelling that is wrong for `language` -> the spelling it prefers."""
     if language == Language.EN_GB:
         return {us: gb for us, gb, accepts in _PAIRS_ALL if not accepts}
-    return {gb: us for us, gb, _ in _PAIRS_ALL}
+    if language == Language.EN_US:
+        return {gb: us for us, gb, _ in _PAIRS_ALL}
+    return {}

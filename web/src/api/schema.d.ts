@@ -4171,7 +4171,7 @@ export interface components {
          * @description Writing language and spelling convention. A story without one follows its author's.
          * @enum {string}
          */
-        Language: "en-US" | "en-GB";
+        Language: "en-US" | "en-GB" | "fr" | "de" | "es" | "pt-PT" | "pt-BR" | "it";
         /** LatestPlace */
         LatestPlace: {
             /** Format: uuid */
