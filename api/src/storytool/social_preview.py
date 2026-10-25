@@ -16,7 +16,12 @@ from storytool.domain.story.models import Story
 from storytool.domain.story.showcase import StoryShowcase
 
 PAGES = {
-    "/": ("From idea to story", "Write, plan and connect your world.", "landing"),
+    "/": (
+        "Plan, write, and keep your novel consistent",
+        "Your manuscript, its structure and its timeline in one place, "
+        "with the AI you already use or none at all.",
+        "landing",
+    ),
     "/library": ("Your stories", "Your stories and writing workspace.", "stories"),
     "/roadmap": (
         "On the horizon",

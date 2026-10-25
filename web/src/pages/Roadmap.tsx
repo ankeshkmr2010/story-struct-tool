@@ -89,7 +89,7 @@ export default function Roadmap() {
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">{dayLabel(day)}</p>
           <ul className="mt-2 space-y-2">{items.filter(item => item.status === 'delivered' && item.delivered_on === day).map(item => <li key={item.id} className="text-sm leading-6">
             <span className={item.hero ? 'rounded-full px-2 py-0.5 font-semibold ring-1 ring-emerald-400 dark:ring-emerald-600' : 'font-semibold'}>{item.title}</span>
-            <span className="text-slate-600 dark:text-slate-300"> — {item.description}</span>{editButton(item)}
+            <span className="text-slate-600 dark:text-slate-300"> — {item.description.charAt(0).toUpperCase() + item.description.slice(1)}</span>{editButton(item)}
             {editing === item.id && editor}
           </li>)}</ul>
         </li>)}</ol>
