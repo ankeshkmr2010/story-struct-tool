@@ -89,7 +89,7 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
           return (
             <li key={run.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className={`rounded-full px-2 py-0.5 capitalize ${statusTone[run.status] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{valueLabel(run.status)}</span>
+                <span className={`rounded-full px-2 py-0.5 ${statusTone[run.status] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{valueLabel(run.status)}</span>
                 <span className="text-slate-500 dark:text-slate-400">{t('{0} · {1} · {2} change{3}{4}', run.provider === 'external' ? t('External agent') : t('Assistant'), new Date(run.created_at).toLocaleString(), operations.length, operations.length === 1 ? '' : t('s'), applied && applied.length < operations.length ? t(' · {0} accepted', applied.length) : '')}</span>
               </div>
               <p className={`mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200 ${open ? '' : 'line-clamp-2'}`}>{run.summary}</p>
