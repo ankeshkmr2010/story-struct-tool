@@ -17,12 +17,12 @@ const plan = [
 
 const craft = [
   ['01', tx('Know who wrote what'), tx('Your words and AI changes have a record. See who changed each field in History, review proposed edits, and copy an AI-use disclosure for agents, publishers or contests.')],
-  ['02', tx('Keep your threads connected'), tx('MICE thread nesting shows where each storyline opens and closes, and flags threads that resolve out of order. The built-in reader checks your prose, with no AI key needed.')],
-  ['03', tx('Find your scene rhythm'), tx('Scene and sequel checks highlight long runs of action or reaction, so you can decide where the story needs room to breathe.')],
-  ['04', tx('Misbelief at midpoint'), tx('Check how the midpoint challenges a character’s false belief, using evidence read from your scenes. No AI key needed.')],
-  ['05', tx('Value shift versus prose'), tx('Compare a scene’s planned emotional change with what its prose delivers, and consider where to revise.')],
-  ['06', tx('Writing checks you can shape'), tx('Set character limits, look for problems or compare actions and intentions. Try a sample and get your own advice beside highlighted sentences, without coding or changing your prose.')],
-  ['07', tx('Names and spellings, consistent'), tx('Catch Maia for Maya, colour in a US story and lantern-keeper written three ways. Smart consistency weighs how often each spelling appears and who is in the scene, and explains every finding.')],
+  ['02', tx('Names and spellings, consistent'), tx('Catch Maia for Maya, colour in a US story and lantern-keeper written three ways. Smart consistency weighs how often each spelling appears and who is in the scene, and explains every finding.')],
+  ['03', tx('Keep your threads connected'), tx('MICE thread nesting shows where each storyline opens and closes, and flags threads that resolve out of order. The built-in reader checks your prose, with no AI key needed.')],
+  ['04', tx('Find your scene rhythm'), tx('Scene and sequel checks highlight long runs of action or reaction, so you can decide where the story needs room to breathe.')],
+  ['05', tx('Misbelief at midpoint'), tx('Check how the midpoint challenges a character’s false belief, using evidence read from your scenes. No AI key needed.')],
+  ['06', tx('Value shift versus prose'), tx('Compare a scene’s planned emotional change with what its prose delivers, and consider where to revise.')],
+  ['07', tx('Writing checks you can shape'), tx('Set character limits, look for problems or compare actions and intentions. Try a sample and get your own advice beside highlighted sentences, without coding or changing your prose.')],
   ['08', tx('Fix it everywhere at once'), tx('Open any finding at its exact line, or fix every occurrence in one go after a snapshot. Add a variant as an alias, or keep both and it stops asking.')],
   ['09', tx('Leave a TK, keep writing'), tx('Type [TK: name of the inn] and carry on. Every placeholder waits in its own list to fill or remove, and export asks before one slips through.')],
 ] as const
@@ -65,7 +65,8 @@ export default function Landing() {
 
     <section className="landing-features" aria-labelledby="craft-title">
       <div className="section-intro"><p className="eyebrow">{t('SEE YOUR STORY CLEARLY')}</p><h2 id="craft-title">{t('See the changes.')}<br />{t('Check the craft.')}</h2><p>{t('On-demand suggestions, every craft check in one Run all, and a record of authorship, with you in control.')}</p></div>
-      <div className="feature-grid">{craft.map(([number, title, description]) => <article key={number}><span className="feature-number">{number}</span><h3>{t(title)}</h3><p>{t(description)}</p></article>)}</div>
+      <div className="feature-grid">{craft.slice(0, 3).map(([number, title, description]) => <article key={number}><span className="feature-number">{number}</span><h3>{t(title)}</h3><p>{t(description)}</p></article>)}</div>
+      <details className="feature-more"><summary>{t('More')}</summary><div className="feature-grid">{craft.slice(3).map(([number, title, description]) => <article key={number}><span className="feature-number">{number}</span><h3>{t(title)}</h3><p>{t(description)}</p></article>)}</div></details>
     </section>
 
     <section className="landing-writing" aria-labelledby="write-title">
