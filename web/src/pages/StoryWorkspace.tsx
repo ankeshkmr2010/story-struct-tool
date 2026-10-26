@@ -520,6 +520,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {/* The site header is hidden while a workspace is open; its links live here. */}
           {!sandbox && <Menu label="⋯" ariaLabel={t('Site menu')} triggerClassName="share-story-button"><MenuItem onSelect={() => navigate('/library')}>{t('Your stories')}</MenuItem><MenuItem onSelect={() => navigate('/how-to-use')}>{t('How to use')}</MenuItem><MenuItem onSelect={() => navigate('/roadmap')}>{t('Roadmap')}</MenuItem><MenuItem onSelect={() => navigate('/about')}>{t('About')}</MenuItem><MenuItem onSelect={() => navigate('/#mcp')}>{t('Connect AI')}</MenuItem><MenuItem onSelect={() => navigate('/feedback')}>{t('Feedback')}</MenuItem></Menu>}
           <ThemeToggle />
+          {/* Leaving the sandbox keeps it in this browser; save the open line first. */}
+          {sandbox && <button type="button" className="share-story-button" onClick={() => { void writerFlush.current().then(ok => ok ? navigate('/') : setTabError(t('Your line has not saved yet. Retry the save before leaving.'))) }}>{t('Exit')}</button>}
           {!sandbox && <AccountMenu />}
         </div>
       </header>
