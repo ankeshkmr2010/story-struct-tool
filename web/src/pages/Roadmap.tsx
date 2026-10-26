@@ -35,6 +35,13 @@ export default function Roadmap() {
       setEditing(null); setMessage(t('Roadmap saved.'))
     },
   })
+  const remove = useMutation({
+    mutationFn: (id: string) => api.deleteRoadmapItem(id),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['roadmap'] })
+      setEditing(null); setMessage(t('Roadmap item deleted.'))
+    },
+  })
   const open = (item?: RoadmapItem) => {
     if (editing && JSON.stringify(draft) !== baseline && !window.confirm(t('Discard unsaved roadmap changes?'))) return
     const next = item ? input(item) : blank()
@@ -47,7 +54,7 @@ export default function Roadmap() {
   }
   const editButton = (item: RoadmapItem) => admin.data?.is_admin && <button type="button" disabled={save.isPending} className="ml-2 text-xs underline underline-offset-4" onClick={() => open(item)}>{t('Edit')}</button>
   const editor = <form ref={formRef} className="my-4 rounded-lg border border-[var(--line)] bg-[var(--surface)] p-4" onSubmit={event => { event.preventDefault(); save.mutate() }}>
-    <fieldset disabled={save.isPending} className="space-y-3">
+    <fieldset disabled={save.isPending || remove.isPending} className="space-y-3">
       <legend className="mb-3 font-semibold">{editing === 'new' ? t('Add roadmap item') : t('Edit roadmap item')}</legend>
       <label className="block text-sm">{t('Title')}<input required maxLength={200} value={draft.title} onChange={event => setDraft({ ...draft, title: event.target.value })} className="mt-1 block w-full rounded border border-[var(--line)] bg-[var(--page)] p-2" /></label>
       <label className="block text-sm">{t('Description')}<textarea required maxLength={3000} rows={3} value={draft.description} onChange={event => setDraft({ ...draft, description: event.target.value })} className="mt-1 block w-full rounded border border-[var(--line)] bg-[var(--page)] p-2" /></label>
@@ -56,8 +63,9 @@ export default function Roadmap() {
         {draft.status === 'delivered' && <label className="text-sm">{t('Delivered date')}<input type="date" required value={draft.delivered_on ?? today} onChange={event => setDraft({ ...draft, delivered_on: event.target.value || null })} className="mt-1 block rounded border border-[var(--line)] bg-[var(--page)] p-2" /></label>}
         <label className="flex items-center gap-2 py-2 text-sm"><input type="checkbox" checked={draft.hero ?? false} onChange={event => setDraft({ ...draft, hero: event.target.checked })} />{t('Highlight as a hero feature')}</label>
       </div>
+      {remove.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{t('Could not delete. {0}', errorText(remove.error))}</p>}
       {save.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{t('Could not save. {0}', errorText(save.error))}</p>}
-      <div className="flex gap-3"><button type="submit" className="rounded bg-[var(--accent)] px-4 py-2 text-sm text-[var(--button-ink)]">{save.isPending ? t('Saving…') : t('Save item')}</button><button type="button" onClick={cancel} className="text-sm underline">{t('Cancel')}</button></div>
+      <div className="flex gap-3"><button type="submit" className="rounded bg-[var(--accent)] px-4 py-2 text-sm text-[var(--button-ink)]">{save.isPending ? t('Saving…') : t('Save item')}</button><button type="button" onClick={cancel} className="text-sm underline">{t('Cancel')}</button>{editing !== 'new' && <button type="button" onClick={() => { if (editing && window.confirm(t('Delete {0} from the roadmap?', draft.title))) remove.mutate(editing) }} className="ml-auto text-sm text-red-700 underline dark:text-red-300">{t('Delete')}</button>}</div>
     </fieldset>
   </form>
   const items = roadmap.data ?? []

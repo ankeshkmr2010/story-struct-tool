@@ -3,7 +3,7 @@
 from datetime import UTC, date, datetime
 from uuid import UUID
 
-from litestar import Controller, Request, get, patch, post
+from litestar import Controller, Request, delete, get, patch, post
 from litestar.exceptions import NotFoundException
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Boolean, CheckConstraint, Date, Float, String, Text, func, select
@@ -93,3 +93,11 @@ class AdminRoadmapController(Controller):
             setattr(row, field, value)
         await db_session.flush()
         return RoadmapOut.model_validate(row)
+
+    @delete("/{item_id:uuid}")
+    async def delete_item(self, request: Request, db_session: AsyncSession, item_id: UUID) -> None:
+        await require_admin(request, db_session)
+        row = await db_session.get(RoadmapItem, item_id)
+        if row is None:
+            raise NotFoundException(detail="Roadmap item not found")
+        await db_session.delete(row)

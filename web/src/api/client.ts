@@ -166,6 +166,7 @@ export const api = {
   listRoadmap: () => request<RoadmapItem[]>('/api/roadmap'),
   createRoadmapItem: (body: RoadmapInput) => post<RoadmapItem>('/api/admin/roadmap', body),
   updateRoadmapItem: (id: string, body: RoadmapInput) => patch<RoadmapItem>(`/api/admin/roadmap/${id}`, body),
+  deleteRoadmapItem: (id: string) => request<void>(`/api/admin/roadmap/${id}`, { method: 'DELETE' }),
   getLatestWorkspacePosition: () => request<{ story_id: string; title: string; position: WorkspacePlace; updated_at: string } | null>('/api/workspace-position/latest'),
   getWorkspacePosition: (storyId: string) => request<WorkspacePlace | null>(`/api/workspace-position/${storyId}`),
   saveWorkspacePosition: (storyId: string, position: WorkspacePlace) => request<WorkspacePlace>(`/api/workspace-position/${storyId}`, { method: 'PUT', body: JSON.stringify(position), keepalive: true }),
