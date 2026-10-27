@@ -8,15 +8,15 @@ const SHOWCASE = '/showcase/lkw4Mh-vzZpNfsVV0KDkyPxJ9KZo9H0E'
 
 // Screenshots come from the /try sandbox (The Last Lantern), light theme, at 2x.
 const proof: [ReactNode, string][] = [
-  [<><path d="M12 8v4l3 2" /><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></>, tx('Know who wrote what')],
-  [<><path d="M4 7V4h16v3" /><path d="M9 20h6" /><path d="M12 4v16" /></>, tx('Names stay consistent')],
-  [<><path d="M20 6 9 17l-5-5" /></>, tx('Craft checks, no AI key needed')],
+  [<><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></>, tx('Plan your cast, world and timeline')],
+  [<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>, tx('Connect the AI you already use')],
+  [<><path d="M20 6 9 17l-5-5" /></>, tx('Review what it changes')],
 ]
 
 const showcase = [
-  { id: 'consistency', title: tx('Catches Maia for Maya.'), line: tx('Spot every slip and fix them all in one go, with a snapshot first.'), image: '/landing/consistency.webp', alt: tx('Smart consistency finding: Maia is probably Maya, with fix options'), guide: '/how-to-use#feedback' },
-  { id: 'craft', title: tx('See the shape of your book.'), line: tx('Pacing, scene rhythm, MICE threads and midpoint checks, all in one Run all.'), image: '/landing/pacing.webp', alt: tx('Pacing view: scene length, value shift and point of view for every scene'), guide: '/how-to-use#feedback' },
-  { id: 'ai', title: tx('Your AI proposes. You choose.'), line: tx('Every edit is a proposal, and History shows who wrote what, ready to disclose.'), image: '/landing/proposal.webp', alt: tx('An AI proposal for a scene summary, cast and plan links, waiting for review'), guide: '/how-to-use#write-with-ai' },
+  { id: 'consistency', title: tx('Never lose track of a name.'), line: tx('StoryTool spots the Maia who should be Maya and fixes every copy at once, with a snapshot first.'), image: '/landing/consistency.webp', alt: tx('Smart consistency finding: Maia is probably Maya, with fix options'), guide: '/how-to-use#feedback' },
+  { id: 'craft', title: tx('See where your plot sags.'), line: tx('Check pacing, scene length and point of view across the whole book, no AI needed.'), image: '/landing/pacing.webp', alt: tx('Pacing view: scene length, value shift and point of view for every scene'), guide: '/how-to-use#feedback' },
+  { id: 'ai', title: tx('AI help, without losing control.'), line: tx('Your AI drafts and edits alongside you. Review any change, undo it, and see who wrote what.'), image: '/landing/proposal.webp', alt: tx('An AI proposal for a scene summary, cast and plan links, waiting for review'), guide: '/how-to-use#write-with-ai' },
 ]
 
 // [tab, one line, screenshot, alt, guide]
@@ -38,8 +38,8 @@ export default function Landing() {
   return <main className="landing">
     <section className="landing-hero" aria-labelledby="landing-title">
       <div className="hero-copy">
-        <h1 id="landing-title">{t('Plan, write, and keep')}<br /><em>{t('your novel consistent.')}</em></h1>
-        <p className="hero-description">{t('Use the AI you already have, or none at all.')}</p>
+        <h1 id="landing-title">{t('Your novel\'s memory,')}<br /><em>{t('for you and your AI.')}</em></h1>
+        <p className="hero-description">{t('For novelists: cast, world, timeline and chapters in one place. Connect Claude, ChatGPT or Gemini to work on it with you, or write with no AI at all.')}</p>
         <div className="hero-actions"><Link to="/try" className="landing-primary">{t('Try the guided tour')}{' '}<small>{t('3 min, no account')}</small></Link><Link to="/library" className="landing-secondary">{t('Start writing')}{' '}<span aria-hidden="true">→</span></Link></div>
         <p className="hero-trust"><Link to="/pricing">{t('Free during beta')}</Link><span aria-hidden="true">·</span><Link to="/privacy">{t('Never trains AI on your manuscript')}</Link></p>
       </div>
@@ -59,8 +59,8 @@ export default function Landing() {
       </div>
     </section>
 
-    <section className="proof-strip" aria-label={t('What StoryTool does')}>
-      {proof.map(([icon, label]) => <p key={label}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{icon}</svg>{t(label)}</p>)}
+    <section className="proof-strip" aria-label={t('How it works')}>
+      {proof.map(([icon, label], index) => <p key={label}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{icon}</svg>{index + 1}. {t(label)}</p>)}
     </section>
 
     {showcase.map(({ id, title, line, image, alt, guide }, index) => <section key={id} className={`landing-showcase${index % 2 ? ' is-reversed' : ''}`} aria-labelledby={`${id}-title`}>
@@ -69,8 +69,8 @@ export default function Landing() {
     </section>)}
 
     <section className="landing-tour" aria-labelledby="more-title">
-      <h2 id="more-title">{t('Everything else')}</h2>
-      <div className="tour-tabs" role="tablist" aria-label={t('Everything else')} onKeyDown={event => {
+      <h2 id="more-title">{t('Write, read, share')}</h2>
+      <div className="tour-tabs" role="tablist" aria-label={t('Write, read, share')} onKeyDown={event => {
         const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
         if (!step) return
         const next = (tab + step + tabs.length) % tabs.length
@@ -80,7 +80,8 @@ export default function Landing() {
     </section>
 
     <section className="landing-closing" aria-labelledby="keep-title">
-      <h2 id="keep-title">{t('Your words can always leave.')}</h2>
+      <h2 id="keep-title">{t('Try it on a sample novel.')}</h2>
+      <p>{t('Bring your draft in, and take it out any time:')}</p>
       <ul className="format-row" aria-label={t('Import and export formats')}>{['Word', 'Scrivener', 'EPUB', 'PDF', 'Markdown'].map(name => <li key={name}>{name}</li>)}</ul>
       <div className="hero-actions"><Link to="/try" className="landing-primary">{t('Try the guided tour')}{' '}<span aria-hidden="true">→</span></Link><Link to={SHOWCASE} className="landing-secondary">{t('See a finished story →')}</Link></div>
     </section>
