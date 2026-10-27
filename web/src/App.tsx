@@ -69,7 +69,7 @@ export default function App() {
           <NavLink to="/how-to-use" className="site-nav-link">{t('How to use')}</NavLink>
           <NavLink to="/roadmap" className="site-nav-link">{t('Roadmap')}</NavLink>
           <NavLink to="/about" className="site-nav-link">{t('About')}</NavLink>
-          <a href="/#mcp" className={`site-nav-link ${location.hash === '#mcp' ? 'is-active' : ''}`}>{t('Connect AI')}</a>
+          <Link to="/how-to-use#mcp" className={`site-nav-link ${location.hash === '#mcp' ? 'is-active' : ''}`}>{t('Connect AI')}</Link>
           <NavLink to="/feedback" className="site-nav-link site-feedback-link">{t('Feedback')}</NavLink>
         </nav>}
         <div className="site-header-actions"><LanguageToggle signedIn={!sandbox} /><ThemeToggle />{!sandbox && <AccountMenu />}</div>

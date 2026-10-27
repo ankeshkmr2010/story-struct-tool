@@ -17,7 +17,7 @@ export default function Pricing() {
       <section className="mt-10 space-y-3" aria-labelledby="ai-costs-title">
         <h2 id="ai-costs-title" className="text-xl font-semibold">{t('AI costs are separate')}</h2>
         <p className="leading-7 text-[var(--muted)]">{t('Use the AI client you already have, or connect your own provider API key for the in-app assistant. Any client subscription or API charges are set by that service and are separate from StoryTool.')}</p>
-        <Link to="/#mcp" className="underline underline-offset-4">{t('See how to connect your AI →')}</Link>
+        <Link to="/how-to-use#mcp" className="underline underline-offset-4">{t('See how to connect your AI →')}</Link>
       </section>
       <section className="mt-10 space-y-3" aria-labelledby="future-pricing-title">
         <h2 id="future-pricing-title" className="text-xl font-semibold">{t('After beta')}</h2>
