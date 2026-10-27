@@ -135,6 +135,7 @@ button:not(:disabled), summary { cursor: pointer; }
 .feature-more > summary:hover { text-decoration: underline; text-underline-offset: 5px; }
 /* Homepage (2026-10-27): one idea per section, each with a real screenshot. */
 .landing-primary small { font-weight: 400; opacity: .8; }
+.landing-closing .landing-primary { gap: 8px; }
 .hero-trust { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; font-size: 13px; color: var(--muted); }
 .hero-trust a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
 .hero-trust a:hover { text-decoration-color: currentColor; }
