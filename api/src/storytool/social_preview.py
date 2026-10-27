@@ -17,9 +17,9 @@ from storytool.domain.story.showcase import StoryShowcase
 
 PAGES = {
     "/": (
-        "Plan, write, and keep your novel consistent",
-        "Your manuscript, its structure and its timeline in one place, "
-        "with the AI you already use or none at all.",
+        "Your novel’s memory, for you and your AI",
+        "For novelists: cast, world, timeline and chapters in one place, "
+        "with Claude, ChatGPT, Gemini or no AI at all.",
         "landing",
     ),
     "/library": ("Your stories", "Your stories and writing workspace.", "stories"),

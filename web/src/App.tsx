@@ -32,7 +32,7 @@ const TryLocked = lazy(() => import('./pages/TryStory').then(m => ({ default: m.
 
 // Browser tab titles by route; story pages refine theirs once the story's title loads.
 const PAGE_TITLES: [RegExp, string][] = [
-  [/^\/$/, tx('StoryTool — Plan, write, and keep your novel consistent')], [/^\/try/, tx('Try StoryTool')], [/^\/how-to-use/, tx('How to use · StoryTool')],
+  [/^\/$/, tx('StoryTool — Your novel’s memory, for you and your AI')], [/^\/try/, tx('Try StoryTool')], [/^\/how-to-use/, tx('How to use · StoryTool')],
   [/^\/roadmap/, tx('Roadmap · StoryTool')], [/^\/thanks/, tx('Shoutouts · StoryTool')], [/^\/about/, tx('About the developer · StoryTool')], [/^\/pricing/, tx('Pricing · StoryTool')],
   [/^\/privacy/, tx('Privacy · StoryTool')], [/^\/library/, tx('Your stories · StoryTool')], [/^\/settings/, tx('Settings · StoryTool')],
   [/^\/checks/, tx('Writing checks · StoryTool')], [/^\/feedback/, tx('Feedback · StoryTool')], [/^\/oauth/, tx('Connect AI · StoryTool')],
