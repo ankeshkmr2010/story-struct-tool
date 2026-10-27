@@ -77,6 +77,8 @@ def frontend_router(directory: Path) -> Router:
         )
     if (directory / "sandbox").is_dir():
         handlers.append(create_static_files_router("/sandbox", directories=[directory / "sandbox"]))
+    if (directory / "landing").is_dir():
+        handlers.append(create_static_files_router("/landing", directories=[directory / "landing"]))
     if (directory / "vite.svg").is_file():
 
         @get("/vite.svg", include_in_schema=False)
