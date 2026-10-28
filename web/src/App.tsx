@@ -1,9 +1,9 @@
-import { Link, NavLink, Outlet, Route, Routes, useLocation } from 'react-router-dom'
+import { Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from 'react'
 import Landing from './pages/Landing'
-import { ThemeProvider, ThemeToggle } from './components/Theme'
-import { LanguageToggle } from './components/LanguageToggle'
-import { AccountMenu, AuthGate } from './components/AuthGate'
+import { ThemeProvider } from './components/Theme'
+import { AuthGate } from './components/AuthGate'
+import { SiteHeader } from './components/SiteHeader'
 import StoryList from './pages/StoryList'
 import StoryWorkspace from './pages/StoryWorkspace'
 import StoryImagesPage from './pages/StoryImagesPage'
@@ -62,18 +62,7 @@ export default function App() {
   }, [location.pathname, location.hash])
   return (
     <ThemeProvider>
-      <header ref={header} className={`site-header${location.pathname.startsWith('/stories/') || sandbox ? ' is-compact' : ''}`}>
-        <Link to="/" className="site-brand"><img src="/branding/storytool.svg" alt="" width="32" height="32" />{t('StoryTool')}</Link>
-        {!sandbox && <nav aria-label={t('Main navigation')}>
-          <NavLink to="/library" className={`site-nav-link ${location.pathname.startsWith('/stories/') ? 'is-active' : ''}`}>{t('Your stories')}</NavLink>
-          <NavLink to="/how-to-use" className="site-nav-link">{t('How to use')}</NavLink>
-          <NavLink to="/roadmap" className="site-nav-link">{t('Roadmap')}</NavLink>
-          <NavLink to="/about" className="site-nav-link">{t('About')}</NavLink>
-          <Link to="/how-to-use#mcp" className={`site-nav-link ${location.hash === '#mcp' ? 'is-active' : ''}`}>{t('Connect AI')}</Link>
-          <NavLink to="/feedback" className="site-nav-link site-feedback-link">{t('Feedback')}</NavLink>
-        </nav>}
-        <div className="site-header-actions"><LanguageToggle signedIn={!sandbox} /><ThemeToggle />{!sandbox && <AccountMenu />}</div>
-      </header>
+      <SiteHeader headerRef={header} sandbox={sandbox} compact={location.pathname.startsWith('/stories/') || sandbox} />
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/try" element={<Suspense fallback={<p className="p-8">{t('Opening sandbox…')}</p>}><TryStory /></Suspense>} />

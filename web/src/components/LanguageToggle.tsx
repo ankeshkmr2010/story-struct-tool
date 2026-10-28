@@ -30,12 +30,10 @@ function Flag({ code }: { code: string }) {
 
 /** Interface language, beside the theme toggle. Kept in this browser and, when signed in, on
  * the account so it follows the author to other devices. */
-export function LanguageToggle({ signedIn = true }: { signedIn?: boolean }) {
+export function useLanguageChoice(signedIn = true) {
   const language = useUiLanguage()
   const qc = useQueryClient()
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, retry: false, enabled: signedIn })
-  const [open, setOpen] = useState(false)
-  const box = useRef<HTMLDivElement>(null)
   const current = UI_LANGUAGES.find(option => option.id === language) ?? UI_LANGUAGES[0]
 
   // The account's choice wins once signed in; an account without one takes this browser's.
@@ -51,6 +49,18 @@ export function LanguageToggle({ signedIn = true }: { signedIn?: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me.data?.id, saved])
 
+  const choose = (next: UiLanguage) => {
+    void setUiLanguage(next)
+    if (me.data) void api.saveProfile({ ui_language: next }).then(user => qc.setQueryData(['me'], user)).catch(() => {})
+  }
+  return { language, current, choose }
+}
+
+export function LanguageToggle({ signedIn = true }: { signedIn?: boolean }) {
+  const { language, current, choose: pick } = useLanguageChoice(signedIn)
+  const [open, setOpen] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     if (!open) return
     const close = (event: MouseEvent | KeyboardEvent) => {
@@ -61,11 +71,7 @@ export function LanguageToggle({ signedIn = true }: { signedIn?: boolean }) {
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', close) }
   }, [open])
 
-  const choose = (next: UiLanguage) => {
-    setOpen(false)
-    void setUiLanguage(next)
-    if (me.data) void api.saveProfile({ ui_language: next }).then(user => qc.setQueryData(['me'], user)).catch(() => {})
-  }
+  const choose = (next: UiLanguage) => { setOpen(false); pick(next) }
 
   return <div className="language-toggle" ref={box}>
     <button type="button" className="theme-toggle" aria-haspopup="menu" aria-expanded={open} aria-label={t('Interface language: {0}', current.label)} onClick={() => setOpen(value => !value)}>

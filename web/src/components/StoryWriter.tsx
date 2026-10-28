@@ -383,7 +383,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
         next.focus()
         return true
       } }))),
-      EditorView.theme({ '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' }, '.cm-scroller': { fontFamily: 'Georgia, serif', fontSize: '18px', overflow: 'visible' }, '.cm-content': { padding: '12px 0 24px', lineHeight: '1.9' }, '.cm-focused': { outline: 'none' }, '.cm-cursor': { borderLeftColor: 'var(--accent)' } }),
+      EditorView.theme({ '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' }, '.cm-scroller': { fontFamily: 'var(--font-serif)', fontSize: '18px', overflow: 'visible' }, '.cm-content': { padding: '12px 0 24px', lineHeight: '1.9' }, '.cm-focused': { outline: 'none' }, '.cm-cursor': { borderLeftColor: 'var(--accent)' } }),
     ]} basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, bracketMatching: false, closeBrackets: false, autocompletion: false }} />
     {liveHints && scene && <LiveWritingHints key={scene.id} slot={hintsSlot} storyId={storyId} sceneId={scene.id} sceneTitle={scene.title} content={state.text} currentParagraph={hintParagraph} onParagraph={(paragraph, find, wholeScene) => {
       const editor = view.current

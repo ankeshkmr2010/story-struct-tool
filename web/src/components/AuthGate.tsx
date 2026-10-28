@@ -89,6 +89,17 @@ export function AuthGate({ children, prompt = t('Sign in with Google to open you
   )
 }
 
+/** Signs out, drops this tab's unsaved writer drafts and goes home. */
+export function useLogout() {
+  return useMutation({
+    mutationFn: api.logout,
+    onSuccess: () => {
+      try { for (const key of Object.keys(sessionStorage)) if (key.startsWith('storytool-writer:')) sessionStorage.removeItem(key) } catch { /* Browser storage may be unavailable. */ }
+      window.location.assign('/')
+    },
+  })
+}
+
 export function AccountMenu() {
   const menu = useRef<HTMLDetailsElement>(null)
   useEffect(() => {
@@ -98,13 +109,7 @@ export function AccountMenu() {
     return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', escape) }
   }, [])
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, retry: false })
-  const logout = useMutation({
-    mutationFn: api.logout,
-    onSuccess: () => {
-      try { for (const key of Object.keys(sessionStorage)) if (key.startsWith('storytool-writer:')) sessionStorage.removeItem(key) } catch { /* Browser storage may be unavailable. */ }
-      window.location.assign('/')
-    },
-  })
+  const logout = useLogout()
 
   if (!me.data) return null
   return (
