@@ -9,10 +9,10 @@ import { valueLabel } from '../i18n/server'
 
 const STATUSES = ['placeholder', 'outlined', 'drafted', 'revised']
 const STATUS_DOT: Record<string, string> = {
-  placeholder: 'bg-slate-400',
-  outlined: 'bg-sky-500',
-  drafted: 'bg-emerald-500',
-  revised: 'bg-violet-500',
+  placeholder: 'bg-[var(--faint)]',
+  outlined: 'bg-[var(--amber)]',
+  drafted: 'bg-green-400',
+  revised: 'bg-[var(--accent)]',
 }
 const AGENT_ORIGINS = new Set(['mcp', 'assistant'])
 const DAY = 24 * 60 * 60 * 1000
@@ -146,7 +146,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
   const clamp = prefs.compact ? 'line-clamp-1' : 'line-clamp-2'
   const text = (value: string | null | undefined) => value?.trim()
     ? <span title={value} className={`${clamp} text-slate-700 dark:text-slate-300`}>{value}</span>
-    : <span className="text-slate-300 dark:text-slate-600">—</span>
+    : <span className="text-slate-400 dark:text-slate-500">—</span>
   const has = (value: unknown) => typeof value === 'string' ? value.trim() !== '' : value != null
 
   const columns: Column[] = [
@@ -274,7 +274,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
               <col className="w-8" /><col className="w-44" /><col className="w-10" />
               {shown.map((column) => <col key={column.key} className={column.width} />)}
             </colgroup>
-            <thead className="text-[10px] uppercase tracking-wide text-slate-400">
+            <thead className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
               <tr>
                 <th className={headCell}>#</th>
                 <th className={headCell}>{t('Scene')}</th>
@@ -296,7 +296,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                     <span className="flex items-center gap-2">
                       <span className="inline-block w-3">{group.shut ? '▸' : '▾'}</span>
                       <span className="truncate">{group.label}</span>
-                      <span className="font-normal text-slate-400">{t('{0} scenes · {1} words', group.scenes.length, group.scenes.reduce((sum, scene) => sum + (scene.word_count ?? 0), 0))}</span>
+                      <span className="font-normal text-slate-400">{t(group.scenes.length === 1 ? '{0} scene · {1} words' : '{0} scenes · {1} words', group.scenes.length, group.scenes.reduce((sum, scene) => sum + (scene.word_count ?? 0), 0))}</span>
                       <span className="ml-auto flex gap-0.5" aria-label={t('Value shift per scene')}>
                         {group.scenes.map((scene) => <span key={scene.id} title={`${scene.title ?? t('Untitled')}: ${shiftKind(scene) === 'shift' ? t('value shifts') : shiftKind(scene) === 'flat' ? t('no shift') : t('not set')}`} className={`h-3 w-1.5 rounded-sm ${SHIFT_COLOR[shiftKind(scene)]}`} />)}
                       </span>

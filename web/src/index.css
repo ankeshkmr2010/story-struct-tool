@@ -1206,3 +1206,26 @@ ol.showcase-list { list-style: decimal; }
   .sh-right .sh-signin-bar { display: none; }
   .sh-sheet .sh-signin-sheet { display: inline-flex; }
 }
+
+/* Design review fixes (2026-10-29). */
+/* Dark homepage: light-cream screenshots dimmed so they don't outshine the page. */
+:root[data-theme=dark] .lp-frame img { filter: brightness(.72) contrast(1.05); }
+/* Dark homepage: readable step icons, chart labels and legend. */
+:root[data-theme=dark] .lp-step-num { color: #8fc3a8; }
+:root[data-theme=dark] .lp-chart-label { fill: var(--ink); }
+:root[data-theme=dark] .lp-legend { color: var(--ink); }
+:root[data-theme=dark] .lp-chart-bar { fill: var(--accent); background: var(--accent); }
+/* Hero trust row: the separator belongs to the item before it, so a wrapped line never starts with "·". */
+.lp-trust li + li::before { content: none; }
+.lp-trust li:not(:last-child)::after { content: "·"; margin: 0 12px; }
+/* Reader: Appearance opens as a row under the controls instead of covering the text. */
+.reading-appearance[open] { flex-basis: 100%; order: 1; }
+.reading-controls .reading-appearance-panel { position: static; width: auto; max-height: none; margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 24px; align-items: end; box-shadow: none; background: var(--band); }
+.reading-controls .reading-appearance-panel > label { margin: 0; }
+.reading-progress { color: var(--ink); font-size: 12px; }
+.reading-scene-context { font: 12px/1.5 var(--font-sans); color: var(--ink); border: 1px solid var(--line); }
+/* Active tab in reader and showcase toolbars: forest green like every other tab. */
+.reader-toolbar button[aria-pressed="true"] { background: var(--button); border-color: var(--button); color: var(--button-ink); }
+/* Feedback: plain text like the main links, not a pill. */
+.sh-ghost.sh-fb { border-color: transparent; padding: 0 6px; }
+.sh-ghost.sh-fb:hover, .sh-ghost.sh-fb.active { border-color: transparent; }
