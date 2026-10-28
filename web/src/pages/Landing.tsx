@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import '@fontsource-variable/fraunces/opsz.css'
-import '@fontsource-variable/fraunces/opsz-italic.css'
-import '@fontsource-variable/inter'
 import { t, tx } from '../i18n'
 
 // A complete public story, linked so visitors can see the result before signing in.

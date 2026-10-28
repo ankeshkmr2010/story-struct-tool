@@ -5,6 +5,9 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { initUiLanguage } from './i18n'
 import { LanguageRoot } from './i18n/LanguageRoot'
+import '@fontsource-variable/fraunces/opsz.css'
+import '@fontsource-variable/fraunces/opsz-italic.css'
+import '@fontsource-variable/inter'
 import './index.css'
 
 const queryClient = new QueryClient({

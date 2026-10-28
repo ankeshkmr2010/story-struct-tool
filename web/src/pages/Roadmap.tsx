@@ -65,7 +65,7 @@ export default function Roadmap() {
       </div>
       {remove.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{t('Could not delete. {0}', errorText(remove.error))}</p>}
       {save.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{t('Could not save. {0}', errorText(save.error))}</p>}
-      <div className="flex gap-3"><button type="submit" className="rounded bg-[var(--accent)] px-4 py-2 text-sm text-[var(--button-ink)]">{save.isPending ? t('Saving…') : t('Save item')}</button><button type="button" onClick={cancel} className="text-sm underline">{t('Cancel')}</button>{editing !== 'new' && <button type="button" onClick={() => { if (editing && window.confirm(t('Delete {0} from the roadmap?', draft.title))) remove.mutate(editing) }} className="ml-auto text-sm text-red-700 underline dark:text-red-300">{t('Delete')}</button>}</div>
+      <div className="flex gap-3"><button type="submit" className="rounded bg-[var(--button)] px-4 py-2 text-sm text-[var(--button-ink)]">{save.isPending ? t('Saving…') : t('Save item')}</button><button type="button" onClick={cancel} className="text-sm underline">{t('Cancel')}</button>{editing !== 'new' && <button type="button" onClick={() => { if (editing && window.confirm(t('Delete {0} from the roadmap?', draft.title))) remove.mutate(editing) }} className="ml-auto text-sm text-red-700 underline dark:text-red-300">{t('Delete')}</button>}</div>
     </fieldset>
   </form>
   const items = roadmap.data ?? []
