@@ -1304,3 +1304,11 @@ p.ws-card-note { margin-top: 8px; }
 .ws-cast strong { display: block; font-size: 13px; font-weight: 500; }
 .ws-cast small { display: block; color: var(--faint); font-size: 12px; }
 .ws-cast-avatar { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--button); color: var(--button-ink); font-size: 12px; font-weight: 600; }
+/* Phase 3 fixes: the title's ellipsis clipped the story switcher; scene names sized to their text. */
+.ws-title h1 { overflow: visible; }
+.writer-passage-heading > span:first-child { max-width: 100%; }
+.writer-passage-heading input { field-sizing: content; min-width: 12ch; max-width: 100%; }
+@supports not (field-sizing: content) {
+  .writer-passage-heading > span:first-child { flex: 1 1 200px; }
+  .writer-passage-heading::after { display: none; }
+}
