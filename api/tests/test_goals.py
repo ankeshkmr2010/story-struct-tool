@@ -88,3 +88,12 @@ async def test_connected_ai_reads_goals_but_cannot_set_them(client):
         f"/api/stories/{sid}/goal", json={"target_words": 9}, headers=headers
     )
     assert blocked.status_code in {401, 403}
+
+
+async def test_goals_page_lists_every_story(client):
+    story_id, _ = await _story_with_scene(client, "Listed")
+    other, _ = await _story_with_scene(client, "No goal")
+    await client.put(f"/api/stories/{story_id}/goal", json={"target_words": 300})
+    rows = {row["story_id"]: row for row in (await client.get("/api/goals/stories")).json()}
+    assert rows[story_id]["goal"]["target_words"] == 300 and rows[story_id]["title"] == "Listed"
+    assert rows[other]["goal"] is None

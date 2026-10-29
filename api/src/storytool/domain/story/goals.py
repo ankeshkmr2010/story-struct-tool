@@ -281,6 +281,7 @@ class GoalsOut(BaseModel):
     week_sprint_words: int
     active_sprint: SprintOut | None
     last_sprint: SprintOut | None
+    recent_sprints: list[SprintOut]
 
 
 class StoryGoalIn(BaseModel):
@@ -307,6 +308,12 @@ class HabitOut(BaseModel):
     daily_words: int | None
     today_words: int
     streak: int
+
+
+class StoryGoalRow(BaseModel):
+    story_id: UUID
+    title: str
+    goal: StoryGoalOut | None
 
 
 class StoryGoalEnvelope(BaseModel):
@@ -467,7 +474,30 @@ class GoalsController(Controller):
             week_sprint_words=sum(sprint.words for sprint in finished),
             active_sprint=sprint_out(active, now) if active else None,
             last_sprint=sprint_out(finished[0], now) if finished else None,
+            recent_sprints=[sprint_out(sprint, now) for sprint in finished],
         )
+
+    @get("/stories", summary="Every story with its goal and pace, for the Goals page")
+    async def stories(self, request: Request, db_session: AsyncSession) -> list[StoryGoalRow]:
+        user_id: UUID = request.scope["state"]["storytool_user_id"]
+        settings = await goal_settings(db_session, user_id)
+        today = datetime.now(UTC).astimezone(zone(settings.timezone)).date()
+        goals = {
+            goal.story_id: goal
+            for goal in await db_session.scalars(
+                select(StoryGoal).where(StoryGoal.user_id == user_id)
+            )
+        }
+        rows = []
+        for story_id, title in await db_session.execute(
+            select(Story.id, Story.title)
+            .where(Story.user_id == user_id, Story.deleted_at.is_(None))
+            .order_by(Story.updated_at.desc())
+        ):
+            goal = goals.get(story_id)
+            summary = await story_goal_summary(db_session, goal, settings, today) if goal else None
+            rows.append(StoryGoalRow(story_id=story_id, title=title, goal=summary))
+        return rows
 
     @put(summary="Set the daily goal and its rules")
     async def save(

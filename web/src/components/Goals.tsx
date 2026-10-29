@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { api, type GoalSettings, type Goals, type StoryGoal, type StoryGoalEnvelope } from '../api/client'
 import { errorText } from '../api/errors'
 import { useWriterStatus } from './writerDraft'
@@ -191,6 +192,7 @@ export function StoryGoalForm({ storyId, onSaved }: { storyId: string; onSaved?:
   const refresh = (data?: StoryGoalEnvelope) => {
     if (data) qc.setQueryData(['story-goal', storyId], data)
     void qc.invalidateQueries({ queryKey: ['library-overview'] })
+    void qc.invalidateQueries({ queryKey: ['goal-stories'] })
     onSaved?.()
   }
   const save = useMutation({
@@ -217,7 +219,7 @@ export function GoalsDialog({ storyId, storyTitle, onClose }: { storyId?: string
   const dialog = useRef<HTMLDialogElement>(null)
   useEffect(() => { dialog.current?.showModal() }, [])
   return <dialog ref={dialog} className="goal-dialog" aria-labelledby="goal-dialog-title" onClose={onClose} onCancel={onClose}>
-    <div className="goal-dialog-head"><h2 id="goal-dialog-title">{t('Writing goals')}</h2><button type="button" aria-label={t('Close')} onClick={() => dialog.current?.close()}>×</button></div>
+    <div className="goal-dialog-head"><h2 id="goal-dialog-title">{t('Writing goals')}</h2><Link to="/goals" className="goal-link" onClick={() => dialog.current?.close()}>{t('All goals →')}</Link><button type="button" aria-label={t('Close')} onClick={() => dialog.current?.close()}>×</button></div>
     <section><h3>{t('Daily habit · all stories')}</h3><HabitGoalForm /></section>
     {storyId && <section><h3>{storyTitle ? t('This story · {0}', storyTitle) : t('This story')}</h3><StoryGoalForm storyId={storyId} /></section>}
   </dialog>

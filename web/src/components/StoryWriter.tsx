@@ -195,10 +195,6 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
         {chapterScenes.map((scene, index) => <Passage key={scene.id} {...{ storyId, prefix, scene, hintsSlot }} liveHints={liveHints && contextScene?.id === scene.id} separator={index > 0} focus={focusTarget === scene.id} onFocus={() => setActiveScene(scene.id)} refresh={refresh} />)}
         {chapterScenes.length === 0 && <Passage key={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} {...{ storyId, prefix }} draftKey={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} focus={focusTarget === 'blank'} createScene={createScene} onCreated={onCreated} onFocus={() => {}} refresh={refresh} />}
         {!unfiled && chapter && <div className="writer-chapter-extras" key={`end-${chapter.id}`}><ChapterExtra label={t('Closing note')} add={t('Add closing note')} value={chapter.closing_note} placeholder={t('Closing flavour text')} onSave={async closing_note => { await api.updateChapter(storyId, chapter.id, { closing_note }); refresh() }} /></div>}
-        <div className="writer-statusbar">
-          <span>{t('{0} words in scene · {1} total', sceneWords.toLocaleString(getUiLanguage()), totalWords.toLocaleString(getUiLanguage()))} · <SaveState storyId={storyId} /></span>
-          {storyId === SANDBOX_ID ? <button type="button" onClick={() => onFocusChange(!focus)} aria-pressed={focus}>{t('Focus')}</button> : <GoalBar storyId={storyId} focus={focus} onFocus={onFocusChange} />}
-        </div>
         <div className="writer-continuation">
           {chapterScenes.length > 0 && <button type="button" disabled={adding} onClick={() => { void addScene() }}>{t('+ Scene break at end')}</button>}
           <button type="button" disabled={adding} onClick={() => { void addChapter() }}>{t('+ Next chapter')}</button>
@@ -212,6 +208,11 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
         {contextScene && <SceneRevisions key={`rev-${contextScene.id}`} storyId={storyId} sceneId={contextScene.id} flush={() => flushWriter(prefix)} onRestored={text => writerDraft(prefix + contextScene.id, text).useLatest(text)} />}
         <p className="writer-help">{t('Timeline, places, glossary and the assistant are tabs in this panel; Design holds the full outline.')}</p>
       </div>, contextSlot)}
+    </div>
+    {/* Status strip along the bottom of Write, outside the page so it never covers prose. */}
+    <div className="writer-statusbar">
+      <span>{t('{0} words in scene · {1} total', sceneWords.toLocaleString(getUiLanguage()), totalWords.toLocaleString(getUiLanguage()))} · <SaveState storyId={storyId} /></span>
+      {storyId === SANDBOX_ID ? <button type="button" onClick={() => onFocusChange(!focus)} aria-pressed={focus}>{t('Focus')}</button> : <GoalBar storyId={storyId} focus={focus} onFocus={onFocusChange} />}
     </div>
   </div>
 }

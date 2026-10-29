@@ -210,6 +210,7 @@ export default function StoryList() {
           <MenuItem disabled={importBackup.isPending || importOpen} title={t('Import a Markdown or plain-text manuscript')} onSelect={() => { setPromptStory(null); setImportFormat('text'); setImportOpen(true) }}>{t('From Markdown or text…')}</MenuItem>
           <MenuItem disabled={importBackup.isPending || importOpen} title={t('Import a DRM-free EPUB book')} onSelect={() => { setPromptStory(null); setImportFormat('epub'); setImportOpen(true) }}>{t('From EPUB…')}</MenuItem>
         </Menu>
+        <Link to="/goals" className="ui-btn ui-btn-secondary">{goals.data?.settings.daily_words ? `◎ ${t('Goals')} · ${goals.data.today_words.toLocaleString(getUiLanguage())} / ${goals.data.settings.daily_words.toLocaleString(getUiLanguage())}` : `◎ ${t('Goals')}`}</Link>
         <button type="button" className="ui-btn ui-btn-primary" onClick={() => { newTitle.current?.focus(); newTitle.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }) }}>{t('+ New story')}</button>
       </>}<button ref={trashToggle} type="button" onClick={() => setShowTrash(!showTrash)} className="shrink-0 rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm">{showTrash ? t('Back to library') : t('Trash{0}', trash.data?.length ? ` (${trash.data.length})` : '')}</button></div></div>
       {message && <p role="status" className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">{message}</p>}

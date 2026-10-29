@@ -40,7 +40,7 @@ import { ThemeToggle } from '../components/Theme'
 import { AccountMenu } from '../components/AuthGate'
 import { useWriterStatus } from '../components/writerDraft'
 import { CastPanel } from '../components/CastPanel'
-import { StoryGoalForm } from '../components/Goals'
+import { GoalsDialog, Ring, StoryGoalForm } from '../components/Goals'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
 import { SANDBOX_ID, FIRST_SCENE, tourEvent, type Sandbox } from '../sandbox/storage'
@@ -301,6 +301,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const saveStatus = useWriterStatus(storyId)
   const storyGoal = useQuery({ queryKey: ['story-goal', storyId], queryFn: () => api.storyGoal(storyId), enabled: !sandbox })
   const [toolsOpen, setToolsOpen] = useState(false)
+  const [goalsOpen, setGoalsOpen] = useState(false)
   // Re-run on a language change, after App has reset the tab to the generic route title.
   const language = useUiLanguage()
   useEffect(() => { if (story.data?.title) document.title = `${story.data.title} · StoryTool` }, [story.data?.title, language])
@@ -521,6 +522,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           <button type="button" className="ui-icon-btn ws-tools-toggle" aria-label={t('More tools')} title={t('More tools')} aria-expanded={toolsOpen} onClick={() => setToolsOpen(open => !open)}>⋯</button>
           <div className={`ws-tools${toolsOpen ? ' is-open' : ''}`} onClick={() => setToolsOpen(false)}>
           {tab === 'write' && <IconButton label={t('Focus mode')} onClick={() => setWriterFocus(true)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></IconButton>}
+          {!sandbox && <IconButton label={t('Writing goals')} className="ws-goals-button" onClick={() => setGoalsOpen(true)}>{storyGoal.data?.goal ? <Ring value={storyGoal.data.goal.percent} max={100} label={t('{0}% of goal', storyGoal.data.goal.percent)} size={20} /> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="0.5" fill="currentColor" /></svg>}</IconButton>}
           <IconButton label={t('History')} aria-pressed={tab === 'design' && level === HISTORY_VIEW} onClick={() => { void openView(HISTORY_VIEW).then(() => { if (sandbox) tourEvent('history') }) }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l3 2" /></svg></IconButton>
           <IconButton label={hasPanel ? t('Hide side panel') : tab === 'write' ? t('Show context and side panel') : t('Show side panel')} aria-pressed={hasPanel} className={tab === 'write' && !hasPanel ? 'writer-context-toggle' : ''} onClick={togglePanel}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg></IconButton>
             <ThemeToggle />
@@ -536,6 +538,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {!sandbox && <AccountMenu />}
         </div>
       </header>
+      {goalsOpen && <GoalsDialog storyId={storyId} storyTitle={story.data.title} onClose={() => setGoalsOpen(false)} />}
       {tabError && <p role="alert" className="writer-error">{tabError}</p>}
       <div className={`ws-body${hasPanel ? ' has-panel' : ''}`}>
       <div className="min-w-0">

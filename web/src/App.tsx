@@ -19,6 +19,7 @@ import Privacy from './pages/Privacy'
 import Feedback from './pages/Feedback'
 import { api } from './api/client'
 import UserSettings from './pages/UserSettings'
+import GoalsPage from './pages/Goals'
 import WritingChecks from './pages/WritingChecks'
 import OAuthConsent from './pages/OAuthConsent'
 import BetaOwner from './pages/BetaOwner'
@@ -34,7 +35,7 @@ const TryLocked = lazy(() => import('./pages/TryStory').then(m => ({ default: m.
 const PAGE_TITLES: [RegExp, string][] = [
   [/^\/$/, tx('StoryTool — Your novel’s memory, for you and your AI')], [/^\/try/, tx('Try StoryTool')], [/^\/how-to-use/, tx('How to use · StoryTool')],
   [/^\/roadmap/, tx('Roadmap · StoryTool')], [/^\/thanks/, tx('Shoutouts · StoryTool')], [/^\/about/, tx('About the developer · StoryTool')], [/^\/pricing/, tx('Pricing · StoryTool')],
-  [/^\/privacy/, tx('Privacy · StoryTool')], [/^\/library/, tx('Your stories · StoryTool')], [/^\/settings/, tx('Settings · StoryTool')],
+  [/^\/privacy/, tx('Privacy · StoryTool')], [/^\/library/, tx('Your stories · StoryTool')], [/^\/settings/, tx('Settings · StoryTool')], [/^\/goals/, tx('Writing goals · StoryTool')],
   [/^\/checks/, tx('Writing checks · StoryTool')], [/^\/feedback/, tx('Feedback · StoryTool')], [/^\/oauth/, tx('Connect AI · StoryTool')],
   [/^\/stories\/[^/]+\/images/, tx('Images · StoryTool')], [/^\/stories\/[^/]+\/beside/, tx('Beside · StoryTool')], [/^\/stories\/[^/]+\/beta/, tx('Beta readers · StoryTool')],
   [/^\/stories\/[^/]+\/polls/, tx('Reader polls · StoryTool')], [/^\/stories\//, tx('Story · StoryTool')], [/^\/shared\//, tx('Shared story · StoryTool')],
@@ -78,6 +79,7 @@ export default function App() {
       <Route element={<AuthGate><Outlet /></AuthGate>}>
         <Route path="/library" element={<StoryList />} />
         <Route path="/settings" element={<UserSettings />} />
+        <Route path="/goals" element={<GoalsPage />} />
         <Route path="/checks" element={<WritingChecks />} />
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />
