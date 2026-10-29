@@ -1,12 +1,12 @@
 """Your stories: how the author arranges their cards, and what the library shows beside them.
 
 Card arrangement (position, pin, archive) is per account and kept out of the story itself, so
-moving a card never creates a story version. Writing activity is a daily tally of words added
-by the author in the browser; agent and import writes are not the author's writing.
+moving a card never creates a story version. `WritingDay` is the daily tally that goals.py
+writes and reads (streaks, This week).
 Card status and open-item counts are derived on every read, never stored (DESIGN.md).
 """
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 from uuid import UUID
 
 from litestar import Controller, Request, get, patch
@@ -20,11 +20,9 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     UniqueConstraint,
-    case,
     func,
     select,
 )
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -32,8 +30,6 @@ from storytool.db.base import StoryToolBase
 from storytool.domain.ai.models import AIRun
 from storytool.domain.narrative.models import Scene
 from storytool.domain.story.models import Story
-
-SESSION_GAP = timedelta(minutes=30)
 
 
 class LibraryCard(StoryToolBase):
@@ -55,33 +51,8 @@ class WritingDay(StoryToolBase):
     day: Mapped[date] = mapped_column(Date)
     words: Mapped[int] = mapped_column(Integer, default=0)
     sessions: Mapped[int] = mapped_column(Integer, default=0)
+    ai_words: Mapped[int] = mapped_column(Integer, default=0)
     last_save_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-
-
-async def record_writing(session: AsyncSession, user_id: UUID, added_words: int) -> None:
-    """Count an author's prose save: words added today, and a new session after a 30-minute gap."""
-    now = datetime.now(UTC)
-    statement = insert(WritingDay).values(
-        user_id=user_id,
-        day=now.date(),
-        words=max(added_words, 0),
-        sessions=1,
-        last_save_at=now,
-        created_at=now,
-        updated_at=now,
-    )
-    await session.execute(
-        statement.on_conflict_do_update(
-            constraint="one_tally_per_day",
-            set_={
-                "words": WritingDay.words + max(added_words, 0),
-                "sessions": WritingDay.sessions
-                + case((WritingDay.last_save_at < now - SESSION_GAP, 1), else_=0),
-                "last_save_at": now,
-                "updated_at": now,
-            },
-        )
-    )
 
 
 class CardOut(BaseModel):
@@ -94,17 +65,12 @@ class CardOut(BaseModel):
     drafted_scene_count: int
     tk_count: int
     pending_agent_changes: int
-
-
-class WeekOut(BaseModel):
-    days: list[int]
-    words: int
-    sessions: int
+    goal_percent: int | None = None
+    goal_status: str | None = None
 
 
 class LibraryOverviewOut(BaseModel):
     cards: list[CardOut]
-    week: WeekOut
 
 
 class CardUpdate(BaseModel):
@@ -189,24 +155,30 @@ class LibraryController(Controller):
                     pending_agent_changes=pending.get(story_id, 0),
                 )
             )
-        today = datetime.now(UTC).date()
-        first = today - timedelta(days=6)
-        tallies = {
-            row.day: row
-            for row in await db_session.scalars(
-                select(WritingDay).where(WritingDay.user_id == user_id, WritingDay.day >= first)
-            )
-        }
-        days = [
-            tallies[first + timedelta(days=n)].words if first + timedelta(days=n) in tallies else 0
-            for n in range(7)
-        ]
-        return LibraryOverviewOut(
-            cards=out,
-            week=WeekOut(
-                days=days, words=sum(days), sessions=sum(row.sessions for row in tallies.values())
-            ),
+        # Story goals ride on the cards: progress bar and pace chip (goals.py derives both).
+        from storytool.domain.story.goals import (
+            StoryGoal,
+            goal_settings,
+            story_goal_summary,
+            zone,
         )
+
+        goals = list(
+            await db_session.scalars(
+                select(StoryGoal).where(
+                    StoryGoal.user_id == user_id, StoryGoal.story_id.in_(story_ids)
+                )
+            )
+        )
+        if goals:
+            settings = await goal_settings(db_session, user_id)
+            today = datetime.now(UTC).astimezone(zone(settings.timezone)).date()
+            by_story = {item.story_id: item for item in out}
+            for goal in goals:
+                summary = await story_goal_summary(db_session, goal, settings, today)
+                by_story[goal.story_id].goal_percent = summary.percent
+                by_story[goal.story_id].goal_status = summary.status
+        return LibraryOverviewOut(cards=out)
 
     @patch("/cards/{story_id:uuid}", summary="Move, pin or archive a story card")
     async def update_card(

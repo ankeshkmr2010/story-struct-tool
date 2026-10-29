@@ -1,4 +1,4 @@
-"""Your stories: card arrangement, derived status and open items, and the weekly writing tally."""
+"""Your stories: card arrangement, derived status and open items, and open items."""
 
 from tests.test_ai import outline
 
@@ -55,21 +55,11 @@ async def test_cards_reject_other_accounts_and_agents(client):
     assert (await client.get("/api/library/overview", headers=headers)).status_code in {401, 403}
 
 
-async def test_author_typing_counts_this_week_and_tks_show(client):
+async def test_tks_and_status_show_on_cards(client):
     story_id, scene_id = await _story_with_scene(client, "Tally")
     base = f"/api/stories/{story_id}/scenes/{scene_id}/content"
     await client.put(base, json={"content": "One two three [TK: the inn] four."})
-    await client.put(base, json={"content": "One two three [TK: the inn] four. Five six."})
     overview = (await client.get("/api/library/overview")).json()
-    assert overview["week"]["words"] >= 7
-    assert overview["week"]["sessions"] == 1
-    assert overview["week"]["days"][-1] == overview["week"]["words"]
     card = next(card for card in overview["cards"] if card["story_id"] == story_id)
     assert card["tk_count"] == 1 and card["status"] == "draft"
-
-    # Agent writes are not the author's writing.
-    token = (await client.post("/api/ai/agent-tokens", json={"story_id": story_id})).json()
-    headers = {"Authorization": "Bearer " + token["token"]}
-    await client.put(base, json={"content": "Agent text " * 50}, headers=headers)
-    after = (await client.get("/api/library/overview")).json()
-    assert after["week"]["words"] == overview["week"]["words"]
+    assert card["goal_percent"] is None

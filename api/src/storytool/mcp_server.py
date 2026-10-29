@@ -617,6 +617,14 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         return await call(ctx, "/ai/fingerprint", story_id=story_id)
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def get_writing_goals(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
+        """Read the author's writing goals: today's words against their daily habit goal and
+        streak, and this story's target, deadline, pace needed today and on-track status.
+        Read-only: goals and sprints are set by the author in StoryTool.
+        """
+        return await call(ctx, "/goal", story_id=story_id)
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_entity_schema(entity: str) -> dict[str, Any]:
         """Exact create/update fields and reference kinds. No World/Theme/lore models yet."""
         if entity not in ENTITIES:

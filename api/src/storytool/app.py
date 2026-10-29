@@ -58,6 +58,7 @@ from storytool.domain.story.beta import (
     feedback_counts,
 )
 from storytool.domain.story.controller import StoryController
+from storytool.domain.story.goals import GoalsController, StoryGoalController
 from storytool.domain.story.image_cleanup import image_cleanup_lifespan
 from storytool.domain.story.images import (
     BetaImagesController,
@@ -130,6 +131,8 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             BetaStatusController,
             feedback_counts,
             LibraryController,
+            GoalsController,
+            StoryGoalController,
             SharedStoriesController,
             StoryShowcaseController,
             PublicShowcaseController,

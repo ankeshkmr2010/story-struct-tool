@@ -9,6 +9,7 @@ import { SearchDialog } from '../components/StorySearch'
 import { Menu, MenuItem } from '../ui/Menu'
 import { getUiLanguage, t } from '../i18n'
 import { ContinueCard, OpenItemsPanel, StatusChip, WeekPanel, coverTint } from '../components/LibraryParts'
+import { statusLabel, useGoals } from '../components/Goals'
 
 type SortMode = 'mine' | 'edited' | 'title'
 const SORT_KEY = 'storytool-library-sort'
@@ -61,6 +62,7 @@ export default function StoryList() {
   const trash = useQuery({ queryKey: ['trashed-stories'], queryFn: api.listTrashedStories })
   const shared = useQuery({ queryKey: ['shared-stories'], queryFn: api.listSharedStories, refetchInterval: 30_000, refetchOnWindowFocus: true })
   const overview = useQuery({ queryKey: ['library-overview'], queryFn: api.libraryOverview, refetchOnWindowFocus: true })
+  const goals = useGoals()
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ['stories'] })
     void qc.invalidateQueries({ queryKey: ['trashed-stories'] })
@@ -117,7 +119,7 @@ export default function StoryList() {
     arrange.mutate(ids.map((item, index): [string, LibraryCardUpdate] => [item, { position: (index + 1) * 100 }]).filter(([item, body]) => cardOf(item)?.position !== body.position))
   }
   const lastStory = lastPlace.data && stories.data?.find(story => story.id === lastPlace.data!.story_id)
-  const totals = (overview.data?.cards ?? []).reduce((sum, card) => ({ tks: sum.tks + card.tk_count, agent: sum.agent + card.pending_agent_changes }), { tks: 0, agent: 0 })
+  const totals = (overview.data?.cards ?? []).reduce((sum, card) => ({ tks: sum.tks + card.tk_count, agent: sum.agent + card.pending_agent_changes, behind: sum.behind + Number(card.goal_status === 'behind' || card.goal_status === 'overdue') }), { tks: 0, agent: 0, behind: 0 })
   const comments = Object.values(feedbackCounts.data ?? {}).reduce((sum, count) => sum + count, 0)
   const importBackup = useMutation({
     mutationFn: async (file: File) => {
@@ -165,11 +167,12 @@ export default function StoryList() {
       onDragEnd={() => setDragged(null)}
       onDragOver={event => { if (movable && dragged && dragged !== story.id) event.preventDefault() }}
       onDrop={event => { event.preventDefault(); if (dragged && dragged !== story.id) moveCard(dragged, index); setDragged(null) }}>
-      <Link to={`/stories/${story.id}`} className={`lib-cover ${coverTint(story.id)}`} tabIndex={-1} aria-hidden="true" draggable={false}>{story.title}</Link>
+      <Link to={`/stories/${story.id}`} className={`lib-cover ${coverTint(story.id)}`} tabIndex={-1} aria-hidden="true" draggable={false}>{story.title}{card?.goal_percent != null && <span className="lib-cover-goal"><i style={{ width: `${card.goal_percent}%` }} /></span>}</Link>
       <div className="min-w-0 lib-card-body">
         <div className="lib-card-tags">
           {card && <StatusChip status={card.status} />}
           {card?.pinned && <span className="lib-chip">{t('Pinned')}</span>}
+          {card?.goal_status && card.goal_status !== 'open' && <span className={`lib-chip lib-chip--goal is-${card.goal_status}`}>{statusLabel({ status: card.goal_status, behind_by: 0 })}</span>}
           {exampleTag(story) && <span className="story-card-tag">{exampleTag(story)}</span>}
           {story.prose_imported && <span className="story-card-tag">{t('Imported')}</span>}
         </div>
@@ -299,8 +302,8 @@ export default function StoryList() {
           {(archivedStories?.length ?? 0) > 0 && <details className="lib-archived"><summary>{t('Archived · {0}', archivedStories!.length)}</summary><ul className="story-library lib-cards">{archivedStories!.map((story, index) => renderCard(story, index, 0))}</ul></details>}
         </div>
         {overview.data && <aside className="lib-side" aria-label={t('Writing summary')}>
-          <WeekPanel week={overview.data.week} />
-          <OpenItemsPanel tks={totals.tks} comments={comments} agentChanges={totals.agent} />
+          {goals.data && <WeekPanel goals={goals.data} />}
+          <OpenItemsPanel tks={totals.tks} comments={comments} agentChanges={totals.agent} behind={totals.behind} />
         </aside>}
       </div>}
 

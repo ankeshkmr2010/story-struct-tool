@@ -463,7 +463,14 @@ class AIController(Controller):
             await checkpoint(
                 db_session, story_id, actor(request), "Before agent deletion", "recovery"
             )
+        from storytool.domain.story.goals import record_words, story_words
+
+        words_before = await story_words(db_session, story_id)
         result, inverse = await execute_proposal(db_session, story_id, actor(request), proposal)
+        # Accepted AI prose counts toward writing goals only when the author opts in.
+        added = await story_words(db_session, story_id) - words_before
+        if added > 0:
+            await record_words(db_session, actor(request), story_id, added, ai=True)
         row.result, row.inverse, row.status = result, inverse, "applied"
         state = await snapshot(db_session, story_id)
         row.applied_fingerprint = fingerprint(state)

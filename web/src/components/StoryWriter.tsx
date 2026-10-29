@@ -23,6 +23,7 @@ import { readerComments } from './readerComments'
 import { writerPlaceholders } from './writerPlaceholders'
 import { openBeside, type BesideItem } from './beside'
 import { getUiLanguage, t } from '../i18n'
+import { GoalBar, StoryGoalCard } from './Goals'
 
 type Named = { label: string; item: BesideItem }
 const WRITE_TIP_KEY = 'storytool-write-tip'
@@ -196,7 +197,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
         {!unfiled && chapter && <div className="writer-chapter-extras" key={`end-${chapter.id}`}><ChapterExtra label={t('Closing note')} add={t('Add closing note')} value={chapter.closing_note} placeholder={t('Closing flavour text')} onSave={async closing_note => { await api.updateChapter(storyId, chapter.id, { closing_note }); refresh() }} /></div>}
         <div className="writer-statusbar">
           <span>{t('{0} words in scene · {1} total', sceneWords.toLocaleString(getUiLanguage()), totalWords.toLocaleString(getUiLanguage()))} · <SaveState storyId={storyId} /></span>
-          <button type="button" onClick={() => onFocusChange(!focus)} aria-pressed={focus}>{t('Focus')}</button>
+          {storyId === SANDBOX_ID ? <button type="button" onClick={() => onFocusChange(!focus)} aria-pressed={focus}>{t('Focus')}</button> : <GoalBar storyId={storyId} focus={focus} onFocus={onFocusChange} />}
         </div>
         <div className="writer-continuation">
           {chapterScenes.length > 0 && <button type="button" disabled={adding} onClick={() => { void addScene() }}>{t('+ Scene break at end')}</button>}
@@ -205,6 +206,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
         </div>
       </article>
       {contextSlot && !focus && createPortal(<div className="writer-context" aria-label={t('Writing context')}>
+        {storyId !== SANDBOX_ID && <StoryGoalCard storyId={storyId} />}
         {brief.data && <ChapterBriefCard brief={brief.data} />}
         {contextScene ? <SceneDetails key={contextScene.id} storyId={storyId} scene={contextScene} essentials onDeleted={() => { setActiveScene(null); refresh() }} /> : <p>{t('Start writing to add scene details. Beats, characters, and locations are optional.')}</p>}
         {contextScene && <SceneRevisions key={`rev-${contextScene.id}`} storyId={storyId} sceneId={contextScene.id} flush={() => flushWriter(prefix)} onRestored={text => writerDraft(prefix + contextScene.id, text).useLatest(text)} />}

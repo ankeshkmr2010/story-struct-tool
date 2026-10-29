@@ -34,7 +34,7 @@ from storytool.domain.narrative.schemas import (
     StoryProgressOut,
 )
 from storytool.domain.narrative.services import SceneService
-from storytool.domain.story.library import record_writing
+from storytool.domain.story.goals import record_words
 
 
 async def provide_scenes(db_session: AsyncSession) -> AsyncGenerator[SceneService, None]:
@@ -87,11 +87,13 @@ class SceneProseController(Controller):
             snapshot=data.snapshot,
             snapshot_label=data.snapshot_label,
         )
-        # Your stories' "This week" counts only the author's own typing, not agent writes.
+        # Writing goals: the author's typing always counts; connected-AI prose is tallied apart
+        # and counts only when the author opts in.
         state = request.scope.get("state", {})
-        if state.get("storytool_write_origin") == "author" and previous != data.content:
+        if previous != data.content and state.get("storytool_user_id"):
             added = scene.word_count - words_before
-            await record_writing(db_session, state["storytool_user_id"], added)
+            ai = state.get("storytool_write_origin") != "author"
+            await record_words(db_session, state["storytool_user_id"], story_id, added, ai=ai)
         return SaveResultOut.model_validate(result)
 
     # ------------------------------------------------------------ revisions

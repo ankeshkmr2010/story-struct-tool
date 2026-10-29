@@ -1377,3 +1377,65 @@ p.ws-card-note { margin-top: 8px; }
 /* The old page-heading button rule painted "+ New story" like the others; keep it the primary action. */
 .lib-heading-actions .ui-btn-primary { border-color: var(--button); background: var(--button); color: var(--button-ink); }
 .lib-heading-actions .ui-btn-primary:hover { background: var(--button-hover); }
+
+/* Writing goals (2026-10-29): Write goal bar, rings, sprints, goals dialog, Library habit panel. */
+.goal-bar { position: relative; display: inline-flex; align-items: center; gap: 8px; }
+.goal-bar button { padding: 5px 12px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink); font-size: 12px; }
+.goal-bar button:hover, .goal-bar button[aria-expanded=true] { border-color: var(--accent); color: var(--accent); }
+.goal-bar .goal-rings { display: inline-flex; align-items: center; gap: 6px; border-color: transparent; color: var(--muted); }
+.goal-bar .goal-set, .goal-hint button:first-child { border-style: dashed; color: var(--muted); }
+.goal-hint { display: inline-flex; gap: 4px; }
+.goal-hint button:last-child { border-color: transparent; padding: 5px 6px; }
+.goal-bar-actions { display: inline-flex; gap: 6px; }
+.goal-sprint { position: relative; }
+.goal-bar.is-sprint { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+.goal-ring-track { fill: none; stroke: var(--line); stroke-width: 3; }
+.goal-ring-fill { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset .4s ease; }
+.goal-ring.is-met .goal-ring-fill { stroke: var(--color-green-400); }
+.goal-pop { position: absolute; bottom: calc(100% + 10px); z-index: 30; padding: 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-pop); color: var(--ink); }
+.goal-sprint-menu { right: 0; display: grid; gap: 4px; min-width: 96px; }
+.goal-sprint-menu button { border-color: transparent; text-align: left; }
+.goal-popover { left: 0; display: grid; gap: 10px; width: min(320px, 80vw); padding: 14px; font-size: 13px; }
+.goal-popover p { display: grid; gap: 2px; }
+.goal-popover p span { color: var(--muted); font-size: 12px; }
+.goal-popover .goal-streak, .lib-streak { color: var(--ink); font-size: 12px; font-weight: 500; }
+.goal-status.is-behind, .goal-status.is-overdue { color: color-mix(in srgb, var(--amber) 70%, var(--ink)) !important; }
+.goal-status.is-done, .goal-status.is-on_track { color: var(--accent) !important; }
+.goal-summary { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); padding: 8px 14px; border-radius: var(--radius-pill); background: var(--button); color: var(--button-ink); font-size: 13px; white-space: nowrap; box-shadow: var(--shadow-pop); }
+.goal-link { padding: 0; color: var(--accent); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.goal-card .goal-track i.on { flex: none; }
+.goal-card .goal-link { margin-top: 6px; }
+.goal-form { display: grid; gap: 12px; }
+.goal-form label { display: grid; gap: 4px; color: var(--muted); font-size: 12px; font-weight: 500; }
+.goal-form input[type=number], .goal-form input[type=date] { padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--page); color: var(--ink); font-size: 14px; }
+.goal-form fieldset { border: 0; padding: 0; margin: 0; }
+.goal-form legend { margin-bottom: 4px; color: var(--muted); font-size: 12px; font-weight: 500; }
+.goal-form .goal-check { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 13px; font-weight: 400; }
+.goal-days { display: flex; gap: 4px; }
+.goal-days button { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); font-size: 12px; font-weight: 600; }
+.goal-days button[aria-pressed=true] { border-color: var(--button); background: var(--button); color: var(--button-ink); }
+.goal-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.goal-dialog { width: min(520px, calc(100% - 32px)); max-height: calc(100dvh - 48px); padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-pop); }
+.goal-dialog::backdrop { background: rgb(0 0 0 / .45); }
+.goal-dialog-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.goal-dialog-head h2 { font: 500 24px/1.2 var(--font-serif); }
+.goal-dialog-head button { padding: 2px 10px; color: var(--muted); font-size: 22px; }
+.goal-dialog section { padding: 16px 0; border-top: 1px solid var(--line); }
+.goal-dialog section:first-of-type { border-top: 0; }
+.goal-dialog h3 { margin-bottom: 12px; color: var(--accent); font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.lib-spark-wrap { position: relative; }
+.lib-goal-line { position: absolute; left: 0; right: 0; z-index: 1; border-top: 1.5px dashed var(--amber); pointer-events: none; }
+.lib-spark i.is-short { opacity: .45; }
+.lib-streak { margin-top: 8px; }
+.lib-streak span { color: var(--faint); font-weight: 400; }
+.lib-set-goal { margin-top: 12px; }
+.lib-chip--goal.is-on_track, .lib-chip--goal.is-done { border-color: transparent; background: var(--accent-soft); color: var(--accent); }
+.lib-chip--goal.is-behind, .lib-chip--goal.is-overdue { border-color: transparent; background: color-mix(in srgb, var(--amber) 18%, var(--surface)); color: color-mix(in srgb, var(--amber) 70%, var(--ink)); }
+.lib-cover { position: relative; }
+.lib-cover-goal { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgb(255 255 255 / .25); }
+.lib-cover-goal i { display: block; height: 100%; background: #fbf7ef; }
+@media (max-width: 700px) {
+  .writer-statusbar { flex-wrap: wrap; justify-content: center; border-radius: 18px; }
+  .goal-bar .goal-rings span { display: none; }
+  .goal-popover { position: fixed; left: 8px; right: 8px; bottom: 8px; width: auto; }
+}

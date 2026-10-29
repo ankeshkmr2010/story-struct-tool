@@ -42,6 +42,7 @@ from storytool.domain.story.beta import (
     BetaThread,
     BetaVote,
 )
+from storytool.domain.story.goals import StoryDay, StoryGoal, WritingGoal, WritingSprint
 from storytool.domain.story.image_models import ImageBlob, ImageDeletion, StoryImage
 from storytool.domain.story.library import LibraryCard, WritingDay
 from storytool.domain.story.models import Story
@@ -98,6 +99,8 @@ __all__ = (
     "SearchIndex",
     "Shoutout",
     "Story",
+    "StoryDay",
+    "StoryGoal",
     "StoryImage",
     "StoryObservation",
     "StoryShare",
@@ -109,6 +112,8 @@ __all__ = (
     "UserSession",
     "WorkspacePosition",
     "WritingDay",
+    "WritingGoal",
+    "WritingSprint",
     "chapter_beat",
     "event_character",
     "scene_arc_advance",
