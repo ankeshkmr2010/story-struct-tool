@@ -7,7 +7,7 @@ from the prose on every write. Clients cannot desynchronise it.
 from collections.abc import AsyncGenerator
 from uuid import UUID
 
-from litestar import Controller, MediaType, Response, delete, get, patch, post, put
+from litestar import Controller, MediaType, Request, Response, delete, get, patch, post, put
 from litestar.di import Provide
 from litestar.exceptions import HTTPException, NotFoundException
 from sqlalchemy import select
@@ -34,6 +34,7 @@ from storytool.domain.narrative.schemas import (
     StoryProgressOut,
 )
 from storytool.domain.narrative.services import SceneService
+from storytool.domain.story.library import record_writing
 
 
 async def provide_scenes(db_session: AsyncSession) -> AsyncGenerator[SceneService, None]:
@@ -60,6 +61,7 @@ class SceneProseController(Controller):
     @put("/content", summary="Save a scene's prose")
     async def save_content(
         self,
+        request: Request,
         db_session: AsyncSession,
         scenes: SceneService,
         story_id: UUID,
@@ -77,6 +79,7 @@ class SceneProseController(Controller):
                     "Review the latest text before saving."
                 ),
             )
+        previous, words_before = scene.content, scene.word_count
         result = await save_scene_content(
             db_session,
             scene,
@@ -84,6 +87,11 @@ class SceneProseController(Controller):
             snapshot=data.snapshot,
             snapshot_label=data.snapshot_label,
         )
+        # Your stories' "This week" counts only the author's own typing, not agent writes.
+        state = request.scope.get("state", {})
+        if state.get("storytool_write_origin") == "author" and previous != data.content:
+            added = scene.word_count - words_before
+            await record_writing(db_session, state["storytool_user_id"], added)
         return SaveResultOut.model_validate(result)
 
     # ------------------------------------------------------------ revisions

@@ -65,6 +65,7 @@ from storytool.domain.story.images import (
     ShowcaseImagesController,
     StoryImagesController,
 )
+from storytool.domain.story.library import LibraryController
 from storytool.domain.story.sharing import (
     SharedStoriesController,
     StoryReaderController,
@@ -128,6 +129,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             BetaFeedbackController,
             BetaStatusController,
             feedback_counts,
+            LibraryController,
             SharedStoriesController,
             StoryShowcaseController,
             PublicShowcaseController,

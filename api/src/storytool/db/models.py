@@ -43,6 +43,7 @@ from storytool.domain.story.beta import (
     BetaVote,
 )
 from storytool.domain.story.image_models import ImageBlob, ImageDeletion, StoryImage
+from storytool.domain.story.library import LibraryCard, WritingDay
 from storytool.domain.story.models import Story
 from storytool.domain.story.sharing import StoryShare
 from storytool.domain.story.showcase import StoryShowcase
@@ -81,6 +82,7 @@ __all__ = (
     "ImageBlob",
     "ImageDeletion",
     "ImportUpload",
+    "LibraryCard",
     "Location",
     "MCPClient",
     "MCPConsent",
@@ -106,6 +108,7 @@ __all__ = (
     "User",
     "UserSession",
     "WorkspacePosition",
+    "WritingDay",
     "chapter_beat",
     "event_character",
     "scene_arc_advance",
