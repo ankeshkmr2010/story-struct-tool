@@ -827,8 +827,10 @@ ol.showcase-list { list-style: decimal; }
 /* Panel polish: one-row tabs, icon search, no nested borders, wider panel and manuscript. */
 .ws-body.has-panel { grid-template-columns: minmax(0, 1fr) clamp(340px, 24vw, 440px); }
 .ws-panel .workspace-ref-head { flex-wrap: nowrap; align-items: center; }
-.ws-panel .workspace-ref-head .ui-tabs { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-.ws-panel .workspace-ref-head .ui-tabs::-webkit-scrollbar { display: none; }
+/* The tab row scrolls sideways with a visible thin bar, so tabs past the edge (Glossary, Assistant) can be found. */
+.ws-panel .workspace-ref-head .ui-tabs { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.ws-panel .workspace-ref-head .ui-tabs::-webkit-scrollbar { height: 4px; }
+.ws-panel .workspace-ref-head .ui-tabs::-webkit-scrollbar-thumb { border-radius: 4px; background: var(--line); }
 .ws-panel .workspace-ref-head .ui-tab { flex-shrink: 0; white-space: nowrap; }
 .ws-panel .workspace-ref-head > div:last-child button { display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; font-size: 14px; }
 .ws-panel .writer-context { padding: 0; border: 0; }

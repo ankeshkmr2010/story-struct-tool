@@ -735,7 +735,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       <aside hidden={!hasPanel} className="workspace-ref-panel ws-panel" aria-label={t('Side panel')}>
         {beside && <BesidePanel storyId={storyId} target={beside} onChange={setBeside} onClose={() => setBeside(null)} />}
         {!beside && <>
-        <div className="workspace-ref-head">
+        {/* A mouse wheel scrolls the tab row sideways when the tabs overflow. */}
+        <div className="workspace-ref-head" onWheel={event => { const row = event.currentTarget.querySelector<HTMLElement>('.ui-tabs'); if (row && row.scrollWidth > row.clientWidth && Math.abs(event.deltaY) > Math.abs(event.deltaX)) row.scrollLeft += event.deltaY }}>
           <Tabs label={t('Side panel')} value={activePanel ?? panelTabs[0][0]} onChange={selectPanel} items={panelTabs.map(([key, label]) => ({ id: key, label: key === 'feedback' && openFeedback.data?.length ? `${label} (${openFeedback.data.length})` : key === 'placeholders' && placeholderCount ? `${label} (${placeholderCount})` : label, className: key === 'context' ? 'writer-context-toggle' : undefined }))} />
           <div><button type="button" aria-label={t('Search this panel')} title={t('Search this panel')} onClick={() => setSearchOpen(true)} disabled={!searchContext}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></button><button type="button" aria-label={t('Close panel')} onClick={() => setRefPanel(null)}>✕</button></div>
         </div>
