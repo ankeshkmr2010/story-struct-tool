@@ -14,7 +14,7 @@ import { SceneRevisions } from './SceneRevisions'
 import { InlineText } from './fields'
 import { useTheme } from './theme-context'
 import { SANDBOX_ID, tourEvent } from '../sandbox/storage'
-import { flushWriter, writerDraft, writerHasUnsaved } from './writerDraft'
+import { flushWriter, useWriterStatus, writerDraft, writerHasUnsaved } from './writerDraft'
 import { ImagePreview } from './StoryImages'
 import { writerImages } from './writerImages'
 import { ImageInsertionPicker } from './ImageInsertionPicker'
@@ -22,7 +22,7 @@ import { LiveWritingHints } from './LiveWritingHints'
 import { readerComments } from './readerComments'
 import { writerPlaceholders } from './writerPlaceholders'
 import { openBeside, type BesideItem } from './beside'
-import { t } from '../i18n'
+import { getUiLanguage, t } from '../i18n'
 
 type Named = { label: string; item: BesideItem }
 const WRITE_TIP_KEY = 'storytool-write-tip'
@@ -164,6 +164,11 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
     finally { setAdding(false) }
   }
 
+  // The open chapter's scenes, each with its status dot; picking one puts the cursor in it.
+  const sceneList = chapterScenes.length > 0 && <ul className="writer-scene-list">{chapterScenes.map(scene => <li key={scene.id}><button type="button" aria-current={contextScene?.id === scene.id ? 'true' : undefined} onClick={() => { setActiveScene(scene.id); setFocusTarget(null); requestAnimationFrame(() => setFocusTarget(scene.id)) }}><i className="writer-status-dot" data-status={scene.status} title={statusLabel(scene.status)} aria-label={statusLabel(scene.status)} />{scene.title || t('Untitled scene')}</button></li>)}</ul>
+  const sceneWords = contextScene?.word_count ?? 0
+  const totalWords = (scenes.data ?? []).reduce((sum, scene) => sum + scene.word_count, 0)
+
   if (chapters.isPending || scenes.isPending || me.isPending) return <p className="p-6">{t('Loading manuscript…')}</p>
   if (chapters.isError || scenes.isError || me.isError) return <p role="alert">{errorText(chapters.error ?? scenes.error ?? me.error)}</p>
 
@@ -174,8 +179,8 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
     <div className={`writer-layout ${!showNavigation || focus ? 'writer-no-navigation' : ''}`}>
       {!focus && <nav aria-label={t('Manuscript chapters')} className={`writer-navigation ${showNavigation ? 'writer-navigation-open' : ''}`}>
         <div className="writer-navigation-head"><p className="eyebrow">{t('MANUSCRIPT')}</p><button type="button" aria-label={t('Hide chapters')} title={t('Hide chapters')} onClick={() => setShowNavigation(false)}>‹</button></div>
-        {orderedChapters.map(item => <button key={item.id} type="button" aria-current={chapter?.id === item.id && !unfiled ? 'page' : undefined} onClick={() => { void chooseChapter(item.id) }}><span>{t('Chapter {0}', item.number)}</span><strong>{item.title || t('Untitled')}</strong></button>)}
-        {(scenes.data ?? []).some(scene => scene.chapter_id === null) && <button type="button" aria-current={unfiled ? 'page' : undefined} onClick={() => { void chooseChapter('unfiled') }}>{t('Unfiled writing')}</button>}
+        {orderedChapters.map(item => <div key={item.id}><button type="button" aria-current={chapter?.id === item.id && !unfiled ? 'page' : undefined} onClick={() => { void chooseChapter(item.id) }}><span>{t('Chapter {0}', item.number)}</span><strong>{item.title || t('Untitled')}</strong></button>{chapter?.id === item.id && !unfiled && sceneList}</div>)}
+        {(scenes.data ?? []).some(scene => scene.chapter_id === null) && <div><button type="button" aria-current={unfiled ? 'page' : undefined} onClick={() => { void chooseChapter('unfiled') }}>{t('Unfiled writing')}</button>{unfiled && sceneList}</div>}
         <button type="button" disabled={adding} onClick={() => { void addChapter() }}>{t('+ New chapter')}</button>
       </nav>}
       <article className="writer-manuscript" aria-label={t('Chapter manuscript')}>
@@ -189,6 +194,10 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
         {chapterScenes.map((scene, index) => <Passage key={scene.id} {...{ storyId, prefix, scene, hintsSlot }} liveHints={liveHints && contextScene?.id === scene.id} separator={index > 0} focus={focusTarget === scene.id} onFocus={() => setActiveScene(scene.id)} refresh={refresh} />)}
         {chapterScenes.length === 0 && <Passage key={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} {...{ storyId, prefix }} draftKey={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} focus={focusTarget === 'blank'} createScene={createScene} onCreated={onCreated} onFocus={() => {}} refresh={refresh} />}
         {!unfiled && chapter && <div className="writer-chapter-extras" key={`end-${chapter.id}`}><ChapterExtra label={t('Closing note')} add={t('Add closing note')} value={chapter.closing_note} placeholder={t('Closing flavour text')} onSave={async closing_note => { await api.updateChapter(storyId, chapter.id, { closing_note }); refresh() }} /></div>}
+        <div className="writer-statusbar">
+          <span>{t('{0} words in scene · {1} total', sceneWords.toLocaleString(getUiLanguage()), totalWords.toLocaleString(getUiLanguage()))} · <SaveState storyId={storyId} /></span>
+          <button type="button" onClick={() => onFocusChange(!focus)} aria-pressed={focus}>{t('Focus')}</button>
+        </div>
         <div className="writer-continuation">
           {chapterScenes.length > 0 && <button type="button" disabled={adding} onClick={() => { void addScene() }}>{t('+ Scene break at end')}</button>}
           <button type="button" disabled={adding} onClick={() => { void addChapter() }}>{t('+ Next chapter')}</button>
@@ -203,6 +212,13 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
       </div>, contextSlot)}
     </div>
   </div>
+}
+
+const statusLabel = (status: string) => status === 'revised' ? t('Revised') : status === 'drafted' ? t('Drafted') : status === 'outlined' ? t('Outlined') : t('Not started')
+
+function SaveState({ storyId }: { storyId: string }) {
+  const status = useWriterStatus(storyId)
+  return <>{status === 'error' ? t('Not saved') : status === 'saving' ? t('Saving…') : status === 'unsaved' ? t('Unsaved changes') : t('Saved')}</>
 }
 
 function Passage({ storyId, prefix, scene, draftKey, separator = false, focus = false, liveHints = false, hintsSlot, createScene, onCreated, onFocus, refresh }: {
@@ -383,7 +399,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
         next.focus()
         return true
       } }))),
-      EditorView.theme({ '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' }, '.cm-scroller': { fontFamily: 'var(--font-serif)', fontSize: '18px', overflow: 'visible' }, '.cm-content': { padding: '12px 0 24px', lineHeight: '1.9' }, '.cm-focused': { outline: 'none' }, '.cm-cursor': { borderLeftColor: 'var(--accent)' } }),
+      EditorView.theme({ '&': { backgroundColor: 'var(--surface)', color: 'var(--ink)' }, '.cm-scroller': { fontFamily: 'var(--font-serif)', fontSize: '20px', overflow: 'visible' }, '.cm-content': { padding: '12px 0 24px', lineHeight: '1.75' }, '.cm-focused': { outline: 'none' }, '.cm-cursor': { borderLeftColor: 'var(--accent)' } }),
     ]} basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, bracketMatching: false, closeBrackets: false, autocompletion: false }} />
     {liveHints && scene && <LiveWritingHints key={scene.id} slot={hintsSlot} storyId={storyId} sceneId={scene.id} sceneTitle={scene.title} content={state.text} currentParagraph={hintParagraph} onParagraph={(paragraph, find, wholeScene) => {
       const editor = view.current

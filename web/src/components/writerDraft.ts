@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react'
 import { errorText } from '../api/errors'
 import { t } from '../i18n'
 
@@ -34,6 +35,7 @@ export class WriterDraft {
       else sessionStorage.setItem(this.key, JSON.stringify({ text: next.text, base: next.base }))
     } catch { /* The live buffer remains available if storage is full. */ }
     this.listeners.forEach(listener => listener())
+    changes.forEach(listener => listener())
   }
   change = (text: string) => {
     this.publish({ ...this.state, text, status: this.state.status === 'error' ? 'error' : 'unsaved' })
@@ -91,6 +93,18 @@ export function writerDraft(key: string, initial: string) {
   let draft = drafts.get(key)
   if (!draft) { draft = new WriterDraft(key, initial); drafts.set(key, draft) }
   return draft
+}
+// The story-wide save state for the workspace bar and Write's status line.
+const changes = new Set<() => void>()
+export type WriterStatus = DraftState['status']
+function writerStatus(storyId: string): WriterStatus {
+  const states = [...drafts.entries()].filter(([key]) => key.includes(':' + storyId + ':')).map(([, draft]) => draft.state)
+  if (states.some(state => state.status === 'error')) return 'error'
+  if (states.some(state => state.status === 'saving')) return 'saving'
+  return states.some(state => state.text !== state.base) ? 'unsaved' : 'saved'
+}
+export function useWriterStatus(storyId: string) {
+  return useSyncExternalStore(listener => { changes.add(listener); return () => { changes.delete(listener) } }, () => writerStatus(storyId))
 }
 export function writerHasUnsaved(prefix: string) {
   return [...drafts.entries()].some(([key, draft]) => key.startsWith(prefix) && (draft.state.text !== draft.state.base || draft.state.status === 'saving'))

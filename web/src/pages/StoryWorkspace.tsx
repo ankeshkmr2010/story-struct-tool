@@ -38,6 +38,8 @@ import { IconButton } from '../ui/primitives'
 import { Menu, MenuItem } from '../ui/Menu'
 import { ThemeToggle } from '../components/Theme'
 import { AccountMenu } from '../components/AuthGate'
+import { useWriterStatus } from '../components/writerDraft'
+import { CastPanel } from '../components/CastPanel'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
 import { SANDBOX_ID, FIRST_SCENE, tourEvent, type Sandbox } from '../sandbox/storage'
@@ -83,8 +85,8 @@ const PLACEHOLDERS_VIEW = 109
 const PACING_VIEW = 110
 
 // One docked side panel; which tabs it offers depends on the mode (Context and Hints belong to Write).
-type RefPanel = 'context' | 'hints' | 'insights' | 'feedback' | 'placeholders' | 'timeline' | 'places' | 'glossary' | 'assistant'
-const REF_PANELS: [RefPanel, string][] = [['context', tx('Context')], ['hints', tx('Hints')], ['insights', tx('Insights')], ['feedback', tx('Feedback')], ['placeholders', tx('TKs')], ['timeline', tx('Timeline')], ['places', tx('Places')], ['glossary', tx('Glossary')], ['assistant', tx('Assistant')]]
+type RefPanel = 'context' | 'hints' | 'cast' | 'insights' | 'feedback' | 'placeholders' | 'timeline' | 'places' | 'glossary' | 'assistant'
+const REF_PANELS: [RefPanel, string][] = [['context', tx('Context')], ['hints', tx('Hints')], ['cast', tx('Cast')], ['insights', tx('Insights')], ['feedback', tx('Feedback')], ['placeholders', tx('TKs')], ['timeline', tx('Timeline')], ['places', tx('Places')], ['glossary', tx('Glossary')], ['assistant', tx('Assistant')]]
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
@@ -178,7 +180,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [searchParams] = useSearchParams()
   const handledSearchTarget = useRef('')
   const navigate = useNavigate()
-  const panelTabs = REF_PANELS.map(([key, label]): [RefPanel, string] => [key, t(label)]).filter(([key]) => key === 'context' || key === 'hints' ? tab === 'write' : key === 'placeholders' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' || key === 'feedback' ? !sandbox : true)
+  const panelTabs = REF_PANELS.map(([key, label]): [RefPanel, string] => [key, t(label)]).filter(([key]) => key === 'context' || key === 'hints' || key === 'cast' ? tab === 'write' : key === 'placeholders' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' || key === 'feedback' ? !sandbox : true)
   const modePanel: RefPanel | null = tab === 'write' ? 'context' : tab === 'design' && !sandbox ? 'insights' : null
   const preferredPanel = panelTabs.some(([key]) => key === refPanel) ? refPanel : modePanel
   const activePanel = panelHidden ? null : preferredPanel
@@ -294,6 +296,9 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   }
 
   const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
+  const otherStories = useQuery({ queryKey: ['stories'], queryFn: api.listStories, enabled: !sandbox })
+  const saveStatus = useWriterStatus(storyId)
+  const [toolsOpen, setToolsOpen] = useState(false)
   // Re-run on a language change, after App has reset the tab to the generic route title.
   const language = useUiLanguage()
   useEffect(() => { if (story.data?.title) document.title = `${story.data.title} · StoryTool` }, [story.data?.title, language])
@@ -493,7 +498,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       <header className="ws-bar">
         <Link to="/" className="ws-brand" aria-label={t('StoryTool home')} title={t('StoryTool home')}><img src="/branding/storytool.svg" alt="" width="26" height="26" /></Link>
         {!sandbox && <Link to="/library" className="ws-back" aria-label={t('All stories')} title={t('All stories')}>‹</Link>}
-        <div className="ws-title"><h1>{story.data.title}</h1>{progress.data && <span>{t('{0} words · {1}/{2} scenes drafted', progress.data.word_count.toLocaleString(getUiLanguage()), progress.data.drafted_scene_count, progress.data.scene_count)}</span>}</div>
+        <div className="ws-title"><h1>{sandbox ? story.data.title : <Menu label={<><span>{story.data.title}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></>} align="start" triggerClassName="ws-title-button" panelClassName="ws-story-menu"><p className="eyebrow">{t('Switch story')}</p>{(otherStories.data ?? []).filter(item => item.id !== storyId).map(item => <MenuItem key={item.id} onSelect={() => navigate(`/stories/${item.id}`)}>{item.title}</MenuItem>)}<MenuItem onSelect={() => navigate('/library')}>{t('All stories →')}</MenuItem></Menu>}</h1>{progress.data && <span>{t('{0} words · {1}/{2} scenes drafted', progress.data.word_count.toLocaleString(getUiLanguage()), progress.data.drafted_scene_count, progress.data.scene_count)}</span>}</div>
       <div className="story-workspace-tabs" role="tablist" aria-label={t('Story workspace')} onKeyDown={event => {
         if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
           event.preventDefault()
@@ -511,15 +516,19 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         <p className={`live-update-status in-bar${live.activity.isError ? ' is-paused' : ''}`} role="status">{live.activity.isError ? <>{t('Live updates paused.')}<button type="button" onClick={() => { void live.activity.refetch() }}>{t('Retry')}</button></> : <><span className="group relative inline-flex cursor-help items-center p-1.5 -m-1.5" tabIndex={0} aria-label={t('Live updates on')}><span className="live-dot" /><span role="tooltip" className="pointer-events-none absolute left-0 top-6 z-30 hidden w-64 rounded-md border border-slate-200 bg-white p-2 text-xs leading-5 text-slate-700 shadow-lg group-hover:block group-focus:block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">{t('Live: changes from agents and other tabs appear here on their own. No need to refresh.')}</span></span>{justUpdated && <span className="live-updated">{t('Updated just now')}</span>}</>}</p>
           {pendingRuns > 0 && <button type="button" className="workspace-ref-alert" onClick={() => { void openView(INBOX_VIEW) }}>{t('Agent changes')}<span className="workspace-nav-badge" aria-label={t('{0} pending', pendingRuns)}>{pendingRuns}</span></button>}
         <div className="ws-bar-actions">
+          <button type="button" className="ui-icon-btn ws-tools-toggle" aria-label={t('More tools')} title={t('More tools')} aria-expanded={toolsOpen} onClick={() => setToolsOpen(open => !open)}>⋯</button>
+          <div className={`ws-tools${toolsOpen ? ' is-open' : ''}`} onClick={() => setToolsOpen(false)}>
           {tab === 'write' && <IconButton label={t('Focus mode')} onClick={() => setWriterFocus(true)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></IconButton>}
           <IconButton label={t('History')} aria-pressed={tab === 'design' && level === HISTORY_VIEW} onClick={() => { void openView(HISTORY_VIEW).then(() => { if (sandbox) tourEvent('history') }) }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l3 2" /></svg></IconButton>
           <IconButton label={hasPanel ? t('Hide side panel') : tab === 'write' ? t('Show context and side panel') : t('Show side panel')} aria-pressed={hasPanel} className={tab === 'write' && !hasPanel ? 'writer-context-toggle' : ''} onClick={togglePanel}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg></IconButton>
+            <ThemeToggle />
+          </div>
+          <span className={`ws-saved is-${saveStatus}`} role="status">{saveStatus === 'error' ? t('Not saved') : saveStatus === 'saving' ? t('Saving…') : saveStatus === 'unsaved' ? t('Unsaved changes') : t('Saved')}</span>
           {!sandbox && <StorySharing menu betaOpen={openFeedback.data?.length ?? 0} storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>{t('Images')}</MenuItem>} />}
           {/* Export is first-class: the words must always be able to leave. */}
           {!sandbox && <DownloadMenu storyId={storyId} onShowPlaceholders={() => { void openView(PLACEHOLDERS_VIEW) }} />}
           {/* The site header is hidden while a workspace is open; its links live here. */}
           {!sandbox && <Menu label="⋯" ariaLabel={t('Site menu')} triggerClassName="share-story-button"><MenuItem onSelect={() => navigate('/library')}>{t('Your stories')}</MenuItem><MenuItem onSelect={() => navigate('/how-to-use')}>{t('How to use')}</MenuItem><MenuItem onSelect={() => navigate('/roadmap')}>{t('Roadmap')}</MenuItem><MenuItem onSelect={() => navigate('/about')}>{t('About')}</MenuItem><MenuItem onSelect={() => navigate('/how-to-use#mcp')}>{t('Connect AI')}</MenuItem><MenuItem onSelect={() => navigate('/feedback')}>{t('Feedback')}</MenuItem></Menu>}
-          <ThemeToggle />
           {/* Leaving the sandbox keeps it in this browser; save the open line first. */}
           {sandbox && <button type="button" className="share-story-button" onClick={() => { void writerFlush.current().then(ok => ok ? navigate('/') : setTabError(t('Your line has not saved yet. Retry the save before leaving.'))) }}>{t('Exit')}</button>}
           {!sandbox && <AccountMenu />}
@@ -735,6 +744,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         </div>}
         {activePanel === 'insights' && <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, levelLabel(rung.level, rung.label)]))} onOpenLevel={selectLevel} />}
         {activePanel === 'timeline' && <StoryTimeline storyId={storyId} compact allowInsert={tab !== 'read'} onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
+        {activePanel === 'cast' && <CastPanel storyId={storyId} onOpen={(id) => { void openCharacter(id) }} />}
         {activePanel === 'places' && <PlacesPanel storyId={storyId} />}
         {activePanel === 'feedback' && <BetaFeedbackPanel storyId={storyId} focusId={feedbackFocus} onShowInWrite={(id, find) => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id, at: Date.now(), find: find || undefined }) }) }} />}
         {activePanel === 'glossary' && <GlossaryPanel storyId={storyId} />}

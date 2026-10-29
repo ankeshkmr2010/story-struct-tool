@@ -53,13 +53,23 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: 
   const valueFrom = <Field label={t('Emotional value from')}><InlineText value={scene.emotional_value_from} placeholder={t('from')} onSave={save('emotional_value_from')} /></Field>
   const valueTo = <Field label={t('Emotional value to')}><InlineText value={scene.emotional_value_to} placeholder={t('to')} onSave={save('emotional_value_to')} /></Field>
 
+  // Write's Context: where this scene sits in each linked arc, and the threads it advances.
+  const arcCards = essentials ? (arcs.data ?? []).flatMap((arc, index) => {
+    const list = stageQueries[index]?.data ?? []
+    const at = list.findIndex((stage) => links.data?.arc_stage_ids.includes(stage.id))
+    if (at < 0) return []
+    const owner = characters.data?.find((character) => character.id === arc.character_id)?.name ?? t('Arc')
+    return [<div key={arc.id} className="ws-card"><h4>{t('Arc')}</h4><p>{arc.resolution ? `${owner} · ${arc.resolution}` : owner}</p><div className="ws-track" aria-hidden="true">{list.map((stage, step) => <i key={stage.id} className={step <= at ? 'on' : ''} />)}</div><p className="ws-card-note">{t('Step {0} of {1} · {2}', at + 1, list.length, list[at].label)}</p></div>]
+  }) : []
+  const linkedThreads = essentials ? (threads.data ?? []).filter((thread) => links.data?.thread_ids.includes(thread.id)) : []
+
   return (
     <div>{essentials && <section className="scene-essentials" aria-label={t('Scene essentials')}>
       {summary}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{pov}{place}</div>
       {goal}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{valueFrom}{valueTo}</div>
-    </section>}<div className="scene-details-actions"><SceneDelete storyId={storyId} scene={scene} onDeleted={() => { onDeleted(); refresh() }} /></div><SceneImages storyId={storyId} sceneId={scene.id} /><details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+    </section>}{arcCards}{linkedThreads.length > 0 && <div className="ws-card"><h4>{t('Threads')}</h4>{linkedThreads.map((thread) => <p key={thread.id}>{thread.title || t('Untitled thread')}{thread.mice && <span className="ws-card-note"> · {thread.mice}</span>}</p>)}</div>}<div className="scene-details-actions"><SceneDelete storyId={storyId} scene={scene} onDeleted={() => { onDeleted(); refresh() }} /></div><SceneImages storyId={storyId} sceneId={scene.id} /><details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
       <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-950">
         <span>{essentials ? t('More details and links') : t('Scene details and links')}</span>
         <span className="truncate text-xs font-normal text-slate-400">{t('Draft: {0} · {1} words', scene.status, scene.word_count)}</span>
