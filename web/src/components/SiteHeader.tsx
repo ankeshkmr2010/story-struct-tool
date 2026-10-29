@@ -61,11 +61,11 @@ export function SiteHeader({ headerRef, sandbox, compact }: { headerRef: Ref<HTM
   const storiesActive = location.pathname === '/library' || location.pathname.startsWith('/stories/')
   const themeLabel = theme === 'dark' ? t('Light mode') : t('Dark mode')
   const links = [
-    ...(signedIn ? [{ to: '/library', label: t('Your stories'), active: storiesActive }] : []),
-    { to: '/how-to-use', label: t('How to use'), active: location.pathname === '/how-to-use' && !mcp },
-    { to: '/how-to-use#mcp', label: t('Connect AI'), active: mcp },
-    { to: '/roadmap', label: t('Roadmap'), active: location.pathname === '/roadmap' },
-    { to: '/about', label: t('About'), active: location.pathname === '/about' },
+    ...(signedIn ? [{ to: '/library', label: t('Your stories'), active: storiesActive, ico: <><path d="M5 4.5h9a3 3 0 0 1 3 3v12a2.5 2.5 0 0 0-2.5-2.5H5z" /><path d="M5 4.5v12.5" /></> }] : []),
+    { to: '/how-to-use', label: t('How to use'), active: location.pathname === '/how-to-use' && !mcp, ico: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01" /></> },
+    { to: '/how-to-use#mcp', label: t('Connect AI'), active: mcp, ico: <path d="M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0V7zM12 16v5" /> },
+    { to: '/roadmap', label: t('Roadmap'), active: location.pathname === '/roadmap', ico: <path d="M5 21V4h11l-1.5 4L16 12H5" /> },
+    { to: '/about', label: t('About'), active: location.pathname === '/about', ico: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></> },
   ]
   const signIn = (extra = '') => <Link to="/library" className={`sh-gbtn ${extra}`}>{google}{t('Sign in with Google')}</Link>
 
@@ -73,7 +73,7 @@ export function SiteHeader({ headerRef, sandbox, compact }: { headerRef: Ref<HTM
     <div className="sh-bar">
       <Link to="/" className="sh-mark">{t('StoryTool')}</Link>
       {!sandbox && <nav className="sh-links" aria-label={t('Main navigation')}>
-        {links.map(link => <NavLink key={link.to} to={link.to} className={() => link.active ? 'is-active' : ''} aria-current={link.active ? 'page' : undefined}>{link.label}</NavLink>)}
+        {links.map(link => <NavLink key={link.to} to={link.to} className={() => link.active ? 'is-active' : ''} aria-current={link.active ? 'page' : undefined}>{icon(link.ico, 15)}{link.label}</NavLink>)}
       </nav>}
       <div className="sh-right">
         {!sandbox && <span className="sh-vr" aria-hidden="true" />}
@@ -95,8 +95,6 @@ export function SiteHeader({ headerRef, sandbox, compact }: { headerRef: Ref<HTM
             <div className="sh-menu-head" role="none"><strong>{me.data.name ?? t('Your account')}</strong><span>{me.data.email}</span></div>
             <Link role="menuitem" to="/settings">{icon(<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></>)}{t('Settings')}</Link>
             <Link role="menuitem" to="/checks">{icon(<path d="m5 12 4 4 10-10" />)}{t('Writing checks')}</Link>
-            <Link role="menuitem" to="/how-to-use#mcp">{icon(<path d="M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0V7zM12 16v5" />)}{t('Connect AI')}</Link>
-            <Link role="menuitem" to="/feedback">{icon(speech)}{t('Feedback')}</Link>
             <hr />
             <button type="button" role="menuitem" onClick={() => logout.mutate()} disabled={logout.isPending}>{icon(<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />)}{logout.isPending ? t('Signing out…') : t('Sign out')}</button>
             {logout.isError && <p role="alert">{t('Could not sign out. Try again.')}</p>}
@@ -109,7 +107,7 @@ export function SiteHeader({ headerRef, sandbox, compact }: { headerRef: Ref<HTM
     </div>
     {sheet && <div className="sh-sheet" id="site-sheet">
       {!sandbox && <nav aria-label={t('Menu')}>
-        {links.map(link => <Link key={link.to} to={link.to} className={link.active ? 'is-active' : ''}>{link.label}</Link>)}
+        {links.map(link => <Link key={link.to} to={link.to} className={link.active ? 'is-active' : ''}>{icon(link.ico)}{link.label}</Link>)}
         <Link to="/feedback">{icon(speech)}{t('Feedback')}</Link>
       </nav>}
       {signedOut && signIn('sh-signin-sheet')}

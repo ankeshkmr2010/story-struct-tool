@@ -1474,3 +1474,8 @@ p.ws-card-note { margin-top: 8px; }
 .goal-bar .goal-popover { left: auto; right: 0; }
 .goal-summary { left: auto; right: 0; transform: none; }
 @media (max-width: 700px) { .story-writer > .writer-statusbar { justify-content: center; } }
+/* Navbar links carry icons like the menus (2026-10-30). */
+.sh-links a { gap: 6px; }
+.sh-links a svg { flex: none; opacity: .75; }
+.sh-links a:hover svg, .sh-links a.is-active svg { opacity: 1; }
+@media (max-width: 1180px) { .sh-links { gap: 16px; } }

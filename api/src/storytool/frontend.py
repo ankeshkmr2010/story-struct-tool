@@ -27,6 +27,7 @@ def frontend_router(directory: Path) -> Router:
             "/try/keep",
             "/try/{feature:path}",
             "/settings",
+            "/goals",
             "/checks",
             "/how-to-use",
             "/roadmap",
