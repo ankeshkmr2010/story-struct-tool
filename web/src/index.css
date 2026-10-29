@@ -1374,3 +1374,6 @@ p.ws-card-note { margin-top: 8px; }
 .lib-open li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px; }
 @media (max-width: 1000px) { .lib-layout { grid-template-columns: minmax(0, 1fr); } .lib-side { position: static; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
 @media (max-width: 640px) { .lib-continue { grid-template-columns: minmax(0, 1fr); } .lib-continue .lib-cover { min-height: 100px; } .lib-continue-body { padding: 20px; } .lib-heading h1 { font-size: 30px; } }
+/* The old page-heading button rule painted "+ New story" like the others; keep it the primary action. */
+.lib-heading-actions .ui-btn-primary { border-color: var(--button); background: var(--button); color: var(--button-ink); }
+.lib-heading-actions .ui-btn-primary:hover { background: var(--button-hover); }
