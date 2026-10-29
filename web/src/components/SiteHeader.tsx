@@ -64,6 +64,7 @@ export function SiteHeader({ headerRef, sandbox, compact }: { headerRef: Ref<HTM
     ...(signedIn ? [{ to: '/library', label: t('Your stories'), active: storiesActive }] : []),
     { to: '/how-to-use', label: t('How to use'), active: location.pathname === '/how-to-use' && !mcp },
     { to: '/how-to-use#mcp', label: t('Connect AI'), active: mcp },
+    { to: '/roadmap', label: t('Roadmap'), active: location.pathname === '/roadmap' },
     { to: '/about', label: t('About'), active: location.pathname === '/about' },
   ]
   const signIn = (extra = '') => <Link to="/library" className={`sh-gbtn ${extra}`}>{google}{t('Sign in with Google')}</Link>
