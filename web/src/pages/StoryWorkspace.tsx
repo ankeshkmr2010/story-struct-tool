@@ -585,8 +585,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === STRUCTURE_VIEW && <StructureBoard storyId={storyId} onOpenScene={openScene} />}
           {level === TIMELINE_VIEW && <TimelineLanes storyId={storyId} onOpenScene={openScene} />}
-          {level === PLACES_VIEW && <section className="plan-view"><header className="plan-head"><h2>{t('Places')}</h2></header><PlacesPanel storyId={storyId} /></section>}
-          {level === GLOSSARY_VIEW && <section className="plan-view"><header className="plan-head"><h2>{t('Glossary')}</h2></header><GlossaryPanel storyId={storyId} /></section>}
+          {level === PLACES_VIEW && <section className="plan-view"><PlacesPanel storyId={storyId} /></section>}
+          {level === GLOSSARY_VIEW && <section className="plan-view"><GlossaryPanel storyId={storyId} /></section>}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
           {level === PLACEHOLDERS_VIEW && <section><h2 className="level-title">{t('Placeholders')}</h2><PlaceholderList storyId={storyId} beforeEdit={() => writerFlush.current()} onOpen={openPassage} /></section>}
           {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} beforeEdit={() => writerFlush.current()} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
