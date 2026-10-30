@@ -4,6 +4,7 @@ import { api, type Beat } from '../api/client'
 import { errorText } from '../api/errors'
 import { InlineSelect, InlineText } from './fields'
 import { t } from '../i18n'
+import { CraftTerm } from './CraftTerm'
 
 /** Design → Structure: act columns with their beats as cards; a beat opens in the drawer. */
 export function StructureBoard({ storyId, onOpenScene }: { storyId: string; onOpenScene: (sceneId: string) => void }) {
@@ -31,7 +32,7 @@ export function StructureBoard({ storyId, onOpenScene }: { storyId: string; onOp
 
   if (acts.isPending || beats.isPending) return <p className="writer-help">{t('Loading…')}</p>
   return <section className="plan-view">
-    <header className="plan-head"><h2>{t('Structure')}</h2><span>{t('{0} acts · {1} beats', acts.data?.length ?? 0, beats.data?.length ?? 0)}</span></header>
+    <header className="plan-head"><h2>{t('Structure')}</h2><span>{t('{0} acts · {1} story moments', acts.data?.length ?? 0, beats.data?.length ?? 0)}</span></header>
     <p className="writer-help">{t('Each act with the beats it should land. Click a beat to edit it and see the scenes that fulfil it. Acts and Beats in the list keep the full forms.')}</p>
     <div className={`structure-layout${current ? ' has-drawer' : ''}`}>
       <div className="structure-board" style={{ gridTemplateColumns: `repeat(${Math.max(1, columns.length)}, minmax(220px, 1fr))` }}>
@@ -49,11 +50,11 @@ export function StructureBoard({ storyId, onOpenScene }: { storyId: string; onOp
             <input autoFocus value={label} maxLength={200} placeholder={t('Beat label')} aria-label={t('Beat label')} onChange={event => setLabel(event.target.value)} />
             <button type="submit" className="ui-btn ui-btn-primary ui-btn-sm" disabled={!label.trim() || create.isPending}>{t('Add')}</button>
             <button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" onClick={() => { setAdding(null); setLabel('') }}>{t('Cancel')}</button>
-          </form> : <button type="button" className="structure-new" onClick={() => { setAdding(column.id ?? 'none'); setLabel('') }}>{t('+ Beat')}</button>}
+          </form> : <button type="button" className="structure-new" onClick={() => { setAdding(column.id ?? 'none'); setLabel('') }}>{t('+ Story moment')}</button>}
         </div>)}
       </div>
       {current && <aside className="structure-drawer" aria-label={t('Beat details')}>
-        <div className="structure-drawer-head"><h3>{t('Beat')}</h3><button type="button" aria-label={t('Close')} onClick={() => setSelected(null)}>×</button></div>
+        <div className="structure-drawer-head"><h3><CraftTerm id="beat" /></h3><button type="button" aria-label={t('Close')} onClick={() => setSelected(null)}>×</button></div>
         <label className="field-label">{t('Label')}<InlineText key={`label-${current.id}`} value={current.label} placeholder={t('Beat label')} onSave={value => value ? update(current)({ label: value }) : undefined} /></label>
         <label className="field-label">{t('Description')}<InlineText key={`desc-${current.id}`} value={current.description} placeholder={t('What has to happen here?')} multiline onSave={value => update(current)({ description: value })} /></label>
         <label className="field-label">{t('Act')}<InlineSelect value={current.act_id} options={(acts.data ?? []).map(act => ({ value: act.id, label: act.title ? t('Act {0} · {1}', act.number, act.title) : t('Act {0}', act.number) }))} onSave={value => update(current)({ act_id: value })} /></label>

@@ -49,8 +49,8 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: 
   const place = <Field label={t('Place')}><InlineSelect value={scene.location_id} options={(locations.data ?? []).map((location) => ({ value: location.id, label: location.name }))} onSave={save('location_id')} /></Field>
   const summary = <Field label={t('Summary')}><InlineText value={scene.summary} placeholder={t('What happens?')} onSave={save('summary')} multiline /></Field>
   const goal = <Field label={t('Goal')}><InlineText value={scene.goal} placeholder={t('What does the POV character want?')} onSave={save('goal')} multiline /></Field>
-  const valueFrom = <Field label={t('Emotional value from')}><InlineText value={scene.emotional_value_from} placeholder={t('from')} onSave={save('emotional_value_from')} /></Field>
-  const valueTo = <Field label={t('Emotional value to')}><InlineText value={scene.emotional_value_to} placeholder={t('to')} onSave={save('emotional_value_to')} /></Field>
+  const valueFrom = <Field label={<CraftTerm id="value_from" />}><InlineText value={scene.emotional_value_from} placeholder={t('from')} onSave={save('emotional_value_from')} /></Field>
+  const valueTo = <Field label={<CraftTerm id="value_to" />}><InlineText value={scene.emotional_value_to} placeholder={t('to')} onSave={save('emotional_value_to')} /></Field>
 
   // Write's Context: where this scene sits in each linked arc, and the threads it advances.
   const arcCards = essentials ? (arcs.data ?? []).flatMap((arc, index) => {
@@ -99,9 +99,9 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: 
       </div>
       {!essentials && <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">{valueFrom}{valueTo}</div>}
       <div className="mt-4 space-y-3 border-t border-slate-100 dark:border-slate-800 pt-3">
-        <div><h4 className="field-label">{t('Beats this scene fulfils')}</h4><div className="mt-1 flex flex-wrap gap-2">{beats.data?.map((beat) => <label key={beat.id} className="text-xs"><input type="checkbox" checked={links.data?.beat_ids.includes(beat.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'beat', id: beat.id, checked: event.target.checked })} /> {beat.label}</label>)}</div></div>
-        <div><h4 className="field-label">{t('Threads advanced')}</h4><div className="mt-1 flex flex-wrap gap-2">{threads.data?.map((thread) => <label key={thread.id} className="text-xs"><input type="checkbox" checked={links.data?.thread_ids.includes(thread.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'thread', id: thread.id, checked: event.target.checked })} /> {thread.title ?? thread.type}</label>)}</div></div>
-        {stages.length > 0 && <div><h4 className="field-label">{t('Arc stages advanced')}</h4><div className="mt-1 flex flex-wrap gap-2">{stages.map((stage) => <label key={stage.id} className="text-xs"><input type="checkbox" checked={links.data?.arc_stage_ids.includes(stage.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'stage', id: stage.id, checked: event.target.checked })} /> {stage.owner}: {stage.label}</label>)}</div></div>}
+        <div><h4 className="field-label"><CraftTerm id="beat" label={t('Story moments this scene fulfils')} /></h4><div className="mt-1 flex flex-wrap gap-2">{beats.data?.map((beat) => <label key={beat.id} className="text-xs"><input type="checkbox" checked={links.data?.beat_ids.includes(beat.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'beat', id: beat.id, checked: event.target.checked })} /> {beat.label}</label>)}</div></div>
+        <div><h4 className="field-label"><CraftTerm id="threads" label={t('Threads advanced')} /></h4><div className="mt-1 flex flex-wrap gap-2">{threads.data?.map((thread) => <label key={thread.id} className="text-xs"><input type="checkbox" checked={links.data?.thread_ids.includes(thread.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'thread', id: thread.id, checked: event.target.checked })} /> {thread.title ?? thread.type}</label>)}</div></div>
+        {stages.length > 0 && <div><h4 className="field-label"><CraftTerm id="arc_stage" label={t('Steps in a character’s change')} /></h4><div className="mt-1 flex flex-wrap gap-2">{stages.map((stage) => <label key={stage.id} className="text-xs"><input type="checkbox" checked={links.data?.arc_stage_ids.includes(stage.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'stage', id: stage.id, checked: event.target.checked })} /> {stage.owner}: {stage.label}</label>)}</div></div>}
       </div>
       </div>
     </details></div>
@@ -110,3 +110,4 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: 
 import { ReferenceImages, SceneImages } from './StoryImages'
 import { t } from '../i18n'
 import { DETAILED, SIMPLE, shownStatus, statusName, storedStatus, useDetailedStatuses } from './sceneStatus'
+import { CraftTerm } from './CraftTerm'

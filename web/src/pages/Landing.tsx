@@ -48,7 +48,7 @@ function PacingChart() {
     <p className="lp-pacing-title">{t('Pacing')}</p>
     <p className="lp-pacing-sub">{t('15 scenes · 41,820 words · value shifts in 9 of 15')}</p>
     <svg viewBox="0 0 600 250" role="img" aria-label={t('Pacing chart: scenes 7 to 10 are long, with no value shift. Act 2 sags here.')}>
-      <g className="lp-chart-label" fontSize="12"><text x="0" y={base - 30}>{t('Scene length')}</text><text x="0" y="196">{t('Value shift')}</text><text x="0" y="232">{t('Point of view')}</text></g>
+      <g className="lp-chart-label" fontSize="12"><text x="0" y={base - 30}>{t('Scene length')}</text><text x="0" y="196">{t('What changes')}</text><text x="0" y="232">{t('Point of view')}</text></g>
       <line x1={x0 - 6} x2={x0 + 14 * step + bw + 6} y1={base + 0.5} y2={base + 0.5} className="lp-chart-axis" />
       {heights.map((h, i) => {
         const x = x0 + i * step
@@ -64,7 +64,7 @@ function PacingChart() {
     </svg>
     <ul className="lp-legend">
       <li><span className="lp-sw lp-chart-bar" />{t('Scene length')}</li>
-      <li><span className="lp-sw is-dot lp-chart-bar" />{t('Value shift')}</li>
+      <li><span className="lp-sw is-dot lp-chart-bar" />{t('What changes')}</li>
       <li><span className="lp-sw is-dot is-ring" />{t('No shift')}</li>
       <li><span className="lp-sw lp-pov-maya" />{t('Maya POV')}</li>
       <li><span className="lp-sw lp-pov-eli" />{t('Eli POV')}</li>

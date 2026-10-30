@@ -1,4 +1,5 @@
 import { t } from '../i18n'
+import { craftPlain } from './CraftTerm'
 
 export function TutorialWalkthrough({ onTimeline, onCharacters, onScenes, onPractice }: {
   onTimeline: () => void
@@ -13,7 +14,7 @@ export function TutorialWalkthrough({ onTimeline, onCharacters, onScenes, onPrac
         <section>
           <h2 className="text-sm font-semibold">{t('1. Two orders, the same events')}</h2>
           <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">{t('The story opens at time 30 during the storm, then flashes back to yesterday\'s warning at time 10.')}</p>
-          <p className="mt-2 text-xs text-slate-700 dark:text-slate-200">{t('World time:')}{' '}<strong>10 → 30 → 40 → 50 → 60 → 70</strong></p>
+          <p className="mt-2 text-xs text-slate-700 dark:text-slate-200">{craftPlain('world_time')}:{' '}<strong>10 → 30 → 40 → 50 → 60 → 70</strong></p>
           <p className="mt-1 text-xs text-slate-700 dark:text-slate-200">{t('Reading order:')}{' '}<strong>30 → 10 → 40 → 50 → 60 → 70</strong></p>
           <button type="button" onClick={onTimeline} className="mt-3 text-xs font-medium text-sky-700 dark:text-sky-300 underline">{t('Explore the two timelines →')}</button>
         </section>

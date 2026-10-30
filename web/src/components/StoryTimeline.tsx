@@ -6,6 +6,7 @@ import { AddForm, InlineNumber, InlineSelect, InlineText } from './fields'
 import { SANDBOX_ID, tourEvent } from '../sandbox/storage'
 import { t } from '../i18n'
 import { valueLabel } from '../i18n/server'
+import { craftPlain } from './CraftTerm'
 
 const entryKey = (entry: TimelineEntry) => `${entry.kind}:${entry.id}`
 const isSuggested = (source: string, isPov: boolean) => source === 'inferred' && !isPov
@@ -102,7 +103,7 @@ export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact =
       {showAdd && <section className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-4"><AddForm placeholder={t('What happens in this event?')} onAdd={(title) => create.mutateAsync(title)} pending={create.isPending} /><p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('The new event starts at the end of the timeline. Select it to set its time, people, and place.')}</p></section>}
 
       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-300">
-        <div className="flex rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-0.5" role="group" aria-label={t('Timeline order')}>{(['world', 'reading'] as const).map((value) => <button key={value} type="button" aria-pressed={order === value} onClick={() => { setOrder(value); if (storyId === SANDBOX_ID && value !== order) tourEvent('timeline') }} className={`rounded px-3 py-1.5 ${order === value ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900'}`}>{value === 'world' ? t('World time') : t('Reading order')}</button>)}</div>
+        <div className="flex rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-0.5" role="group" aria-label={t('Timeline order')}>{(['world', 'reading'] as const).map((value) => <button key={value} type="button" aria-pressed={order === value} onClick={() => { setOrder(value); if (storyId === SANDBOX_ID && value !== order) tourEvent('timeline') }} className={`rounded px-3 py-1.5 ${order === value ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900'}`}>{value === 'world' ? craftPlain('world_time') : t('Reading order')}</button>)}</div>
         <label>{t('Person')}<select aria-label={t('Filter timeline by person')} value={characterFilter} onChange={(event) => setCharacterFilter(event.target.value)} className="ml-2 max-w-48 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5"><option value="">{t('Everyone')}</option>{timeline.data.characters.map((character) => <option key={character.id} value={character.id}>{character.name}</option>)}</select></label>
         <label>{t('Place')}<select aria-label={t('Filter timeline by place')} value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} className="ml-2 max-w-48 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5"><option value="">{t('Everywhere')}</option>{locations.data?.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select></label>
         <label className="flex items-center gap-2"><input type="checkbox" checked={showScenes} onChange={(event) => setShowScenes(event.target.checked)} />{t('Include scenes')}</label>
@@ -111,7 +112,7 @@ export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact =
 
       {moments.length > 0 ? (
         <section className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900" aria-label={t('Visual story timeline')}>
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-4 py-3 text-xs text-slate-500 dark:text-slate-400"><span>{order === 'world' ? t('Earlier ← when it happened → Later') : t('Opening ← when it is told → Ending')}</span><span>{t('◆ Turning point')}</span></div>
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-4 py-3 text-xs text-slate-500 dark:text-slate-400"><span>{order === 'world' ? t('Earlier ← when it happened → Later') : t('Opening ← when it is told → Ending')}</span><span>{`◆ ${craftPlain('turning_point')}`}</span></div>
           <div className={compact ? "px-4 py-4" : "overflow-x-auto px-6 py-5"} tabIndex={0} aria-label={t('Scroll horizontally through story events')}>
             <div className={compact ? "relative flex flex-col gap-5" : "relative flex w-max min-w-full gap-7 pb-4"}>
               {!compact && <div aria-hidden="true" className="absolute left-0 right-0 top-[60px] h-0.5 bg-sky-200 dark:bg-sky-900" />}
@@ -186,7 +187,7 @@ function EventCard({ entry, active, onSelect, sceneTitle, onOpenScene, onOpenCha
   const go = (event: MouseEvent, action: () => void) => { event.stopPropagation(); action() }
   return (
     <div role="button" tabIndex={0} onClick={onSelect} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onSelect() } }} aria-pressed={active} className={`w-full rounded-xl border bg-white dark:bg-slate-900 p-4 text-left shadow-sm transition hover:border-sky-300 dark:hover:border-sky-800 hover:shadow-md ${active ? 'border-sky-400 ring-2 ring-sky-200' : 'border-slate-200 dark:border-slate-700'}`}>
-      <span className="flex flex-wrap gap-2 text-[10px] uppercase tracking-wide text-slate-400"><span>{valueLabel(entry.kind)}</span>{entry.is_turning_point && <span className="text-amber-700 dark:text-amber-300">{t('◆ Turning point')}</span>}{entry.is_flashback && <span className="text-violet-600 dark:text-violet-300">{t('Flashback')}</span>}</span>
+      <span className="flex flex-wrap gap-2 text-[10px] uppercase tracking-wide text-slate-400"><span>{valueLabel(entry.kind)}</span>{entry.is_turning_point && <span className="text-amber-700 dark:text-amber-300">{`◆ ${craftPlain('turning_point')}`}</span>}{entry.is_flashback && <span className="text-violet-600 dark:text-violet-300">{t('Flashback')}</span>}</span>
       {entry.kind === 'scene'
         ? <button type="button" onClick={(event) => go(event, () => onOpenScene(entry.id))} className="mt-2 block text-left text-sm font-semibold leading-5 text-slate-900 hover:underline dark:text-slate-100">{entry.title} →</button>
         : <span className="mt-2 block text-sm font-semibold leading-5 text-slate-900 dark:text-slate-100">{entry.title}</span>}

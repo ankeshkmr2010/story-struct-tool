@@ -9,6 +9,7 @@ import { orderChapters, orderScenes } from '../api/ordering'
 import { ManuscriptReading } from '../components/ManuscriptReading'
 import { ReadOnlyTimeline } from '../components/ReadOnlyTimeline'
 import { getUiLanguage, t, tx, useUiLanguage } from '../i18n'
+import { craftPlain } from '../components/CraftTerm'
 
 type Row = Record<string, unknown>
 const value = (row: Row | undefined, field: string) => row?.[field] == null ? '' : String(row[field])
@@ -131,7 +132,7 @@ function ShowcaseContext({ story, rows, name }: { story: Row; rows: (kind: strin
     </section>
 
     <Section id="ctx-characters" title={t('Characters')} count={people.length}><div className="showcase-grid">{people.map(person => {
-      const inner = [['wound', t('Wound')], ['misbelief', t('Misbelief')], ['voice_notes', t('Voice')]].filter(([field]) => value(person, field))
+      const inner = [['wound', craftPlain('wound')], ['misbelief', craftPlain('misbelief')], ['voice_notes', t('Voice')]].filter(([field]) => value(person, field))
       return <article key={value(person, 'id')} className="showcase-card showcase-person">
         <header><span className="showcase-avatar" aria-hidden="true">{value(person, 'name').charAt(0)}</span><div><h3>{value(person, 'name')}</h3>{value(person, 'role') && <span className="showcase-pill">{human(value(person, 'role'))}</span>}</div></header>
         <ReadOnlyReferenceImages images={rows('story_image')} entity="character" entityId={value(person, 'id')} />{value(person, 'description') && <p>{value(person, 'description')}</p>}

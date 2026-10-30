@@ -6,6 +6,7 @@ import { InlineSelect, InlineText } from './fields'
 import { SceneDetails } from './SceneDetails'
 import { t } from '../i18n'
 import { DETAILED, SIMPLE, dotStatus, isDrafted, shownStatus, statusName, storedStatus, useDetailedStatuses } from './sceneStatus'
+import { CraftTerm, craftPlain } from './CraftTerm'
 
 // A scene with prose is at least drafted, so its status only moves between drafted and revised.
 const WRITTEN = ['drafted', 'revised']
@@ -160,7 +161,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
     { key: 'conflict', label: t('Conflict'), fields: ['conflict'], filled: (s) => has(s.conflict), view: (s) => text(s.conflict), edit: (s) => <InlineText value={s.conflict} placeholder="—" multiline onSave={save(s.id, 'conflict')} /> },
     { key: 'outcome', label: t('Outcome'), fields: ['outcome'], filled: (s) => has(s.outcome), view: (s) => text(s.outcome), edit: (s) => <InlineText value={s.outcome} placeholder="—" multiline onSave={save(s.id, 'outcome')} /> },
     {
-      key: 'shift', label: t('Value shift'), width: 'w-36', fields: ['emotional_value_from', 'emotional_value_to'], filled: (s) => shiftKind(s) === 'shift',
+      key: 'shift', label: craftPlain('value_shift'), width: 'w-36', fields: ['emotional_value_from', 'emotional_value_to'], filled: (s) => shiftKind(s) === 'shift',
       view: (s) => <Shift scene={s} empty />,
       edit: (s) => <div className="flex flex-col gap-1"><InlineText value={s.emotional_value_from} placeholder={t('from')} onSave={save(s.id, 'emotional_value_from')} /><InlineText value={s.emotional_value_to} placeholder={t('to')} onSave={save(s.id, 'emotional_value_to')} /><Shift scene={s} /></div>,
     },
@@ -283,7 +284,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                 <th className={headCell}>#</th>
                 <th className={headCell}>{t('Scene')}</th>
                 <th className={headCell} title={t('Draft status — click a dot to advance')}>{t('St')}</th>
-                {shown.map((column) => <th key={column.key} className={`${headCell} ${column.key === 'words' ? 'text-right' : ''}`}>{column.label}</th>)}
+                {shown.map((column) => <th key={column.key} className={`${headCell} ${column.key === 'words' ? 'text-right' : ''}`}>{column.key === 'shift' ? <CraftTerm id="value_shift" /> : column.label}</th>)}
               </tr>
             </thead>
             <tbody>

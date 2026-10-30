@@ -11,6 +11,7 @@ import { SANDBOX_ID } from '../sandbox/storage'
 import { HelpTip } from './HelpTip'
 import { ReferenceImages } from './StoryImages'
 import { t } from '../i18n'
+import { CraftTerm } from './CraftTerm'
 
 const ROLES = ['protagonist', 'antagonist', 'mentor', 'foil', 'supporting', 'minor'] as const
 const ARC_TYPES = ['positive', 'negative', 'flat'] as const
@@ -161,7 +162,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
               <div className="mt-1.5 grid grid-cols-2 gap-2">
                 <label className="block">
                   <span className="field-label">
-                    {t('Want (external)')}
+                    <CraftTerm id="want" />
                   </span>
                   <InlineText
                     value={character.want}
@@ -171,7 +172,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                 </label>
                 <label className="block">
                   <span className="field-label">
-                    {t('Need (actual)')}
+                    <CraftTerm id="need" />
                   </span>
                   <InlineText
                     value={character.need}
@@ -186,12 +187,14 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                   {t('Backstory')}
                 </summary>
                 <div className="mt-1 space-y-1.5">
+                  <span className="field-label"><CraftTerm id="wound" /></span>
                   <InlineText
                     value={character.wound}
                     placeholder={t('wound — the formative injury')}
                     onSave={set('wound')}
                     multiline
                   />
+                  <span className="field-label"><CraftTerm id="misbelief" /></span>
                   <InlineText
                     value={character.misbelief}
                     placeholder={t('misbelief — the lie they believe')}

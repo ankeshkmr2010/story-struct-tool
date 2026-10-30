@@ -1,5 +1,6 @@
 import type { AIRun } from '../api/client'
 import { t } from '../i18n'
+import { craftPlain } from './CraftTerm'
 
 type Entities = Record<string, Record<string, unknown>[]>
 
@@ -46,7 +47,7 @@ export function AIChangePreview({ run, entities = {} }: { run: AIRun; entities?:
                 return `${action}${edit.index == null ? '' : ` item ${edit.index + 1}`}: ${edit.expected_value == null ? '' : short(edit.expected_value) + ' → '}${action === 'remove' ? 'remove item' : action === 'move' ? `position ${Number(edit.to_index) + 1}` : short(edit.value)}`
               }).join(' · ')
               const before = rows.get(operation.ref)?.[field]
-              const label = field === 'sort_ordinal' || field === 'story_time_ordinal' ? t('World time') : field === 'sort_key' ? t('Reading order') : field.replace(/_id$/, '').replaceAll('_', ' ')
+              const label = field === 'sort_ordinal' || field === 'story_time_ordinal' ? craftPlain('world_time') : field === 'sort_key' ? t('Reading order') : field.replace(/_id$/, '').replaceAll('_', ' ')
               return `${label}: ${run.status === 'proposed' && operation.op === 'update' ? short(before) + ' → ' : ''}${short(value)}`
             }).join(' · ')}</p>}
           </li>

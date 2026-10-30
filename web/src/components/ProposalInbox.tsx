@@ -4,6 +4,7 @@ import { api, type AIRun } from '../api/client'
 import { errorText } from '../api/errors'
 import { t, tx } from '../i18n'
 import { valueLabel } from '../i18n/server'
+import { craftPlain } from './CraftTerm'
 
 type Operation = AIRun['proposal']['operations'][number]
 type StatusFilter = 'pending' | 'applied' | 'closed' | 'all'
@@ -22,7 +23,7 @@ const statusTone: Record<string, string> = {
 }
 const verbs: Record<string, string> = { create: tx('Add'), update: tx('Update'), link: tx('Connect'), unlink: tx('Disconnect'), write_prose: tx('Rewrite prose in'), patch_prose: tx('Edit passage in'), patch_list: tx('Edit list in'), delete: tx('Delete') }
 const hidden = new Set(['expected_content_hash', 'expected_field_hash'])
-const fieldLabel = (field: string) => field === 'sort_ordinal' || field === 'story_time_ordinal' ? t('World time') : field === 'sort_key' ? t('Reading order') : field.replace(/_id$/, '').replaceAll('_', ' ')
+const fieldLabel = (field: string) => field === 'sort_ordinal' || field === 'story_time_ordinal' ? craftPlain('world_time') : field === 'sort_key' ? t('Reading order') : field.replace(/_id$/, '').replaceAll('_', ' ')
 
 export function ProposalInbox({ storyId }: { storyId: string }) {
   const qc = useQueryClient()

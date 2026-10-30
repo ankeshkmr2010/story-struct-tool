@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api, type TimelineEntry } from '../api/client'
 import { t } from '../i18n'
+import { craftPlain, craftTitle } from './CraftTerm'
 
 type Order = 'story' | 'world'
 type Lanes = 'pov' | 'place'
@@ -35,7 +36,7 @@ export function TimelineLanes({ storyId, onOpenScene }: { storyId: string; onOpe
       <div className="timeline-controls">
         <div className="lib-view" role="group" aria-label={t('Order')}>
           <button type="button" aria-pressed={order === 'story'} onClick={() => setOrder('story')}>{t('Story order')}</button>
-          <button type="button" aria-pressed={order === 'world'} onClick={() => setOrder('world')}>{t('World order')}</button>
+          <button type="button" aria-pressed={order === 'world'} onClick={() => setOrder('world')} title={craftTitle('world_order')}>{craftPlain('world_order')}</button>
         </div>
         <div className="lib-view" role="group" aria-label={t('Lanes')}>
           <button type="button" aria-pressed={lanes === 'pov'} onClick={() => setLanes('pov')}>{t('By POV')}</button>
@@ -55,7 +56,7 @@ export function TimelineLanes({ storyId, onOpenScene }: { storyId: string; onOpe
               <span className="timeline-lane-label" title={name}>{name}</span>
               <div className="timeline-track">
                 {placed.map((entry, index) => laneOf(entry) === name && <button key={entry.id} type="button" className={`timeline-item lane-c${lane % 6}${entry.kind === 'event' ? ' is-event' : ''}${entry.is_flashback ? ' is-flashback' : ''}${selected === entry.id ? ' is-selected' : ''}`} style={{ left: index * step, width: step - 10 }} aria-pressed={selected === entry.id} title={entry.title} onClick={() => setSelected(selected === entry.id ? null : entry.id)}>
-                  {entry.is_turning_point && <i aria-label={t('Turning point')}>◆</i>}<span>{entry.title}</span>
+                  {entry.is_turning_point && <i aria-label={craftPlain('turning_point')}>◆</i>}<span>{entry.title}</span>
                 </button>)}
               </div>
             </div>)}

@@ -4,6 +4,7 @@ import { api, type Scene } from '../api/client'
 import { orderScenes } from '../api/ordering'
 import { openBeside } from './beside'
 import { getUiLanguage, t, tx } from '../i18n'
+import { CraftTerm, craftPlain } from './CraftTerm'
 
 const MAX_POV = 8
 type Shift = 'shift' | 'flat' | 'missing'
@@ -67,7 +68,7 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
           {ordered.map(({ scene }, index) => <span key={scene.id} className={marked(index)}><i style={{ height: `${Math.max(scene.word_count ? 6 : 0, (scene.word_count / longest) * 100)}%` }} /></span>)}
         </div>
 
-        <p className="pacing-row-label">{t('Value shift')}</p>
+        <p className="pacing-row-label"><CraftTerm id="value_shift" /></p>
         <div className="pacing-row pacing-shifts" style={columns}>
           {ordered.map(({ scene }, index) => <span key={scene.id} className={`is-${shiftOf(scene)}${marked(index)}`}><i /></span>)}
         </div>
@@ -88,7 +89,7 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
       {active ? <>
         <strong>{active.scene.title || t('Untitled scene')}</strong>
         <span>{t('Chapter {0}{1}', active.chapter.number, active.chapter.title ? `: ${active.chapter.title}` : '')}</span>
-        <span>{t('{0} words · {1}', active.scene.word_count.toLocaleString(getUiLanguage()), active.scene.type === 'sequel' ? t('Sequel') : t('Scene'))}</span>
+        <span>{t('{0} words · {1}', active.scene.word_count.toLocaleString(getUiLanguage()), active.scene.type === 'sequel' ? craftPlain('reaction') : t('Scene'))}</span>
         <span>{t(SHIFT_LABEL[shiftOf(active.scene)])}{active.scene.emotional_value_from || active.scene.emotional_value_to ? `: ${active.scene.emotional_value_from || '?'} → ${active.scene.emotional_value_to || '?'}` : ''}</span>
         <span>{t('POV: {0}', name(active.scene.pov_character_id) ?? t('not set'))}</span>
       </> : <span>{t('Hover or tab to a scene for details; click to select it.')}</span>}
@@ -101,7 +102,7 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
     </div>}
 
     <ul className="pacing-legend" aria-label={t('Legend')}>
-      <li><i className="pacing-key is-shift" />{t('Value shifts')}</li>
+      <li><i className="pacing-key is-shift" />{craftPlain('value_shift')}</li>
       <li><i className="pacing-key is-flat" />{t('No shift')}</li>
       <li><i className="pacing-key is-missing" />{t('Not set')}</li>
       {povOrder.slice(0, MAX_POV).map((id, index) => <li key={id}><i className="pacing-key is-pov" style={{ background: `var(--pov-${index + 1})` }} />{name(id) ?? t('Unknown')}</li>)}
@@ -112,7 +113,7 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
     <details className="pacing-table">
       <summary>{t('Table view')}</summary>
       <table>
-        <thead><tr><th scope="col">{t('Ch.')}</th><th scope="col">{t('Scene')}</th><th scope="col">{t('Words')}</th><th scope="col">{t('Value shift')}</th><th scope="col">{t('POV')}</th></tr></thead>
+        <thead><tr><th scope="col">{t('Ch.')}</th><th scope="col">{t('Scene')}</th><th scope="col">{t('Words')}</th><th scope="col"><CraftTerm id="value_shift" /></th><th scope="col">{t('POV')}</th></tr></thead>
         <tbody>{ordered.map(({ scene, chapter }) => <tr key={scene.id}>
           <td>{chapter.number}</td>
           <td><button type="button" className="underline" onClick={() => onOpenScene(scene)}>{scene.title || t('Untitled scene')}</button> <button type="button" className="pacing-beside" onClick={() => openBeside({ kind: 'scene', id: scene.id })}>{t('Beside')}</button></td>

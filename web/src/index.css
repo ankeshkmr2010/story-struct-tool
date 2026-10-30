@@ -1722,3 +1722,9 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 .check-needs { display: grid; gap: 14px; }
 .check-subhead { margin-top: 8px; color: var(--accent); font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
 .check-summary { display: grid; gap: 8px; justify-items: start; }
+/* Plain-language craft terms (usability phase 1): plain label, craft term as a quiet subtitle, ? help. */
+.craft-term { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; text-transform: none; letter-spacing: 0; }
+.craft-term .craft-plain { text-transform: inherit; }
+.field-label .craft-term .craft-plain, .ws-design .field-label .craft-term .craft-plain { text-transform: uppercase; letter-spacing: .12em; }
+.craft-name { color: var(--faint); font-size: 11px; font-style: italic; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.craft-term [role=tooltip] em { display: block; margin-top: 4px; color: var(--muted); }

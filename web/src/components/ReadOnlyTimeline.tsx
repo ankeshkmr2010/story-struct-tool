@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { TimelineEntry } from '../api/client'
 import { t } from '../i18n'
+import { craftPlain } from './CraftTerm'
 
 /**
  * The one read-only story timeline (public showcase and shared reader). World order shows when
@@ -12,7 +13,7 @@ function EntryCard({ entry, order, nested = [], onOpenScene }: { entry: Timeline
   const people = entry.participants.map(person => person.name)
   const when = order === 'world' ? entry.reading_label && t('Told in {0}', entry.reading_label) : entry.time_label && t('Happens: {0}', entry.time_label)
   return <li className={`showcase-entry showcase-entry-${entry.kind}`}>
-    <div className="showcase-entry-tags"><span className="showcase-pill">{entry.kind === 'scene' ? t('Scene') : t('Event')}</span>{entry.is_turning_point && <span className="showcase-pill showcase-pill-accent">{t('Turning point')}</span>}{entry.is_flashback && <span className="showcase-pill showcase-pill-accent">{t('↺ Flashback')}</span>}{order === 'world' && entry.time_label && <small>{entry.time_label}</small>}{order === 'reading' && entry.chapter_title && <small>{entry.chapter_title}</small>}</div>
+    <div className="showcase-entry-tags"><span className="showcase-pill">{entry.kind === 'scene' ? t('Scene') : t('Event')}</span>{entry.is_turning_point && <span className="showcase-pill showcase-pill-accent">{craftPlain('turning_point')}</span>}{entry.is_flashback && <span className="showcase-pill showcase-pill-accent">{t('↺ Flashback')}</span>}{order === 'world' && entry.time_label && <small>{entry.time_label}</small>}{order === 'reading' && entry.chapter_title && <small>{entry.chapter_title}</small>}</div>
     <h3>{entry.title}</h3>
     {entry.summary && <p>{entry.summary}</p>}
     <p className="showcase-entry-meta">{[entry.location_name, people.join(', '), when].filter(Boolean).join(' · ')}</p>
@@ -30,7 +31,7 @@ export function ReadOnlyTimeline({ entries, onOpenScene }: { entries: TimelineEn
   const flashbacks = scenes.filter(scene => scene.is_flashback).length
   return <div className="showcase-body">
     <div className="showcase-timeline-head">
-      <div role="group" aria-label={t('Timeline order')} className="showcase-segment">{(['world', 'reading'] as const).map(id => <button key={id} type="button" aria-pressed={order === id} onClick={() => setOrder(id)}>{id === 'world' ? t('World order') : t('Reading order')}</button>)}</div>
+      <div role="group" aria-label={t('Timeline order')} className="showcase-segment">{(['world', 'reading'] as const).map(id => <button key={id} type="button" aria-pressed={order === id} onClick={() => setOrder(id)}>{id === 'world' ? craftPlain('world_order') : t('Reading order')}</button>)}</div>
       <p className="writer-help">{order === 'world' ? t('When things happen in the story world, including events that never appear on the page.') : t('The order a reader meets the scenes{0}. Events each scene depicts are listed under it.', flashbacks ? t(', including {0} flashback{1}', flashbacks, flashbacks > 1 ? t('s') : '') : '')}</p>
     </div>
     {order === 'world'

@@ -3,6 +3,7 @@ import { api } from '../api/client'
 import { AddForm, Chip, DeleteButton, Field, InlineNumber, InlineSelect, InlineText } from './fields'
 import { HelpTip } from './HelpTip'
 import { t } from '../i18n'
+import { CraftTerm } from './CraftTerm'
 
 function useRefresh(storyId: string, collection: string) {
   const qc = useQueryClient()
@@ -51,7 +52,7 @@ export function EventsPanel({ storyId }: { storyId: string }) {
             <div className="mt-2 grid grid-cols-2 gap-2">
               <Field label={t('Story order')}><InlineNumber value={event.sort_ordinal} onSave={(v) => save(event.id, 'sort_ordinal', v)} /></Field>
               <Field label={t('Time label')}><InlineText value={event.display_label} placeholder={t('e.g. the following morning')} onSave={(v) => save(event.id, 'display_label', v)} /></Field>
-              <Field label={t('Turning point')}><InlineSelect value={String(event.is_turning_point)} options={[{ value: 'true', label: t('Yes') }, { value: 'false', label: t('No') }]} onSave={(v) => save(event.id, 'is_turning_point', v === 'true')} /></Field>
+              <Field label={<CraftTerm id="turning_point" />}><InlineSelect value={String(event.is_turning_point)} options={[{ value: 'true', label: t('Yes') }, { value: 'false', label: t('No') }]} onSave={(v) => save(event.id, 'is_turning_point', v === 'true')} /></Field>
               <Field label={t('On the page')}><InlineSelect value={String(event.is_on_page)} options={[{ value: 'true', label: t('Yes') }, { value: 'false', label: t('No') }]} onSave={(v) => save(event.id, 'is_on_page', v === 'true')} /></Field>
               <Field label={t('Depicted in scene')}><InlineSelect value={event.scene_id} options={(scenes.data ?? []).map((scene) => ({ value: scene.id, label: scene.title ?? t('Untitled scene') }))} onSave={(v) => save(event.id, 'scene_id', v)} /></Field>
               <Field label={t('Location')}><InlineSelect value={event.location_id} options={(locations.data ?? []).map((location) => ({ value: location.id, label: location.name }))} onSave={(v) => save(event.id, 'location_id', v)} /></Field>

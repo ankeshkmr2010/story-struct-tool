@@ -7,6 +7,7 @@ import { besideKind, openBeside } from './beside'
 import { errorText } from '../api/errors'
 import { t, tx } from '../i18n'
 import { serverText } from '../i18n/server'
+import { CraftTerm, craftPlain } from './CraftTerm'
 
 /**
  * Evaluate: on-demand craft checks, separate from the live health findings. Pick an
@@ -39,7 +40,7 @@ function RhythmStrip({ visual }: { visual: RhythmVisual }) {
       </div>
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
         <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" />{t('Scene')}
-        <span className="ml-3 mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-sky-400" />{t('Sequel')}
+        <span className="ml-3 mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-sky-400" />{craftPlain('reaction')}
         <span className="ml-3">{t('Ringed: a run of {0} or more', visual.run_limit)}</span>
       </p>
     </div>
@@ -196,6 +197,10 @@ function ReviewInputs({ storyId, evaluatorId, ready, onOpenInbox }: {
     </div>
   )
 }
+
+// The two framework checks read by their plain names, with the craft term beside them.
+const CHECK_TERMS: Record<string, 'sequel_rhythm' | 'mice'> = { 'Scene and sequel rhythm': 'sequel_rhythm', 'MICE thread nesting': 'mice' }
+const checkName = (name: string, help = true) => CHECK_TERMS[name] ? <CraftTerm id={CHECK_TERMS[name]} help={help} /> : serverText(name)
 
 const VERDICT: Record<string, { icon: string; label: string; border: string }> = {
   works: { icon: '✅', label: tx('Works'), border: 'border-emerald-400' },
@@ -361,7 +366,7 @@ function EvaluationOverview({ evaluators, results, reading, readerShared, runnin
       {evaluators.map((item) => {
         const { text, attention } = status(item)
         return <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-          <div className="min-w-0"><p className="text-sm font-medium">{attention && <span className="mr-1 text-amber-600" aria-label={t('Has findings')}>●</span>}{serverText(item.name)}</p><p className="text-xs text-slate-500 dark:text-slate-400">{text}</p></div>
+          <div className="min-w-0"><p className="text-sm font-medium">{attention && <span className="mr-1 text-amber-600" aria-label={t('Has findings')}>●</span>}{checkName(item.name)}</p><p className="text-xs text-slate-500 dark:text-slate-400">{text}</p></div>
           <button type="button" className="ui-btn ui-btn-secondary" onClick={() => onOpen(item.id)}>{t('Open')}</button>
         </li>
       })}
@@ -479,7 +484,7 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
   return (
     <div className="space-y-5">
       <header className="eval-header">
-        <h2 className="text-2xl font-semibold">{t('Evaluate')}</h2>
+        <h2 className="text-2xl font-semibold">{t('Craft checks')}</h2>
         <details className="ws-help"><summary aria-label={t('About Evaluate')}>?</summary><p>{t('Run a craft check when you want one. Results are suggestions to consider, never rules, and nothing here changes your story unless you fill in an input.')}</p></details>
       </header>
 
@@ -498,7 +503,7 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
               onClick={() => setChosen(item.id)}
               className="eval-check"
             >
-              <span>{serverText(item.name)}</span>{item.missing.length > 0 && <small>{t('Needs inputs')}</small>}
+              <span>{checkName(item.name, false)}</span>{item.missing.length > 0 && <small>{t('Needs inputs')}</small>}
             </button>
           ))}
         </div>
