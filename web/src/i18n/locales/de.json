@@ -161,6 +161,7 @@
  "{0} scenes · {1} words": "{0} Szenen · {1} Wörter",
  "{0} scenes · {1} words · average {2} per scene · value shifts in {3} of {4}{5} · POV set in {6}": "{0} Szenen · {1} Wörter · durchschnittlich {2} pro Szene · Wertewandel in {3} von {4}{5} · POV festgelegt in {6}",
  "{0} scenes could not be read. Coverage is incomplete; retry later. Missing evidence is not a clean result.": "{0} Szenen konnten nicht gelesen werden. Die Abdeckung ist unvollständig; versuche es später erneut. Fehlende Belege sind kein sauberes Ergebnis.",
+ "{0} sprint · {1} words": "{0} Sprint · {1} Wörter",
  "{0} sprints · {1} words": "{0} Sprints · {1} Wörter",
  "{0} Start a new connection from your AI client.": "{0} Starte eine neue Verbindung aus deinem KI-Client.",
  "{0} story changes · inspect details": "{0} Änderungen an der Geschichte · Details ansehen",

@@ -67,7 +67,7 @@ export function WeekPanel({ goals }: { goals: Goals }) {
         {days.map(day => <li key={day.day} title={`${day.name}: ${t('{0} words', day.words.toLocaleString(getUiLanguage()))}`}><i style={{ height: `${Math.max(4, Math.round(day.words / max * 100))}%` }} className={!day.words ? 'is-empty' : daily && !day.met ? 'is-short' : ''} /><span aria-hidden="true">{day.label}</span><span className="sr-only">{`${day.name}: ${t('{0} words', day.words)}`}</span></li>)}
       </ol>
     </div>
-    {goals.week_sprints > 0 && <p className="lib-note">{t('{0} sprints · {1} words', goals.week_sprints, goals.week_sprint_words.toLocaleString(getUiLanguage()))}</p>}
+    {goals.week_sprints > 0 && <p className="lib-note">{t(goals.week_sprints === 1 ? '{0} sprint · {1} words' : '{0} sprints · {1} words', goals.week_sprints, goals.week_sprint_words.toLocaleString(getUiLanguage()))}</p>}
     {daily ? <p className="lib-note">{t('Goal: {0} words a writing day.', daily.toLocaleString(getUiLanguage()))} <button type="button" className="goal-link" onClick={() => setEditing(true)}>{t('Edit')}</button></p>
       : <button type="button" className="ui-btn ui-btn-secondary ui-btn-sm lib-set-goal" onClick={() => setEditing(true)}>{t('Set a daily goal')}</button>}
     <p className="lib-note">{goals.settings.count_ai ? t('Counts words you type in Write and AI changes you accept.') : t('Counts words you type in Write. Text from connected AI and imports is not counted.')}</p>

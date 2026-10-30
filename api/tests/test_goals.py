@@ -84,6 +84,7 @@ async def test_connected_ai_reads_goals_but_cannot_set_them(client):
     await client.put(f"/api/stories/{sid}/goal", json={"target_words": 500})
     result = await tool(client, headers, "get_writing_goals")
     assert result["goal"]["target_words"] == 500 and "habit" in result
+    assert {"week_words", "week_sprints", "sprint_running"} <= set(result["habit"])
     blocked = await client.put(
         f"/api/stories/{sid}/goal", json={"target_words": 9}, headers=headers
     )

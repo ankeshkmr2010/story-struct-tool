@@ -1548,3 +1548,4 @@ p.ws-card-note { margin-top: 8px; }
 .shared-reader-header.has-cover { display: flex; gap: 24px; align-items: flex-start; }
 .reader-cover { flex: none; width: 140px; border-radius: 3px 8px 8px 3px; box-shadow: 0 14px 28px -16px rgb(0 0 0 / .5); }
 @media (max-width: 640px) { .shared-reader-header.has-cover { flex-direction: column; } .reader-cover { width: 110px; } .cover-slot { grid-template-columns: 90px minmax(0, 1fr); } .cover-frame { width: 90px; } }
+.jacket-stage { margin-inline: auto; }

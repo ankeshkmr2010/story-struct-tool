@@ -126,7 +126,7 @@ export function JacketPreview({ title, blurb, wordCount, jacket, cover, onClose 
   const n = (value: number, digits = 2) => value.toLocaleString(getUiLanguage(), { maximumFractionDigits: digits, minimumFractionDigits: digits })
   return <dialog ref={dialog} className="goal-dialog jacket-dialog" aria-labelledby="jacket-title" onClose={onClose} onCancel={onClose}>
     <div className="goal-dialog-head"><h2 id="jacket-title">{t('Jacket preview')}</h2><button type="button" aria-label={t('Close')} onClick={() => dialog.current?.close()}>×</button></div>
-    <div className="jacket-stage" style={{ aspectRatio: `${total} / ${tall}` }}>
+    <div className="jacket-stage" style={{ aspectRatio: `${total} / ${tall}`, width: `min(100%, calc(55vh * ${total / tall}))` }}>
       {jacket ? <img src={jacket.url} alt={jacket.alt} className="jacket-image" /> : <>
         <span className="jacket-panel is-back" style={{ left: 0, width: pct(BLEED + width) }} />
         <span className="jacket-panel is-spine" style={{ left: pct(BLEED + width), width: pct(spine) }}><span>{title}</span></span>

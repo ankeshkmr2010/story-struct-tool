@@ -308,6 +308,10 @@ class HabitOut(BaseModel):
     daily_words: int | None
     today_words: int
     streak: int
+    week_words: int = 0
+    week_sprints: int = 0
+    week_sprint_words: int = 0
+    sprint_running: bool = False
 
 
 class StoryGoalRow(BaseModel):
@@ -397,12 +401,26 @@ async def story_goal_envelope(
     today = datetime.now(UTC).astimezone(zone(settings.timezone)).date()
     goal = await session.scalar(select(StoryGoal).where(StoryGoal.story_id == story_id))
     days = await habit_days(session, user_id, settings.count_ai)
+    now = datetime.now(UTC)
+    sprints = list(
+        await session.scalars(
+            select(WritingSprint).where(
+                WritingSprint.user_id == user_id,
+                WritingSprint.started_at >= now - timedelta(days=7),
+            )
+        )
+    )
+    finished = [sprint for sprint in sprints if ended(sprint, now) is not None]
     return StoryGoalEnvelope(
         goal=await story_goal_summary(session, goal, settings, today) if goal else None,
         habit=HabitOut(
             daily_words=settings.daily_words,
             today_words=days.get(today, 0),
             streak=streaks(days, settings, today)[0],
+            week_words=sum(days.get(today - timedelta(days=n), 0) for n in range(7)),
+            week_sprints=len(finished),
+            week_sprint_words=sum(sprint.words for sprint in finished),
+            sprint_running=len(finished) < len(sprints),
         ),
     )
 

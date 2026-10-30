@@ -84,3 +84,18 @@ async def test_cover_and_jacket_roles_cards_and_exports(client):
     await client.delete(f"{base}/{first['id']}")
     roles = {image["id"]: image["role"] for image in (await client.get(base)).json()["images"]}
     assert roles[first["id"]] is None
+
+
+async def test_connected_ai_reads_images_and_cover(client):
+    from tests.test_mcp import connect, tool
+
+    sid, _token, headers = await connect(client)
+    image = await _upload(client, sid, "Front", "teal")
+    await client.put(f"/api/stories/{sid}/images/cover", json={"image_id": image["id"]})
+    listed = await tool(client, headers, "list_story_images")
+    assert listed["cover_id"] == image["id"] and listed["jacket_id"] is None
+    assert listed["images"][0]["role"] == "cover" and "url" not in listed["images"][0]
+    blocked = await client.put(
+        f"/api/stories/{sid}/images/cover", json={"image_id": None}, headers=headers
+    )
+    assert blocked.status_code in {401, 403}

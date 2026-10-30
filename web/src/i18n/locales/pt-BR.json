@@ -160,6 +160,7 @@
  "{0} scenes · {1} words": "{0} cenas · {1} palavras",
  "{0} scenes · {1} words · average {2} per scene · value shifts in {3} of {4}{5} · POV set in {6}": "{0} cenas · {1} palavras · média de {2} por cena · mudanças de valor em {3} de {4}{5} · PDV definido em {6}",
  "{0} scenes could not be read. Coverage is incomplete; retry later. Missing evidence is not a clean result.": "{0} cenas não puderam ser lidas. A cobertura está incompleta; tente mais tarde. Falta de indícios não é um resultado limpo.",
+ "{0} sprint · {1} words": "{0} sprint · {1} palavras",
  "{0} sprints · {1} words": "{0} sprints · {1} palavras",
  "{0} Start a new connection from your AI client.": "{0} Inicie uma nova conexão pelo seu cliente de IA.",
  "{0} story changes · inspect details": "{0} alterações na história · ver detalhes",

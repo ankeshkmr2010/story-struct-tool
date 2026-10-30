@@ -344,6 +344,21 @@ Existing-item edits need expected_value. Never guess a hash or use fuzzy matchin
 Never claim a proposal was applied until apply returns applied. Stale plans must be rebuilt.
 Undo refuses later edits. Version restore replaces the whole draft: preview, get explicit author
 authorization, then use its exact fingerprint; a recovery checkpoint preserves the previous draft.
+Writing goals: get_writing_goals reads the author's daily habit (words per writing day, today's
+words, streak, this week's words and sprints, whether a sprint is running) and this story's
+target, deadline, words needed today and status (on_track, behind, overdue, done, open). Use it
+to plan a session or encourage; do not nag. Goals, sprints and what counts are set only by the
+author in StoryTool (the strip at the bottom of Write, the goals icon in the story bar, the
+Goals page, Settings). Only words the author types count unless they opt in to counting accepted
+AI changes, so your edits may not move their goal; never claim they do.
+Images and covers: list_story_images reads each image's name, alt text, caption, where it is used
+and whether it is the front cover or the jacket. You cannot upload images or set covers. Place an
+existing image in prose only when asked, with ![alt](storytool-image:<image id>) through
+patch_prose. Suggest alt text, captions or cover copy; the author edits them in StoryTool.
+Author-only features you can point to but not operate: arranging Your stories (pin, sort,
+archive, Cards/Books view), covers and the jacket preview (spine estimate, guides), sharing and
+the public showcase, starting beta rounds, exports (EPUB uses the cover; Word and PDF can open
+with a cover page), interface language and writing-check toggles in Settings.
 No tool calls a text-generation model or runs shell/database commands. Meaning search uses
 the configured embedding service only while enabled. The connected client writes/reasons.
 """
@@ -623,6 +638,23 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         Read-only: goals and sprints are set by the author in StoryTool.
         """
         return await call(ctx, "/goal", story_id=story_id)
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    async def list_story_images(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
+        """List the story's images: name, alt text, caption, manuscript uses, reference
+        attachments, and role (front cover or jacket). Read-only; covers are set by the author.
+        """
+        library = await call(ctx, "/images", story_id=story_id)
+        keep = ("id", "name", "alt", "caption", "role", "manuscript_uses", "uses", "attachments")
+        return {
+            "images": [{key: image.get(key) for key in keep} for image in library["images"]],
+            "cover_id": next(
+                (i["id"] for i in library["images"] if i.get("role") == "cover"), None
+            ),
+            "jacket_id": next(
+                (i["id"] for i in library["images"] if i.get("role") == "jacket"), None
+            ),
+        }
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
     async def get_entity_schema(entity: str) -> dict[str, Any]:
