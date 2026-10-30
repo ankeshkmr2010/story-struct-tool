@@ -6,7 +6,9 @@ import { useWorkspacePosition } from '../components/useWorkspacePosition'
 import { SearchDialog } from '../components/StorySearch'
 import { Ladder, type AuthoringMode } from '../components/Ladder'
 import { ChapterBriefCard } from '../components/ChapterBriefCard'
-import { InsightsPanel } from '../components/InsightsPanel'
+import { HealthPanel } from '../components/HealthPanel'
+import { ContinuityPanel } from '../components/ContinuityPanel'
+import { SuggestionsPanel } from '../components/SuggestionsPanel'
 import { PlacesPanel } from '../components/PlacesPanel'
 import { GlossaryPanel } from '../components/GlossaryPanel'
 import { BetaFeedbackPanel } from '../components/BetaFeedbackPanel'
@@ -84,7 +86,10 @@ const INBOX_VIEW = 104
 const GRID_VIEW = 105
 const CATCHUP_VIEW = 106
 const HISTORY_VIEW = 107
+// Check my story (usability phase 1): Health, Continuity, Evaluate and Noticed in one place.
+// It keeps Evaluate's view id so saved positions and existing links still land here.
 const EVALUATE_VIEW = 108
+type CheckTab = 'needs' | 'craft' | 'ai'
 const PLACEHOLDERS_VIEW = 109
 const PACING_VIEW = 110
 // Plan pages beside the eight levels (2026-10-30): the structure board, a full timeline,
@@ -96,7 +101,7 @@ const GLOSSARY_VIEW = 114
 
 // One docked side panel; which tabs it offers depends on the mode (Context and Hints belong to Write).
 type RefPanel = 'context' | 'hints' | 'cast' | 'insights' | 'feedback' | 'placeholders' | 'timeline' | 'places' | 'glossary' | 'assistant'
-const REF_PANELS: [RefPanel, string][] = [['context', tx('Context')], ['hints', tx('Hints')], ['cast', tx('Cast')], ['insights', tx('Insights')], ['feedback', tx('Feedback')], ['placeholders', tx('TKs')], ['timeline', tx('Timeline')], ['places', tx('Places')], ['glossary', tx('Glossary')], ['assistant', tx('Assistant')]]
+const REF_PANELS: [RefPanel, string][] = [['context', tx('Context')], ['hints', tx('Hints')], ['cast', tx('Cast')], ['insights', tx('Needs attention')], ['feedback', tx('Feedback')], ['placeholders', tx('TKs')], ['timeline', tx('Timeline')], ['places', tx('Places')], ['glossary', tx('Glossary')], ['assistant', tx('Assistant')]]
 
 export default function StoryWorkspace() {
   const { storyId = '' } = useParams()
@@ -313,6 +318,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const storyGoal = useQuery({ queryKey: ['story-goal', storyId], queryFn: () => api.storyGoal(storyId), enabled: !sandbox })
   const [toolsOpen, setToolsOpen] = useState(false)
   const [goalsOpen, setGoalsOpen] = useState(false)
+  const [checkTab, setCheckTab] = useState<CheckTab>('needs')
+  const openCheck = (section: CheckTab) => { setCheckTab(section); void openView(EVALUATE_VIEW) }
   const [searchAll, setSearchAll] = useState(false)
   // Re-run on a language change, after App has reset the tab to the generic route title.
   const language = useUiLanguage()
@@ -571,11 +578,12 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {viewItem(PLACES_VIEW, t('Places'))}
           {viewItem(GLOSSARY_VIEW, t('Glossary'))}
           <h2>{t('Review')}</h2>
+          <button type="button" aria-current={level === EVALUATE_VIEW ? 'page' : undefined} onClick={() => { setCheckTab('needs'); setLevel(EVALUATE_VIEW) }}>{t('Check my story')}{(health.data?.warning_count ?? 0) > 0 && <span className="workspace-nav-badge" aria-label={t('{0} to fix', health.data?.warning_count)}>{health.data?.warning_count}</span>}</button>
+          <h2>{t('Tools')}</h2>
           {viewItem(GRID_VIEW, t('Grid'))}
           {viewItem(PACING_VIEW, t('Pacing'))}
           {!sandbox && viewItem(INBOX_VIEW, <>{t('Agent changes')}{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={t('{0} pending', pendingRuns)}>{pendingRuns}</span>}</>)}
           {!sandbox && viewItem(CATCHUP_VIEW, t('Catch up'))}
-          {viewItem(EVALUATE_VIEW, t('Evaluate'))}
           {viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>{t('Placeholders')}<span className="workspace-nav-badge" aria-label={t('{0} left', placeholderCount)}>{placeholderCount}</span></> : t('Placeholders'))}
           {viewItem(HISTORY_VIEW, t('History'))}
         </nav>
@@ -589,7 +597,22 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {level === GLOSSARY_VIEW && <section className="plan-view"><GlossaryPanel storyId={storyId} /></section>}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
           {level === PLACEHOLDERS_VIEW && <section><h2 className="level-title">{t('Placeholders')}</h2><PlaceholderList storyId={storyId} beforeEdit={() => writerFlush.current()} onOpen={openPassage} /></section>}
-          {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} beforeEdit={() => writerFlush.current()} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
+          {level === EVALUATE_VIEW && <section className="plan-view check-story">
+            <header className="plan-head"><h2>{t('Check my story')}</h2></header>
+            <div className="lib-view check-tabs" role="tablist" aria-label={t('Check my story')}>
+              <button type="button" role="tab" aria-selected={checkTab === 'needs'} aria-pressed={checkTab === 'needs'} onClick={() => setCheckTab('needs')}>{t('Needs attention')}{(health.data?.warning_count ?? 0) > 0 && <>{' '}<span className="workspace-nav-badge insights-badge">{health.data?.warning_count}</span></>}</button>
+              <button type="button" role="tab" aria-selected={checkTab === 'craft'} aria-pressed={checkTab === 'craft'} onClick={() => setCheckTab('craft')}>{t('Craft checks')}</button>
+              <button type="button" role="tab" aria-selected={checkTab === 'ai'} aria-pressed={checkTab === 'ai'} onClick={() => setCheckTab('ai')}>{t('AI read')}</button>
+            </div>
+            {checkTab === 'needs' && <div className="check-needs">
+              <p className="writer-help">{t('Gaps in the plan that block the next level, and places where the timeline contradicts itself.')}</p>
+              {sandbox ? <p className="writer-help">{t('Health and continuity checks run on saved stories. Sign in and create a story to see them.')}</p> : health.data ? <HealthPanel health={health.data} level={planLevel.current} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, levelLabel(rung.level, rung.label)]))} onOpenLevel={selectLevel} /> : <p className="writer-help">{t('Loading health…')}</p>}
+              {!sandbox && <><h3 className="check-subhead">{t('Continuity')}</h3>
+              <ContinuityPanel storyId={storyId} /></>}
+            </div>}
+            {checkTab === 'ai' && <div><p className="writer-help">{t('What a reader noticed in your prose: things the plan could follow. Dismissed notices stay dismissed.')}</p><SuggestionsPanel storyId={storyId} /></div>}
+            {checkTab === 'craft' && <StoryEvaluation storyId={storyId} beforeEdit={() => writerFlush.current()} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
+          </section>}
           {level === PACING_VIEW && <section><h2 className="level-title">{t('Pacing')}</h2><PacingView storyId={storyId} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8); setBackToPacing(true) }} /></section>}
           {level === 8 && backToPacing && <button type="button" className="ws-back-link" onClick={() => { setBackToPacing(false); setLevel(PACING_VIEW) }}>{t('← Back to Pacing')}</button>}
           {level === GRID_VIEW && <StoryGrid storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8) }} />}
@@ -771,7 +794,12 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           <p className="writer-help">{t('The shared reader reads only the current scene, about two seconds after you stop typing. Hints never change your prose.')}</p>
           <div ref={setHintsSlot} />
         </div>}
-        {activePanel === 'insights' && <InsightsPanel storyId={storyId} health={health.data} level={level} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, levelLabel(rung.level, rung.label)]))} onOpenLevel={selectLevel} />}
+        {activePanel === 'insights' && <div className="ws-card check-summary">
+          <h4>{t('Needs attention')}</h4>
+          <p>{(health.data?.warning_count ?? 0) > 0 ? t(health.data?.warning_count === 1 ? '{0} thing to fix' : '{0} things to fix', health.data?.warning_count) : t('Nothing needs attention right now.')}</p>
+          <button type="button" className="ui-btn ui-btn-secondary ui-btn-sm" onClick={() => openCheck('needs')}>{t('Open Check my story')}</button>
+          <p className="writer-help">{t('Craft checks and what an AI reader noticed are there too.')}</p>
+        </div>}
         {activePanel === 'timeline' && <StoryTimeline storyId={storyId} compact allowInsert={tab !== 'read'} onOpenScene={openScene} onOpenCharacter={(id) => { void openCharacter(id) }} />}
         {activePanel === 'cast' && <CastPanel storyId={storyId} onOpen={(id) => { void openCharacter(id) }} />}
         {activePanel === 'places' && <PlacesPanel storyId={storyId} />}

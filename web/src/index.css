@@ -1716,3 +1716,9 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
   background: color-mix(in srgb, var(--button) 14%, var(--surface)) !important;
   color: color-mix(in srgb, var(--ink) 55%, var(--surface)) !important;
 }
+/* Check my story (usability phase 1). */
+.check-tabs { width: fit-content; }
+.check-tabs .insights-badge { margin-left: 4px; }
+.check-needs { display: grid; gap: 14px; }
+.check-subhead { margin-top: 8px; color: var(--accent); font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.check-summary { display: grid; gap: 8px; justify-items: start; }
