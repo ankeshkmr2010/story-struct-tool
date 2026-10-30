@@ -6,13 +6,16 @@ import { InlineSelect, InlineText } from './fields'
 import { SceneDetails } from './SceneDetails'
 import { t } from '../i18n'
 import { valueLabel } from '../i18n/server'
+import { effectiveStatus, isDrafted } from './sceneStatus'
 
 const STATUSES = ['placeholder', 'outlined', 'drafted', 'revised']
+// A scene with prose is at least drafted, so its status only moves between drafted and revised.
+const WRITTEN = ['drafted', 'revised']
 const STATUS_DOT: Record<string, string> = {
   placeholder: 'border-[1.5px] border-[var(--faint)] bg-transparent',
   outlined: 'bg-[var(--amber)]',
   drafted: 'bg-green-400',
-  revised: 'bg-[var(--accent)]',
+  revised: 'bg-[var(--accent)] status-revised',
 }
 const AGENT_ORIGINS = new Set(['mcp', 'assistant'])
 const DAY = 24 * 60 * 60 * 1000
@@ -173,7 +176,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
   ].map((group) => ({ ...group, key: group.id ?? 'unfiled', all: orderScenes(all.filter((scene) => (scene.chapter_id ?? null) === group.id)) }))
   const numbers = new Map(groupsAll.flatMap((group) => group.all).map((scene, index) => [scene.id, index + 1]))
   const matches = (scene: Scene) =>
-    (!prefs.status || scene.status === prefs.status)
+    (!prefs.status || effectiveStatus(scene) === prefs.status)
     && (!prefs.pov || (prefs.pov === 'none' ? !scene.pov_character_id : scene.pov_character_id === prefs.pov))
     && (!prefs.noShift || shiftKind(scene) !== 'shift')
   const groups = groupsAll
@@ -189,7 +192,8 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
   const toggleGroup = (key: string) => setPrefs({ collapsed: prefs.collapsed.includes(key) ? prefs.collapsed.filter((item) => item !== key) : [...prefs.collapsed, key] })
   const toggleColumn = (key: string) => setPrefs({ hidden: prefs.hidden.includes(key) ? prefs.hidden.filter((item) => item !== key) : [...prefs.hidden, key] })
   const advanceStatus = (scene: Scene) => {
-    const next = STATUSES[(STATUSES.indexOf(scene.status) + 1) % STATUSES.length]
+    const cycle = (scene.word_count ?? 0) > 0 ? WRITTEN : STATUSES
+    const next = cycle[(cycle.indexOf(effectiveStatus(scene)) + 1) % cycle.length]
     void update.mutateAsync({ id: scene.id, body: { status: next } })
   }
   const focusRow = (id: string) => {
@@ -332,7 +336,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                         {isEditing && <button type="button" onClick={(event) => { event.stopPropagation(); setEditing(null) }} className="workspace-shortcut mt-2 block rounded px-2 text-xs">{t('Done')}</button>}
                       </td>
                       <td className={`px-2 ${pad}`}>
-                        <button type="button" aria-label={t('Status {0}, click to advance', valueLabel(scene.status))} title={t('{0} — click to advance', valueLabel(scene.status))} onClick={(event) => { event.stopPropagation(); advanceStatus(scene) }} className={`mt-0.5 block h-4 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/20 ${STATUS_DOT[scene.status] ?? 'bg-slate-300'}`} />
+                        <button type="button" aria-label={t('Status {0}, click to advance', valueLabel(effectiveStatus(scene)))} title={t('{0} — click to advance', valueLabel(effectiveStatus(scene)))} onClick={(event) => { event.stopPropagation(); advanceStatus(scene) }} className={`mt-0.5 block h-4 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/20 ${STATUS_DOT[effectiveStatus(scene)] ?? 'bg-slate-300'}`} />
                       </td>
                       {shown.map((column) => {
                         const edit = agentEdit(scene, column.fields)
@@ -355,9 +359,9 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                   <span className="flex flex-wrap items-center gap-3">
                     <span>{t(all.length === 1 ? '{0} of {1} scene · {2} words' : '{0} of {1} scenes · {2} words', visible.length, all.length, words)}</span>
                     {/* Drafted means the scene has prose, as in the story header and Your stories. */}
-                    <span>{t('{0} drafted', visible.filter((scene) => (scene.word_count ?? 0) > 0).length)}</span>
+                    <span>{t('{0} drafted', visible.filter(isDrafted).length)}</span>
                     <span className="font-semibold">{t('Status')}</span>
-                    {STATUSES.map((status) => <span key={status} className="flex items-center gap-1"><span className={`h-2.5 w-2.5 rounded-full ${STATUS_DOT[status]}`} />{visible.filter((scene) => scene.status === status).length} {valueLabel(status)}</span>)}
+                    {STATUSES.map((status) => <span key={status} className="flex items-center gap-1"><span className={`h-2.5 w-2.5 rounded-full ${STATUS_DOT[status]}`} />{visible.filter((scene) => effectiveStatus(scene) === status).length} {valueLabel(status)}</span>)}
                   </span>
                 </td>
               </tr>

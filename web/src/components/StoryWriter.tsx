@@ -24,6 +24,7 @@ import { writerPlaceholders } from './writerPlaceholders'
 import { openBeside, type BesideItem } from './beside'
 import { getUiLanguage, t } from '../i18n'
 import { GoalBar, StoryGoalCard } from './Goals'
+import { effectiveStatus } from './sceneStatus'
 
 type Named = { label: string; item: BesideItem }
 const WRITE_TIP_KEY = 'storytool-write-tip'
@@ -166,7 +167,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
   }
 
   // The open chapter's scenes, each with its status dot; picking one puts the cursor in it.
-  const sceneList = chapterScenes.length > 0 && <ul className="writer-scene-list">{chapterScenes.map(scene => <li key={scene.id}><button type="button" aria-current={contextScene?.id === scene.id ? 'true' : undefined} onClick={() => { setActiveScene(scene.id); setFocusTarget(null); requestAnimationFrame(() => setFocusTarget(scene.id)) }}><i className="writer-status-dot" data-status={scene.status} title={statusLabel(scene.status)} aria-label={statusLabel(scene.status)} />{scene.title || t('Untitled scene')}</button></li>)}</ul>
+  const sceneList = chapterScenes.length > 0 && <ul className="writer-scene-list">{chapterScenes.map(scene => <li key={scene.id}><button type="button" aria-current={contextScene?.id === scene.id ? 'true' : undefined} onClick={() => { setActiveScene(scene.id); setFocusTarget(null); requestAnimationFrame(() => setFocusTarget(scene.id)) }}><i className="writer-status-dot" data-status={effectiveStatus(scene)} title={statusLabel(effectiveStatus(scene))} aria-label={statusLabel(effectiveStatus(scene))} />{scene.title || t('Untitled scene')}</button></li>)}</ul>
   const sceneWords = contextScene?.word_count ?? 0
   const saveStatus = useWriterStatus(storyId)
   useEffect(() => {

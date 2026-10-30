@@ -445,3 +445,17 @@ async def test_prose_endpoints_are_story_scoped(client: AsyncTestClient) -> None
     assert (
         await client.put(f"{STORIES}/{other}/scenes/{scene_id}/content", json={"content": "hijack"})
     ).status_code == 404
+
+
+async def test_prose_moves_a_placeholder_scene_to_drafted(client: AsyncTestClient) -> None:
+    """One rule for drafted: a scene with prose is at least drafted, so header and Grid agree."""
+    story_id, _, scene_id = await story_with_scene(client)
+    scene = f"{STORIES}/{story_id}/scenes/{scene_id}"
+    assert (await client.get(scene)).json()["status"] == "placeholder"
+    await client.put(scene + "/content", json={"content": "Maya lit the lamp."})
+    assert (await client.get(scene)).json()["status"] == "drafted"
+    await client.patch(scene, json={"status": "revised"})
+    await client.put(scene + "/content", json={"content": "Maya lit the lamp again."})
+    assert (await client.get(scene)).json()["status"] == "revised"
+    progress = (await client.get(f"{STORIES}/{story_id}/progress")).json()
+    assert progress["drafted_scene_count"] == 1

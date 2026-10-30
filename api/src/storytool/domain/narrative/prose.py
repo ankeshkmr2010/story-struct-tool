@@ -100,6 +100,12 @@ def replaces_most_of(previous: str | None, content: str | None) -> bool:
     return (len(old) - start - end) / len(old) > LARGE_CHANGE_SHARE
 
 
+def is_drafted(scene: Scene) -> bool:
+    """One rule everywhere: a scene is drafted once it has prose, or its author marked it
+    drafted or revised."""
+    return bool((scene.content or "").strip()) or scene.status in ("drafted", "revised")
+
+
 async def save_scene_content(
     session: AsyncSession,
     scene: Scene,
@@ -117,6 +123,9 @@ async def save_scene_content(
     """
     previous = scene.content
     unchanged = previous == content
+    # A scene with prose is at least drafted: placeholder and outlined move up on save.
+    if (content or "").strip() and scene.status in ("placeholder", "outlined"):
+        scene.status = "drafted"
     if not snapshot and replaces_most_of(previous, content):
         snapshot, snapshot_label = True, LARGE_CHANGE_LABEL
 
@@ -198,9 +207,7 @@ def story_progress(graph: StoryGraph) -> StoryProgress:
             title=chapter.title,
             word_count=sum(s.word_count for s in by_chapter.get(chapter.id, [])),
             scene_count=len(by_chapter.get(chapter.id, [])),
-            drafted_scene_count=sum(
-                1 for s in by_chapter.get(chapter.id, []) if (s.content or "").strip()
-            ),
+            drafted_scene_count=sum(1 for s in by_chapter.get(chapter.id, []) if is_drafted(s)),
         )
         for chapter in sorted(graph.chapters, key=lambda c: c.sort_key)
     )
@@ -209,7 +216,7 @@ def story_progress(graph: StoryGraph) -> StoryProgress:
         story_id=graph.story.id,
         word_count=sum(s.word_count for s in graph.scenes),
         scene_count=len(graph.scenes),
-        drafted_scene_count=sum(1 for s in graph.scenes if (s.content or "").strip()),
+        drafted_scene_count=sum(1 for s in graph.scenes if is_drafted(s)),
         unplaced_scene_word_count=sum(s.word_count for s in by_chapter.get(None, [])),
         chapters=chapters,
     )

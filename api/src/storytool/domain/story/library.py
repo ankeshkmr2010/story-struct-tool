@@ -118,8 +118,10 @@ class LibraryController(Controller):
                     func.count(Scene.id),
                     func.count(Scene.id).filter(Scene.status == "drafted"),
                     func.count(Scene.id).filter(Scene.status == "revised"),
-                    # Drafted means the scene has prose, as in the story header and the Grid.
-                    func.count(Scene.id).filter(Scene.word_count > 0),
+                    # Drafted: has prose or marked drafted/revised (prose.is_drafted).
+                    func.count(Scene.id).filter(
+                        (Scene.word_count > 0) | Scene.status.in_(("drafted", "revised"))
+                    ),
                     func.coalesce(func.sum(Scene.word_count), 0),
                     func.coalesce(
                         func.sum(

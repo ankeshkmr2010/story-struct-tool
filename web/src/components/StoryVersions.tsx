@@ -8,7 +8,18 @@ import { getUiLanguage, t } from '../i18n'
 
 function counts(version: StoryVersion) {
   const items = (version.statistics.counts ?? {}) as Record<string, number>
-  return t('{0} words · {1} scenes · {2} beats · {3} events', Number(version.statistics.word_count ?? 0).toLocaleString(getUiLanguage()), items.scene ?? 0, items.beat ?? 0, items.event ?? 0)
+  return countSummary(Number(version.statistics.word_count ?? 0), items.scene ?? 0, items.beat ?? 0, items.event ?? 0)
+}
+
+// Each count says 1 scene, 2 scenes … in every interface language.
+function countSummary(words: number, scenes: number, beats?: number, events?: number) {
+  const n = (value: number) => value.toLocaleString(getUiLanguage())
+  return [
+    t(words === 1 ? '{0} word' : '{0} words', n(words)),
+    t(scenes === 1 ? '{0} scene' : '{0} scenes', n(scenes)),
+    beats === undefined ? null : t(beats === 1 ? '{0} beat' : '{0} beats', n(beats)),
+    events === undefined ? null : t(events === 1 ? '{0} event' : '{0} events', n(events)),
+  ].filter(Boolean).join(' · ')
 }
 
 export function StoryVersions({ storyId, beforeEdit = async () => true }: { storyId: string; beforeEdit?: () => Promise<boolean> }) {
@@ -30,7 +41,7 @@ export function StoryVersions({ storyId, beforeEdit = async () => true }: { stor
   const restore = useMutation({ mutationFn: () => api.restoreStoryVersion(storyId, selected!.id, preview.data!.current_fingerprint), onSuccess: (result) => { setMessage(t('Restored v{0}. Your previous draft is preserved in recovery v{1}.', result.restored_number, result.recovery_version.number)); refresh() } })
   return <div>
         <h2 id="story-versions-title" className="text-xl font-semibold">{t('Whole-story versions')}</h2>
-        {progress.data && <p className="versions-current">{t('Current draft: {0} words · {1} scenes', progress.data.word_count.toLocaleString(getUiLanguage()), progress.data.scene_count)}<span>{t('Each checkpoint below shows the story as it was when it was saved.')}</span></p>}
+        {progress.data && <p className="versions-current">{t('Current draft: {0}', countSummary(progress.data.word_count, progress.data.scene_count))}<span>{t('Each checkpoint below shows the story as it was when it was saved.')}</span></p>}
         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('Save the story as a whole: prose, chapters, beats, characters, relationships, arcs, locations, timeline, notes, and links.')}</p>
         <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{t('Automatic checkpoints are saved at most once per minute during editing, with extra checkpoints around AI changes. The latest 50 automatic checkpoints are kept. Named versions and recovery versions are retained. Account settings, keys, and AI conversations stay separate.')}</p>
         <form onSubmit={(event) => { event.preventDefault(); if (label.trim() && !pending) save.mutate() }} className="mt-4 flex flex-wrap items-end gap-3 rounded-lg bg-slate-50 dark:bg-slate-950 p-3">

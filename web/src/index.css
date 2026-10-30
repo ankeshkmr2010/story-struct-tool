@@ -1699,3 +1699,9 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 .shoutouts-page { background: var(--page); color: var(--ink); }
 .shoutouts-title { font: 500 clamp(44px, 7vw, 72px)/1.05 var(--font-serif); color: var(--ink); }
 .shoutouts-page header .eyebrow { text-align: center; }
+/* QA round 2 (2026-10-30). */
+/* Revised: a filled dot inside a ring, so it differs from Drafted by shape as well as tone. */
+.status-revised, .writer-status-dot[data-status=revised] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--accent) !important; }
+/* Places and Glossary pages: the panel's own heading is the page title (no second label). */
+.plan-view > :first-child > h2:first-child { margin-bottom: 8px; color: var(--ink); font: 500 28px/1.2 var(--font-serif); letter-spacing: 0; text-transform: none; }
+:root[data-theme=dark] .ui-btn-primary:disabled { background: color-mix(in srgb, var(--button) 75%, var(--surface)); color: color-mix(in srgb, var(--button-ink) 85%, transparent); }
