@@ -56,7 +56,8 @@ export type BetaPoll = S['PollOut']
 export type BetaPollInput = S['PollIn']
 export type SearchHit = S['SearchHit']
 export type SearchPage = S['SearchPage']
-export type SearchContext = operations['ApiStoriesStoryIdSearchSearch']['parameters']['query']['context']
+// A story section; the whole-story 'all' scope is LibrarySearchContext.
+export type SearchContext = Exclude<operations['ApiStoriesStoryIdSearchSearch']['parameters']['query']['context'], 'all'>
 export type LibrarySearchContext = NonNullable<operations['ApiSearchSearch']['parameters']['query']['context']>
 
 export type Ladder = S['LadderOut']

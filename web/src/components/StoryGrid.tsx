@@ -5,10 +5,8 @@ import { orderScenes } from '../api/ordering'
 import { InlineSelect, InlineText } from './fields'
 import { SceneDetails } from './SceneDetails'
 import { t } from '../i18n'
-import { valueLabel } from '../i18n/server'
-import { effectiveStatus, isDrafted } from './sceneStatus'
+import { DETAILED, SIMPLE, dotStatus, isDrafted, shownStatus, statusName, storedStatus, useDetailedStatuses } from './sceneStatus'
 
-const STATUSES = ['placeholder', 'outlined', 'drafted', 'revised']
 // A scene with prose is at least drafted, so its status only moves between drafted and revised.
 const WRITTEN = ['drafted', 'revised']
 const STATUS_DOT: Record<string, string> = {
@@ -75,6 +73,8 @@ type Column = {
 }
 
 export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: string; onOpenScene: (scene: Scene) => void; onOpenInbox: () => void }) {
+  const detailed = useDetailedStatuses()
+  const statuses = detailed ? DETAILED : SIMPLE
   const qc = useQueryClient()
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
@@ -176,7 +176,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
   ].map((group) => ({ ...group, key: group.id ?? 'unfiled', all: orderScenes(all.filter((scene) => (scene.chapter_id ?? null) === group.id)) }))
   const numbers = new Map(groupsAll.flatMap((group) => group.all).map((scene, index) => [scene.id, index + 1]))
   const matches = (scene: Scene) =>
-    (!prefs.status || effectiveStatus(scene) === prefs.status)
+    (!prefs.status || shownStatus(scene, detailed) === prefs.status)
     && (!prefs.pov || (prefs.pov === 'none' ? !scene.pov_character_id : scene.pov_character_id === prefs.pov))
     && (!prefs.noShift || shiftKind(scene) !== 'shift')
   const groups = groupsAll
@@ -192,9 +192,9 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
   const toggleGroup = (key: string) => setPrefs({ collapsed: prefs.collapsed.includes(key) ? prefs.collapsed.filter((item) => item !== key) : [...prefs.collapsed, key] })
   const toggleColumn = (key: string) => setPrefs({ hidden: prefs.hidden.includes(key) ? prefs.hidden.filter((item) => item !== key) : [...prefs.hidden, key] })
   const advanceStatus = (scene: Scene) => {
-    const cycle = (scene.word_count ?? 0) > 0 ? WRITTEN : STATUSES
-    const next = cycle[(cycle.indexOf(effectiveStatus(scene)) + 1) % cycle.length]
-    void update.mutateAsync({ id: scene.id, body: { status: next } })
+    const cycle = !detailed ? SIMPLE : (scene.word_count ?? 0) > 0 ? WRITTEN : DETAILED
+    const next = cycle[(cycle.indexOf(shownStatus(scene, detailed)) + 1) % cycle.length]
+    void update.mutateAsync({ id: scene.id, body: { status: storedStatus(next, scene) } })
   }
   const focusRow = (id: string) => {
     setCursor(id)
@@ -248,7 +248,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <select aria-label={t('Filter by status')} value={prefs.status} onChange={(event) => setPrefs({ status: event.target.value })} className={filter}>
           <option value="">{t('All statuses')}</option>
-          {STATUSES.map((status) => <option key={status} value={status}>{valueLabel(status)}</option>)}
+          {statuses.map((status) => <option key={status} value={status}>{statusName(status)}</option>)}
         </select>
         <select aria-label={t('Filter by POV')} value={prefs.pov} onChange={(event) => setPrefs({ pov: event.target.value })} className={filter}>
           <option value="">{t('All POVs')}</option>
@@ -336,7 +336,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                         {isEditing && <button type="button" onClick={(event) => { event.stopPropagation(); setEditing(null) }} className="workspace-shortcut mt-2 block rounded px-2 text-xs">{t('Done')}</button>}
                       </td>
                       <td className={`px-2 ${pad}`}>
-                        <button type="button" aria-label={t('Status {0}, click to advance', valueLabel(effectiveStatus(scene)))} title={t('{0} — click to advance', valueLabel(effectiveStatus(scene)))} onClick={(event) => { event.stopPropagation(); advanceStatus(scene) }} className={`mt-0.5 block h-4 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/20 ${STATUS_DOT[effectiveStatus(scene)] ?? 'bg-slate-300'}`} />
+                        <button type="button" aria-label={t('Status {0}, click to advance', statusName(shownStatus(scene, detailed)))} title={t('{0} — click to advance', statusName(shownStatus(scene, detailed)))} onClick={(event) => { event.stopPropagation(); advanceStatus(scene) }} className={`mt-0.5 block h-4 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/20 ${STATUS_DOT[dotStatus(shownStatus(scene, detailed))] ?? 'bg-slate-300'}`} />
                       </td>
                       {shown.map((column) => {
                         const edit = agentEdit(scene, column.fields)
@@ -361,7 +361,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                     {/* Drafted means the scene has prose, as in the story header and Your stories. */}
                     <span>{t('{0} drafted', visible.filter(isDrafted).length)}</span>
                     <span className="font-semibold">{t('Status')}</span>
-                    {STATUSES.map((status) => <span key={status} className="flex items-center gap-1"><span className={`h-2.5 w-2.5 rounded-full ${STATUS_DOT[status]}`} />{visible.filter((scene) => effectiveStatus(scene) === status).length} {valueLabel(status)}</span>)}
+                    {statuses.map((status) => <span key={status} className="flex items-center gap-1"><span className={`h-2.5 w-2.5 rounded-full ${STATUS_DOT[dotStatus(status)]}`} />{visible.filter((scene) => shownStatus(scene, detailed) === status).length} {statusName(status)}</span>)}
                   </span>
                 </td>
               </tr>

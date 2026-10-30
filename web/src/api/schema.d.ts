@@ -4264,6 +4264,14 @@ export interface components {
             daily_words: number | null;
             today_words: number;
             streak: number;
+            /** @default 0 */
+            week_words: number;
+            /** @default 0 */
+            week_sprints: number;
+            /** @default 0 */
+            week_sprint_words: number;
+            /** @default false */
+            sprint_running: boolean;
         };
         /** HealthOut */
         HealthOut: {
@@ -4812,6 +4820,8 @@ export interface components {
             language?: components["schemas"]["Language"] | null;
             /** @description Language of the app's interface; null follows the browser. */
             ui_language?: components["schemas"]["UiLanguage"] | null;
+            /** @description Show Placeholder, Outlined and Revised beside Draft and Done. */
+            detailed_statuses?: boolean | null;
         };
         /** ProgressIn */
         ProgressIn: {
@@ -5738,6 +5748,8 @@ export interface components {
             picture_url: string | null;
             language: string;
             ui_language?: string | null;
+            /** @default false */
+            detailed_statuses: boolean;
         };
         /** ValidatorCreate */
         ValidatorCreate: {
@@ -5890,7 +5902,7 @@ export interface components {
              * @default 1
              * @enum {integer}
              */
-            level: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 104 | 105 | 106 | 107 | 108;
+            level: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 104 | 105 | 106 | 107 | 108 | 109 | 110 | 111 | 112 | 113 | 114;
             chapter_id?: string | null;
             scene_id?: string | null;
             write_chapter_id?: string | "unfiled" | null;
@@ -14966,7 +14978,7 @@ export interface operations {
     ApiStoriesStoryIdSearchSearch: {
         parameters: {
             query: {
-                context: "prose" | "story" | "scene" | "character" | "location" | "glossary_entry" | "chapter" | "event" | "act" | "beat" | "thread" | "timeline";
+                context: ("prose" | "story" | "scene" | "character" | "location" | "glossary_entry" | "chapter" | "event" | "act" | "beat" | "thread" | "timeline") | "all";
                 q: string;
                 field?: string | null;
                 mode?: "text" | "semantic";

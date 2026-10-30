@@ -49,6 +49,22 @@ function LanguageSettings() {
   </section>
 }
 
+// Scene statuses: Draft and Done by default; Placeholder, Outlined and Revised on request.
+function StatusSettings() {
+  const qc = useQueryClient()
+  const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser })
+  const save = useMutation({
+    mutationFn: (detailed: boolean) => api.saveProfile({ detailed_statuses: detailed }),
+    onSuccess: (user) => qc.setQueryData(['me'], user),
+  })
+  return <section id="statuses" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6">
+    <h2 className="text-lg font-semibold">{t('Scene statuses')}</h2>
+    <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('Scenes are Draft or Done. Turn on detailed statuses to also mark scenes as Placeholder, Outlined or Revised. Your scenes keep their status either way.')}</p>
+    <label className="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" checked={me.data?.detailed_statuses ?? false} disabled={!me.data || save.isPending} onChange={(event) => save.mutate(event.target.checked)} />{t('Detailed statuses')}</label>
+    {save.error && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(save.error)}</p>}
+  </section>
+}
+
 export default function UserSettings() {
   const qc = useQueryClient()
   const connections = useQuery({ queryKey: ['ai-connections'], queryFn: api.listAIConnections })
@@ -95,10 +111,11 @@ export default function UserSettings() {
       <Link to="/library" className="text-sm text-slate-500 dark:text-slate-400 hover:underline">{t('← Your stories')}</Link>
       <h1 className="mt-5 text-2xl font-semibold">{t('Your settings')}</h1>
       <div className="settings-layout">
-        <nav className="settings-nav" aria-label={t('Settings sections')}><a href="#profile">{t('Profile')}</a><a href="#writing-goal">{t('Writing goal')}</a><a href="#ai-clients">{t('AI clients')}</a><a href="#api-keys">{t('API keys')}</a><Link to="/checks">{t('Writing checks')}</Link></nav>
+        <nav className="settings-nav" aria-label={t('Settings sections')}><a href="#profile">{t('Profile')}</a><a href="#writing-goal">{t('Writing goal')}</a><a href="#statuses">{t('Scene statuses')}</a><a href="#ai-clients">{t('AI clients')}</a><a href="#api-keys">{t('API keys')}</a><Link to="/checks">{t('Writing checks')}</Link></nav>
         <div className="min-w-0">
       <AuthorNameSettings />
       <LanguageSettings />
+      <StatusSettings />
       <section id="writing-goal" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6"><h2 className="text-lg font-semibold">{t('Writing goal')}</h2><p className="writer-help mb-3">{t('A daily habit across all your stories. Set a goal for one story from its Write screen or Design.')}</p><HabitGoalForm /></section>
       <section id="ai-clients" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6">
         <h2 className="text-lg font-semibold">{t('Connect an AI client · MCP')}</h2>

@@ -41,6 +41,7 @@ class UserOut(BaseModel):
     picture_url: str | None
     language: str
     ui_language: str | None = None
+    detailed_statuses: bool = False
 
     @classmethod
     def from_user(cls, user: User) -> "UserOut":
@@ -52,6 +53,7 @@ class UserOut(BaseModel):
             picture_url=user.picture_url,
             language=user.language,
             ui_language=user.ui_language,
+            detailed_statuses=user.detailed_statuses,
         )
 
 
@@ -64,6 +66,9 @@ class ProfileIn(BaseModel):
     )
     ui_language: UiLanguage | None = Field(
         default=None, description="Language of the app's interface; null follows the browser."
+    )
+    detailed_statuses: bool | None = Field(
+        default=None, description="Show Placeholder, Outlined and Revised beside Draft and Done."
     )
 
 
@@ -170,6 +175,8 @@ class AuthController(Controller):
             user.language = data.language
         if "ui_language" in data.model_fields_set:
             user.ui_language = data.ui_language
+        if data.detailed_statuses is not None:
+            user.detailed_statuses = data.detailed_statuses
         await db_session.flush()
         return UserOut.from_user(user)
 

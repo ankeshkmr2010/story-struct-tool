@@ -4,7 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from advanced_alchemy.types import DateTimeUTC
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import StoryToolBase
@@ -20,6 +20,9 @@ class User(StoryToolBase):
     language: Mapped[str] = mapped_column(String(10), default="en-US", server_default="en-US")
     # Interface language; None follows the browser.
     ui_language: Mapped[str | None] = mapped_column(String(10), default=None)
+    # Scene statuses: False shows just Draft and Done; True adds Placeholder, Outlined, Revised.
+    # New accounts start simple; accounts that existed before 2026-10-31 keep detailed.
+    detailed_statuses: Mapped[bool] = mapped_column(Boolean, default=False)
     picture_url: Mapped[str | None] = mapped_column(String(1000), default=None)
     examples_seed_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 

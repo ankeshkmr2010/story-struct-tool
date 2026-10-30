@@ -4,8 +4,6 @@ import { OriginSummary } from './AuthorshipPanel'
 import { SceneDelete } from './SceneDelete'
 import { Chip, Field, InlineNumber, InlineSelect, InlineText } from './fields'
 
-const STATUSES = ['placeholder', 'outlined', 'drafted', 'revised']
-const statusOptions = () => STATUSES.map(value => ({ value, label: valueLabel(value) }))
 
 
 /**
@@ -13,6 +11,7 @@ const statusOptions = () => STATUSES.map(value => ({ value, label: valueLabel(va
  * reaches for mid-draft stay in view and everything else folds under More details and links.
  */
 export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: { storyId: string; scene: Scene; onDeleted: () => void; essentials?: boolean }) {
+  const detailed = useDetailedStatuses()
   const qc = useQueryClient()
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId) })
@@ -72,7 +71,7 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: 
     </section>}{arcCards}{linkedThreads.length > 0 && <div className="ws-card"><h4>{t('Threads')}</h4>{linkedThreads.map((thread) => <p key={thread.id}>{thread.title || t('Untitled thread')}{thread.mice && <span className="ws-card-note"> · {thread.mice}</span>}</p>)}</div>}<div className="scene-details-actions"><SceneDelete storyId={storyId} scene={scene} onDeleted={() => { onDeleted(); refresh() }} /></div><SceneImages storyId={storyId} sceneId={scene.id} /><details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
       <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-950">
         <span>{essentials ? t('More details and links') : t('Scene details and links')}</span>
-        <span className="truncate text-xs font-normal text-slate-400">{t('Draft: {0} · {1} words', scene.status, scene.word_count)}</span>
+        <span className="truncate text-xs font-normal text-slate-400">{t('Draft: {0} · {1} words', statusName(shownStatus(scene, detailed)), scene.word_count)}</span>
       </summary>
       <div className="border-t border-slate-100 dark:border-slate-800 p-3">
       <div className="flex items-center justify-between">
@@ -84,7 +83,7 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: 
         <Field label={t('Title')}><InlineText value={scene.title} placeholder={t('Scene title')} onSave={save('title')} /></Field>
         <Field label={t('Chapter')}><InlineSelect value={scene.chapter_id} options={(chapters.data ?? []).map((chapter) => ({ value: chapter.id, label: `${chapter.number}. ${chapter.title ?? t('Untitled')}` }))} onSave={save('chapter_id')} /></Field>
         <Field label={t('Type')}><InlineSelect value={scene.type} options={['scene', 'sequel']} onSave={save('type')} /></Field>
-        <Field label={t('Draft status')}><InlineSelect value={scene.status} options={statusOptions()} onSave={save('status')} /></Field>
+        <Field label={t('Draft status')}><InlineSelect value={shownStatus(scene, detailed)} options={(detailed ? DETAILED : SIMPLE).map(value => ({ value, label: statusName(value) }))} onSave={value => save('status')(value ? storedStatus(String(value), scene) : value)} /></Field>
         {!essentials && <>{pov}{place}</>}
         <Field label={t('Story time')}><InlineNumber value={scene.story_time_ordinal} onSave={save('story_time_ordinal')} /></Field>
         <Field label={t('Time label')}><InlineText value={scene.time_label} placeholder={t('e.g. next morning')} onSave={save('time_label')} /></Field>
@@ -110,4 +109,4 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: 
 }
 import { ReferenceImages, SceneImages } from './StoryImages'
 import { t } from '../i18n'
-import { valueLabel } from '../i18n/server'
+import { DETAILED, SIMPLE, shownStatus, statusName, storedStatus, useDetailedStatuses } from './sceneStatus'
