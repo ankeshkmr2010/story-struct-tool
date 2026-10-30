@@ -166,10 +166,10 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
     finally { setAdding(false) }
   }
 
+  const detailed = useDetailedStatuses()
   // The open chapter's scenes, each with its status dot; picking one puts the cursor in it.
   const sceneList = chapterScenes.length > 0 && <ul className="writer-scene-list">{chapterScenes.map(scene => <li key={scene.id}><button type="button" aria-current={contextScene?.id === scene.id ? 'true' : undefined} onClick={() => { setActiveScene(scene.id); setFocusTarget(null); requestAnimationFrame(() => setFocusTarget(scene.id)) }}><i className="writer-status-dot" data-status={dotStatus(shownStatus(scene, detailed))} title={statusName(shownStatus(scene, detailed))} aria-label={statusName(shownStatus(scene, detailed))} />{scene.title || t('Untitled scene')}</button></li>)}</ul>
   const sceneWords = contextScene?.word_count ?? 0
-  const detailed = useDetailedStatuses()
   const saveStatus = useWriterStatus(storyId)
   useEffect(() => {
     if (saveStatus !== 'saved') return
