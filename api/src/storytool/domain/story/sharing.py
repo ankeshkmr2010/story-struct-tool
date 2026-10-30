@@ -264,10 +264,11 @@ class SharedStoriesController(Controller):
         result = [shared_summary(story, grant, owner) for story, grant, owner in records]
         from storytool.domain.story.beta import BetaMember, BetaRound
 
-        rounds = await db_session.scalars(select(BetaRound).join(BetaMember).join(Story).where(
+        # A list, not a one-pass result: the rounds are read twice (summaries, then covers).
+        rounds = list(await db_session.scalars(select(BetaRound).join(BetaMember).join(Story).where(
             BetaMember.user_id == recipient.id, BetaMember.status == "approved",
             Story.deleted_at.is_(None),
-        ).order_by(BetaRound.created_at.desc()))
+        ).order_by(BetaRound.created_at.desc())))
         result.extend(SharedStoryOut(
             story_id=row.story_id, title=f"{row.snapshot['title']} · {row.title}",
             premise=None, blurb=row.snapshot.get("blurb"),

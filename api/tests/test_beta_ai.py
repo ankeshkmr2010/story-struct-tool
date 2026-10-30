@@ -232,3 +232,13 @@ async def test_disclosure_summary_counts_tracked_edits(client):
     assert summary["prose"]["author"] >= 1
     assert summary["prose"]["mcp"] == summary["prose"]["assistant"] == 0
     assert summary["ai_tools"] == [] and summary["tracking_since"]
+
+
+async def test_reader_shared_list_includes_beta_rounds(client, engine):
+    """Regression: the beta rounds are read twice (summaries, then covers)."""
+    beta = await published_round(client, engine, reader_ai=False)
+    as_reader(client)
+    listed = await client.get("/api/shared-stories")
+    assert listed.status_code == 200, listed.text
+    assert any(item["beta_round_id"] == beta["rid"] for item in listed.json())
+    as_author(client)
