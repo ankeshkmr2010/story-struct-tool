@@ -1676,3 +1676,26 @@ p.ws-card-note { margin-top: 8px; }
 .search-scope { margin: -4px 0 12px; }
 .ui-btn-primary:disabled { opacity: .55; }
 :root[data-theme=dark] .ui-btn-primary:disabled { opacity: 1; background: color-mix(in srgb, var(--button) 55%, var(--surface)); color: color-mix(in srgb, var(--button-ink) 70%, transparent); }
+
+/* Coherence pass (2026-10-30): the old Tailwind patterns left on Settings, Writing checks,
+   Feedback, readers, info pages and the sandbox, mapped onto the warm tokens site-wide.
+   Exact class tokens (~=) so dark: variants are not caught by substring matches. */
+:is(button, a, summary)[class~="bg-slate-900"] { border-radius: var(--radius-pill) !important; background: var(--button) !important; color: var(--button-ink) !important; }
+:is(button, a, summary)[class~="bg-slate-900"]:hover:not(:disabled) { background: var(--button-hover) !important; }
+span[class~="bg-slate-900"] { background: var(--button) !important; color: var(--button-ink) !important; }
+:root[data-theme=dark] :is(button, a, summary, span)[class~="dark:bg-slate-200"] { background: var(--button) !important; color: var(--button-ink) !important; }
+:root:not([data-theme=dark]) [class~="bg-white"] { background-color: var(--surface) !important; }
+/* Sky blue was the old accent; the forest green is the accent now. Violet stays: it means "a model's guess". */
+[class*="text-sky-"] { color: var(--accent) !important; }
+[class~="bg-sky-50"], [class~="bg-sky-100"], [class~="dark:bg-sky-950"], [class~="dark:bg-sky-900"] { background-color: var(--accent-soft) !important; }
+[class*="border-sky-"] { border-color: color-mix(in srgb, var(--accent) 30%, var(--line)) !important; }
+[class~="bg-sky-200"], [class~="bg-sky-400"], [class~="bg-sky-500"], [class~="bg-sky-600"], [class~="dark:bg-sky-900"] { background-color: var(--accent) !important; }
+/* Page and section titles in Fraunces, like the redesigned screens. */
+main :is(h1, h2)[class~="text-2xl"], main :is(h1, h2)[class~="text-3xl"], main h1[class~="text-xl"], main h2[class~="text-xl"] { font-family: var(--font-serif); font-weight: 500; letter-spacing: 0; }
+/* Bordered panels become the soft 14px cards. */
+main :is(section, article, div, form)[class~="rounded-xl"][class~="border"] { border-radius: 14px; border-color: var(--line); }
+main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-radius: var(--radius-md); border-color: var(--line); }
+/* Shoutouts: the page on the warm palette; each card keeps the colour its person chose. */
+.shoutouts-page { background: var(--page); color: var(--ink); }
+.shoutouts-title { font: 500 clamp(44px, 7vw, 72px)/1.05 var(--font-serif); color: var(--ink); }
+.shoutouts-page header .eyebrow { text-align: center; }

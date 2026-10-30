@@ -77,13 +77,13 @@ export default function Shoutouts() {
   const tool = 'rounded-md bg-white/20 px-2 py-1 text-xs font-semibold text-white hover:bg-white/30 disabled:opacity-40'
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-rose-50 via-amber-50 to-sky-50 text-slate-900 dark:from-slate-950 dark:via-violet-950 dark:to-slate-950 dark:text-slate-100">
+    <main className="shoutouts-page min-h-screen">
       <div className="mx-auto max-w-5xl px-5 py-10 sm:px-8 sm:py-16">
         <header className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-fuchsia-600 dark:text-fuchsia-300">
+          <p className="eyebrow">
             {t('Thank you')}
           </p>
-          <h1 className="mt-3 bg-linear-to-r from-rose-500 via-amber-500 to-sky-500 bg-clip-text text-5xl font-black tracking-tight text-transparent sm:text-7xl">
+          <h1 className="shoutouts-title mt-3">
             {t('Shoutouts')}
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-slate-700 dark:text-slate-300">
@@ -91,7 +91,7 @@ export default function Shoutouts() {
           </p>
         </header>
 
-        {error && <p role="alert" className="mt-8 text-center text-sm font-semibold text-rose-700 dark:text-rose-300">{error}</p>}
+        {error && <p role="alert" className="writer-error mt-8 text-center">{error}</p>}
         {items === null && !error && <p className="mt-12 text-center text-slate-500">{t('Loading…')}</p>}
 
         <ul className="mt-12 grid gap-5 sm:grid-cols-2">
