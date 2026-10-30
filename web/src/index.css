@@ -1614,3 +1614,56 @@ p.ws-card-note { margin-top: 8px; }
 .is-flash { animation: cast-flash 1.6s ease; }
 @keyframes cast-flash { 0%, 60% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: none; } }
 @media (max-width: 900px) { .structure-layout.has-drawer { grid-template-columns: minmax(0, 1fr); } .structure-drawer { position: static; } .timeline-lane { grid-template-columns: 80px minmax(0, 1fr); } }
+
+/* Design restyle (2026-10-30): Plan level panels and the Review group on the new tokens.
+   Scoped to Design so Write, Read and other pages keep their own styles. */
+.ws-design .plan-panel > .help-text { margin-bottom: 16px; font-size: 13px; }
+.ws-design h2.text-2xl, .ws-design h2.text-xl { font: 500 28px/1.2 var(--font-serif); letter-spacing: 0; color: var(--ink); }
+.ws-design h2.text-lg, .ws-design h3.text-lg, .ws-design h3.text-xl { font: 500 20px/1.25 var(--font-serif); color: var(--ink); }
+.ws-design .field-label { margin-bottom: 4px; color: var(--accent); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+/* Entry cards: list items, articles and padded bordered boxes. */
+.ws-design :is(li, article)[class*="border"],
+.ws-design div[class*="rounded-lg"][class*="border"],
+.ws-design div[class*="rounded-xl"][class*="border"],
+.ws-design div[class*="rounded-md"][class*="border"][class*=" p-"] {
+  border-color: var(--line); border-radius: 14px; background: var(--surface);
+}
+.ws-design :is(li, article)[class*="border"][class*="p-2"] { padding: 12px 14px; }
+.ws-design :is(li, article)[class*="border"]:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+/* Old dark primary buttons become the forest-green pill. */
+.ws-design button[class*="bg-slate-900"], .story-search-dialog button[class*="bg-slate-900"] {
+  border-radius: var(--radius-pill); background: var(--button) !important; color: var(--button-ink) !important; padding-inline: 14px;
+}
+.ws-design button[class*="bg-slate-900"]:hover:not(:disabled) { background: var(--button-hover) !important; }
+.ws-design .add-form input { border-radius: var(--radius-pill); border-color: var(--line); background: var(--surface); padding-inline: 14px; }
+.ws-design .add-form button { border-radius: var(--radius-pill); background: var(--button); color: var(--button-ink); padding-inline: 16px; }
+/* Completeness chips: green when filled, amber when details are missing. */
+.state-chip.is-complete { background: var(--accent-soft) !important; color: var(--accent) !important; border-radius: var(--radius-pill); }
+.state-chip.is-placeholder { background: color-mix(in srgb, var(--amber) 18%, var(--surface)) !important; color: color-mix(in srgb, var(--amber) 70%, var(--ink)) !important; border-radius: var(--radius-pill); }
+/* Old sky-blue notes and links read in the accent colour. */
+.ws-design [class*="text-sky-"] { color: var(--accent) !important; }
+.ws-design [class*="bg-sky-50"], .ws-design [class*="bg-sky-100"] { background: var(--accent-soft) !important; border-color: transparent !important; }
+.ws-design [class*="border-sky-"] { border-color: color-mix(in srgb, var(--accent) 30%, var(--line)) !important; }
+/* Tabs inside Design pages (Evaluate, History, Grid filters) as pills. */
+.ws-design .history-tabs { gap: 4px; padding: 3px; width: fit-content; border: 0; border-radius: var(--radius-pill); background: var(--band); }
+.ws-design .history-tabs button { margin: 0; padding: 6px 14px; border: 0; border-radius: var(--radius-pill); font-size: 13px; font-weight: 500; }
+.ws-design .history-tabs button[aria-selected="true"] { background: var(--button); color: var(--button-ink); }
+.ws-design section [role="tablist"]:not(.history-tabs):not(.ui-tabs) [role="tab"] { border-radius: var(--radius-pill); }
+.ws-design section [role="tablist"]:not(.history-tabs):not(.ui-tabs) [role="tab"][aria-selected="true"] { background: var(--button); border-color: var(--button); color: var(--button-ink); }
+.eval-check { border-radius: 10px; }
+.eval-check[aria-selected=true] { border-color: transparent; background: var(--accent-soft); color: var(--accent); }
+.eval-check small { color: color-mix(in srgb, var(--amber) 70%, var(--ink)); }
+/* Findings and amber notes in Review read like Write's hints. */
+.ws-design [class*="bg-amber-50"] { background: color-mix(in srgb, var(--amber) 12%, var(--surface)) !important; border-color: color-mix(in srgb, var(--amber) 30%, transparent) !important; border-radius: 14px; }
+.ws-design [class*="bg-emerald-50"] { background: var(--accent-soft) !important; border-color: transparent !important; border-radius: 14px; }
+/* Tables (Grid, Pacing table) on the band. */
+.ws-design table thead { background: var(--band); }
+.ws-design table { border-color: var(--line); }
+
+/* Search dialog: same card language everywhere it opens. */
+.story-search-dialog { border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-pop); }
+.story-search-dialog-head h2 { font: 500 24px/1.2 var(--font-serif); }
+.story-search-dialog input { border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--page); color: var(--ink); padding-inline: 18px; }
+.story-search-results li { border-radius: 14px; background: var(--page); }
+.story-search-results li:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.story-search-dialog .share-story-button { border-radius: var(--radius-pill); }

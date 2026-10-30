@@ -221,7 +221,7 @@ export function Chip({ complete, missing = [] }: { complete: boolean; missing?: 
   const label = (field: string) => field === 'pov_character_id' ? t('POV character') : field.replaceAll('_', ' ')
   if (!complete) return (
     <details className="relative shrink-0 text-[10px]">
-      <summary aria-label={t('Placeholder — show missing details')} className="cursor-pointer list-none rounded bg-amber-100 dark:bg-amber-950 px-1.5 py-0.5 uppercase tracking-wide text-amber-700 dark:text-amber-300 [&::-webkit-details-marker]:hidden">{t('placeholder ⓘ')}</summary>
+      <summary aria-label={t('Placeholder — show missing details')} className="state-chip is-placeholder cursor-pointer list-none rounded bg-amber-100 dark:bg-amber-950 px-1.5 py-0.5 uppercase tracking-wide text-amber-700 dark:text-amber-300 [&::-webkit-details-marker]:hidden">{t('placeholder ⓘ')}</summary>
       <div className="absolute right-0 top-full z-30 mt-2 w-60 rounded-lg border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 p-3 text-xs normal-case leading-5 text-slate-600 dark:text-slate-300 shadow-lg">
         <p className="font-semibold text-slate-800 dark:text-slate-100">{t('Required details are still missing')}</p>
         {missing.length > 0 && <p className="mt-1">{t('Fill in: {0}.', missing.map(label).join(', '))}</p>}
@@ -233,7 +233,7 @@ export function Chip({ complete, missing = [] }: { complete: boolean; missing?: 
     <span
       title={t('Required structural details are filled. This does not mean the story or draft is finished.')}
       className={[
-        'shrink-0 rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+        'state-chip shrink-0 rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide', complete ? 'is-complete' : 'is-placeholder',
         complete ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300',
       ].join(' ')}
     >
@@ -259,7 +259,7 @@ export function AddForm({
   const [error, setError] = useState(false)
   return (
     <form
-      className="flex gap-2"
+      className="add-form flex gap-2"
       onSubmit={async (event) => {
         event.preventDefault()
         if (!value.trim()) return

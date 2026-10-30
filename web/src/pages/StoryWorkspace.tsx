@@ -800,7 +800,7 @@ function Panel({
   children: React.ReactNode
 }) {
   return (
-    <div>
+    <div className="plan-panel">
       <h2 className="level-title">{title}{help && <HelpTip label={title.toLowerCase()}>{help}</HelpTip>}</h2>
       <p className="help-text mb-3">{hint}</p>
       {children}
