@@ -1750,3 +1750,7 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 .search-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
 .search-tools > span { color: var(--muted); font-size: 12px; }
 .search-tools .lib-chip:hover { border-color: var(--accent); color: var(--ink); }
+/* Usability phase 2, item 7: Write's tools in the bar. */
+.ws-write-tools { display: flex; align-items: center; gap: 4px; padding-right: 6px; border-right: 1px solid var(--line); }
+.ws-write-tools .ui-icon-btn { border-color: transparent; border-radius: 50%; }
+.ws-tk-glyph { font-size: 10px; font-weight: 700; letter-spacing: .04em; }

@@ -25,6 +25,10 @@ import { openBeside, type BesideItem } from './beside'
 import { getUiLanguage, plural, t } from '../i18n'
 import { GoalBar, StoryGoalCard } from './Goals'
 import { dotStatus, shownStatus, statusName, useDetailedStatuses } from './sceneStatus'
+import { WRITER_ACTION_EVENT, type WriterAction } from './writerActions'
+
+/** The passage Write's top-bar buttons act on: the one last focused. */
+let lastWriter: object | null = null
 
 type Named = { label: string; item: BesideItem }
 const WRITE_TIP_KEY = 'storytool-write-tip'
@@ -255,7 +259,9 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   const [previewImage, setPreviewImage] = useState<StoryImage | null>(null)
   const [hintParagraph, setHintParagraph] = useState(1)
   const [imageAnchor, setImageAnchor] = useState<{ x: number; y: number; at: number } | null>(null)
-  const [context, setContext] = useState<{ x: number; y: number; at: number; hasSelection: boolean; named: Named | null } | null>(null)
+  // `slash`: opened by typing / on an empty line; Esc then types the / after all.
+  const [context, setContext] = useState<{ x: number; y: number; at: number; hasSelection: boolean; named: Named | null; slash?: boolean } | null>(null)
+  const writerId = useRef({})
   const [clipboardError, setClipboardError] = useState('')
   // A small button beside a selection opens the same actions as right-click, so they are discoverable.
   const [selectionChip, setSelectionChip] = useState<{ x: number; y: number } | null>(null)
@@ -305,17 +311,23 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     try { setReviewError(null); setLatest(realScene.current ? (await api.getContent(storyId, realScene.current.id)).content ?? '' : '') }
     catch (error) { setReviewError(errorText(error)) }
   }
-  const openContext = (editor: EditorView, x: number, y: number, pointer: boolean) => {
+  const openContext = (editor: EditorView, x: number, y: number, pointer: boolean, slash = false) => {
     const position = pointer ? editor.posAtCoords({ x, y }) : editor.state.selection.main.head
     const selected = editor.state.selection.main
     if (position !== null && (selected.empty || position < selected.from || position > selected.to)) editor.dispatch({ selection: { anchor: position } })
-    setClipboardError(''); setContext({ x, y, at: position ?? editor.state.selection.main.head, hasSelection: !editor.state.selection.main.empty, named: nameAt(editor, position) }); setImageAnchor(null)
+    setClipboardError(''); setContext({ x, y, at: position ?? editor.state.selection.main.head, hasSelection: !editor.state.selection.main.empty, named: nameAt(editor, position), slash }); setImageAnchor(null)
   }
   useEffect(() => {
     if (!context) return
     menu.current?.querySelector<HTMLButtonElement>('button')?.focus()
     const outside = (event: PointerEvent) => { if (!menu.current?.contains(event.target as Node)) setContext(null) }
-    const dismiss = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); setContext(null); view.current?.focus() } }
+    const dismiss = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault(); setContext(null)
+      const editor = view.current
+      if (context.slash && editor) { const at = editor.state.selection.main.head; editor.dispatch({ changes: { from: at, insert: '/' }, selection: { anchor: at + 1 }, userEvent: 'input' }) }
+      editor?.focus()
+    }
     const scroll = () => setContext(null)
     window.addEventListener('pointerdown', outside); window.addEventListener('keydown', dismiss); window.addEventListener('scroll', scroll, true)
     return () => { window.removeEventListener('pointerdown', outside); window.removeEventListener('keydown', dismiss); window.removeEventListener('scroll', scroll, true) }
@@ -335,6 +347,24 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     editor.dispatch({ changes: { from, to, insert: marker }, selection: { anchor: from + marker.length - 1 }, scrollIntoView: true, userEvent: 'input' })
     setContext(null); editor.focus()
   }
+  const imageAtCaret = () => {
+    const editor = view.current; if (!editor) return
+    if (storyId === SANDBOX_ID) { window.dispatchEvent(new Event('storytool-try-images')); return }
+    const at = editor.state.selection.main.head
+    const coords = editor.coordsAtPos(at)
+    setContext(null); setImageAnchor({ x: coords?.left ?? 80, y: coords?.bottom ?? 120, at })
+  }
+  // Top-bar Add TK / Image: the last-focused passage acts; with none focused yet, the first one does.
+  useEffect(() => {
+    const act = (event: Event) => {
+      if (lastWriter && lastWriter !== writerId.current) return
+      lastWriter = writerId.current
+      if ((event as CustomEvent<WriterAction>).detail === 'tk') addPlaceholder(); else imageAtCaret()
+    }
+    window.addEventListener(WRITER_ACTION_EVENT, act)
+    return () => window.removeEventListener(WRITER_ACTION_EVENT, act)
+  })
+  useEffect(() => () => { if (lastWriter === writerId.current) lastWriter = null }, [])
   const editClipboard = async (action: 'cut' | 'copy' | 'paste' | 'select') => {
     const editor = view.current; if (!editor) return
     const selection = editor.state.selection.main
@@ -377,7 +407,15 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       writerImages(images.data?.images ?? [], setPreviewImage),
       readerComments(comments),
       writerPlaceholders,
+      // Typing / on an empty line opens the writing actions at the caret (usability phase 2, item 7).
+      EditorView.inputHandler.of((editor, from, to, text) => {
+        if (text !== '/' || from !== to || editor.state.doc.lineAt(from).text.trim() !== '') return false
+        const coords = editor.coordsAtPos(from)
+        openContext(editor, coords?.left ?? 20, coords?.bottom ?? 100, false, true)
+        return true
+      }),
       EditorView.domEventHandlers({
+        focus: () => { lastWriter = writerId.current; return false },
         contextmenu: (event, editor) => { event.preventDefault(); openContext(editor, event.clientX, event.clientY, true); return true },
         // A click below the last line starts a new paragraph instead of extending the last one.
         mousedown: (event, editor) => {
