@@ -15,7 +15,7 @@ const STATUS_DOT: Record<string, string> = {
   placeholder: 'border-[1.5px] border-[var(--faint)] bg-transparent',
   outlined: 'bg-[var(--amber)]',
   drafted: 'bg-green-400',
-  revised: 'bg-[var(--accent)] status-revised',
+  revised: 'bg-[var(--status-revised)] status-revised',
 }
 const AGENT_ORIGINS = new Set(['mcp', 'assistant'])
 const DAY = 24 * 60 * 60 * 1000

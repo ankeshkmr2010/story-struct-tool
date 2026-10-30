@@ -1705,3 +1705,14 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 /* Places and Glossary pages: the panel's own heading is the page title (no second label). */
 .plan-view > :first-child > h2:first-child { margin-bottom: 8px; color: var(--ink); font: 500 28px/1.2 var(--font-serif); letter-spacing: 0; text-transform: none; }
 :root[data-theme=dark] .ui-btn-primary:disabled { background: color-mix(in srgb, var(--button) 75%, var(--surface)); color: color-mix(in srgb, var(--button-ink) 85%, transparent); }
+/* QA round 3 (2026-10-30). Revised has its own hue (blue), distinct from Drafted green and Outlined amber. */
+:root { --status-revised: #2f6fd6; }
+:root[data-theme=dark] { --status-revised: #7aa7f5; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --status-revised: #7aa7f5; } }
+.status-revised, .writer-status-dot[data-status=revised] { border-color: var(--status-revised) !important; background: var(--status-revised) !important; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--status-revised) !important; margin-inline: 3px; }
+/* Disabled buttons look disabled in both themes: pale fill, dimmed but readable text, not-allowed cursor. */
+.ui-btn:disabled, .ui-btn-primary:disabled, :root[data-theme=dark] .ui-btn-primary:disabled, button[class~="bg-slate-900"]:disabled {
+  opacity: 1; cursor: not-allowed; filter: none; border-color: var(--line) !important;
+  background: color-mix(in srgb, var(--button) 14%, var(--surface)) !important;
+  color: color-mix(in srgb, var(--ink) 55%, var(--surface)) !important;
+}
