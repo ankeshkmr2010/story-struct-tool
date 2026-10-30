@@ -660,6 +660,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/images/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set, re-frame or remove the front cover or jacket */
+        put: operations["ApiStoriesStoryIdImagesCoverSetCover"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/shared-stories/{story_id}/images/{image_id}/file": {
         parameters: {
             query?: never;
@@ -1156,6 +1173,128 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/library/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Card arrangement, status and open items for Your stories */
+        get: operations["ApiLibraryOverviewOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/library/cards/{story_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Move, pin or archive a story card */
+        patch: operations["ApiLibraryCardsStoryIdUpdateCard"];
+        trace?: never;
+    };
+    "/api/goals/sprints/{sprint_id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** End a sprint early */
+        post: operations["ApiGoalsSprintsSprintIdEndEndSprint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daily goal, streak, this week and sprints */
+        get: operations["ApiGoalsOverview"];
+        /** Set the daily goal and its rules */
+        put: operations["ApiGoalsSave"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/goals/sprints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a sprint (ends any running one) */
+        post: operations["ApiGoalsSprintsStartSprint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/goals/stories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every story with its goal and pace, for the Goals page */
+        get: operations["ApiGoalsStoriesStories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/goal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** This story's goal and pace, with the daily habit beside it */
+        get: operations["ApiStoriesStoryIdGoalRead"];
+        /** Set this story's word target, deadline or daily pace */
+        put: operations["ApiStoriesStoryIdGoalSave"];
+        post?: never;
+        /** Remove this story's goal */
+        delete: operations["ApiStoriesStoryIdGoalRemove"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1870,7 +2009,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** DeleteItem */
+        delete: operations["ApiAdminRoadmapItemIdDeleteItem"];
         options?: never;
         head?: never;
         /** UpdateItem */
@@ -3545,6 +3685,32 @@ export interface components {
             override_key: string;
             bands: components["schemas"]["CalibrationBand"][];
         };
+        /** CardOut */
+        CardOut: {
+            /** Format: uuid */
+            story_id: string;
+            position: number | null;
+            pinned: boolean;
+            archived: boolean;
+            status: string;
+            scene_count: number;
+            drafted_scene_count: number;
+            tk_count: number;
+            pending_agent_changes: number;
+            goal_percent?: number | null;
+            goal_status?: string | null;
+            cover_url?: string | null;
+            /** @default 0.5 */
+            cover_focus_x: number;
+            /** @default 0.5 */
+            cover_focus_y: number;
+        };
+        /** CardUpdate */
+        CardUpdate: {
+            position?: number | null;
+            pinned?: boolean | null;
+            archived?: boolean | null;
+        };
         /** ChapterBriefOut */
         ChapterBriefOut: {
             /** Format: uuid */
@@ -3795,6 +3961,21 @@ export interface components {
             limit: number;
             additional_names?: string[];
         };
+        /** CoverIn */
+        CoverIn: {
+            /**
+             * @default cover
+             * @enum {string}
+             */
+            role: "cover" | "jacket";
+            image_id?: string | null;
+            /** @default 0.5 */
+            focus_x: number;
+            /** @default 0.5 */
+            focus_y: number;
+            /** @default false */
+            show_public: boolean;
+        };
         /** CraftFinding */
         CraftFinding: {
             check: string;
@@ -3830,6 +4011,14 @@ export interface components {
              * @constant
              */
             rubric_version: "craft-v2";
+        };
+        /** DayOut */
+        DayOut: {
+            /** Format: date */
+            day: string;
+            words: number;
+            writing_day: boolean;
+            met: boolean;
         };
         /** DecisionLabelIn */
         DecisionLabelIn: {
@@ -4024,9 +4213,57 @@ export interface components {
             definition?: string | null;
             first_explained_scene_id?: string | null;
         };
+        /** GoalSettingsIn */
+        GoalSettingsIn: {
+            daily_words?: number | null;
+            /** @default 127 */
+            writing_days: number;
+            /** @default true */
+            forgive_missed: boolean;
+            /** @default false */
+            count_ai: boolean;
+            /** @default UTC */
+            timezone: string;
+        };
+        /** GoalSettingsOut */
+        GoalSettingsOut: {
+            daily_words?: number | null;
+            /** @default 127 */
+            writing_days: number;
+            /** @default true */
+            forgive_missed: boolean;
+            /** @default false */
+            count_ai: boolean;
+            /** @default UTC */
+            timezone: string;
+        };
+        /** GoalsOut */
+        GoalsOut: {
+            settings: components["schemas"]["GoalSettingsOut"];
+            has_goal: boolean;
+            /** Format: date */
+            today: string;
+            today_words: number;
+            streak: number;
+            best_streak: number;
+            week: components["schemas"]["DayOut"][];
+            week_words: number;
+            week_sessions: number;
+            week_sprints: number;
+            week_sprint_words: number;
+            active_sprint: components["schemas"]["SprintOut"] | null;
+            last_sprint: components["schemas"]["SprintOut"] | null;
+            recent_sprints: components["schemas"]["SprintOut"][];
+        };
         /** GoogleCredential */
         GoogleCredential: {
             credential: string;
+        };
+        /** HabitOut */
+        HabitOut: {
+            daily_words: number | null;
+            today_words: number;
+            streak: number;
         };
         /** HealthOut */
         HealthOut: {
@@ -4103,6 +4340,13 @@ export interface components {
             caption: string;
             attachments?: components["schemas"]["ImageAttachment"][];
             archived: boolean;
+            role?: string | null;
+            /** @default 0.5 */
+            focus_x: number;
+            /** @default 0.5 */
+            focus_y: number;
+            /** @default false */
+            show_public: boolean;
             /** @default 0 */
             manuscript_uses: number;
             uses?: components["schemas"]["ImageUse"][];
@@ -4180,6 +4424,10 @@ export interface components {
             position: components["schemas"]["WorkspacePlace"];
             /** Format: date-time */
             updated_at: string;
+        };
+        /** LibraryOverviewOut */
+        LibraryOverviewOut: {
+            cards: components["schemas"]["CardOut"][];
         };
         /** LinksOut */
         LinksOut: {
@@ -5066,6 +5314,7 @@ export interface components {
             owner_name: string;
             allow_import: boolean;
             beta_round_id?: string | null;
+            cover_url?: string | null;
         };
         /** ShoutoutCreate */
         ShoutoutCreate: {
@@ -5156,6 +5405,26 @@ export interface components {
             chapter_count: number;
             scene_count: number;
         };
+        /** SprintIn */
+        SprintIn: {
+            /** Format: uuid */
+            story_id: string;
+            minutes: number;
+            target_words?: number | null;
+        };
+        /** SprintOut */
+        SprintOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            story_id: string;
+            /** Format: date-time */
+            started_at: string;
+            minutes: number;
+            target_words: number | null;
+            words: number;
+            ended_at: string | null;
+        };
         /** StoryActivityOut */
         StoryActivityOut: {
             change_token: string;
@@ -5176,6 +5445,37 @@ export interface components {
             language?: components["schemas"]["Language"] | null;
             structure_framework?: components["schemas"]["StructureFramework"];
             authoring_mode?: components["schemas"]["AuthoringMode"];
+        };
+        /** StoryGoalEnvelope */
+        StoryGoalEnvelope: {
+            goal: components["schemas"]["StoryGoalOut"] | null;
+            habit: components["schemas"]["HabitOut"];
+        };
+        /** StoryGoalIn */
+        StoryGoalIn: {
+            target_words: number;
+            deadline?: string | null;
+            daily_words?: number | null;
+        };
+        /** StoryGoalOut */
+        StoryGoalOut: {
+            target_words: number;
+            deadline: string | null;
+            daily_words: number | null;
+            words_now: number;
+            percent: number;
+            today_words: number;
+            needed_today: number | null;
+            behind_by: number;
+            days_left: number | null;
+            status: string;
+        };
+        /** StoryGoalRow */
+        StoryGoalRow: {
+            /** Format: uuid */
+            story_id: string;
+            title: string;
+            goal: components["schemas"]["StoryGoalOut"] | null;
         };
         /** StoryOut */
         StoryOut: {
@@ -7337,6 +7637,47 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdImagesCoverSetCover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CoverIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageOut"] | null;
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiSharedStoriesStoryIdImagesImageIdFileFile: {
         parameters: {
             query?: never;
@@ -8755,6 +9096,333 @@ export interface operations {
             };
         };
     };
+    ApiLibraryOverviewOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryOverviewOut"];
+                };
+            };
+        };
+    };
+    ApiLibraryCardsStoryIdUpdateCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CardUpdate"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGoalsSprintsSprintIdEndEndSprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sprint_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SprintOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGoalsOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalsOut"];
+                };
+            };
+        };
+    };
+    ApiGoalsSave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalSettingsIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalSettingsOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGoalsSprintsStartSprint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SprintIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SprintOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiGoalsStoriesStories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoryGoalRow"][];
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdGoalRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoryGoalEnvelope"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdGoalSave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoryGoalIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoryGoalEnvelope"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdGoalRemove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiSharedStoriesStoryIdImportImportStory: {
         parameters: {
             query?: never;
@@ -9205,6 +9873,7 @@ export interface operations {
                 glossary?: boolean;
                 timeline?: boolean;
                 places?: boolean;
+                cover_page?: boolean;
             };
             header?: never;
             path: {
@@ -9283,6 +9952,7 @@ export interface operations {
         parameters: {
             query?: {
                 include_unplaced?: boolean;
+                cover_page?: boolean;
             };
             header?: never;
             path: {
@@ -10374,6 +11044,41 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RoadmapOut"];
                 };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminRoadmapItemIdDeleteItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad request syntax or unsupported method */
             400: {

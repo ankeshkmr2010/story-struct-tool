@@ -113,6 +113,7 @@ _CSS = (
     "blockquote{font-style:italic;margin:1.5em 2em}"
     ".scene-break{text-align:center;margin:1.5em 0}"
     "figure{margin:1.5em 0;break-inside:avoid}img{max-width:100%;height:auto}figcaption{text-align:center;font-size:.85em}"
+    ".cover{text-align:center;margin:0}.cover img{max-height:95vh}"
 )
 
 
@@ -162,8 +163,10 @@ def manuscript_epub(
     identifier: UUID,
     author_name: str | None = None,
     images: ImageFiles | None = None,
+    cover_id: str | None = None,
 ) -> bytes:
-    """An EPUB 3 book: a title page, then one file per chapter (level-2 heading)."""
+    """An EPUB 3 book: a cover (when `cover_id` names one of `images`), a title page, then one
+    file per chapter (level-2 heading)."""
     sections: list[tuple[str, list[Block]]] = [(title, [])]
     for block in blocks(markdown):
         if block.kind == "heading" and block.level == 2:
@@ -179,6 +182,11 @@ def manuscript_epub(
         )
         for index, (label, body) in enumerate(sections)
     ]
+    if cover_id and images and cover_id in images:
+        data = images[cover_id]
+        src = f"images/{cover_id}.{data[1].split('/')[1]}"
+        page = f'<div class="cover"><img src="{src}" alt="{escape(data[2])}"/></div>'
+        files.insert(0, ("cover.xhtml", "Cover", _xhtml("Cover", page)))
     modified = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     manifest = "\n".join(
         f'<item id="s{i}" href="{name}" media-type="application/xhtml+xml"/>'
@@ -186,7 +194,9 @@ def manuscript_epub(
     )
     spine = "\n".join(f'<itemref idref="s{i}"/>' for i in range(len(files)))
     manifest += "\n" + "\n".join(
-        f'<item id="img-{id_}" href="images/{id_}.{data[1].split("/")[1]}" media-type="{data[1]}"/>'
+        f'<item id="img-{id_}" href="images/{id_}.{data[1].split("/")[1]}" media-type="{data[1]}"'
+        + (' properties="cover-image"' if id_ == cover_id else "")
+        + "/>"
         for id_, data in (images or {}).items()
     )
     creator = f"<dc:creator>{escape(author_name)}</dc:creator>\n" if author_name else ""

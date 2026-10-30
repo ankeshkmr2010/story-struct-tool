@@ -17,6 +17,7 @@ def manuscript_pdf(
     markdown: str, title: str, author_name: str | None, word_count: int,
     appendices: list[tuple[str, list[Block]]],
     images: ImageFiles | None = None,
+    cover: tuple[bytes, str, str, str] | None = None,
 ) -> bytes:
     # The standard Times faces use WinAnsi. Refuse unsupported text rather than
     # silently replacing manuscript characters with boxes or question marks.
@@ -50,7 +51,14 @@ def manuscript_pdf(
         "ReferenceHeading", parent=reference, fontName="Times-Bold",
         spaceBefore=12, spaceAfter=4, keepWithNext=True,
     )
-    flow = [Spacer(1, 144), Paragraph(escape(title), title_style)]
+    flow: list = []
+    if cover:
+        # An optional cover page before the title page, scaled to fit inside the margins.
+        art = Image(io.BytesIO(cover[0]))
+        scale = min(450 / art.imageWidth, 620 / art.imageHeight)
+        art.drawWidth, art.drawHeight = art.imageWidth * scale, art.imageHeight * scale
+        flow.extend([art, PageBreak()])
+    flow.extend([Spacer(1, 144), Paragraph(escape(title), title_style)])
     if author_name:
         flow.append(Paragraph(f"By {escape(author_name)}", centered))
     flow.extend([Spacer(1, 24), Paragraph(f"{word_count:,} words", centered), PageBreak()])

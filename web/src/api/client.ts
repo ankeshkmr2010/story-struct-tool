@@ -24,7 +24,7 @@ export type StoryActivity = S['StoryActivityOut']
 export type WorkspacePlace = S['WorkspacePlace']
 export type RoadmapItem = S['RoadmapOut']
 // Your stories: per-account card arrangement plus derived status and open items (api domain/story/library.py).
-export type LibraryCardState = { story_id: string; position: number | null; pinned: boolean; archived: boolean; status: 'planning' | 'draft' | 'revision'; scene_count: number; drafted_scene_count: number; tk_count: number; pending_agent_changes: number; goal_percent: number | null; goal_status: StoryGoalStatus | null }
+export type LibraryCardState = { story_id: string; position: number | null; pinned: boolean; archived: boolean; status: 'planning' | 'draft' | 'revision'; scene_count: number; drafted_scene_count: number; tk_count: number; pending_agent_changes: number; goal_percent: number | null; goal_status: StoryGoalStatus | null; cover_url: string | null; cover_focus_x: number; cover_focus_y: number }
 export type LibraryOverview = { cards: LibraryCardState[] }
 // Writing goals (api domain/story/goals.py). Streaks, pace and status are derived server-side.
 export type GoalSettings = { daily_words: number | null; writing_days: number; forgive_missed: boolean; count_ai: boolean; timezone: string }
@@ -203,6 +203,7 @@ export const api = {
   decisionCalibration: () => request<S['CalibrationOut'][]>('/api/admin/decisions/calibration'),
   writingHints: (storyId: string, sceneId: string, content: string, knownNames: string[], signal: AbortSignal) => request<HintReading>(storyId === '00000000-0000-4000-8000-000000000001' ? '/api/site/try/hints' : `/api/stories/${storyId}/scenes/${sceneId}/hints`, { method: 'POST', body: JSON.stringify({ content, known_names: knownNames.slice(0, 255), known_names_complete: knownNames.length <= 255 }), signal }),
   imageLibrary: (id: string) => request<ImageLibrary>(`/api/stories/${id}/images`),
+  setCover: (id: string, body: S['CoverIn']) => request<StoryImage | null>(`/api/stories/${id}/images/cover`, { method: 'PUT', body: JSON.stringify(body) }),
   describeImage: (id: string, imageId: string, body: ImageDescription) => patch<StoryImage>(`/api/stories/${id}/images/${imageId}`, body),
   removeImage: (id: string, imageId: string) => request<void>(`/api/stories/${id}/images/${imageId}`, { method: 'DELETE' }),
   searchCapabilities: (id: string) => request<S['SearchCapabilities']>(`/api/stories/${id}/search/capabilities`),

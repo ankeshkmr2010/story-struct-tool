@@ -67,6 +67,9 @@ class CardOut(BaseModel):
     pending_agent_changes: int
     goal_percent: int | None = None
     goal_status: str | None = None
+    cover_url: str | None = None
+    cover_focus_x: float = 0.5
+    cover_focus_y: float = 0.5
 
 
 class LibraryOverviewOut(BaseModel):
@@ -155,6 +158,20 @@ class LibraryController(Controller):
                     pending_agent_changes=pending.get(story_id, 0),
                 )
             )
+        # Covers replace the generated tile on cards that have one.
+        from storytool.domain.story.image_models import StoryImage
+
+        by_id = {item.story_id: item for item in out}
+        for image in await db_session.scalars(
+            select(StoryImage).where(
+                StoryImage.story_id.in_(story_ids),
+                StoryImage.role == "cover",
+                StoryImage.archived.is_(False),
+            )
+        ):
+            card_out = by_id[image.story_id]
+            card_out.cover_url = f"/api/stories/{image.story_id}/images/{image.id}/file"
+            card_out.cover_focus_x, card_out.cover_focus_y = image.focus_x, image.focus_y
         # Story goals ride on the cards: progress bar and pace chip (goals.py derives both).
         from storytool.domain.story.goals import (
             StoryGoal,

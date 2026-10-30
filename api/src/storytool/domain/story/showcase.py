@@ -181,7 +181,7 @@ class PublicShowcaseController(Controller):
             owner_name=owner.name or "StoryTool author",
             updated_at=story.updated_at,
             manuscript=compile_manuscript(graph),
-            structure=reading_state(state, f"/api/showcase/{token}/images"),
+            structure=reading_state(state, f"/api/showcase/{token}/images", showcase=True),
             versions=[
                 ShowcaseVersionOut(
                     number=v.number,

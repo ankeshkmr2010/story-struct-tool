@@ -13,6 +13,8 @@ const n = (value: number) => value.toLocaleString(getUiLanguage())
 export default function GoalsPage() {
   const goals = useGoals()
   const stories = useQuery({ queryKey: ['goal-stories'], queryFn: api.goalStories })
+  const cards = useQuery({ queryKey: ['library-overview'], queryFn: api.libraryOverview })
+  const coverOf = (id: string) => cards.data?.cards.find(card => card.story_id === id)?.cover_url
   const [editing, setEditing] = useState<string | null>(null)
   const storyTitles = Object.fromEntries((stories.data ?? []).map(row => [row.story_id, row.title]))
   const daily = goals.data?.settings.daily_words
@@ -50,6 +52,7 @@ export default function GoalsPage() {
       <ul>
         {stories.data?.map(row => <li key={row.story_id} className="goals-story">
           <div className="goals-story-head">
+            {coverOf(row.story_id) ? <img className="goals-thumb" src={coverOf(row.story_id)!} alt="" /> : <span className="goals-thumb" aria-hidden="true" />}
             <Link to={`/stories/${row.story_id}`} className="story-card-title">{row.title}</Link>
             {row.goal && <span className={`lib-chip lib-chip--goal is-${row.goal.status}`}>{statusLabel(row.goal)}</span>}
             <span className="lib-grow" />

@@ -8,10 +8,10 @@ from collections import Counter
 from typing import Any, Literal
 from uuid import UUID
 
-from litestar import Controller, Request, Response, delete, get, patch, post
+from litestar import Controller, Request, Response, delete, get, patch, post, put
 from litestar.exceptions import ClientException, NotFoundException
 from PIL import Image
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid_utils import uuid7
@@ -65,6 +65,10 @@ class ImageUse(BaseModel):
 
 class ImageOut(ImageDescription):
     archived: bool
+    role: str | None = None
+    focus_x: float = 0.5
+    focus_y: float = 0.5
+    show_public: bool = False
     manuscript_uses: int = 0
     uses: list[ImageUse] = Field(default_factory=list)
     id: UUID
@@ -149,7 +153,11 @@ async def save_blob(
 def image_out(image: StoryImage, blob: ImageBlob, uses: int = 0) -> ImageOut:
     return ImageOut(
         id=image.id,
-        archived=image.archived and not uses and not image.attachments,
+        archived=image.archived and not uses and not image.attachments and not image.role,
+        role=image.role,
+        focus_x=image.focus_x,
+        focus_y=image.focus_y,
+        show_public=image.show_public,
         manuscript_uses=uses,
         name=image.name,
         alt=image.alt,
@@ -162,7 +170,17 @@ def image_out(image: StoryImage, blob: ImageBlob, uses: int = 0) -> ImageOut:
     )
 
 
-def public_images(state: dict[str, Any], base_url: str) -> list[dict[str, Any]]:
+def cover_visible(row: dict[str, Any], showcase: bool) -> bool:
+    """Readers of a shared story or beta round see the front cover; the jacket, and anything
+    on a public showcase, only when the author ticked show_public."""
+    if row.get("role") == "cover":
+        return bool(row.get("show_public")) or not showcase
+    return row.get("role") == "jacket" and bool(row.get("show_public"))
+
+
+def public_images(
+    state: dict[str, Any], base_url: str, *, showcase: bool = False
+) -> list[dict[str, Any]]:
     refs = {
         match[1]
         for scene in state.get("scene", [])
@@ -176,9 +194,14 @@ def public_images(state: dict[str, Any], base_url: str) -> list[dict[str, Any]]:
         attachments = [
             a for a in row.get("attachments", []) if a["id"] in targets.get(a["entity"], set())
         ]
-        if str(row["id"]) in refs or attachments:
+        if str(row["id"]) in refs or attachments or cover_visible(row, showcase):
             result.append(
                 {k: row[k] for k in ("id", "name", "alt", "caption", "blob_id")}
+                | {
+                    "role": row.get("role") if cover_visible(row, showcase) else None,
+                    "focus_x": row.get("focus_x", 0.5),
+                    "focus_y": row.get("focus_y", 0.5),
+                }
                 | {"attachments": attachments, "url": f"{base_url}/{row['id']}/file"}
             )
     return result
@@ -299,6 +322,34 @@ async def import_images(
                 raise ValueError("An image points outside this backup")
 
 
+class CoverIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    role: Literal["cover", "jacket"] = "cover"
+    image_id: UUID | None = None
+    focus_x: float = Field(default=0.5, ge=0, le=1)
+    focus_y: float = Field(default=0.5, ge=0, le=1)
+    show_public: bool = False
+
+
+async def story_cover(db: AsyncSession, story_id: UUID, role: str = "cover") -> StoryImage | None:
+    return await db.scalar(
+        select(StoryImage).where(
+            StoryImage.story_id == story_id, StoryImage.role == role, StoryImage.archived.is_(False)
+        )
+    )
+
+
+async def cover_file(
+    db: AsyncSession, story_id: UUID
+) -> tuple[str, tuple[bytes, str, str, str]] | None:
+    """The front cover as an export image (PNG when stored as WebP), keyed by image id."""
+    cover = await story_cover(db, story_id)
+    if cover is None:
+        return None
+    files = await export_images(db, story_id, f"![{cover.alt}](storytool-image:{cover.id})")
+    return str(cover.id), files[str(cover.id)]
+
+
 class StoryImagesController(Controller):
     path = "/api/stories/{story_id:uuid}/images"
     tags = ["images"]  # noqa: RUF012 - Litestar controller configuration
@@ -400,6 +451,39 @@ class StoryImagesController(Controller):
         await db_session.flush()
         return image_out(image, blob)
 
+    @put("/cover", summary="Set, re-frame or remove the front cover or jacket")
+    async def set_cover(
+        self, db_session: AsyncSession, story_id: UUID, data: CoverIn
+    ) -> ImageOut | None:
+        for current in await db_session.scalars(
+            select(StoryImage).where(StoryImage.story_id == story_id, StoryImage.role == data.role)
+        ):
+            if current.id != data.image_id:
+                current.role, current.show_public = None, False
+        if data.image_id is None:
+            await db_session.flush()
+            return None
+        image = await db_session.scalar(
+            select(StoryImage).where(
+                StoryImage.id == data.image_id, StoryImage.story_id == story_id
+            )
+        )
+        if image is None:
+            raise NotFoundException(detail="Image not found")
+        if image.role and image.role != data.role:
+            raise ClientException(detail="This image is already the story's " + image.role)
+        image.role, image.focus_x, image.focus_y, image.show_public = (
+            data.role,
+            data.focus_x,
+            data.focus_y,
+            data.show_public,
+        )
+        image.archived = False
+        await db_session.flush()
+        blob = await db_session.get(ImageBlob, image.blob_id)
+        assert blob is not None
+        return image_out(image, blob)
+
     @patch("/{image_id:uuid}")
     async def describe(
         self, db_session: AsyncSession, story_id: UUID, image_id: UUID, data: ImageDescription
@@ -435,7 +519,7 @@ class StoryImagesController(Controller):
                 for match in IMAGE_REF.findall(scene.content or "")
             )
         ]
-        if image.archived and not affected and not image.attachments:
+        if image.archived and not affected and not image.attachments and not image.role:
             return
         from storytool.domain.versioning.service import checkpoint
 
@@ -458,6 +542,7 @@ class StoryImagesController(Controller):
             )
         image.archived = True
         image.attachments = []
+        image.role = None
 
     @get("/{image_id:uuid}/file")
     async def file(
@@ -509,7 +594,7 @@ class ShowcaseImagesController(Controller):
             db_session,
             story_id,
             image_id,
-            public_images(await full_state(db_session, story_id), ""),
+            public_images(await full_state(db_session, story_id), "", showcase=True),
         )
 
 

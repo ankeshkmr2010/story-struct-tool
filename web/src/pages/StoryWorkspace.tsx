@@ -41,6 +41,7 @@ import { AccountMenu } from '../components/AuthGate'
 import { useWriterStatus } from '../components/writerDraft'
 import { CastPanel } from '../components/CastPanel'
 import { GoalsDialog, Ring, StoryGoalForm } from '../components/Goals'
+import { CoverManager } from '../components/Covers'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
 import { SANDBOX_ID, FIRST_SCENE, tourEvent, type Sandbox } from '../sandbox/storage'
@@ -299,6 +300,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
   const otherStories = useQuery({ queryKey: ['stories'], queryFn: api.listStories, enabled: !sandbox })
   const saveStatus = useWriterStatus(storyId)
+  const libraryCards = useQuery({ queryKey: ['library-overview'], queryFn: api.libraryOverview, enabled: !sandbox })
+  const coverOf = (id: string) => libraryCards.data?.cards.find(card => card.story_id === id)?.cover_url
   const storyGoal = useQuery({ queryKey: ['story-goal', storyId], queryFn: () => api.storyGoal(storyId), enabled: !sandbox })
   const [toolsOpen, setToolsOpen] = useState(false)
   const [goalsOpen, setGoalsOpen] = useState(false)
@@ -501,7 +504,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       <header className="ws-bar">
         <Link to="/" className="ws-brand" aria-label={t('StoryTool home')} title={t('StoryTool home')}><img src="/branding/storytool.svg" alt="" width="26" height="26" /></Link>
         {!sandbox && <Link to="/library" className="ws-back" aria-label={t('All stories')} title={t('All stories')}>‹</Link>}
-        <div className="ws-title"><h1>{sandbox ? story.data.title : <Menu label={<><span>{story.data.title}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></>} align="start" triggerClassName="ws-title-button" panelClassName="ws-story-menu"><p className="eyebrow">{t('Switch story')}</p>{(otherStories.data ?? []).filter(item => item.id !== storyId).map(item => <MenuItem key={item.id} onSelect={() => navigate(`/stories/${item.id}`)}>{item.title}</MenuItem>)}<MenuItem onSelect={() => navigate('/library')}>{t('All stories →')}</MenuItem></Menu>}</h1>{progress.data && <span>{t('{0} words · {1}/{2} scenes drafted', progress.data.word_count.toLocaleString(getUiLanguage()), progress.data.drafted_scene_count, progress.data.scene_count)}{storyGoal.data?.goal && ` · ${t('{0}% of goal', storyGoal.data.goal.percent)}`}</span>}</div>
+        {!sandbox && coverOf(storyId) && <img className="ws-cover-thumb" src={coverOf(storyId)!} alt="" />}
+        <div className="ws-title"><h1>{sandbox ? story.data.title : <Menu label={<><span>{story.data.title}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></>} align="start" triggerClassName="ws-title-button" panelClassName="ws-story-menu"><p className="eyebrow">{t('Switch story')}</p>{(otherStories.data ?? []).filter(item => item.id !== storyId).map(item => <MenuItem key={item.id} onSelect={() => navigate(`/stories/${item.id}`)}>{coverOf(item.id) ? <img className="ws-switch-thumb" src={coverOf(item.id)!} alt="" /> : <span className="ws-switch-thumb" aria-hidden="true" />}{item.title}</MenuItem>)}<MenuItem onSelect={() => navigate('/library')}>{t('All stories →')}</MenuItem></Menu>}</h1>{progress.data && <span>{t('{0} words · {1}/{2} scenes drafted', progress.data.word_count.toLocaleString(getUiLanguage()), progress.data.drafted_scene_count, progress.data.scene_count)}{storyGoal.data?.goal && ` · ${t('{0}% of goal', storyGoal.data.goal.percent)}`}</span>}</div>
       <div className="story-workspace-tabs" role="tablist" aria-label={t('Story workspace')} onKeyDown={event => {
         if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
           event.preventDefault()
@@ -599,6 +603,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
                 <label className="block text-xs"><span className="field-label">{t('Motifs')}</span>{' '}{t('(one per line)')}<InlineText value={story.data.motifs?.join('\n') ?? null} placeholder={t('Recurring images or ideas')} onSave={value => updateStory.mutateAsync({ motifs: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
                 <label className="block text-xs"><span className="field-label">{t('Private story notes')}</span><InlineText value={story.data.notes} placeholder={t('Reference and working notes; keep the premise one sentence')} onSave={notes => updateStory.mutateAsync({ notes })} multiline /></label>
               </div></details>
+              {!sandbox && <details className="mt-3"><summary className="field-label cursor-pointer">{t('Cover')}</summary><div className="mt-2"><CoverManager storyId={storyId} title={story.data.title} blurb={story.data.blurb} wordCount={progress.data?.word_count ?? 0} /></div></details>}
               {!sandbox && <details className="mt-3"><summary className="field-label cursor-pointer">{t('Goal')}</summary><div className="mt-2"><StoryGoalForm storyId={storyId} /></div></details>}
             </Panel>
           )}

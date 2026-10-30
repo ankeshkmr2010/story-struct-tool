@@ -45,7 +45,7 @@ export function DiscoverTour({ open, onClose, onKeep }: { open: boolean; onClose
   const structure = Object.fromEntries(Object.entries(seed.data?.state ?? {}).filter(([, value]) => Array.isArray(value))) as Record<string, Row[]>
   const scenes = structure.scene ?? []
   const first = scenes.find(scene => scene.id === FIRST_SCENE)
-  const sampleImage: StoryImage = { archived: false, manuscript_uses: 1, attachments: [], uses: [], size: 0, width: 800, height: 600, id: imageId, name: 'The Last Lantern illustration', url: imagePreviewUrl, alt: 'A glowing brass lantern beside a lighthouse window.', caption }
+  const sampleImage: StoryImage = { archived: false, focus_x: 0.5, focus_y: 0.5, show_public: false, manuscript_uses: 1, attachments: [], uses: [], size: 0, width: 800, height: 600, id: imageId, name: 'The Last Lantern illustration', url: imagePreviewUrl, alt: 'A glowing brass lantern beside a lighthouse window.', caption }
   const previewScenes = scenes.map(scene => {
     if (scene.id !== FIRST_SCENE || imageDeleted) return scene
     const [opening, ...rest] = String(scene.content ?? '').split(/\n\s*\n/)

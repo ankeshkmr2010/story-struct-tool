@@ -2,7 +2,8 @@ import { ReadOnlyReferenceImages } from '../components/StoryImages'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { api } from '../api/client'
+import { api, type StoryImage } from '../api/client'
+import { JacketPreview } from '../components/Covers'
 import { errorText } from '../api/errors'
 import { orderChapters, orderScenes } from '../api/ordering'
 import { ManuscriptReading } from '../components/ManuscriptReading'
@@ -38,6 +39,7 @@ export default function StoryShowcase() {
   const { token = '' } = useParams()
   const [tab, setTab] = useState<Tab>('read')
   const [allVersions, setAllVersions] = useState(false)
+  const [jacketOpen, setJacketOpen] = useState(false)
   const doc = useQuery({ queryKey: ['showcase', token], queryFn: () => api.readShowcase(token), retry: false })
   useEffect(() => {
     const meta = document.createElement('meta')
@@ -66,11 +68,15 @@ export default function StoryShowcase() {
   const agentEdits = (data.authorship.mcp ?? 0) + (data.authorship.assistant ?? 0)
   const shownVersions = allVersions ? data.versions : data.versions.slice(0, 6)
 
+  const showcaseCover = (data.structure.story_image ?? []).find((row: Record<string, unknown>) => row.role === 'cover')
+  const showcaseJacket = (data.structure.story_image ?? []).find((row: Record<string, unknown>) => row.role === 'jacket')
   return <main className="shared-reader-page showcase-page">
-    <header className="shared-reader-header"><div>
+    {jacketOpen && showcaseJacket && <JacketPreview title={data.title} blurb={data.blurb} wordCount={words} jacket={showcaseJacket as unknown as StoryImage} onClose={() => setJacketOpen(false)} />}
+    <header className={`shared-reader-header${showcaseCover ? ' has-cover' : ''}`}>{showcaseCover && <img className="reader-cover" src={String(showcaseCover.url)} alt={String(showcaseCover.alt || t('Cover of {0}', data.title))} />}<div>
       <p className="eyebrow">{t('STORY SHOWCASE · READ ONLY{0}', data.genre ? ` · ${data.genre.toUpperCase()}` : '')}</p>
       <h1>{data.title}</h1>
       {data.blurb && <p className="shared-reader-blurb">{data.blurb.replace(/\\"/g, '"')}</p>}
+      {showcaseJacket && <button type="button" className="share-story-button" onClick={() => setJacketOpen(true)}>{t('View jacket')}</button>}
       <p className="writer-help">{t('By {0} · updated {1}{2} · {3} chapters · {4} characters · {5} saved versions', data.owner_name, date(data.updated_at), words ? t(' · {0} words', words.toLocaleString(getUiLanguage())) : '', chapters.length, rows('character').length, data.versions.length)}</p>
     </div></header>
     <div className="reader-toolbar showcase-tabs" role="tablist" aria-label={t('Showcase sections')}>{TABS.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id} aria-pressed={tab === id} className="share-story-button" onClick={() => setTab(id)}>{t(label)}</button>)}</div>

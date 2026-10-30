@@ -199,7 +199,8 @@ class StoryBackupController(Controller):
 
     @get("/manuscript.docx", summary="Compile the manuscript as a Word document")
     async def manuscript(
-        self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True
+        self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True,
+        cover_page: bool = False,
     ) -> Response[bytes]:
         graph = await load_graph_by_id(db_session, story_id)
         if graph is None:
@@ -210,6 +211,11 @@ class StoryBackupController(Controller):
         from storytool.domain.story.images import export_images
 
         markdown = compile_manuscript(graph, include_unplaced=include_unplaced, author_name=author_name)
+        if cover_page:
+            from storytool.domain.story.images import story_cover
+
+            if cover := await story_cover(db_session, story_id):
+                markdown = f"![{cover.alt}](storytool-image:{cover.id})\n\n" + markdown
         return Response(
             content=manuscript_docx(
                 markdown,
@@ -278,9 +284,14 @@ class StoryBackupController(Controller):
         self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True
     ) -> Response[bytes]:
         markdown, title, identifier, author = await self._manuscript(db_session, story_id, include_unplaced)
-        from storytool.domain.story.images import export_images
+        from storytool.domain.story.images import cover_file, export_images
+
+        images = await export_images(db_session, story_id, markdown)
+        cover = await cover_file(db_session, story_id)
+        if cover:
+            images[cover[0]] = cover[1]
         return Response(
-            content=manuscript_epub(markdown, title, identifier, author, await export_images(db_session, story_id, markdown)),
+            content=manuscript_epub(markdown, title, identifier, author, images, cover[0] if cover else None),
             media_type="application/epub+zip",
             headers={"content-disposition": f'attachment; filename="{slug(title)}.epub"'},
         )
@@ -290,6 +301,7 @@ class StoryBackupController(Controller):
     async def export_pdf(
         self, db_session: AsyncSession, story_id: UUID, include_unplaced: bool = True,
         glossary: bool = False, timeline: bool = False, places: bool = False,
+        cover_page: bool = False,
     ) -> Response[bytes]:
         markdown, title, _, author = await self._manuscript(
             db_session, story_id, include_unplaced, include_planning=False
@@ -351,11 +363,13 @@ class StoryBackupController(Controller):
             appendices.append(("Places", section or [Block("para", "No places yet.")]))
         scenes = graph.scenes if include_unplaced else graph.scenes_in_reading_order()
         try:
-            from storytool.domain.story.images import export_images
+            from storytool.domain.story.images import cover_file, export_images
 
+            cover = await cover_file(db_session, story_id) if cover_page else None
             content = manuscript_pdf(
                 markdown, title, author, sum(scene.word_count for scene in scenes), appendices,
                 await export_images(db_session, story_id, markdown),
+                cover[1] if cover else None,
             )
         except ValueError as error:
             raise ClientException(detail=str(error)) from None

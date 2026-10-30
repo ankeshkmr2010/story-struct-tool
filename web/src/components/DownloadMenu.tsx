@@ -16,6 +16,9 @@ const ITEMS = [
 
 export function DownloadMenu({ storyId, onShowPlaceholders }: { storyId: string; onShowPlaceholders?: () => void }) {
   const [appendices, setAppendices] = useState({ glossary: false, timeline: false, places: false })
+  const [coverPage, setCoverPage] = useState(false)
+  // Word and PDF can open with the story's cover; agents rarely want one, so it is off by default.
+  const withCover = (href: string) => coverPage && /manuscript\.(docx|pdf)/.test(href) ? `${href}${href.includes('?') ? '&' : '?'}cover_page=true` : href
   const [unfinished, setUnfinished] = useState<{ href: string; count: number } | null>(null)
   // Manuscript exports first look for [TK] placeholders; a failed check never blocks the export.
   const checkPlaceholders = async (event: MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -27,9 +30,10 @@ export function DownloadMenu({ storyId, onShowPlaceholders }: { storyId: string;
   return <>
   <Menu label={t('Export ▾')} triggerClassName="share-story-button" panelClassName="download-menu-panel">
     {ITEMS.map(item => {
-      const href = item.href === api.manuscriptPdfUrl ? api.manuscriptPdfUrl(storyId, appendices) : item.href(storyId)
+      const href = withCover(item.href === api.manuscriptPdfUrl ? api.manuscriptPdfUrl(storyId, appendices) : item.href(storyId))
       return <MenuLink key={item.label} href={href} onClick={'backup' in item ? undefined : event => { void checkPlaceholders(event, href) }}><strong>{t(item.label)}</strong><span>{item.help && t(item.help)}</span></MenuLink>
     })}
+    <label className="flex items-center gap-1.5 border-t border-[var(--line)] p-3 text-xs"><input type="checkbox" checked={coverPage} onChange={event => setCoverPage(event.target.checked)} />{t('Open Word and PDF with the cover page')}</label>
     <fieldset className="border-t border-[var(--line)] p-3 text-xs"><legend className="px-1">{t('PDF appendices (optional)')}</legend>
       {(['glossary', 'timeline', 'places'] as const).map((key) => <label key={key} className="mr-3 inline-flex items-center gap-1.5"><input type="checkbox" aria-label={t('Include {0} appendix in PDF', key)} checked={appendices[key]} onChange={(event) => setAppendices({ ...appendices, [key]: event.target.checked })} />{key[0].toUpperCase() + key.slice(1)}</label>)}
     </fieldset>

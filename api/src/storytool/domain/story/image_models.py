@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,6 +31,12 @@ class StoryImage(StoryToolBase):
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
     # Each entry is {entity: character|location|glossary|scene, id: UUID}.
     attachments: Mapped[list[dict[str, str]]] = mapped_column(JSONB, default=list)
+    # The story's front cover or full jacket (one of each per story), its crop focus (0-1),
+    # and whether a public showcase may show it. Shared and beta readers always see the cover.
+    role: Mapped[str | None] = mapped_column(String(10), default=None)
+    focus_x: Mapped[float] = mapped_column(Float, default=0.5)
+    focus_y: Mapped[float] = mapped_column(Float, default=0.5)
+    show_public: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class ImageDeletion(StoryToolBase):

@@ -103,7 +103,7 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
     finally { setBusy(false); upload.current = null }
   }
   const active = library.data?.images.filter(image => !image.archived && (!sceneFilter || image.uses?.some(use => use.entity === 'scene' && use.id === sceneFilter))) ?? []
-  const matches = (image: StoryImage, value: string) => value === 'manuscript' ? image.manuscript_uses > 0 : value === 'reference' ? image.attachments.length > 0 : value === 'unused' ? !image.manuscript_uses && !image.attachments.length : true
+  const matches = (image: StoryImage, value: string) => value === 'manuscript' ? image.manuscript_uses > 0 : value === 'reference' ? image.attachments.length > 0 : value === 'unused' ? !image.manuscript_uses && !image.attachments.length && !image.role : value === 'cover' ? Boolean(image.role) : true
   const visible = active.filter(image => matches(image, filter))
   const content = <>
     <header className="story-images-head"><h2 id="story-images-title">{t('Story images')}</h2>{!page && <button type="button" aria-label={t('Close images')} onClick={onClose}>×</button>}</header>
@@ -114,7 +114,7 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
     {library.isPending && <p role="status">{t('Loading images…')}</p>}
     {library.isError && <p role="alert">{errorText(library.error)} <button type="button" onClick={() => { void library.refetch() }}>{t('Retry')}</button></p>}
     {sceneFilter && <p className="writer-help">{t('Showing images used in this scene.')}{' '}<Link to={`/stories/${storyId}/images`}>{t('Show every image →')}</Link></p>}
-    {page && <nav aria-label={t('Filter images')} className="story-images-actions">{[['all', t('All images')], ['manuscript', t('Manuscript')], ['reference', t('Reference')], ['unused', t('Unused')]].map(([value, label]) => <button type="button" className="share-story-button" key={value} aria-pressed={filter === value} onClick={() => { const next = new URLSearchParams(params); if (value === 'all') next.delete('filter'); else next.set('filter', value); setParams(next) }}>{label} ({active.filter(image => matches(image, value)).length})</button>)}</nav>}
+    {page && <nav aria-label={t('Filter images')} className="story-images-actions">{[['all', t('All images')], ['manuscript', t('Manuscript')], ['reference', t('Reference')], ['unused', t('Unused')], ['cover', t('Cover')]].map(([value, label]) => <button type="button" className="share-story-button" key={value} aria-pressed={filter === value} onClick={() => { const next = new URLSearchParams(params); if (value === 'all') next.delete('filter'); else next.set('filter', value); setParams(next) }}>{label} ({active.filter(image => matches(image, value)).length})</button>)}</nav>}
     <div className="story-images-grid">{visible.map(image => <button type="button" key={image.id} disabled={busy} aria-pressed={selected?.id === image.id} onClick={() => { setSelected(image); setFile(null); setPreview(''); setDescription(image); setError(null); setNotice(''); showEditor() }}><img src={image.url} alt={image.alt || image.name} loading="lazy" /><span>{image.name}</span>{page && <><small>{image.caption || t('No caption')}</small><small>{t('{0} placements · {1} references', image.manuscript_uses, image.attachments.length)}</small><span>{t('Edit details & uses →')}</span></>}</button>)}</div>
     {library.data && !active.length && <p className="writer-help">{sceneFilter ? t('No images used in this scene yet. Insert one in Write or attach a reference in Scene Design.') : t('No images yet. Upload an illustration, map or reference image.')}</p>}
     {page && library.data && active.length > 0 && visible.length === 0 && <p role="status">{t('No images in this filter. Choose All images to see your library.')}</p>}
@@ -130,6 +130,11 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
       <label>{t('Caption')}<textarea value={description.caption} maxLength={1000} disabled={busy} onChange={event => setDescription({ ...description, caption: event.target.value })} /></label>
       {busy && <p role="status">{file ? progress < 100 ? progress === 0 ? t('Preparing image for upload…') : t('Uploading… {0}%', progress) : t('Validating and saving…') : t('Saving…')} {file && <button type="button" onClick={() => upload.current?.abort()}>{t('Cancel upload')}</button>}</p>}
       <div className="story-images-actions"><button type="submit" className="share-story-button" disabled={busy}>{file ? t('Upload') : t('Save details')}</button>{onSelect && <button type="button" className="share-story-button" disabled={busy} onClick={() => { void save(true) }}>{target ? t('Attach image') : t('Insert image')}</button>}
+      {page && selected && selected.role !== 'cover' && <button type="button" className="share-story-button" disabled={busy} onClick={async () => {
+        setBusy(true); setError(null)
+        try { const updated = await api.setCover(storyId, { role: 'cover', image_id: selected.id, focus_x: 0.5, focus_y: 0.5, show_public: false }); if (updated) setSelected(updated); setNotice(t('Set as the story’s cover.')); void qc.invalidateQueries({ queryKey: ['images', storyId] }); void qc.invalidateQueries({ queryKey: ['library-overview'] }) }
+        catch (failure) { setError(errorText(failure)) } finally { setBusy(false) }
+      }}>{t('Set as cover')}</button>}
       {selected && <button type="button" disabled={busy} onClick={async () => {
         setBusy(true); setError(null)
         try {

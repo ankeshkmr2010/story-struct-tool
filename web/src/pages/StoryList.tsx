@@ -10,9 +10,12 @@ import { Menu, MenuItem } from '../ui/Menu'
 import { getUiLanguage, t } from '../i18n'
 import { ContinueCard, OpenItemsPanel, StatusChip, WeekPanel, coverTint } from '../components/LibraryParts'
 import { statusLabel, useGoals } from '../components/Goals'
+import { CoverDialog, coverPosition } from '../components/Covers'
+import { uploadStoryImage } from '../api/client'
 
 type SortMode = 'mine' | 'edited' | 'title'
 const SORT_KEY = 'storytool-library-sort'
+const VIEW_KEY = 'storytool-library-view'
 
 // Library cards show when a story was last touched rather than a completeness bar.
 function editedLabel(iso: string) {
@@ -86,6 +89,21 @@ export default function StoryList() {
     onSettled: () => { void qc.invalidateQueries({ queryKey: ['library-overview'] }) },
   })
   const [dragged, setDragged] = useState<string | null>(null)
+  // Cards (cover strip) or Books (2:3 covers on a shelf); remembered in this browser.
+  const [view, setViewState] = useState<'cards' | 'books'>(() => { try { return localStorage.getItem(VIEW_KEY) === 'books' ? 'books' : 'cards' } catch { return 'cards' } })
+  const setView = (value: 'cards' | 'books') => { setViewState(value); try { localStorage.setItem(VIEW_KEY, value) } catch { /* Optional browser storage. */ } }
+  const [coverFor, setCoverFor] = useState<Story | null>(null)
+  const [coverDrop, setCoverDrop] = useState<string | null>(null)
+  // Dropping an image file on a card uploads it and makes it the cover.
+  const dropCover = async (story: Story, file: File) => {
+    setCoverDrop(story.id); setMessage('')
+    try {
+      const image = await uploadStoryImage(story.id, crypto.randomUUID(), file, { name: t('Cover · {0}', story.title).slice(0, 200), alt: '', caption: '', attachments: [] }, () => {}, new AbortController().signal)
+      await api.setCover(story.id, { role: 'cover', image_id: image.id, focus_x: 0.5, focus_y: 0.5, show_public: false })
+      setMessage(t('Cover set for “{0}”.', story.title))
+      void qc.invalidateQueries({ queryKey: ['library-overview'] }); void qc.invalidateQueries({ queryKey: ['images', story.id] })
+    } catch (error) { setMessage(errorText(error)) } finally { setCoverDrop(null) }
+  }
   const newTitle = useRef<HTMLInputElement>(null)
 
   const create = useMutation({
@@ -165,9 +183,9 @@ export default function StoryList() {
       draggable={movable}
       onDragStart={event => { setDragged(story.id); event.dataTransfer.effectAllowed = 'move' }}
       onDragEnd={() => setDragged(null)}
-      onDragOver={event => { if (movable && dragged && dragged !== story.id) event.preventDefault() }}
-      onDrop={event => { event.preventDefault(); if (dragged && dragged !== story.id) moveCard(dragged, index); setDragged(null) }}>
-      <Link to={`/stories/${story.id}`} className={`lib-cover ${coverTint(story.id)}`} tabIndex={-1} aria-hidden="true" draggable={false}>{story.title}{card?.goal_percent != null && <span className="lib-cover-goal"><i style={{ width: `${card.goal_percent}%` }} /></span>}</Link>
+      onDragOver={event => { if ((movable && dragged && dragged !== story.id) || (!dragged && event.dataTransfer.types.includes('Files'))) event.preventDefault() }}
+      onDrop={event => { event.preventDefault(); const file = event.dataTransfer.files[0]; if (!dragged && file?.type.startsWith('image/')) void dropCover(story, file); else if (dragged && dragged !== story.id) moveCard(dragged, index); setDragged(null) }}>
+      <Link to={`/stories/${story.id}`} className={`lib-cover ${card?.cover_url ? 'has-image' : coverTint(story.id)}${coverDrop === story.id ? ' is-busy' : ''}`} tabIndex={-1} aria-hidden="true" draggable={false}>{card?.cover_url ? <img className="lib-cover-img" src={card.cover_url} alt="" loading="lazy" decoding="async" draggable={false} style={coverPosition(card.cover_focus_x, card.cover_focus_y)} /> : <span className="lib-cover-title">{story.title}</span>}{card?.goal_percent != null && <span className="lib-cover-goal"><i style={{ width: `${card.goal_percent}%` }} /></span>}</Link>
       <div className="min-w-0 lib-card-body">
         <div className="lib-card-tags">
           {card && <StatusChip status={card.status} />}
@@ -182,6 +200,7 @@ export default function StoryList() {
         {story.prose_imported && <button type="button" className="mt-2 text-xs text-[var(--accent)] underline" onClick={() => { setPromptStory(story); setImportOpen(true) }}>{t('Import prompts →')}</button>}
       </div>
       <div className="story-card-actions"><StorySharing storyId={story.id} title={story.title} blurb={story.blurb} betaOpen={feedbackCounts.data?.[story.id] ?? 0} />{/* Delete stays one step away so it is not as prominent as Share. */}<Menu label="⋯" ariaLabel={t('More actions for {0}', story.title)} triggerClassName="ui-btn ui-btn-ghost ui-btn-sm">
+        <MenuItem onSelect={() => setCoverFor(story)}>{t('Cover…')}</MenuItem>
         <MenuItem onSelect={() => arrange.mutate([[story.id, { pinned: !card?.pinned }]])}>{card?.pinned ? t('Unpin') : t('Pin to top')}</MenuItem>
         {movable && index > 0 && <MenuItem onSelect={() => moveCard(story.id, index - 1)}>{t('Move earlier')}</MenuItem>}
         {movable && index < count - 1 && <MenuItem onSelect={() => moveCard(story.id, index + 1)}>{t('Move later')}</MenuItem>}
@@ -294,13 +313,17 @@ export default function StoryList() {
             <label className="lib-sort">{t('Sort')}<select value={sort} onChange={event => setSort(event.target.value as SortMode)}>
               <option value="mine">{t('My order')}</option><option value="edited">{t('Last edited')}</option><option value="title">{t('Title')}</option>
             </select></label>
+            <div className="lib-view" role="group" aria-label={t('Card style')}>
+              <button type="button" aria-pressed={view === 'cards'} onClick={() => setView('cards')}>{t('Cards')}</button>
+              <button type="button" aria-pressed={view === 'books'} onClick={() => setView('books')}>{t('Books')}</button>
+            </div>
           </div>}
           {sort === 'mine' && (libraryStories?.length ?? 0) > 1 && <p className="lib-note">{t('Drag cards to arrange them, or use ⋯ to move, pin or archive a story.')}</p>}
-          <ul className="story-library lib-cards">
+          <ul className={`story-library lib-cards${view === 'books' ? ' is-books' : ''}`}>
             {libraryStories?.map((story, index) => renderCard(story, index, libraryStories.length))}
             <li className="lib-newcard"><button type="button" onClick={() => { newTitle.current?.focus(); newTitle.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }) }}><span aria-hidden="true">+</span>{t('New story')}</button></li>
           </ul>
-          {(archivedStories?.length ?? 0) > 0 && <details className="lib-archived"><summary>{t('Archived · {0}', archivedStories!.length)}</summary><ul className="story-library lib-cards">{archivedStories!.map((story, index) => renderCard(story, index, 0))}</ul></details>}
+          {(archivedStories?.length ?? 0) > 0 && <details className="lib-archived"><summary>{t('Archived · {0}', archivedStories!.length)}</summary><ul className={`story-library lib-cards${view === 'books' ? ' is-books' : ''}`}>{archivedStories!.map((story, index) => renderCard(story, index, 0))}</ul></details>}
         </div>
         {overview.data && <aside className="lib-side" aria-label={t('Writing summary')}>
           {goals.data && <WeekPanel goals={goals.data} />}
@@ -313,6 +336,7 @@ export default function StoryList() {
       {showTrash && trash.isPending && <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">{t('Loading Trash…')}</p>}
       {(trash.isError || restore.isError) && <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-300">{String(trash.error ?? restore.error)}</p>}
       {(showTrash ? trash.data : stories.data)?.length === 0 && <p className="mt-6 text-sm text-slate-400">{showTrash ? t('Trash is empty.') : t('No stories yet.')}</p>}
+      {coverFor && <CoverDialog storyId={coverFor.id} title={coverFor.title} blurb={coverFor.blurb} wordCount={coverFor.word_count} onClose={() => setCoverFor(null)} />}
       <dialog ref={confirmDialog} role="alertdialog" aria-labelledby="delete-story-title" aria-describedby="delete-story-description" onCancel={(event) => { event.preventDefault(); if (!remove.isPending) setPendingDelete(null) }} className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-slate-200 bg-white p-6 text-slate-900 shadow-xl backdrop:bg-black/50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
         <h2 id="delete-story-title" className="text-lg font-semibold">{t('Move story to Trash?')}</h2>
         <p id="delete-story-description" className="mt-3 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">{t('“{0}” will leave your library. All its prose, characters, structure, and version history will be preserved. You can restore it from Trash.', pendingDelete?.title)}</p>

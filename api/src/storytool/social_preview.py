@@ -69,6 +69,27 @@ async def preview_metadata(db: AsyncSession, path: str, token: str | None) -> di
         description=(story.blurb or "Read this public story showcase on StoryTool.")[:400],
         alt=f"Public story showcase: {story.title}",
     )
+    # A cover the author chose to show publicly is the best preview image.
+    cover = (
+        await db.execute(
+            select(StoryImage.id, StoryImage.alt, ImageBlob.width, ImageBlob.height)
+            .join(ImageBlob, StoryImage.blob_id == ImageBlob.id)
+            .where(
+                StoryImage.story_id == story.id,
+                StoryImage.role == "cover",
+                StoryImage.show_public.is_(True),
+                StoryImage.archived.is_(False),
+            )
+        )
+    ).one_or_none()
+    if cover:
+        result.update(
+            image=f"{base}/api/showcase/{quote(token, safe='')}/images/{cover.id}/file",
+            width=str(cover.width),
+            height=str(cover.height),
+            alt=cover.alt or f"Cover of {story.title}",
+        )
+        return result
     candidates = await db.scalars(
         select(Scene.content)
         .outerjoin(Chapter, Scene.chapter_id == Chapter.id)

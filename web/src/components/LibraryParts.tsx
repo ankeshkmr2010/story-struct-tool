@@ -23,7 +23,7 @@ export function ContinueCard({ storyId, title, mode, edited, card, feedback }: {
   const total = card?.scene_count ?? 0
   const done = card?.drafted_scene_count ?? 0
   return <article className="lib-continue">
-    <div className={`lib-cover ${coverTint(storyId)}`} aria-hidden="true">{title}</div>
+    <div className={`lib-cover ${card?.cover_url ? 'has-image' : coverTint(storyId)}`} aria-hidden="true">{card?.cover_url ? <img className="lib-cover-img" src={card.cover_url} alt="" style={{ objectPosition: `${card.cover_focus_x * 100}% ${card.cover_focus_y * 100}%` }} /> : <span className="lib-cover-title">{title}</span>}</div>
     <div className="lib-continue-body">
       <div className="lib-continue-top"><span className="eyebrow">{t('Continue writing')}</span><span>{edited}</span></div>
       <div><h2>{title}</h2><p>{mode}</p></div>

@@ -68,6 +68,7 @@ class SharedStoryOut(BaseModel):
     owner_name: str
     allow_import: bool
     beta_round_id: UUID | None = None
+    cover_url: str | None = None
 
 
 class SharedDocumentOut(BaseModel):
@@ -94,7 +95,9 @@ def activity(source: Story) -> StoryActivityOut:
     )
 
 
-def visible_state(state: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+def visible_state(
+    state: dict[str, Any], *, showcase: bool = False
+) -> dict[str, list[dict[str, Any]]]:
     from storytool.domain.story.images import public_images
 
     visible = {
@@ -102,12 +105,14 @@ def visible_state(state: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
         for kind in (*ENTITIES, *LINKS)
     }
     visible["story_image"] = [{k: v for k, v in row.items() if k != "url"}
-                              for row in public_images(state, "")]
+                              for row in public_images(state, "", showcase=showcase)]
     return visible
 
 
-def reading_state(state: dict[str, Any], image_base: str) -> dict[str, Any]:
-    visible = visible_state(state)
+def reading_state(
+    state: dict[str, Any], image_base: str, *, showcase: bool = False
+) -> dict[str, Any]:
+    visible = visible_state(state, showcase=showcase)
     visible["story_image"] = [row | {"url": f"{image_base}/{row['id']}/file"}
                               for row in visible["story_image"]]
     return visible
@@ -269,6 +274,19 @@ class SharedStoriesController(Controller):
             owner_name=row.snapshot.get("author_name") or "StoryTool author",
             allow_import=False, beta_round_id=row.id,
         ) for row in rounds)
+        # Covers on Shared with you: the live cover for shares, the frozen one for beta rounds.
+        from storytool.domain.story.images import story_cover
+
+        snapshots = {row.id: row.snapshot for row in rounds}
+        for item in result:
+            if item.beta_round_id:
+                images = snapshots[item.beta_round_id].get("structure", {}).get("story_image", [])
+                cover = next((image for image in images if image.get("role") == "cover"), None)
+                if cover:
+                    base = f"/api/beta/rounds/{item.beta_round_id}/images"
+                    item.cover_url = f"{base}/{cover['id']}/file"
+            elif cover := await story_cover(db_session, item.story_id):
+                item.cover_url = f"/api/shared-stories/{item.story_id}/images/{cover.id}/file"
         return result
 
     @get("/{story_id:uuid}")
