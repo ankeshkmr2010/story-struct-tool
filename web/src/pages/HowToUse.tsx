@@ -23,6 +23,7 @@ const DOT: Record<Status, string> = {
 
 const SECTIONS = [
   ['start', tx('First five minutes')],
+  ['library', tx('Your stories')],
   ['search', tx('Search your stories')],
   ['modes', tx('How you work')],
   ['levels', tx('The eight levels')],
@@ -30,6 +31,7 @@ const SECTIONS = [
   ['time', tx('Story time and flashbacks')],
   ['feedback', tx('What the tool tells you')],
   ['writing', tx('Write, Focus, and exporting')],
+  ['goals', tx('Goals and sprints')],
   ['images', tx('Images and illustrations')],
   ['sharing', tx('Sharing and reading stories')],
   ['beta-readers', tx('Beta readers, feedback and polls')],
@@ -182,6 +184,17 @@ export default function HowToUse() {
                   </li>
                 ))}
               </ol>
+            </Section>
+
+            <Section id="library" eyebrow={t('YOUR STORIES')} title={t('Your stories')}>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Item title={t('Continue where you left off')}>{t('The Continue writing card at the top of Your stories opens the story you were last in, on the same tab and passage. It shows when you last edited, your progress (scenes drafted, or how much of the story’s goal is done) and anything waiting: TKs, agent changes to review and reader comments.')}</Item>
+                <Item title={t('Arrange your story cards')}>{t('Each story is a card with a cover, a status and its word count. In My order, drag cards to arrange them, or use ⋯ → Move earlier or Move later. Pin to top keeps a story first, and Sort switches between My order, Last edited and Title. Archive moves a finished story into Archived at the end of the list without deleting it; Unarchive brings it back. Arranging never changes a story or creates a version.')}</Item>
+                <Item title={t('Read the status chip')}>{t('Planning until a story has prose, Draft once it does, and Revision when half its scenes are marked revised. It follows your scene statuses on its own.')}</Item>
+                <Item title={t('This week and Open items')}>{t('This week shows the words you typed and your writing sessions over seven days, with your streak and goal line once you set a daily goal. Open items totals TKs, agent changes waiting for review, reader comments and stories behind on a goal.')}</Item>
+                <Item title={t('Start or import a story')}>{t('Type a title and choose Create, or choose + New story to jump to the title field. Import brings in a StoryTool backup, or a Word, Scrivener, Markdown, text or EPUB file.')}</Item>
+                <Item title={t('Change the interface language')}>{t('Choose the language button (EN) in the site header to use StoryTool in English, French, German, Spanish, Portuguese or Italian. Signed in, your choice follows your account. A story’s own language, used by consistency checks and reading, is set under Design → Premise.')}</Item>
+              </div>
             </Section>
 
             <Section id="search" eyebrow={t('SEARCH')} title={t('Find a line or an idea')}>
@@ -341,6 +354,7 @@ export default function HowToUse() {
                 <Item title={t('Share an individual story')}>{t('Choose Share on a library card or in the story header. Enter the recipient’s StoryTool sign-in email. Read only is the default; choose Read and import a copy if you want them to have an editable independent draft. Copy the reader link and send it yourself. No email is sent automatically.')}</Item>
                 <Item title={t('Read stories shared with you')}>{t('Open Shared with you in your library, or follow the reader link while signed in with the authorized email. The separate reader shows the manuscript with chapter navigation and a timeline. Context shows linked beats, arc stages, characters, and places without editing controls.')}</Item>
                 <Item title={t('Import only when permitted')}>{t('If the author allows it, choose Import a copy and confirm. The copy includes current prose, structure, arcs, and timeline links, starts its own version history, and belongs to your account. Changes to either draft do not sync. Past versions and AI conversations aren’t shared or imported.')}</Item>
+                <Item title={t('Open a public showcase')}>{t('In Share, turn on Public showcase for a read-only page anyone with the link can open without signing in: manuscript, story context and timeline. Private notes, annotations and AI conversations stay private. Copy the link, create a new one to retire the old link, or turn it off at any time.')}</Item>
                 <Item title={t('Change or revoke access')}>{t('Open Share again to change a recipient’s permission or revoke access. The reader shows the author’s current saved draft; Refresh story loads newer changes. Moving the original to Trash hides it from recipients until restored. Revoking or deleting the original does not remove copies already imported.')}</Item>
               </div>
               <h3 id="beta-readers" className="mt-8 scroll-mt-24 text-xl font-semibold">{t('Beta readers, feedback and polls')}</h3>
@@ -358,7 +372,7 @@ export default function HowToUse() {
             <Section id="writing" eyebrow="08" title={t('Write, Design, and your writing flow')}>
               <div className="grid gap-5 sm:grid-cols-2">
                 <Item title={t('Draft in the editor')}>
-                  {t('Open a story’s')}{' '}<strong className="font-medium">{t('Write')}</strong>{' '}{t('tab and start typing. A chapter’s scenes appear together on one scrolling manuscript. Chapter titles and scene names are optional. Add a scene break at the end or continue into the next chapter. Prose is Markdown and autosaves; Context shows the chapter brief and keeps the scene’s summary, POV, place, goal and value shift in view, with every other field under More details and links, while Focus hides the surrounding controls. The')}{' '}<strong className="font-medium">{t('Design')}</strong>{' '}{t('tab keeps the full planning workspace. Both tabs edit the same story. Right-click the prose, or select text and click the small ⋯ button beside it, for editing actions, Insert image and Add TK here. The story bar carries everything else: the StoryTool menu, History (the clock), the side panel, theme and your account.')}
+                  {t('Open a story’s')}{' '}<strong className="font-medium">{t('Write')}</strong>{' '}{t('tab and start typing. The Manuscript list on the left shows your chapters; the open chapter lists its scenes, each with a status dot (not started, outlined, drafted, revised), and clicking one puts the cursor there. A chapter’s scenes appear together on one scrolling page. Chapter titles and scene names are optional. Add a scene break at the end or continue into the next chapter. Prose is Markdown and autosaves; the strip along the bottom shows words in the scene, the story total and save status, with your goal, Sprint and Focus. Context shows the chapter brief and keeps the scene’s summary, POV, place, goal and value shift in view, with every other field under More details and links. The')}{' '}<strong className="font-medium">{t('Design')}</strong>{' '}{t('tab keeps the full planning workspace. Both tabs edit the same story. Right-click the prose, or select text and click the small ⋯ button beside it, for editing actions, Insert image and Add TK here. The story bar carries the rest: click the story title to switch to another story, then Write, Read and Design, search, the tools (Focus, Writing goals, History, the side panel and theme), save status, Share, Export and your account. On narrow screens the tools fold into ⋯.')}
                 </Item>
                 <Item title={t('Check a detail beside the manuscript')}>
                   {t('Right-click in Write and choose Open scene beside… to pick a scene, character, place, glossary term or image; right-click a defined name (a character, place or term) to open it directly. Character and glossary cards, Pacing, placeholders, Evaluate findings and search results also offer Open beside. It shows read only in the side panel’s place until you close it, stays open while you change chapters, and New window ↗ moves it to its own window, e.g. on a second screen.')}
@@ -376,7 +390,7 @@ export default function HowToUse() {
                   {t('Design → Review → Pacing lines up every placed scene in reading order on three rows: scene length, whether its value shifts (filled dot), stays flat (amber ring) or is not set (dash), and its point of view, one colour per POV character with a named legend. Chapter numbers mark where chapters begin. Hover or tab to a scene for its details; click to select it and choose Open scene (with a way back to the chart) or Open beside. Table view lists the same data.')}
                 </Item>
                 <Item title={t('Switch between Write, Read, and Design')}>
-                  {t('All three tabs use the same chapters, scenes, and prose. Each story reopens where you left off on any device: the same tab, chapter and position, and Your stories offers a Pick up where you left off card. Write saves pending prose before you switch tabs or chapters; if saving fails, resolve the error first. Write is available in Plotter, Pantser, and Hybrid.')}
+                  {t('All three tabs use the same chapters, scenes, and prose. Each story reopens where you left off on any device: the same tab, chapter and position, and Your stories shows a Continue writing card for the story you were last in. Write saves pending prose before you switch tabs or chapters; if saving fails, resolve the error first. Write is available in Plotter, Pantser, and Hybrid.')}
                 </Item>
                 <Item title={t('Read continuously or turn pages')}>
                   {t('Open Read to experience your saved story without editing. Every chapter and scene stays in reading order in one manuscript. Choose Continuous scroll or Pages. In Pages, use Previous/Next, click the page edges, or focus the reading area and use arrow keys or Page Up/Down. Chapters and linked timeline events jump to passages without replacing the manuscript.')}
@@ -392,7 +406,7 @@ export default function HowToUse() {
                   <strong className="font-medium">{' '}{t('Exit focus')}</strong>{' '}{t('or Escape to return. You can keep typing while focused; save status stays beside each passage.')}
                 </Item>
                 <Item title={t('Open Context when useful')}>
-                  {t('Click into a passage, then choose')}{' '}<strong className="font-medium">{t('Context')}</strong>{t('. The panel shows its chapter brief and scene details: POV, characters, location, goal, conflict, outcome, beats, threads, and arc stages. On smaller screens, Context opens as a side panel; Chapters reveals your chapter list. Close either to give the manuscript its full width.')}
+                  {t('Click into a passage, then choose')}{' '}<strong className="font-medium">{t('Context')}</strong>{t('. Its tabs (Context, Hints, Cast, Feedback, TKs, Timeline, Places, Glossary, Assistant) scroll sideways: use the scrollbar under them or turn the mouse wheel over them. Context starts with this story’s Goal, then the chapter brief and scene details: POV, characters, location, goal, conflict, outcome, beats, threads and arc stages. Arc and Threads cards show where the scene sits in a character’s arc and which threads it advances. Cast lists every character with their role and POV scene count; click a name to open them in Design. On smaller screens, Context opens as a side panel; Chapters reveals your chapter list. Close either to give the manuscript its full width.')}
                 </Item>
                 <Item title={t('Add scenes and chapters as you go')}>
                   {t('You can write a whole chapter without naming scenes. Choose')}
@@ -428,17 +442,26 @@ export default function HowToUse() {
                   {t('In Design → History → Who wrote what, the AI-use disclosure card summarises saved edits to prose and planning by you, connected AI clients and StoryTool’s assistant, with the AI tools used and when tracking began. Copy it or download it as text for agents, publishers or contests. It counts edits, not words, so check it before sending.')}
                 </Item>
                 <Item title={t('Track progress')}>
-                  {t('The header shows total words and how many scenes are drafted. Word counts come from the prose, so they are always current.')}
+                  {t('The header shows total words, how many scenes are drafted and, when the story has a goal, how much of it is done. Word counts come from the prose, so they are always current. Daily targets and deadlines are under Goals and sprints.')}
                 </Item>
                 <Item title={t('Take the words with you')}>
                   {t('Open')}{' '}<strong className="font-medium">{t('Export ▾')}</strong>{' '}{t('for Word (.docx), Markdown (.md), EPUB, HTML, plain text or submission PDF. PDF uses double-spaced manuscript pages and offers optional glossary, timeline and places appendices; it may reject characters its fonts cannot display. Set your author name in Settings for the export byline. Illustrations stay at their manuscript positions in Word, PDF, EPUB and HTML. Markdown downloads a ZIP with the manuscript and image files when needed; plain text keeps image descriptions and captions in place.')}
                   <strong className="font-medium">{' '}{t('Backup')}</strong>{' '}{t('downloads everything, including image files, notes and scene revisions; use Restore backup in your library to bring it back as a new story.')}
                 </Item>
                 <Item title={t('Bring in existing prose')}>
-                  {t('In Your stories, choose')}{' '}<strong className="font-medium">{t('Create ▾ → From Word (.docx)')}</strong>{' '}{t('or{0}', ' ')}
+                  {t('In Your stories, choose')}{' '}<strong className="font-medium">{t('Import → From Word (.docx)')}</strong>{' '}{t('or{0}', ' ')}
                   <strong className="font-medium">{t('From Scrivener (.zip)')}</strong>{' '}{t('(zip the whole .scriv folder first),{0}', ' ')}
                   <strong className="font-medium">{t('From Markdown or text')}</strong>{' '}{t('or')}{' '}<strong className="font-medium">{t('From EPUB')}</strong>{' '}{t('(DRM-free). StoryTool reads the file and shows what it found; you choose where chapters and scenes start (headings, “Chapter” lines, *** separators, page breaks, or Scrivener folder levels), whether to skip a title page, and whether synopses and notes come along, with a live preview. Or copy the prompt for your connected AI: it can read the outline, plan exact breaks, titles and summaries, preview them and import once you approve. The import window stays open through completion and offers prompts to organize chapters/scenes or populate story components while preserving your prose. Imported stories keep an')}{' '}<strong className="font-medium">{t('Import prompts')}</strong>{' '}{t('entry.')}
                 </Item>
+              </div>
+            </Section>
+            <Section id="goals" eyebrow={t('GOALS')} title={t('Goals and sprints')}>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Item title={t('Set a daily habit')}>{t('Open Writing goals from the target icon in a story’s top bar, the Goals button on Your stories, Settings or the Goals page. Choose words per writing day and which days you write. Rest days never break your streak, and one missed writing day a week is forgiven; switch that off for a strict streak.')}</Item>
+                <Item title={t('Give a story a target or deadline')}>{t('Under This story in the same dialog, in Design → Premise → Goal, or on the Goals page, set a target length and, if you like, a deadline or a fixed number of words a day. With a deadline, today’s pace is what is left divided by your writing days remaining, so a big day lowers tomorrow’s number and a missed day is spread out. The story shows On track, Behind by a number of words, Past deadline or Done.')}</Item>
+                <Item title={t('Run a sprint')}>{t('Choose ▶ Sprint in the strip at the bottom of Write and pick 15, 25 or 45 minutes. A timer takes the place of the goal rings and counts the words you add; Focus keeps only the strip in view. End sprint stops early. A short summary follows, and the sprint is listed on the Goals page and in This week.')}</Item>
+                <Item title={t('See your progress')}>{t('In Write, the strip shows a ring for today’s habit and one for this story’s pace; click them for today, your streak, the deadline and Edit goals. The top-bar icon turns into a ring when the story has a goal, Context shows a Goal card and the header shows the share done. Your stories shows your streak and goal line in This week and a progress bar and pace chip on each card. The Goals page puts the habit and every story’s goal in one place.')}</Item>
+                <Item title={t('What counts as writing')}>{t('Words you add in Write count toward your habit and the story. Deleting text never lowers today’s count, and one save or paste counts at most 1,000 words. Text from connected AI or imports is not counted unless you turn on Count words from AI changes I accept. Days follow your local time zone, taken from your browser. Your connected AI can read your goals with get_writing_goals but cannot change them.')}</Item>
               </div>
             </Section>
             <Section id="images" eyebrow={t('IMAGES')} title={t('Illustrations and reference images')}>

@@ -72,6 +72,17 @@ function PacingChart() {
   </div>
 }
 
+const extras: [string, string][] = [
+  [tx('Daily goals and sprints'), '/how-to-use#goals'],
+  [tx('Six interface languages'), '/how-to-use#library'],
+  [tx('TK placeholders'), '/how-to-use#writing'],
+  [tx('Split view'), '/how-to-use#writing'],
+  [tx('Draft compare'), '/how-to-use#writing'],
+  [tx('Rename everywhere'), '/how-to-use#writing'],
+  [tx('Whole-story versions'), '/how-to-use#time'],
+  [tx('Glossary'), '/how-to-use#levels'],
+]
+
 // [tab, description, screenshot, alt]
 const tabs = [
   [tx('Write'), tx('One page per chapter. Name scenes later, or never.'), '/landing/tab-write.webp', tx('Write tab')],
@@ -188,14 +199,15 @@ export default function Landing() {
       <Reveal className="lp-wrap">
         <div className="lp-center"><p className="lp-eyebrow">{t('And the rest')}</p><h2 className="lp-h2">{t('Everything a long book needs.')}</h2></div>
         <FeatureTabs />
+        <nav className="lp-extras" aria-label={t('Also in StoryTool')}>{extras.map(([label, to]) => <Link key={label} to={to}>{t(label)}</Link>)}</nav>
       </Reveal>
     </section>
 
     <section className="lp-close">
       <Reveal className="lp-wrap lp-center">
         <h2>{t('Your words can always leave.')}</h2>
-        <p className="lp-body">{t('Import from Word, Scrivener or EPUB. Export whenever you like.')}</p>
-        <ul className="lp-formats">{['Word', 'Scrivener', 'EPUB', 'PDF', 'Markdown'].map(name => <li key={name}>{name}</li>)}</ul>
+        <p className="lp-body">{t('Import from Word, Scrivener, EPUB or Markdown. Export whenever you like.')}</p>
+        <ul className="lp-formats">{['Word', 'Scrivener', 'EPUB', 'PDF', 'Markdown', 'HTML', t('Text')].map(name => <li key={name}>{name}</li>)}</ul>
         <div className="lp-ctas"><Link to="/try" className="lp-btn">{t('Try the guided tour')}</Link><Link to={SHOWCASE} className="lp-arrow">{t('See a finished story →')}</Link></div>
       </Reveal>
     </section>
