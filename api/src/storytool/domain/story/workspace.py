@@ -35,7 +35,9 @@ class ReadingPlace(BaseModel):
 class WorkspacePlace(BaseModel):
     model_config = ConfigDict(extra="forbid")
     mode: Literal["write", "read", "design"] = "design"
-    level: Literal[1, 2, 3, 4, 5, 6, 7, 8, 104, 105, 106, 107, 108] = 1
+    level: Literal[
+        1, 2, 3, 4, 5, 6, 7, 8, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114
+    ] = 1
     chapter_id: UUID | None = None
     scene_id: UUID | None = None
     write_chapter_id: UUID | Literal["unfiled"] | None = None

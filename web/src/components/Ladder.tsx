@@ -57,7 +57,7 @@ export function Ladder({
               aria-current={isActive ? 'step' : undefined}
               className={[
                 'w-full rounded-md px-2.5 py-1.5 text-left transition',
-                isActive ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-950' : 'hover:bg-slate-100 dark:hover:bg-slate-800',
+                'ladder-step', isActive ? 'is-active' : '',
                 gated && !isActive ? 'opacity-60' : '',
               ].join(' ')}
             >

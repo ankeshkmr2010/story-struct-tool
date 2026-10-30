@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueries } from '@tanstack/react-query'
 import { OriginSummary } from './AuthorshipPanel'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
@@ -114,6 +115,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
         </p>
       )}
 
+      {(characters.data?.length ?? 0) > 0 && <CastGrid storyId={storyId} />}
       <ul className="mt-4 space-y-3">
         {characters.data?.map((character) => {
           const set = patch(character.id)
@@ -343,4 +345,39 @@ function CharacterArc({
       <div className="mt-2"><AddForm placeholder={t('Next arc stage…')} onAdd={(label) => addStage.mutateAsync(label)} pending={addStage.isPending} /></div>
     </div>
   )
+}
+
+const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toLocaleUpperCase() || '?'
+
+/** The cast at a glance: role, arc (first to last stage) and how many scenes each appears in.
+ * A card jumps to that character's full editor below. */
+function CastGrid({ storyId }: { storyId: string }) {
+  const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId) })
+  const arcs = useQuery({ queryKey: ['arcs', storyId], queryFn: () => api.listArcs(storyId) })
+  const stages = useQueries({ queries: (arcs.data ?? []).map(arc => ({ queryKey: ['arc-stages', arc.id], queryFn: () => api.listArcStages(arc.id) })) })
+  const timeline = useQuery({ queryKey: ['timeline', storyId], queryFn: () => api.getTimeline(storyId) })
+  const arcFor = (id: string) => {
+    const index = (arcs.data ?? []).findIndex(arc => arc.character_id === id)
+    const list = index >= 0 ? stages[index]?.data ?? [] : []
+    return list.length > 1 ? `${list[0].label} → ${list[list.length - 1].label}` : list[0]?.label ?? null
+  }
+  const scenesFor = (id: string) => (timeline.data?.entries ?? []).filter(entry => entry.kind === 'scene' && entry.participants.some(person => person.character_id === id)).length
+  const open = (id: string) => {
+    const card = document.getElementById(`character-${id}`)
+    card?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    card?.classList.add('is-flash'); window.setTimeout(() => card?.classList.remove('is-flash'), 1600)
+  }
+  return <ul className="cast-grid" aria-label={t('Cast')}>
+    {characters.data?.map((character, index) => {
+      const arc = arcFor(character.id)
+      const scenes = scenesFor(character.id)
+      return <li key={character.id}><button type="button" className="cast-card" onClick={() => open(character.id)}>
+        <span className={`cast-avatar lane-c${index % 6}`} aria-hidden="true">{initials(character.name)}</span>
+        <span className="cast-name">{character.name}</span>
+        {character.role && <span className="cast-role">{character.role}</span>}
+        {arc && <span className="lib-chip lib-chip--draft">{arc}</span>}
+        <span className="cast-meta">{scenes ? t(scenes === 1 ? 'Appears in {0} scene' : 'Appears in {0} scenes', scenes) : t('Not in a scene yet')}</span>
+      </button></li>
+    })}
+  </ul>
 }

@@ -42,6 +42,8 @@ import { useWriterStatus } from '../components/writerDraft'
 import { CastPanel } from '../components/CastPanel'
 import { GoalsDialog, Ring, StoryGoalForm } from '../components/Goals'
 import { CoverManager } from '../components/Covers'
+import { StructureBoard } from '../components/StructureBoard'
+import { TimelineLanes } from '../components/TimelineLanes'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
 import { SANDBOX_ID, FIRST_SCENE, tourEvent, type Sandbox } from '../sandbox/storage'
@@ -85,6 +87,12 @@ const HISTORY_VIEW = 107
 const EVALUATE_VIEW = 108
 const PLACEHOLDERS_VIEW = 109
 const PACING_VIEW = 110
+// Plan pages beside the eight levels (2026-10-30): the structure board, a full timeline,
+// and Places and Glossary, which otherwise live only in the side panel.
+const STRUCTURE_VIEW = 111
+const TIMELINE_VIEW = 112
+const PLACES_VIEW = 113
+const GLOSSARY_VIEW = 114
 
 // One docked side panel; which tabs it offers depends on the mode (Context and Hints belong to Write).
 type RefPanel = 'context' | 'hints' | 'cast' | 'insights' | 'feedback' | 'placeholders' | 'timeline' | 'places' | 'glossary' | 'assistant'
@@ -121,7 +129,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [savedSearchContext] = useState(() => {
     try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' ? JSON.parse(localStorage.getItem(`storytool-search-context:${storyId}`) || '{}') : {} } catch { return {} }
   })
-  const [level, setLevel] = useState(() => initialPosition?.level ?? ([1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW, PLACEHOLDERS_VIEW, PACING_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1))
+  const [level, setLevel] = useState(() => initialPosition?.level ?? ([1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW, PLACEHOLDERS_VIEW, PACING_VIEW, STRUCTURE_VIEW, TIMELINE_VIEW, PLACES_VIEW, GLOSSARY_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1))
   // Levels 1-8 are the Plan; ids from 104 up are full-width Design pages (Grid, History, …).
   const isView = level >= INBOX_VIEW
   const planLevel = useRef(1)
@@ -556,7 +564,11 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       <div className="ws-design">
         <nav aria-label={t('Story design')} className="workspace-nav ws-rail">
           <h2>{t('Plan')}</h2>
+          {viewItem(STRUCTURE_VIEW, t('Structure'))}
           {ladder.data && <Ladder ladder={ladder.data} mode={story.data.authoring_mode as AuthoringMode} activeLevel={level} onSelect={selectLevel} />}
+          {viewItem(TIMELINE_VIEW, t('Timeline'))}
+          {viewItem(PLACES_VIEW, t('Places'))}
+          {viewItem(GLOSSARY_VIEW, t('Glossary'))}
           <h2>{t('Review')}</h2>
           {viewItem(GRID_VIEW, t('Grid'))}
           {viewItem(PACING_VIEW, t('Pacing'))}
@@ -570,6 +582,10 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setRefPanel('timeline')} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
         <section ref={levelSection} id="story-search-design-section" className="min-w-0 scroll-mt-4">
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
+          {level === STRUCTURE_VIEW && <StructureBoard storyId={storyId} onOpenScene={openScene} />}
+          {level === TIMELINE_VIEW && <TimelineLanes storyId={storyId} onOpenScene={openScene} />}
+          {level === PLACES_VIEW && <section className="plan-view"><header className="plan-head"><h2>{t('Places')}</h2></header><PlacesPanel storyId={storyId} /></section>}
+          {level === GLOSSARY_VIEW && <section className="plan-view"><header className="plan-head"><h2>{t('Glossary')}</h2></header><GlossaryPanel storyId={storyId} /></section>}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
           {level === PLACEHOLDERS_VIEW && <section><h2 className="level-title">{t('Placeholders')}</h2><PlaceholderList storyId={storyId} beforeEdit={() => writerFlush.current()} onOpen={openPassage} /></section>}
           {level === EVALUATE_VIEW && <StoryEvaluation storyId={storyId} beforeEdit={() => writerFlush.current()} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
