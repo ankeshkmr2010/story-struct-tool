@@ -33,12 +33,12 @@ const Unset = ({ children }: { children: React.ReactNode }) => (
 export function ChapterBriefCard({ brief }: { brief: ChapterBrief }) {
   return (
     <div className="brief-card rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-baseline justify-between gap-3">
         <h3 className="section-title">
           {t('Chapter {0}', brief.number)}
           {brief.title && <span className="font-normal text-slate-500 dark:text-slate-400"> — {brief.title}</span>}
         </h3>
-        <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">
+        <span className="shrink-0 whitespace-nowrap rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">
           {valueLabel(brief.status)}
         </span>
       </div>
