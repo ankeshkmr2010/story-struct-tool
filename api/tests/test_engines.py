@@ -4,6 +4,8 @@ All pure functions -- no database, no client. If these ever need a fixture datab
 something has leaked into the wrong layer.
 """
 
+from uuid import uuid4
+
 import pytest
 
 from storytool.domain.cast.models import Arc, ArcStage, Character
@@ -18,6 +20,7 @@ from storytool.domain.frameworks import (
     missing_beats,
 )
 from storytool.domain.health import Severity, StoryGraph, run_health
+from storytool.domain.narrative.models import Chapter, Scene
 from storytool.domain.readiness import (
     MIN_TURNING_POINTS,
     StorySnapshot,
@@ -165,6 +168,22 @@ def test_level_scoping_excludes_rules_above_the_requested_level() -> None:
     # The thread rule only fires once we ask about Level 6.
     assert "thread.none_defined" not in codes(at_beats)
     assert "thread.none_defined" in codes(at_threads)
+
+
+def test_scenes_only_story_gets_no_empty_level_warnings() -> None:
+    """Usability phase 2: writing scenes first leaves planning levels empty."""
+    chapter = Chapter(id=uuid4(), story_id=None, number=1, title="One")
+    scene = Scene(story_id=None, chapter_id=chapter.id, title="Opening")
+    graph = StoryGraph(story=Story(title="S"), chapters=(chapter,), scenes=(scene,))
+    assert codes(run_health(graph)).isdisjoint(
+        {
+            "story.no_premise",
+            "arc.too_few_turning_points",
+            "chapter.no_act",
+            "chapter.no_beats",
+            "scene.no_beat",
+        }
+    )
 
 
 def test_premise_finding_clears_once_premise_is_written() -> None:

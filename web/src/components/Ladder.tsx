@@ -22,6 +22,11 @@ function statusFor(
   return 'nudge'
 }
 
+// A level with nothing in it yet is empty, not unfinished: neutral dot, no reasons (usability phase 2).
+function isEmpty(level: number, s: LadderData['snapshot']): boolean {
+  return [0, 0, s.turning_point_count, s.character_count, s.act_count, s.beat_count, s.thread_count, s.chapter_count, s.scene_count][level] === 0
+}
+
 const dot = {
   unknown: 'bg-slate-300 dark:bg-slate-600',
   ready: 'bg-emerald-500',
@@ -46,7 +51,9 @@ export function Ladder({
   return (
     <ol className="space-y-1">
       {ladder.levels.filter((rung) => !visibleLevels || visibleLevels.includes(rung.level) || rung.level === activeLevel).map((rung) => {
-        const status = statusFor(rung, mode, ladder.furthest_ready_level)
+        const empty = isEmpty(rung.level, ladder.snapshot)
+        const assessed = statusFor(rung, mode, ladder.furthest_ready_level)
+        const status = empty && assessed !== 'locked' ? 'unknown' : assessed
         const isActive = rung.level === activeLevel
         // Flagged, never blocked: a gated level is dimmed but stays open, because it may
         // already hold work (an agent can fill any level).
@@ -70,7 +77,7 @@ export function Ladder({
                 <span className="text-sm font-medium">{levelLabel(rung.level, rung.label)}</span>
               </span>
 
-              {isActive && status !== 'ready' && rung.blocked_by.length > 0 && (
+              {isActive && status !== 'ready' && !empty && rung.blocked_by.length > 0 && (
                 <ul className="mt-1.5 space-y-0.5">
                   {rung.blocked_by.map((reason) => (
                     <li

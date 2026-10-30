@@ -68,9 +68,14 @@ def registered_rule_count(max_level: Level = Level.SCENES) -> int:
 # --------------------------------------------------------------------------- Level 1
 
 
+def writes_scenes_first(g: StoryGraph) -> bool:
+    """Scenes but no planning yet: planning levels are empty, not unfinished (usability phase 2)."""
+    return bool(g.scenes) and not (g.turning_points or g.acts or g.beats or g.threads)
+
+
 @rule(Level.PREMISE)
 def story_needs_premise(g: StoryGraph) -> Iterator[Finding]:
-    if not (g.story.premise or "").strip():
+    if not (g.story.premise or "").strip() and not writes_scenes_first(g):
         yield Finding(
             code="story.no_premise",
             level=Level.PREMISE,
@@ -87,7 +92,7 @@ def story_needs_premise(g: StoryGraph) -> Iterator[Finding]:
 @rule(Level.ARC_SKELETON)
 def turning_point_count_is_sane(g: StoryGraph) -> Iterator[Finding]:
     count = len(g.turning_points)
-    if count < MIN_TURNING_POINTS:
+    if count < MIN_TURNING_POINTS and not writes_scenes_first(g):
         yield Finding(
             code="arc.too_few_turning_points",
             level=Level.ARC_SKELETON,
@@ -336,6 +341,8 @@ def beats_should_be_fulfilled(g: StoryGraph) -> Iterator[Finding]:
 
 @rule(Level.CHAPTERS)
 def chapters_should_belong_to_an_act(g: StoryGraph) -> Iterator[Finding]:
+    if not g.acts:  # No acts yet: an empty level, not a gap in each chapter.
+        return
     for chapter in g.chapters:
         if chapter.act_id is None:
             yield Finding(
@@ -351,6 +358,8 @@ def chapters_should_belong_to_an_act(g: StoryGraph) -> Iterator[Finding]:
 @rule(Level.CHAPTERS)
 def chapters_should_owe_a_beat(g: StoryGraph) -> Iterator[Finding]:
     """A chapter that fulfils nothing has no structural reason to exist."""
+    if not g.beats:
+        return
     for chapter in g.chapters:
         if not g.beat_ids_for_chapter(chapter.id):
             yield Finding(
@@ -414,6 +423,8 @@ def scenes_should_sit_in_a_chapter(g: StoryGraph) -> Iterator[Finding]:
 @rule(Level.SCENES)
 def scenes_should_serve_a_beat(g: StoryGraph) -> Iterator[Finding]:
     """The brief's "5 scenes have no beat assigned"."""
+    if not g.beats:
+        return
     assigned = {scene_id for scene_id, _ in g.scene_beats}
     # A scene inside a chapter that owes beats is covered by its chapter.
     chapters_with_beats = {c.id for c in g.chapters if g.beat_ids_for_chapter(c.id)}
