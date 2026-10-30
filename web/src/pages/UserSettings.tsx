@@ -22,7 +22,7 @@ function AuthorNameSettings() {
     <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('Your writing name or pen name, used as the byline in manuscript exports. Leave it blank to omit the byline. Your Google profile name stays separate.')}</p>
     <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate() }}>
       <label className="min-w-0 flex-1 text-sm">{t('Name on exports')}<input maxLength={200} disabled={me.isPending || save.isPending} value={value} onChange={(event) => { setDraft(event.target.value); save.reset() }} className="mt-2 block w-full rounded-md border border-slate-300 bg-white p-2 dark:border-slate-600 dark:bg-slate-900" /></label>
-      <button type="submit" disabled={!me.data || save.isPending || value === (me.data.author_name ?? '')} className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{save.isPending ? t('Saving…') : t('Save author name')}</button>
+      <button type="submit" disabled={!me.data || save.isPending || value === (me.data.author_name ?? '')} className="ui-btn ui-btn-primary">{save.isPending ? t('Saving…') : t('Save author name')}</button>
     </form>
     {save.isSuccess && <p role="status" className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">{t('Author name saved.')}</p>}
     {(save.error || me.error) && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(save.error ?? me.error)}</p>}

@@ -313,6 +313,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const storyGoal = useQuery({ queryKey: ['story-goal', storyId], queryFn: () => api.storyGoal(storyId), enabled: !sandbox })
   const [toolsOpen, setToolsOpen] = useState(false)
   const [goalsOpen, setGoalsOpen] = useState(false)
+  const [searchAll, setSearchAll] = useState(false)
   // Re-run on a language change, after App has reset the tab to the generic route title.
   const language = useUiLanguage()
   useEffect(() => { if (story.data?.title) document.title = `${story.data.title} · StoryTool` }, [story.data?.title, language])
@@ -782,7 +783,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       </aside>
       </div>
       <RenameDialog storyId={storyId} beforeEdit={() => writerFlush.current()} />
-      <SearchDialog storyId={storyId} initialQuery={sandboxStep === 5 ? 'lantern' : undefined} context={searchContext} active={searchOpen} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={async hit => { await openSearchHit(hit); if (sandbox) tourEvent('search') }} />
+      <SearchDialog storyId={storyId} initialQuery={sandboxStep === 5 ? 'lantern' : undefined} context={searchAll && !sandbox ? 'all' : searchContext} wholeStory={searchAll} onWholeStory={sandbox ? undefined : setSearchAll} active={searchOpen} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={async hit => { await openSearchHit(hit); if (sandbox) tourEvent('search') }} />
     </main>
   )
 }

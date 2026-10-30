@@ -109,7 +109,7 @@ class LibraryController(Controller):
                 select(LibraryCard).where(LibraryCard.user_id == user_id)
             )
         }
-        counts: dict[UUID, tuple[int, int, int, int, int]] = {}
+        counts: dict[UUID, tuple[int, int, int, int, int, int]] = {}
         pending: dict[UUID, int] = {}
         if story_ids:
             rows = await db_session.execute(
@@ -118,6 +118,8 @@ class LibraryController(Controller):
                     func.count(Scene.id),
                     func.count(Scene.id).filter(Scene.status == "drafted"),
                     func.count(Scene.id).filter(Scene.status == "revised"),
+                    # Drafted means the scene has prose, as in the story header and the Grid.
+                    func.count(Scene.id).filter(Scene.word_count > 0),
                     func.coalesce(func.sum(Scene.word_count), 0),
                     func.coalesce(
                         func.sum(
@@ -143,7 +145,9 @@ class LibraryController(Controller):
             )
         out = []
         for story_id in story_ids:
-            scenes, drafted, revised, words, tks = counts.get(story_id, (0, 0, 0, 0, 0))
+            scenes, drafted, revised, with_prose, words, tks = counts.get(
+                story_id, (0, 0, 0, 0, 0, 0)
+            )
             card = cards.get(story_id)
             out.append(
                 CardOut(
@@ -153,7 +157,7 @@ class LibraryController(Controller):
                     archived=bool(card and card.archived),
                     status=card_status(scenes, drafted, revised, words),
                     scene_count=scenes,
-                    drafted_scene_count=drafted + revised,
+                    drafted_scene_count=with_prose,
                     tk_count=tks,
                     pending_agent_changes=pending.get(story_id, 0),
                 )

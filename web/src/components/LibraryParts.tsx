@@ -25,7 +25,7 @@ export function ContinueCard({ storyId, title, mode, edited, card, feedback }: {
   return <article className="lib-continue">
     <div className={`lib-cover ${card?.cover_url ? 'has-image' : coverTint(storyId)}`} aria-hidden="true">{card?.cover_url ? <img className="lib-cover-img" src={card.cover_url} alt="" style={{ objectPosition: `${card.cover_focus_x * 100}% ${card.cover_focus_y * 100}%` }} /> : <span className="lib-cover-title">{title}</span>}</div>
     <div className="lib-continue-body">
-      <div className="lib-continue-top"><span className="eyebrow">{t('Continue writing')}</span><span>{edited}</span></div>
+      <div className="lib-continue-top"><span className="eyebrow">{t('Pick up where you left off')}</span><span>{edited}</span></div>
       <div><h2>{title}</h2><p>{mode}</p></div>
       {card?.goal_percent != null ? <div className="lib-progress">
         <div><span>{t('{0}% of goal', card.goal_percent)} · {statusLabel({ status: card.goal_status ?? 'open', behind_by: 0 })}</span></div>

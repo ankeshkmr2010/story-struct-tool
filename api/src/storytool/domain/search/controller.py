@@ -10,7 +10,6 @@ from storytool.config import get_settings
 from storytool.domain.search.schemas import (
     LibrarySearchContext,
     SearchCapabilities,
-    SearchContext,
     SearchHit,
     SearchPage,
 )
@@ -33,7 +32,7 @@ class SearchController(Controller):
         db_session: AsyncSession,
         request: Request,
         story_id: UUID,
-        context: SearchContext,
+        context: LibrarySearchContext,
         q: str,
         field: str | None = None,
         mode: Literal["text", "semantic"] = "text",

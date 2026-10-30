@@ -31,7 +31,7 @@ export function InsightsPanel({ storyId, health, level, levelNames, onOpenLevel 
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100',
             ].join(' ')}
           >
-            {item.label}{item.id === 'health' && Boolean(health?.warning_count) && <span className="workspace-nav-badge ml-1.5" aria-label={t('{0} to fix', health?.warning_count)}>{health?.warning_count}</span>}
+            {item.label}{item.id === 'health' && Boolean(health?.warning_count) && <>{' '}<span className="workspace-nav-badge insights-badge ml-1.5" aria-label={t('{0} to fix', health?.warning_count)}>{health?.warning_count}</span></>}
           </button>
         ))}
       </div>

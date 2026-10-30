@@ -242,7 +242,7 @@ export default function StoryList() {
         {t('Your library includes editable study examples and an original timeline-and-arc tutorial. Each account has its own copies.')}
       </p>
       {lastPlace.data && <ContinueCard storyId={lastPlace.data.story_id} title={lastPlace.data.title} mode={{ write: t('Writing'), read: t('Reading'), design: t('Designing') }[lastPlace.data.position.mode ?? 'design']} edited={editedLabel(lastStory?.updated_at ?? lastPlace.data.updated_at)} card={cardOf(lastPlace.data.story_id)} feedback={feedbackCounts.data?.[lastPlace.data.story_id] ?? 0} />}
-      {stories.data?.find((story) => story.genre === 'Tutorial · timelines and arcs') && <Link to={`/stories/${stories.data.find((story) => story.genre === 'Tutorial · timelines and arcs')!.id}`} className="mt-4 inline-block rounded-lg border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950 px-4 py-2 text-sm text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-950">{t('Learn timelines and arcs with The Last Lantern →')}</Link>}
+      {stories.data?.find((story) => story.genre === 'Tutorial · timelines and arcs') && <Link to={`/stories/${stories.data.find((story) => story.genre === 'Tutorial · timelines and arcs')!.id}`} className="lib-tutorial-link">{t('Learn timelines and arcs with The Last Lantern →')}</Link>}
 
       <form
         className="library-create mt-6 flex gap-2"

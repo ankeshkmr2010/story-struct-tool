@@ -168,6 +168,12 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
   // The open chapter's scenes, each with its status dot; picking one puts the cursor in it.
   const sceneList = chapterScenes.length > 0 && <ul className="writer-scene-list">{chapterScenes.map(scene => <li key={scene.id}><button type="button" aria-current={contextScene?.id === scene.id ? 'true' : undefined} onClick={() => { setActiveScene(scene.id); setFocusTarget(null); requestAnimationFrame(() => setFocusTarget(scene.id)) }}><i className="writer-status-dot" data-status={scene.status} title={statusLabel(scene.status)} aria-label={statusLabel(scene.status)} />{scene.title || t('Untitled scene')}</button></li>)}</ul>
   const sceneWords = contextScene?.word_count ?? 0
+  const saveStatus = useWriterStatus(storyId)
+  useEffect(() => {
+    if (saveStatus !== 'saved') return
+    const timer = window.setTimeout(() => { for (const key of ['scenes', 'progress', 'brief', 'ladder']) void qc.invalidateQueries({ queryKey: [key, storyId] }) }, 500)
+    return () => window.clearTimeout(timer)
+  }, [saveStatus, qc, storyId])
   const totalWords = (scenes.data ?? []).reduce((sum, scene) => sum + scene.word_count, 0)
 
   if (chapters.isPending || scenes.isPending || me.isPending) return <p className="p-6">{t('Loading manuscript…')}</p>

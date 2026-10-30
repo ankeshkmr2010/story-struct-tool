@@ -9,7 +9,7 @@ import { valueLabel } from '../i18n/server'
 
 const STATUSES = ['placeholder', 'outlined', 'drafted', 'revised']
 const STATUS_DOT: Record<string, string> = {
-  placeholder: 'bg-[var(--faint)]',
+  placeholder: 'border-[1.5px] border-[var(--faint)] bg-transparent',
   outlined: 'bg-[var(--amber)]',
   drafted: 'bg-green-400',
   revised: 'bg-[var(--accent)]',
@@ -53,10 +53,10 @@ const shiftKind = (scene: Scene) => {
 }
 const SHIFT_COLOR = { shift: 'bg-emerald-500', flat: 'bg-amber-500', missing: 'bg-slate-300 dark:bg-slate-600' }
 
-function Shift({ scene }: { scene: Scene }) {
+function Shift({ scene, empty = false }: { scene: Scene; empty?: boolean }) {
   const from = scene.emotional_value_from?.trim()
   const to = scene.emotional_value_to?.trim()
-  if (!from && !to) return null
+  if (!from && !to) return empty ? <span className="text-slate-400 dark:text-slate-500">—</span> : null
   const flat = shiftKind(scene) === 'flat'
   return <span title={flat ? t('Value does not change in this scene') : undefined} className={`inline-block rounded-full px-2 text-[11px] ${flat ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{from || '?'} → {to || '?'}{flat ? t(' · no shift') : ''}</span>
 }
@@ -158,7 +158,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
     { key: 'outcome', label: t('Outcome'), fields: ['outcome'], filled: (s) => has(s.outcome), view: (s) => text(s.outcome), edit: (s) => <InlineText value={s.outcome} placeholder="—" multiline onSave={save(s.id, 'outcome')} /> },
     {
       key: 'shift', label: t('Value shift'), width: 'w-36', fields: ['emotional_value_from', 'emotional_value_to'], filled: (s) => shiftKind(s) === 'shift',
-      view: (s) => <Shift scene={s} />,
+      view: (s) => <Shift scene={s} empty />,
       edit: (s) => <div className="flex flex-col gap-1"><InlineText value={s.emotional_value_from} placeholder={t('from')} onSave={save(s.id, 'emotional_value_from')} /><InlineText value={s.emotional_value_to} placeholder={t('to')} onSave={save(s.id, 'emotional_value_to')} /><Shift scene={s} /></div>,
     },
     { key: 'words', label: t('Words'), width: 'w-16', fields: [], filled: (s) => (s.word_count ?? 0) > 0, view: (s) => <span className="block text-right tabular-nums text-slate-500">{s.word_count ?? 0}</span>, edit: (s) => <span className="block text-right tabular-nums text-slate-500">{s.word_count ?? 0}</span> },
@@ -353,8 +353,11 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
               <tr>
                 <td colSpan={span} className="px-2 py-2">
                   <span className="flex flex-wrap items-center gap-3">
-                    <span>{t('{0} of {1} scenes · {2} words', visible.length, all.length, words)}</span>
-                    {STATUSES.map((status) => <span key={status} className="flex items-center gap-1"><span className={`h-2.5 w-2.5 rounded-full ${STATUS_DOT[status]}`} />{visible.filter((scene) => scene.status === status).length} {status}</span>)}
+                    <span>{t(all.length === 1 ? '{0} of {1} scene · {2} words' : '{0} of {1} scenes · {2} words', visible.length, all.length, words)}</span>
+                    {/* Drafted means the scene has prose, as in the story header and Your stories. */}
+                    <span>{t('{0} drafted', visible.filter((scene) => (scene.word_count ?? 0) > 0).length)}</span>
+                    <span className="font-semibold">{t('Status')}</span>
+                    {STATUSES.map((status) => <span key={status} className="flex items-center gap-1"><span className={`h-2.5 w-2.5 rounded-full ${STATUS_DOT[status]}`} />{visible.filter((scene) => scene.status === status).length} {valueLabel(status)}</span>)}
                   </span>
                 </td>
               </tr>

@@ -13,6 +13,7 @@ function counts(version: StoryVersion) {
 
 export function StoryVersions({ storyId, beforeEdit = async () => true }: { storyId: string; beforeEdit?: () => Promise<boolean> }) {
   const qc = useQueryClient()
+  const progress = useQuery({ queryKey: ['progress', storyId], queryFn: () => api.getProgress(storyId) })
   // Compare one scene's prose in the selected version with its current text.
   const [compareScene, setCompareScene] = useState<{ id: string; title: string } | null>(null)
   const [label, setLabel] = useState('')
@@ -29,6 +30,7 @@ export function StoryVersions({ storyId, beforeEdit = async () => true }: { stor
   const restore = useMutation({ mutationFn: () => api.restoreStoryVersion(storyId, selected!.id, preview.data!.current_fingerprint), onSuccess: (result) => { setMessage(t('Restored v{0}. Your previous draft is preserved in recovery v{1}.', result.restored_number, result.recovery_version.number)); refresh() } })
   return <div>
         <h2 id="story-versions-title" className="text-xl font-semibold">{t('Whole-story versions')}</h2>
+        {progress.data && <p className="versions-current">{t('Current draft: {0} words · {1} scenes', progress.data.word_count.toLocaleString(getUiLanguage()), progress.data.scene_count)}<span>{t('Each checkpoint below shows the story as it was when it was saved.')}</span></p>}
         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('Save the story as a whole: prose, chapters, beats, characters, relationships, arcs, locations, timeline, notes, and links.')}</p>
         <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">{t('Automatic checkpoints are saved at most once per minute during editing, with extra checkpoints around AI changes. The latest 50 automatic checkpoints are kept. Named versions and recovery versions are retained. Account settings, keys, and AI conversations stay separate.')}</p>
         <form onSubmit={(event) => { event.preventDefault(); if (label.trim() && !pending) save.mutate() }} className="mt-4 flex flex-wrap items-end gap-3 rounded-lg bg-slate-50 dark:bg-slate-950 p-3">

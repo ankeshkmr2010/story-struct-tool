@@ -55,7 +55,7 @@ type SearchProps = {
   initialQuery?: string;
   onOpen: (hit: SearchHit) => Promise<void>;
 }
-export function SearchDialog({ onClose, onReopen, ...props }: SearchProps & { onClose: () => void; onReopen: () => void }) {
+export function SearchDialog({ onClose, onReopen, wholeStory, onWholeStory, ...props }: SearchProps & { onClose: () => void; onReopen: () => void; wholeStory?: boolean; onWholeStory?: (whole: boolean) => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const [dialogError, setDialogError] = useState<string | null>(null)
@@ -71,6 +71,7 @@ export function SearchDialog({ onClose, onReopen, ...props }: SearchProps & { on
     if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) event.currentTarget.close()
   }}>
     <header className="story-search-dialog-head"><h2 id={titleId}>{t('Search')}</h2><button type="button" aria-label={t('Close search')} onClick={() => dialog.current?.close()}>✕</button></header>
+    {onWholeStory && <div className="lib-view search-scope" role="group" aria-label={t('Search scope')}><button type="button" aria-pressed={!wholeStory} onClick={() => onWholeStory(false)}>{t('This section')}</button><button type="button" aria-pressed={Boolean(wholeStory)} onClick={() => onWholeStory(true)}>{t('All of this story')}</button></div>}
     {props.storyId === '00000000-0000-4000-8000-000000000001' && <div id="try-search-coach" />}
     {dialogError && <p role="alert" className="writer-error">{dialogError}</p>}
     <StorySearch {...props} onOpen={async hit => {
@@ -141,8 +142,9 @@ function SearchResults({ storyId, accountId, context, active, onOpen, initialQue
     try { await onOpen(hit) } catch (error) { setNavigationError(errorText(error)) }
     finally { setOpening(null) }
   }
-  return <section className="story-search" aria-label={t('Search {0}', t(SEARCH_LABELS[context]))}>
-    <p className="story-search-context">{t('In {0}', t(SEARCH_LABELS[context]))}{' '}<span>{t('· Saved text')}</span></p>
+  const scopeLabel = context === 'all' && storyId ? t('this story') : t(SEARCH_LABELS[context])
+  return <section className="story-search" aria-label={t('Search {0}', scopeLabel)}>
+    <p className="story-search-context">{t('In {0}', scopeLabel)}{' '}<span>{t('· Saved text')}</span></p>
     <form role="search" onSubmit={event => { event.preventDefault(); setNavigationError(null); if (input.trim() === query) refresh(); else setQuery(input.trim()) }}>
       <div className="story-search-input"><input ref={searchInput} autoFocus type="search" enterKeyHint="search" aria-label={t('Search text')} placeholder={t('Find a name, phrase or idea…')} maxLength={300} value={input} onChange={event => { setInput(event.target.value); setNavigationError(null) }} /></div>
       <div className="story-search-filters">
@@ -155,7 +157,7 @@ function SearchResults({ storyId, accountId, context, active, onOpen, initialQue
     {!input.trim() && <p className="writer-help">{t('Start typing to search.')}</p>}
     {input.trim() && (searching || (indexing && hits.length === 0)) && <p role="status" className="writer-help">{t('Searching…')}</p>}
     {(failed || navigationError) && <div role="alert" className="writer-error"><p>{navigationError || t('Search could not finish. Please retry.')}</p><button type="button" className="share-story-button" onClick={() => { setNavigationError(null); refresh() }}>{t('Retry')}</button></div>}
-    {query && fresh && textResults.isSuccess && hits.length === 0 && !searching && !indexing && <p role="status" className="writer-help">{t('No matches in {0}. Try another phrase or field.', t(SEARCH_LABELS[context]))}</p>}
+    {query && fresh && textResults.isSuccess && hits.length === 0 && !searching && !indexing && <p role="status" className="writer-help">{t('No matches in {0}. Try another phrase or field.', scopeLabel)}</p>}
     <ul className="story-search-results">{hits.map(({ hit, related }) => <li key={`${hit.story_id}:${hit.entity}:${hit.id}`}>
       {!storyId && <p className="story-search-story">{hit.story_title}</p>}
       <p className="story-search-kind">{t(SEARCH_LABELS[hit.entity as SearchContext]) ?? hit.entity}{hit.chapter_id ? ` · ${hit.chapter_title || t('Untitled chapter')}` : hit.entity === 'scene' ? t(' · Unfiled writing') : ''}</p>
