@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { api, type DocxImport, type ImportFormat, type ImportUpload, type Story } from '../api/client'
 import { errorText } from '../api/errors'
 import { importedStoryPrompt } from './importPrompts'
-import { getUiLanguage, t, tx } from '../i18n'
+import { getUiLanguage, plural, t, tx } from '../i18n'
 
 type Plan = Record<string, unknown>
 type Option = { value: string | number; count?: number; chapters?: number }
@@ -200,7 +200,7 @@ export function WordImportDialog({ open, format = 'docx', story, defaultTitle, o
         {preview.isPending && <p className="text-sm text-[var(--muted)]">{t('Previewing…')}</p>}
         {preview.error && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(preview.error)}</p>}
         {preview.data && <>
-          <p className="text-sm font-medium">{t('{0} chapters · {1} scenes · {2} words', preview.data.chapter_count, preview.data.scene_count, preview.data.word_count.toLocaleString(getUiLanguage()))}</p>
+          <p className="text-sm font-medium">{[plural(preview.data.chapter_count, '{0} chapter', '{0} chapters', preview.data.chapter_count), plural(preview.data.scene_count, '{0} scene', '{0} scenes', preview.data.scene_count), plural(preview.data.word_count, '{0} word', '{0} words', preview.data.word_count.toLocaleString(getUiLanguage()))].join(' · ')}</p>
           <ol className="mt-2 max-h-60 space-y-1 overflow-y-auto text-sm">
             {preview.data.chapters.slice(0, 80).map((chapter, index) => <li key={index}>
               <span className="font-medium">{index + 1}. {chapter.title || t('Untitled chapter')}</span>

@@ -5,7 +5,7 @@ import { api } from '../api/client'
 import { errorText } from '../api/errors'
 import { HabitGoalForm, Ring, StoryGoalForm, statusLabel, useGoals } from '../components/Goals'
 import { WeekPanel } from '../components/LibraryParts'
-import { getUiLanguage, t } from '../i18n'
+import { getUiLanguage, plural, t } from '../i18n'
 
 const n = (value: number) => value.toLocaleString(getUiLanguage())
 
@@ -28,7 +28,7 @@ export default function GoalsPage() {
       <section className="lib-panel goals-habit" aria-labelledby="goals-habit-title">
         <h2 id="goals-habit-title" className="eyebrow">{t('Daily habit · all stories')}</h2>
         {goals.data && <div className="goals-today">
-          <Ring value={goals.data.today_words} max={daily ?? Math.max(1, goals.data.today_words)} label={daily ? t('{0} of {1} words today', goals.data.today_words, daily) : t('{0} words', goals.data.today_words)} size={64} />
+          <Ring value={goals.data.today_words} max={daily ?? Math.max(1, goals.data.today_words)} label={daily ? t('{0} of {1} words today', goals.data.today_words, daily) : plural(goals.data.today_words, '{0} word', '{0} words', goals.data.today_words)} size={64} />
           <div><strong>{daily ? `${n(goals.data.today_words)} / ${n(daily)}` : n(goals.data.today_words)}</strong><span>{t('Today')}</span></div>
           <div><strong>🔥 {n(goals.data.streak)}</strong><span>{t('best {0}', goals.data.best_streak)}</span></div>
         </div>}

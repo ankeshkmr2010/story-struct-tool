@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api, type Scene } from '../api/client'
 import { orderScenes } from '../api/ordering'
 import { openBeside } from './beside'
-import { getUiLanguage, t, tx } from '../i18n'
+import { getUiLanguage, plural, t, tx } from '../i18n'
 import { CraftTerm, craftPlain } from './CraftTerm'
 
 const MAX_POV = 8
@@ -89,7 +89,7 @@ export function PacingView({ storyId, onOpenScene }: { storyId: string; onOpenSc
       {active ? <>
         <strong>{active.scene.title || t('Untitled scene')}</strong>
         <span>{t('Chapter {0}{1}', active.chapter.number, active.chapter.title ? `: ${active.chapter.title}` : '')}</span>
-        <span>{t('{0} words · {1}', active.scene.word_count.toLocaleString(getUiLanguage()), active.scene.type === 'sequel' ? craftPlain('reaction') : t('Scene'))}</span>
+        <span>{plural(active.scene.word_count, '{0} word · {1}', '{0} words · {1}', active.scene.word_count.toLocaleString(getUiLanguage()), active.scene.type === 'sequel' ? craftPlain('reaction') : t('Scene'))}</span>
         <span>{t(SHIFT_LABEL[shiftOf(active.scene)])}{active.scene.emotional_value_from || active.scene.emotional_value_to ? `: ${active.scene.emotional_value_from || '?'} → ${active.scene.emotional_value_to || '?'}` : ''}</span>
         <span>{t('POV: {0}', name(active.scene.pov_character_id) ?? t('not set'))}</span>
       </> : <span>{t('Hover or tab to a scene for details; click to select it.')}</span>}

@@ -22,7 +22,7 @@ import { LiveWritingHints } from './LiveWritingHints'
 import { readerComments } from './readerComments'
 import { writerPlaceholders } from './writerPlaceholders'
 import { openBeside, type BesideItem } from './beside'
-import { getUiLanguage, t } from '../i18n'
+import { getUiLanguage, plural, t } from '../i18n'
 import { GoalBar, StoryGoalCard } from './Goals'
 import { dotStatus, shownStatus, statusName, useDetailedStatuses } from './sceneStatus'
 
@@ -219,7 +219,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
     </div>
     {/* Status strip along the bottom of Write, outside the page so it never covers prose. */}
     <div className="writer-statusbar">
-      <span>{t('{0} words in scene · {1} total', sceneWords.toLocaleString(getUiLanguage()), totalWords.toLocaleString(getUiLanguage()))} · <SaveState storyId={storyId} /></span>
+      <span>{[plural(sceneWords, '{0} word in scene', '{0} words in scene', sceneWords.toLocaleString(getUiLanguage())), t('{0} total', totalWords.toLocaleString(getUiLanguage()))].join(' · ')} · <SaveState storyId={storyId} /></span>
       {storyId === SANDBOX_ID ? <button type="button" onClick={() => onFocusChange(!focus)} aria-pressed={focus}>{t('Focus')}</button> : <GoalBar storyId={storyId} focus={focus} onFocus={onFocusChange} />}
     </div>
   </div>
@@ -355,7 +355,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     {separator && <div className="writer-scene-break" aria-label={t('Scene break')}>⁂</div>}
     <div className="writer-passage-heading">
       {scene ? <InlineText value={scene.title} placeholder={t('Scene name (optional)')} onSave={async title => { await api.updateScene(storyId, scene.id, { title }); refresh() }} /> : <span className="writer-help">{t('Start writing…')}</span>}
-      <span className="writer-passage-status" role="status">{t('{0} words · {1}', words, state.status === 'error' ? t('Not saved') : state.status === 'saving' ? t('Saving…') : state.status === 'unsaved' ? t('Unsaved') : storyId === SANDBOX_ID ? t('Saved in this browser') : t('Saved'))}</span>
+      <span className="writer-passage-status" role="status">{plural(words, '{0} word · {1}', '{0} words · {1}', words, state.status === 'error' ? t('Not saved') : state.status === 'saving' ? t('Saving…') : state.status === 'unsaved' ? t('Unsaved') : storyId === SANDBOX_ID ? t('Saved in this browser') : t('Saved'))}</span>
       {scene && <SceneDelete storyId={storyId} scene={scene} onDeleted={refresh} />}
 
     </div>

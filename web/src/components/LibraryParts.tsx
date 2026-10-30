@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import type { Goals, LibraryCardState } from '../api/client'
 import { GoalsDialog, statusLabel } from './Goals'
-import { getUiLanguage, t } from '../i18n'
+import { getUiLanguage, plural, t } from '../i18n'
 
 // Six cover tints; a story keeps its tint because it comes from the story id.
 export function coverTint(id: string) {
@@ -31,11 +31,11 @@ export function ContinueCard({ storyId, title, mode, edited, card, feedback }: {
         <div><span>{t('{0}% of goal', card.goal_percent)} · {statusLabel({ status: card.goal_status ?? 'open', behind_by: 0 })}</span></div>
         <div className="lib-bar" role="img" aria-label={t('{0}% of goal', card.goal_percent)}><i style={{ width: `${card.goal_percent}%` }} /></div>
       </div> : total > 0 && <div className="lib-progress">
-        <div><span>{t('{0} of {1} scenes', done, total)}</span></div>
-        <div className="lib-bar" role="img" aria-label={t('{0} of {1} scenes', done, total)}><i style={{ width: `${Math.round(done / total * 100)}%` }} /></div>
+        <div><span>{plural(total, '{0} of {1} scene', '{0} of {1} scenes', done, total)}</span></div>
+        <div className="lib-bar" role="img" aria-label={plural(total, '{0} of {1} scene', '{0} of {1} scenes', done, total)}><i style={{ width: `${Math.round(done / total * 100)}%` }} /></div>
       </div>}
       <div className="lib-continue-foot">
-        {(card?.tk_count ?? 0) > 0 && <span className="lib-chip lib-chip--amber">{t(card!.tk_count === 1 ? '{0} TK' : '{0} TKs', card!.tk_count)}</span>}
+        {(card?.tk_count ?? 0) > 0 && <span className="lib-chip lib-chip--amber">{plural(card!.tk_count, '{0} TK', '{0} TKs', card!.tk_count)}</span>}
         {(card?.pending_agent_changes ?? 0) > 0 && <span className="lib-chip lib-chip--amber">{t('{0} agent changes', card!.pending_agent_changes)}</span>}
         {feedback > 0 && <span className="lib-chip">{t('{0} reader comments', feedback)}</span>}
         <span className="lib-grow" />
@@ -64,10 +64,10 @@ export function WeekPanel({ goals }: { goals: Goals }) {
     <div className="lib-spark-wrap">
       {daily && <span className="lib-goal-line" style={{ bottom: `${18 + Math.round(daily / max * 48)}px` }} aria-hidden="true" />}
       <ol className="lib-spark" aria-label={t('Words per day, last seven days')}>
-        {days.map(day => <li key={day.day} title={`${day.name}: ${t('{0} words', day.words.toLocaleString(getUiLanguage()))}`}><i style={{ height: `${Math.max(4, Math.round(day.words / max * 100))}%` }} className={!day.words ? 'is-empty' : daily && !day.met ? 'is-short' : ''} /><span aria-hidden="true">{day.label}</span><span className="sr-only">{`${day.name}: ${t('{0} words', day.words)}`}</span></li>)}
+        {days.map(day => <li key={day.day} title={`${day.name}: ${plural(day.words, '{0} word', '{0} words', day.words.toLocaleString(getUiLanguage()))}`}><i style={{ height: `${Math.max(4, Math.round(day.words / max * 100))}%` }} className={!day.words ? 'is-empty' : daily && !day.met ? 'is-short' : ''} /><span aria-hidden="true">{day.label}</span><span className="sr-only">{`${day.name}: ${plural(day.words, '{0} word', '{0} words', day.words)}`}</span></li>)}
       </ol>
     </div>
-    {goals.week_sprints > 0 && <p className="lib-note">{t(goals.week_sprints === 1 ? '{0} sprint · {1} words' : '{0} sprints · {1} words', goals.week_sprints, goals.week_sprint_words.toLocaleString(getUiLanguage()))}</p>}
+    {goals.week_sprints > 0 && <p className="lib-note">{plural(goals.week_sprints, '{0} sprint · {1} words', '{0} sprints · {1} words', goals.week_sprints, goals.week_sprint_words.toLocaleString(getUiLanguage()))}</p>}
     {daily ? <p className="lib-note">{t('Goal: {0} words a writing day.', daily.toLocaleString(getUiLanguage()))} <button type="button" className="goal-link" onClick={() => setEditing(true)}>{t('Edit')}</button></p>
       : <button type="button" className="ui-btn ui-btn-secondary ui-btn-sm lib-set-goal" onClick={() => setEditing(true)}>{t('Set a daily goal')}</button>}
     <p className="lib-note">{goals.settings.count_ai ? t('Counts words you type in Write and AI changes you accept.') : t('Counts words you type in Write. Text from connected AI and imports is not counted.')}</p>

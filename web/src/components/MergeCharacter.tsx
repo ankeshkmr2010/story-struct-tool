@@ -4,7 +4,7 @@ import { api, type Character } from '../api/client'
 import { errorText } from '../api/errors'
 import { Dialog } from '../ui/Dialog'
 import { offerRename } from './rename'
-import { t, tx } from '../i18n'
+import { plural, t, tx } from '../i18n'
 
 /**
  * Merge a duplicate character into another. Nothing changes until the author has read the
@@ -47,7 +47,7 @@ export function MergeCharacter({ storyId, character, characters }: { storyId: st
           <p><strong>{p.source_name}</strong> → <strong>{p.target_name}</strong></p>
           <ul>
             <li>{t('Moves: {0}.', lines.length ? lines.join(', ') : t('nothing else points at this character'))}</li>
-            {p.relationships_removed > 0 && <li>{t('Removes {0} between them.', p.relationships_removed === 1 ? t('the relationship') : t('{0} relationships', p.relationships_removed))}</li>}
+            {p.relationships_removed > 0 && <li>{t('Removes {0} between them.', p.relationships_removed === 1 ? t('the relationship') : plural(p.relationships_removed, '{0} relationship', '{0} relationships', p.relationships_removed))}</li>}
             <li>{p.aliases_added.length ? t('Adds {0} to {1}’s aliases.', p.aliases_added.map(name => `“${name}”`).join(', '), p.target_name) : t('No new aliases.')}</li>
             <li>{t('Deletes {0}. The prose is not changed; you can update it next.', p.source_name)}</li>
           </ul>

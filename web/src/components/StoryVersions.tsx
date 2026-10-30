@@ -4,7 +4,7 @@ import { DraftCompare } from './DraftCompare'
 import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type StoryVersion } from '../api/client'
 import { errorText } from '../api/errors'
-import { getUiLanguage, t } from '../i18n'
+import { getUiLanguage, plural, t } from '../i18n'
 
 function counts(version: StoryVersion) {
   const items = (version.statistics.counts ?? {}) as Record<string, number>
@@ -15,10 +15,10 @@ function counts(version: StoryVersion) {
 function countSummary(words: number, scenes: number, beats?: number, events?: number) {
   const n = (value: number) => value.toLocaleString(getUiLanguage())
   return [
-    t(words === 1 ? '{0} word' : '{0} words', n(words)),
-    t(scenes === 1 ? '{0} scene' : '{0} scenes', n(scenes)),
-    beats === undefined ? null : t(beats === 1 ? '{0} beat' : '{0} beats', n(beats)),
-    events === undefined ? null : t(events === 1 ? '{0} event' : '{0} events', n(events)),
+    plural(words, '{0} word', '{0} words', n(words)),
+    plural(scenes, '{0} scene', '{0} scenes', n(scenes)),
+    beats === undefined ? null : plural(beats, '{0} beat', '{0} beats', n(beats)),
+    events === undefined ? null : plural(events, '{0} event', '{0} events', n(events)),
   ].filter(Boolean).join(' · ')
 }
 

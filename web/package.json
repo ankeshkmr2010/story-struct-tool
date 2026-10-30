@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "gen:api": "openapi-typescript http://localhost:8000/api/schema/openapi.json -o src/api/schema.d.ts"
+    "gen:api": "openapi-typescript http://localhost:8000/api/schema/openapi.json -o src/api/schema.d.ts",
+    "test": "node --test src/**/*.test.ts"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.2",

@@ -4,7 +4,7 @@ import { api, type Authorship, type Scene } from '../api/client'
 import { orderScenes } from '../api/ordering'
 import { InlineSelect, InlineText } from './fields'
 import { SceneDetails } from './SceneDetails'
-import { t } from '../i18n'
+import { plural, t } from '../i18n'
 import { DETAILED, SIMPLE, dotStatus, isDrafted, shownStatus, statusName, storedStatus, useDetailedStatuses } from './sceneStatus'
 import { CraftTerm, craftPlain } from './CraftTerm'
 
@@ -301,7 +301,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
                     <span className="flex items-center gap-2">
                       <span className="inline-block w-3">{group.shut ? '▸' : '▾'}</span>
                       <span className="truncate">{group.label}</span>
-                      <span className="font-normal text-slate-400">{t(group.scenes.length === 1 ? '{0} scene · {1} words' : '{0} scenes · {1} words', group.scenes.length, group.scenes.reduce((sum, scene) => sum + (scene.word_count ?? 0), 0))}</span>
+                      <span className="font-normal text-slate-400">{plural(group.scenes.length, '{0} scene · {1} words', '{0} scenes · {1} words', group.scenes.length, group.scenes.reduce((sum, scene) => sum + (scene.word_count ?? 0), 0))}</span>
                       <span className="ml-auto flex gap-0.5" aria-label={t('Value shift per scene')}>
                         {group.scenes.map((scene) => <span key={scene.id} title={`${scene.title ?? t('Untitled')}: ${shiftKind(scene) === 'shift' ? t('value shifts') : shiftKind(scene) === 'flat' ? t('no shift') : t('not set')}`} className={`h-3 w-1.5 rounded-sm ${SHIFT_COLOR[shiftKind(scene)]}`} />)}
                       </span>
@@ -358,7 +358,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
               <tr>
                 <td colSpan={span} className="px-2 py-2">
                   <span className="flex flex-wrap items-center gap-3">
-                    <span>{t(all.length === 1 ? '{0} of {1} scene · {2} words' : '{0} of {1} scenes · {2} words', visible.length, all.length, words)}</span>
+                    <span>{plural(all.length, '{0} of {1} scene · {2} words', '{0} of {1} scenes · {2} words', visible.length, all.length, words)}</span>
                     {/* Drafted means the scene has prose, as in the story header and Your stories. */}
                     <span>{t('{0} drafted', visible.filter(isDrafted).length)}</span>
                     <span className="font-semibold">{t('Status')}</span>

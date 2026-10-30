@@ -1,4 +1,5 @@
 import { createElement, Fragment, useSyncExternalStore, type ReactNode } from 'react'
+import { pluralForm } from './pluralRules'
 
 /** Languages the app's own interface is offered in. English is the source text: every
  * `t()` call is written in English and other languages look that text up. */
@@ -41,6 +42,12 @@ export function t(text: string, ...args: ReactNode[]): ReactNode {
 /** Marks interface text kept in a module-level constant: returns it unchanged so the key is
  * collected for translation, and the place that shows it calls `t(value)`. */
 export const tx = (text: string): string => text
+
+/** One formatter for every count: the singular or plural text, chosen by the interface
+ * language's own rules (French and Portuguese treat 0 as singular). */
+export function plural(count: number, one: string, other: string, ...args: Plain[]): string {
+  return t(pluralForm(language, count) === 'one' ? one : other, ...args)
+}
 
 export const isUiLanguage =(value: unknown): value is UiLanguage => UI_LANGUAGES.some(option => option.id === value)
 

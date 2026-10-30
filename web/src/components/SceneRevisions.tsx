@@ -4,7 +4,7 @@ import { api, type SceneRevision } from '../api/client'
 import { errorText } from '../api/errors'
 import { Dialog } from '../ui/Dialog'
 import { DraftCompare } from './DraftCompare'
-import { t } from '../i18n'
+import { plural, t } from '../i18n'
 
 /**
  * Prose snapshots for one scene. Restoring is itself undoable: the API snapshots the
@@ -85,7 +85,7 @@ export function SceneRevisions({
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="text-slate-700 dark:text-slate-200">{new Date(revision.created_at).toLocaleString()}</span>
                 {revision.label && <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 text-slate-600 dark:text-slate-300">{revision.label}</span>}
-                <span className="text-slate-400">{t('{0} words', revision.word_count)}</span>
+                <span className="text-slate-400">{plural(revision.word_count, '{0} word', '{0} words', revision.word_count)}</span>
                 <span className="sm:ml-auto flex gap-3">
                   <button type="button" onClick={() => setPreviewId(previewId === revision.id ? null : revision.id)} className="text-slate-500 dark:text-slate-400 hover:underline">
                     {previewId === revision.id ? t('Hide') : t('Preview')}

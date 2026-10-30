@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type Beat } from '../api/client'
 import { errorText } from '../api/errors'
 import { InlineSelect, InlineText } from './fields'
-import { t } from '../i18n'
+import { plural, t } from '../i18n'
 import { CraftTerm } from './CraftTerm'
 
 /** Design → Structure: act columns with their beats as cards; a beat opens in the drawer. */
@@ -32,7 +32,7 @@ export function StructureBoard({ storyId, onOpenScene }: { storyId: string; onOp
 
   if (acts.isPending || beats.isPending) return <p className="writer-help">{t('Loading…')}</p>
   return <section className="plan-view">
-    <header className="plan-head"><h2>{t('Structure')}</h2><span>{t('{0} acts · {1} story moments', acts.data?.length ?? 0, beats.data?.length ?? 0)}</span></header>
+    <header className="plan-head"><h2>{t('Structure')}</h2><span>{[plural(acts.data?.length ?? 0, '{0} act', '{0} acts', acts.data?.length ?? 0), plural(beats.data?.length ?? 0, '{0} story moment', '{0} story moments', beats.data?.length ?? 0)].join(' · ')}</span></header>
     <p className="writer-help">{t('Each act with the beats it should land. Click a beat to edit it and see the scenes that fulfil it. Acts and Beats in the list keep the full forms.')}</p>
     <div className={`structure-layout${current ? ' has-drawer' : ''}`}>
       <div className="structure-board" style={{ gridTemplateColumns: `repeat(${Math.max(1, columns.length)}, minmax(220px, 1fr))` }}>
@@ -43,7 +43,7 @@ export function StructureBoard({ storyId, onOpenScene }: { storyId: string; onOp
             return <button key={beat.id} type="button" className={`structure-beat${selected === beat.id ? ' is-selected' : ''}`} aria-pressed={selected === beat.id} onClick={() => setSelected(selected === beat.id ? null : beat.id)}>
               <strong>{beat.label}</strong>
               {beat.framework_position && <small>{beat.framework_position}</small>}
-              <span className={`structure-status${scenes.length ? ' is-done' : ''}`}>{scenes.length ? t(scenes.length === 1 ? 'In {0} scene' : 'In {0} scenes', scenes.length) : t('Not in a scene yet')}</span>
+              <span className={`structure-status${scenes.length ? ' is-done' : ''}`}>{scenes.length ? plural(scenes.length, 'In {0} scene', 'In {0} scenes', scenes.length) : t('Not in a scene yet')}</span>
             </button>
           })}
           {adding === (column.id ?? 'none') ? <form className="structure-add" onSubmit={submit(column.id)}>

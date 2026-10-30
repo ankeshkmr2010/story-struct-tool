@@ -5,7 +5,7 @@ import { api, uploadStoryImage, type ImageAttachment, type ImageDescription, typ
 import { errorText } from '../api/errors'
 import { SANDBOX_ID } from '../sandbox/storage'
 import { flushWriter } from './writerDraft'
-import { t } from '../i18n'
+import { plural, t } from '../i18n'
 
 const megabytes = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
 
@@ -115,7 +115,7 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
     {library.isError && <p role="alert">{errorText(library.error)} <button type="button" onClick={() => { void library.refetch() }}>{t('Retry')}</button></p>}
     {sceneFilter && <p className="writer-help">{t('Showing images used in this scene.')}{' '}<Link to={`/stories/${storyId}/images`}>{t('Show every image →')}</Link></p>}
     {page && <nav aria-label={t('Filter images')} className="story-images-actions">{[['all', t('All images')], ['manuscript', t('Manuscript')], ['reference', t('Reference')], ['unused', t('Unused')], ['cover', t('Cover')]].map(([value, label]) => <button type="button" className="share-story-button" key={value} aria-pressed={filter === value} onClick={() => { const next = new URLSearchParams(params); if (value === 'all') next.delete('filter'); else next.set('filter', value); setParams(next) }}>{label} ({active.filter(image => matches(image, value)).length})</button>)}</nav>}
-    <div className="story-images-grid">{visible.map(image => <button type="button" key={image.id} disabled={busy} aria-pressed={selected?.id === image.id} onClick={() => { setSelected(image); setFile(null); setPreview(''); setDescription(image); setError(null); setNotice(''); showEditor() }}><img src={image.url} alt={image.alt || image.name} loading="lazy" /><span>{image.name}</span>{page && <><small>{image.caption || t('No caption')}</small><small>{t('{0} placements · {1} references', image.manuscript_uses, image.attachments.length)}</small><span>{t('Edit details & uses →')}</span></>}</button>)}</div>
+    <div className="story-images-grid">{visible.map(image => <button type="button" key={image.id} disabled={busy} aria-pressed={selected?.id === image.id} onClick={() => { setSelected(image); setFile(null); setPreview(''); setDescription(image); setError(null); setNotice(''); showEditor() }}><img src={image.url} alt={image.alt || image.name} loading="lazy" /><span>{image.name}</span>{page && <><small>{image.caption || t('No caption')}</small><small>{[plural(image.manuscript_uses, '{0} placement', '{0} placements', image.manuscript_uses), plural(image.attachments.length, '{0} reference', '{0} references', image.attachments.length)].join(' · ')}</small><span>{t('Edit details & uses →')}</span></>}</button>)}</div>
     {library.data && !active.length && <p className="writer-help">{sceneFilter ? t('No images used in this scene yet. Insert one in Write or attach a reference in Scene Design.') : t('No images yet. Upload an illustration, map or reference image.')}</p>}
     {page && library.data && active.length > 0 && visible.length === 0 && <p role="status">{t('No images in this filter. Choose All images to see your library.')}</p>}
     <label className="story-image-upload">{t('Upload an image')}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || !library.data || library.data.retained_count >= library.data.max_images || library.data.retained_bytes >= library.data.max_story_bytes} onChange={event => { chooseFile(event.target.files?.[0]); event.target.value = '' }} /></label>

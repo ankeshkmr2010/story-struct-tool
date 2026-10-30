@@ -10,7 +10,7 @@ import { MergeCharacter } from './MergeCharacter'
 import { SANDBOX_ID } from '../sandbox/storage'
 import { HelpTip } from './HelpTip'
 import { ReferenceImages } from './StoryImages'
-import { t } from '../i18n'
+import { plural, t } from '../i18n'
 import { CraftTerm } from './CraftTerm'
 
 const ROLES = ['protagonist', 'antagonist', 'mentor', 'foil', 'supporting', 'minor'] as const
@@ -379,7 +379,7 @@ function CastGrid({ storyId }: { storyId: string }) {
         <span className="cast-name">{character.name}</span>
         {character.role && <span className="cast-role">{character.role}</span>}
         {arc && <span className="lib-chip lib-chip--draft">{arc}</span>}
-        <span className="cast-meta">{scenes ? t(scenes === 1 ? 'Appears in {0} scene' : 'Appears in {0} scenes', scenes) : t('Not in a scene yet')}</span>
+        <span className="cast-meta">{scenes ? plural(scenes, 'Appears in {0} scene', 'Appears in {0} scenes', scenes) : t('Not in a scene yet')}</span>
       </button></li>
     })}
   </ul>

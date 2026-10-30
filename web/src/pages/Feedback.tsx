@@ -22,7 +22,7 @@ export default function Feedback() {
       <header>
         <p className="eyebrow">{t('PRODUCT FEEDBACK')}</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight">{t('Help make StoryTool better.')}</h1>
-        <p className="mt-5 leading-7 text-[var(--muted)]">{t('Report a bug, suggest an improvement, or tell us what works. Your feedback is private to the site admins. For story reviews, use Evaluate inside your story.')}</p>
+        <p className="mt-5 leading-7 text-[var(--muted)]">{t('Report a bug, suggest an improvement, or tell us what works. Your feedback is private to the site admins. For story reviews, use Check my story inside your story.')}</p>
       </header>
       <form className="mt-8 space-y-5" onSubmit={(event) => { event.preventDefault(); send.mutate() }}>
         <label className="block text-sm">{t('Category (optional)')}

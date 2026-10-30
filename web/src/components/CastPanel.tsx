@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
-import { t } from '../i18n'
+import { plural, t } from '../i18n'
 
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toLocaleUpperCase() || '?'
 
@@ -16,7 +16,7 @@ export function CastPanel({ storyId, onOpen }: { storyId: string; onOpen: (id: s
       return <li key={character.id}>
         <button type="button" onClick={() => onOpen(character.id)}>
           <span className="ws-cast-avatar" aria-hidden="true">{initials(character.name)}</span>
-          <span><strong>{character.name}</strong><small>{[character.role, pov > 0 ? t(pov === 1 ? 'POV · {0} scene' : 'POV · {0} scenes', pov) : null].filter(Boolean).join(' · ')}</small></span>
+          <span><strong>{character.name}</strong><small>{[character.role, pov > 0 ? plural(pov, 'POV · {0} scene', 'POV · {0} scenes', pov) : null].filter(Boolean).join(' · ')}</small></span>
         </button>
       </li>
     })}

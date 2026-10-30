@@ -5,7 +5,7 @@ import { api, type CraftReading, type Evaluation, type Evaluator, type StoryUpda
 import { applyPassageEdits } from './passageEdits'
 import { besideKind, openBeside } from './beside'
 import { errorText } from '../api/errors'
-import { t, tx } from '../i18n'
+import { plural, t, tx } from '../i18n'
 import { serverText } from '../i18n/server'
 import { CraftTerm, craftPlain } from './CraftTerm'
 
@@ -103,7 +103,7 @@ function MiceInputs({ storyId, onOpenInbox }: { storyId: string; onOpenInbox: ()
   if (!threads.data || missing.length === 0) return null
   return (
     <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/60 dark:bg-amber-950/30">
-      <h3 className="text-sm font-semibold">{t('{0} thread{1} without a MICE category', missing.length, missing.length === 1 ? '' : t('s'))}</h3>
+      <h3 className="text-sm font-semibold">{plural(missing.length, '{0} thread without a MICE category', '{0} threads without a MICE category', missing.length)}</h3>
       <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{t('Fill them in here, or ask an AI to propose them for you to review.')}</p>
       <ul className="mt-3 space-y-2">
         {missing.map((thread) => (
@@ -485,7 +485,7 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
     <div className="space-y-5">
       <header className="eval-header">
         <h2 className="text-2xl font-semibold">{t('Craft checks')}</h2>
-        <details className="ws-help"><summary aria-label={t('About Evaluate')}>?</summary><p>{t('Run a craft check when you want one. Results are suggestions to consider, never rules, and nothing here changes your story unless you fill in an input.')}</p></details>
+        <details className="ws-help"><summary aria-label={t('About Check my story')}>?</summary><p>{t('Run a craft check when you want one. Results are suggestions to consider, never rules, and nothing here changes your story unless you fill in an input.')}</p></details>
       </header>
 
       {evaluators.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(evaluators.error)}</p>}

@@ -4,7 +4,7 @@ import { api, type TimelineEntry } from '../api/client'
 import { EventDelete } from './EventDelete'
 import { AddForm, InlineNumber, InlineSelect, InlineText } from './fields'
 import { SANDBOX_ID, tourEvent } from '../sandbox/storage'
-import { t } from '../i18n'
+import { plural, t } from '../i18n'
 import { valueLabel } from '../i18n/server'
 import { craftPlain } from './CraftTerm'
 
@@ -107,7 +107,7 @@ export function StoryTimeline({ storyId, onOpenScene, onOpenCharacter, compact =
         <label>{t('Person')}<select aria-label={t('Filter timeline by person')} value={characterFilter} onChange={(event) => setCharacterFilter(event.target.value)} className="ml-2 max-w-48 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5"><option value="">{t('Everyone')}</option>{timeline.data.characters.map((character) => <option key={character.id} value={character.id}>{character.name}</option>)}</select></label>
         <label>{t('Place')}<select aria-label={t('Filter timeline by place')} value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} className="ml-2 max-w-48 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5"><option value="">{t('Everywhere')}</option>{locations.data?.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select></label>
         <label className="flex items-center gap-2"><input type="checkbox" checked={showScenes} onChange={(event) => setShowScenes(event.target.checked)} />{t('Include scenes')}</label>
-        <span className="ml-auto text-slate-400">{[t(eventCount === 1 ? '{0} event' : '{0} events', eventCount), t(entries.length - eventCount === 1 ? '{0} scene' : '{0} scenes', entries.length - eventCount)].join(' · ')}</span>
+        <span className="ml-auto text-slate-400">{[plural(eventCount, '{0} event', '{0} events', eventCount), plural(entries.length - eventCount, '{0} scene', '{0} scenes', entries.length - eventCount)].join(' · ')}</span>
       </div>
 
       {moments.length > 0 ? (

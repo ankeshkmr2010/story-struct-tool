@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api, type TimelineEntry } from '../api/client'
-import { t } from '../i18n'
+import { plural, t } from '../i18n'
 import { craftPlain, craftTitle } from './CraftTerm'
 
 type Order = 'story' | 'world'
@@ -62,7 +62,7 @@ export function TimelineLanes({ storyId, onOpenScene }: { storyId: string; onOpe
             </div>)}
           </div>
         </div>
-        <p className="lib-note">{[t(placed.length === 1 ? '{0} item' : '{0} items', placed.length), unplaced ? t('{0} not shown: no place in this order', unplaced) : null, t('◆ turning point · dashed: event off the page · slanted: flashback')].filter(Boolean).join(' · ')}</p>
+        <p className="lib-note">{[plural(placed.length, '{0} item', '{0} items', placed.length), unplaced ? t('{0} not shown: no place in this order', unplaced) : null, t('◆ turning point · dashed: event off the page · slanted: flashback')].filter(Boolean).join(' · ')}</p>
       </div>
       {current && <div className="timeline-detail" aria-live="polite">
         <p className="eyebrow">{current.kind === 'scene' ? t('Scene') : t('Event')}{current.time_label ? ` · ${current.time_label}` : ''}</p>

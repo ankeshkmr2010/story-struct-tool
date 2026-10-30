@@ -7,7 +7,7 @@ import { StorySharing } from '../components/StorySharing'
 import { WordImportDialog } from '../components/WordImportDialog'
 import { SearchDialog } from '../components/StorySearch'
 import { Menu, MenuItem } from '../ui/Menu'
-import { getUiLanguage, t } from '../i18n'
+import { getUiLanguage, plural, t } from '../i18n'
 import { ContinueCard, OpenItemsPanel, StatusChip, WeekPanel, coverTint } from '../components/LibraryParts'
 import { statusLabel, useGoals } from '../components/Goals'
 import { CoverDialog, coverPosition } from '../components/Covers'
@@ -196,7 +196,7 @@ export default function StoryList() {
         </div>
         <Link to={`/stories/${story.id}`} className="story-card-title" draggable={false}>{story.title}</Link>
         <p className="truncate text-xs text-slate-400">{story.premise ?? t('no premise yet')}</p>
-        <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('{0} words · {1}', story.word_count.toLocaleString(getUiLanguage()), editedLabel(story.updated_at))}</p>
+        <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{plural(story.word_count, '{0} word · {1}', '{0} words · {1}', story.word_count.toLocaleString(getUiLanguage()), editedLabel(story.updated_at))}</p>
         {story.prose_imported && <button type="button" className="mt-2 text-xs text-[var(--accent)] underline" onClick={() => { setPromptStory(story); setImportOpen(true) }}>{t('Import prompts →')}</button>}
       </div>
       <div className="story-card-actions"><StorySharing storyId={story.id} title={story.title} blurb={story.blurb} betaOpen={feedbackCounts.data?.[story.id] ?? 0} />{/* Delete stays one step away so it is not as prominent as Share. */}<Menu label="⋯" ariaLabel={t('More actions for {0}', story.title)} triggerClassName="ui-btn ui-btn-ghost ui-btn-sm">
@@ -301,7 +301,7 @@ export default function StoryList() {
               {exampleTag(story) && <span className="story-card-tag">{exampleTag(story)}</span>}
               {story.prose_imported && <span className="story-card-tag">{t('Imported')}</span>}
               <p className="truncate text-xs text-slate-400">{story.premise ?? t('no premise yet')}</p>
-              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('{0} words · {1}', story.word_count.toLocaleString(getUiLanguage()), editedLabel(story.updated_at))}</p>
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{plural(story.word_count, '{0} word · {1}', '{0} words · {1}', story.word_count.toLocaleString(getUiLanguage()), editedLabel(story.updated_at))}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => restore.mutate(story.id)} className="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm disabled:opacity-50">{t('Restore')}</button><button type="button" disabled={restore.isPending || purge.isPending} onClick={() => { purge.reset(); setPurgeConfirmation(''); setPendingPurge(story) }} className="text-xs text-red-700 dark:text-red-300">{t('Delete permanently')}</button></div>
           </li>

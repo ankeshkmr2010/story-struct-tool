@@ -38,7 +38,7 @@ function LanguageSettings() {
   })
   return <section className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6">
     <h2 className="text-lg font-semibold">{t('Writing language')}</h2>
-    <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('The default for your stories. Smart consistency in Evaluate flags spellings from the other variety, such as colour in a US story. A story can choose its own under Design → Premise.')}</p>
+    <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('The default for your stories. Smart consistency in Check my story flags spellings from the other variety, such as colour in a US story. A story can choose its own under Design → Premise.')}</p>
     <label className="mt-4 block text-sm">{t('Default language')}
       <select value={me.data?.language ?? 'en-US'} disabled={!me.data || save.isPending} onChange={(event) => save.mutate(event.target.value as LanguageId)} className="mt-2 block rounded-md border border-slate-300 bg-white p-2 dark:border-slate-600 dark:bg-slate-900">
         {LANGUAGES.map((language) => <option key={language.id} value={language.id}>{t(language.label)}</option>)}
