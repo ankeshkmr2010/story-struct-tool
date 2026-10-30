@@ -41,6 +41,7 @@ import { Menu, MenuItem } from '../ui/Menu'
 import { ThemeToggle } from '../components/Theme'
 import { AccountMenu } from '../components/AuthGate'
 import { useWriterStatus } from '../components/writerDraft'
+import { isDrafted } from '../components/sceneStatus'
 import { CastPanel } from '../components/CastPanel'
 import { GoalsDialog, Ring, StoryGoalForm } from '../components/Goals'
 import { CoverManager } from '../components/Covers'
@@ -342,6 +343,28 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
     queryFn: () => api.listChapters(storyId),
   })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
+  // Usability phase 2: a story shows the tools its starting mode needs (Just write = pantser,
+  // I have an outline = hybrid, Plan from scratch = plotter); more unlock as the story grows,
+  // and the rest wait under More tools and Ctrl+K. Older stories show everything.
+  const myCard = libraryCards.data?.cards.find(card => card.story_id === storyId)
+  const showAll = sandbox || (myCard?.show_all_tools ?? true)
+  const fullLadder = showAll || (myCard?.full_ladder ?? true)
+  const viewMode = story.data?.authoring_mode
+  const sceneTotal = scenes.data?.length ?? 0
+  const fullChapter = (chapters.data ?? []).some(chapter => { const own = (scenes.data ?? []).filter(scene => scene.chapter_id === chapter.id); return own.length > 0 && own.every(isDrafted) })
+  const baseViews = viewMode === 'pantser' ? [PLACES_VIEW] : viewMode === 'hybrid' ? [STRUCTURE_VIEW, PLACES_VIEW, EVALUATE_VIEW] : [STRUCTURE_VIEW, PLACES_VIEW, GLOSSARY_VIEW, EVALUATE_VIEW, GRID_VIEW]
+  const unlocked = (view: number) => (view === TIMELINE_VIEW && sceneTotal >= 5) || (view === PACING_VIEW && sceneTotal >= 10)
+  const shows = (view: number) => showAll || baseViews.includes(view) || unlocked(view) || (view === INBOX_VIEW && pendingRuns > 0) || level === view
+  const ladderLevels = fullLadder ? undefined : viewMode === 'pantser' ? [3] : [1, 4, 8]
+  const seenKey = (view: number) => `storytool-unlocked:${storyId}:${view}`
+  const fresh = (view: number) => { if (showAll || !unlocked(view)) return false; try { return localStorage.getItem(seenKey(view)) !== 'seen' } catch { return false } }
+  useEffect(() => { if (fresh(level)) { try { localStorage.setItem(seenKey(level), 'seen') } catch { /* Optional browser storage. */ } } })
+
+  const setView = (body: { show_all_tools?: boolean; full_ladder?: boolean }) => { void api.updateLibraryCard(storyId, body).then(() => qc.invalidateQueries({ queryKey: ['library-overview'] })) }
+  const hiddenTools = [
+    [STRUCTURE_VIEW, t('Structure')], [TIMELINE_VIEW, t('Timeline')], [PLACES_VIEW, t('Places')], [GLOSSARY_VIEW, t('Glossary')], [EVALUATE_VIEW, t('Check my story')],
+    [GRID_VIEW, t('Grid')], [PACING_VIEW, t('Pacing')], [INBOX_VIEW, t('Agent changes')], [CATCHUP_VIEW, t('Catch up')], [PLACEHOLDERS_VIEW, t('Placeholders')], [HISTORY_VIEW, t('History')],
+  ].filter(([view]) => !shows(view as number)).map(([view, label]) => ({ label: label as string, open: () => { void openView(view as number) } }))
 
   const [chapterId, setChapterId] = useState<string | null>(initialPosition?.chapter_id ?? null)
   const selectedChapter = chapters.data?.find((chapter) => chapter.id === chapterId)?.id ?? chapters.data?.[0]?.id ?? null
@@ -548,7 +571,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
             <ThemeToggle />
           </div>
           <span className={`ws-saved is-${saveStatus}`} role="status">{saveStatus === 'error' ? t('Not saved') : saveStatus === 'saving' ? t('Saving…') : saveStatus === 'unsaved' ? t('Unsaved changes') : t('Saved')}</span>
-          {!sandbox && <StorySharing menu betaOpen={openFeedback.data?.length ?? 0} storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>{t('Images')}</MenuItem>} />}
+          {!sandbox && <StorySharing betaButton={showAll || fullChapter} menu betaOpen={openFeedback.data?.length ?? 0} storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>{t('Images')}</MenuItem>} />}
           {/* Export is first-class: the words must always be able to leave. */}
           {!sandbox && <DownloadMenu storyId={storyId} onShowPlaceholders={() => { void openView(PLACEHOLDERS_VIEW) }} />}
           {/* The site header is hidden while a workspace is open; its links live here. */}
@@ -572,20 +595,26 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       <div className="ws-design">
         <nav aria-label={t('Story design')} className="workspace-nav ws-rail">
           <h2>{t('Plan')}</h2>
-          {viewItem(STRUCTURE_VIEW, t('Structure'))}
-          {ladder.data && <Ladder ladder={ladder.data} mode={story.data.authoring_mode as AuthoringMode} activeLevel={level} onSelect={selectLevel} />}
-          {viewItem(TIMELINE_VIEW, t('Timeline'))}
-          {viewItem(PLACES_VIEW, t('Places'))}
-          {viewItem(GLOSSARY_VIEW, t('Glossary'))}
-          <h2>{t('Review')}</h2>
-          <button type="button" aria-current={level === EVALUATE_VIEW ? 'page' : undefined} onClick={() => { setCheckTab('needs'); setLevel(EVALUATE_VIEW) }}>{t('Check my story')}{(health.data?.warning_count ?? 0) > 0 && <span className="workspace-nav-badge" aria-label={t('{0} to fix', health.data?.warning_count)}>{health.data?.warning_count}</span>}</button>
-          <h2>{t('Tools')}</h2>
-          {viewItem(GRID_VIEW, t('Grid'))}
-          {viewItem(PACING_VIEW, t('Pacing'))}
-          {!sandbox && viewItem(INBOX_VIEW, <>{t('Agent changes')}{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={t('{0} pending', pendingRuns)}>{pendingRuns}</span>}</>)}
-          {!sandbox && viewItem(CATCHUP_VIEW, t('Catch up'))}
-          {viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>{t('Placeholders')}<span className="workspace-nav-badge" aria-label={t('{0} left', placeholderCount)}>{placeholderCount}</span></> : t('Placeholders'))}
-          {viewItem(HISTORY_VIEW, t('History'))}
+          {shows(STRUCTURE_VIEW) && viewItem(STRUCTURE_VIEW, t('Structure'))}
+          {ladder.data && <Ladder ladder={ladder.data} mode={story.data.authoring_mode as AuthoringMode} activeLevel={level} onSelect={selectLevel} visibleLevels={ladderLevels} />}
+          {ladderLevels && <button type="button" className="rail-deeper" onClick={() => setView({ full_ladder: true })}>{t('Go deeper')}</button>}
+          {shows(TIMELINE_VIEW) && viewItem(TIMELINE_VIEW, <>{t('Timeline')}{fresh(TIMELINE_VIEW) && <span className="rail-new">{t('New')}</span>}</>)}
+          {shows(PLACES_VIEW) && viewItem(PLACES_VIEW, t('Places'))}
+          {shows(GLOSSARY_VIEW) && viewItem(GLOSSARY_VIEW, t('Glossary'))}
+          {shows(EVALUATE_VIEW) && <h2>{t('Review')}</h2>}
+          {shows(EVALUATE_VIEW) && <button type="button" aria-current={level === EVALUATE_VIEW ? 'page' : undefined} onClick={() => { setCheckTab('needs'); setLevel(EVALUATE_VIEW) }}>{t('Check my story')}{(health.data?.warning_count ?? 0) > 0 && <span className="workspace-nav-badge" aria-label={t('{0} to fix', health.data?.warning_count)}>{health.data?.warning_count}</span>}</button>}
+          {[GRID_VIEW, PACING_VIEW, INBOX_VIEW, CATCHUP_VIEW, PLACEHOLDERS_VIEW, HISTORY_VIEW].some(shows) && <h2>{t('Tools')}</h2>}
+          {shows(GRID_VIEW) && viewItem(GRID_VIEW, t('Grid'))}
+          {shows(PACING_VIEW) && viewItem(PACING_VIEW, <>{t('Pacing')}{fresh(PACING_VIEW) && <span className="rail-new">{t('New')}</span>}</>)}
+          {!sandbox && shows(INBOX_VIEW) && viewItem(INBOX_VIEW, <>{t('Agent changes')}{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={t('{0} pending', pendingRuns)}>{pendingRuns}</span>}</>)}
+          {!sandbox && shows(CATCHUP_VIEW) && viewItem(CATCHUP_VIEW, t('Catch up'))}
+          {shows(PLACEHOLDERS_VIEW) && viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>{t('Placeholders')}<span className="workspace-nav-badge" aria-label={t('{0} left', placeholderCount)}>{placeholderCount}</span></> : t('Placeholders'))}
+          {shows(HISTORY_VIEW) && viewItem(HISTORY_VIEW, t('History'))}
+          {!sandbox && <details className="rail-more">
+            <summary>{t('More tools')}</summary>
+            {hiddenTools.map(tool => <button key={tool.label} type="button" onClick={tool.open}>{tool.label}</button>)}
+            <label className="rail-showall"><input type="checkbox" checked={showAll} onChange={event => setView({ show_all_tools: event.target.checked })} />{t('Show all tools')}</label>
+          </details>}
         </nav>
         <div className="min-w-0">
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setRefPanel('timeline')} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
@@ -811,7 +840,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
       </aside>
       </div>
       <RenameDialog storyId={storyId} beforeEdit={() => writerFlush.current()} />
-      <SearchDialog storyId={storyId} initialQuery={sandboxStep === 5 ? 'lantern' : undefined} context={searchAll && !sandbox ? 'all' : searchContext} wholeStory={searchAll} onWholeStory={sandbox ? undefined : setSearchAll} active={searchOpen} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={async hit => { await openSearchHit(hit); if (sandbox) tourEvent('search') }} />
+      <SearchDialog tools={sandbox ? undefined : hiddenTools} storyId={storyId} initialQuery={sandboxStep === 5 ? 'lantern' : undefined} context={searchAll && !sandbox ? 'all' : searchContext} wholeStory={searchAll} onWholeStory={sandbox ? undefined : setSearchAll} active={searchOpen} onClose={() => setSearchOpen(false)} onReopen={() => setSearchOpen(true)} onOpen={async hit => { await openSearchHit(hit); if (sandbox) tourEvent('search') }} />
     </main>
   )
 }

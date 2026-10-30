@@ -55,7 +55,7 @@ type SearchProps = {
   initialQuery?: string;
   onOpen: (hit: SearchHit) => Promise<void>;
 }
-export function SearchDialog({ onClose, onReopen, wholeStory, onWholeStory, ...props }: SearchProps & { onClose: () => void; onReopen: () => void; wholeStory?: boolean; onWholeStory?: (whole: boolean) => void }) {
+export function SearchDialog({ onClose, onReopen, wholeStory, onWholeStory, tools, ...props }: SearchProps & { onClose: () => void; onReopen: () => void; wholeStory?: boolean; onWholeStory?: (whole: boolean) => void; tools?: { label: string; open: () => void }[] }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const [dialogError, setDialogError] = useState<string | null>(null)
@@ -72,6 +72,8 @@ export function SearchDialog({ onClose, onReopen, wholeStory, onWholeStory, ...p
   }}>
     <header className="story-search-dialog-head"><h2 id={titleId}>{t('Search')}</h2><button type="button" aria-label={t('Close search')} onClick={() => dialog.current?.close()}>✕</button></header>
     {onWholeStory && <div className="lib-view search-scope" role="group" aria-label={t('Search scope')}><button type="button" aria-pressed={!wholeStory} onClick={() => onWholeStory(false)}>{t('This section')}</button><button type="button" aria-pressed={Boolean(wholeStory)} onClick={() => onWholeStory(true)}>{t('All of this story')}</button></div>}
+    {/* Tools this story keeps out of the rail stay one keystroke away (usability phase 2). */}
+    {tools && tools.length > 0 && <div className="search-tools"><span>{t('Go to')}</span>{tools.map(tool => <button key={tool.label} type="button" className="lib-chip" onClick={() => { dialog.current?.close(); tool.open() }}>{tool.label}</button>)}</div>}
     {props.storyId === '00000000-0000-4000-8000-000000000001' && <div id="try-search-coach" />}
     {dialogError && <p role="alert" className="writer-error">{dialogError}</p>}
     <StorySearch {...props} onOpen={async hit => {

@@ -63,3 +63,23 @@ async def test_tks_and_status_show_on_cards(client):
     card = next(card for card in overview["cards"] if card["story_id"] == story_id)
     assert card["tk_count"] == 1 and card["status"] == "draft"
     assert card["goal_percent"] is None
+
+
+async def test_design_view_choices_default_by_story_age_and_can_be_set(client, monkeypatch):
+    from datetime import UTC, datetime
+
+    from storytool.domain.story import library
+
+    story_id = (await client.post("/api/stories", json={"title": "Fresh"})).json()["id"]
+
+    async def read():
+        overview = (await client.get("/api/library/overview")).json()
+        return next(c for c in overview["cards"] if c["story_id"] == story_id)
+
+    monkeypatch.setattr(library, "SIMPLE_SINCE", datetime(2000, 1, 1, tzinfo=UTC))
+    fresh = await read()
+    assert fresh["show_all_tools"] is False and fresh["full_ladder"] is False
+    monkeypatch.setattr(library, "SIMPLE_SINCE", datetime(2999, 1, 1, tzinfo=UTC))
+    assert (await read())["show_all_tools"] is True
+    await client.patch(f"/api/library/cards/{story_id}", json={"show_all_tools": False})
+    assert (await read())["show_all_tools"] is False

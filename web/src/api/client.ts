@@ -24,7 +24,7 @@ export type StoryActivity = S['StoryActivityOut']
 export type WorkspacePlace = S['WorkspacePlace']
 export type RoadmapItem = S['RoadmapOut']
 // Your stories: per-account card arrangement plus derived status and open items (api domain/story/library.py).
-export type LibraryCardState = { story_id: string; position: number | null; pinned: boolean; archived: boolean; status: 'planning' | 'draft' | 'revision'; scene_count: number; drafted_scene_count: number; tk_count: number; pending_agent_changes: number; goal_percent: number | null; goal_status: StoryGoalStatus | null; cover_url: string | null; cover_focus_x: number; cover_focus_y: number }
+export type LibraryCardState = { story_id: string; position: number | null; pinned: boolean; archived: boolean; status: 'planning' | 'draft' | 'revision'; scene_count: number; drafted_scene_count: number; tk_count: number; pending_agent_changes: number; goal_percent: number | null; goal_status: StoryGoalStatus | null; cover_url: string | null; cover_focus_x: number; cover_focus_y: number; show_all_tools: boolean; full_ladder: boolean }
 export type LibraryOverview = { cards: LibraryCardState[] }
 // Writing goals (api domain/story/goals.py). Streaks, pace and status are derived server-side.
 export type GoalSettings = { daily_words: number | null; writing_days: number; forgive_missed: boolean; count_ai: boolean; timezone: string }
@@ -35,7 +35,7 @@ export type StoryGoal = { target_words: number; deadline: string | null; daily_w
 export type StoryGoalEnvelope = { goal: StoryGoal | null; habit: { daily_words: number | null; today_words: number; streak: number } }
 export type StoryGoalRow = { story_id: string; title: string; goal: StoryGoal | null }
 export type StoryGoalInput = { target_words: number; deadline: string | null; daily_words: number | null }
-export type LibraryCardUpdate = { position?: number | null; pinned?: boolean; archived?: boolean }
+export type LibraryCardUpdate = { position?: number | null; pinned?: boolean; archived?: boolean; show_all_tools?: boolean; full_ladder?: boolean }
 export type RoadmapInput = S['RoadmapInput']
 export type AuthUser = S['UserOut']
 export type AuthConfig = S['AuthConfigOut']

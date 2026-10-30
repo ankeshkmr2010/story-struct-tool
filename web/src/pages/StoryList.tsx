@@ -42,6 +42,8 @@ export default function StoryList() {
   })
   useEffect(() => { try { localStorage.setItem('storytool-library-search-open', String(searchOpen)) } catch { /* Optional browser storage. */ } }, [searchOpen])
   const [title, setTitle] = useState('')
+  // How a new story starts (usability phase 2): sets the authoring mode, which sets the Design tools shown.
+  const [startMode, setStartMode] = useState<'pantser' | 'hybrid' | 'plotter'>('pantser')
   const [showTrash, setShowTrash] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Story | null>(null)
   const [pendingPurge, setPendingPurge] = useState<Story | null>(null)
@@ -107,7 +109,7 @@ export default function StoryList() {
   const newTitle = useRef<HTMLInputElement>(null)
 
   const create = useMutation({
-    mutationFn: () => api.createStory({ title }),
+    mutationFn: () => api.createStory({ title, authoring_mode: startMode }),
     onSuccess: () => {
       setTitle('')
       void qc.invalidateQueries({ queryKey: ['stories'] })
@@ -244,8 +246,15 @@ export default function StoryList() {
       {lastPlace.data && <ContinueCard storyId={lastPlace.data.story_id} title={lastPlace.data.title} mode={{ write: t('Writing'), read: t('Reading'), design: t('Designing') }[lastPlace.data.position.mode ?? 'design']} edited={editedLabel(lastStory?.updated_at ?? lastPlace.data.updated_at)} card={cardOf(lastPlace.data.story_id)} feedback={feedbackCounts.data?.[lastPlace.data.story_id] ?? 0} />}
       {stories.data?.find((story) => story.genre === 'Tutorial · timelines and arcs') && <Link to={`/stories/${stories.data.find((story) => story.genre === 'Tutorial · timelines and arcs')!.id}`} className="lib-tutorial-link">{t('Learn timelines and arcs with The Last Lantern →')}</Link>}
 
+      <fieldset className="lib-start mt-6">
+        <legend>{t('How do you want to start?')}</legend>
+        {([['pantser', t('Just write'), t('Scenes, characters and places. More tools appear as the story grows.')], ['hybrid', t('I have an outline'), t('Add story structure and Check my story.')], ['plotter', t('Plan from scratch'), t('The planning tools from day one: structure, glossary, grid.')]] as const).map(([mode, label, hint]) => (
+          <label key={mode} className="lib-start-card"><input type="radio" name="start-mode" checked={startMode === mode} onChange={() => setStartMode(mode)} /><span><strong>{label}</strong><small>{hint}</small></span></label>
+        ))}
+        <p className="lib-start-note">{t('You can change this later in the story settings, or show all tools at any time.')}</p>
+      </fieldset>
       <form
-        className="library-create mt-6 flex gap-2"
+        className="library-create mt-2 flex gap-2"
         onSubmit={(e) => {
           e.preventDefault()
           if (title.trim()) create.mutate()

@@ -34,15 +34,18 @@ export function Ladder({
   mode,
   activeLevel,
   onSelect,
+  visibleLevels,
 }: {
   ladder: LadderData
   mode: AuthoringMode
   activeLevel: number
   onSelect: (level: number) => void
+  /** The levels this story shows (usability phase 2); all when omitted. The open level always shows. */
+  visibleLevels?: number[]
 }) {
   return (
     <ol className="space-y-1">
-      {ladder.levels.map((rung) => {
+      {ladder.levels.filter((rung) => !visibleLevels || visibleLevels.includes(rung.level) || rung.level === activeLevel).map((rung) => {
         const status = statusFor(rung, mode, ladder.furthest_ready_level)
         const isActive = rung.level === activeLevel
         // Flagged, never blocked: a gated level is dimmed but stays open, because it may

@@ -7,7 +7,7 @@ import type { ReactNode } from 'react'
 import { Menu, MenuItem } from '../ui/Menu'
 import { t } from '../i18n'
 
-export function StorySharing({ storyId, title, blurb, beforeOpen, menu = false, extraItems, betaOpen = 0 }: { storyId: string; title: string; blurb?: string | null; beforeOpen?: () => Promise<boolean>; menu?: boolean; extraItems?: ReactNode; betaOpen?: number }) {
+export function StorySharing({ storyId, title, blurb, beforeOpen, menu = false, extraItems, betaOpen = 0, betaButton = true }: { storyId: string; title: string; blurb?: string | null; beforeOpen?: () => Promise<boolean>; menu?: boolean; extraItems?: ReactNode; betaOpen?: number ; betaButton?: boolean }) {
   const betaLabel = <>{t('Beta readers')}{betaOpen > 0 && <span className="workspace-nav-badge ml-1" title={t('{0} open reader comments', betaOpen)}>{betaOpen}</span>}</>
   const qc = useQueryClient()
   const navigate = useNavigate()
@@ -32,9 +32,11 @@ export function StorySharing({ storyId, title, blurb, beforeOpen, menu = false, 
   return <>
     {menu ? <><Menu label={t('Share ▾')} ariaLabel={t('Share options for {0}', title)} triggerClassName="ui-btn ui-btn-primary">
       <MenuItem onSelect={() => { void openShare() }}>{t('Share with readers…')}</MenuItem>
+      {!betaButton && <MenuItem onSelect={() => { void openBeta() }}>{t('Beta readers…')}</MenuItem>}
       {extraItems}
     </Menu>
-    <button type="button" className="ui-btn ui-btn-secondary" aria-label={t('Beta readers for {0}{1}', title, betaOpen ? t(', {0} open comments', betaOpen) : '')} onClick={() => { void openBeta() }}>{betaLabel}</button>
+    {/* Until a chapter is fully drafted, Beta readers waits in the Share menu (usability phase 2). */}
+    {betaButton && <button type="button" className="ui-btn ui-btn-secondary" aria-label={t('Beta readers for {0}{1}', title, betaOpen ? t(', {0} open comments', betaOpen) : '')} onClick={() => { void openBeta() }}>{betaLabel}</button>}
     </> : <>
     <button type="button" className="share-story-button" aria-label={t('Share {0}', title)} onClick={() => { void openShare() }}>{t('Share')}</button>
     <button type="button" className="share-story-button" aria-label={t('Beta readers for {0}{1}', title, betaOpen ? t(', {0} open comments', betaOpen) : '')} onClick={() => { void openBeta() }}>{betaLabel}</button>

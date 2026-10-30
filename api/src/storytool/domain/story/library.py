@@ -41,6 +41,10 @@ class LibraryCard(StoryToolBase):
     position: Mapped[float | None] = mapped_column(Float, default=None)
     pinned: Mapped[bool] = mapped_column(Boolean, default=False)
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Usability phase 2, per story: show every Design tool, and every ladder level.
+    # None means the default for the story's age (see SIMPLE_SINCE).
+    show_all_tools: Mapped[bool | None] = mapped_column(Boolean, default=None)
+    full_ladder: Mapped[bool | None] = mapped_column(Boolean, default=None)
 
 
 class WritingDay(StoryToolBase):
@@ -60,6 +64,8 @@ class CardOut(BaseModel):
     position: float | None
     pinned: bool
     archived: bool
+    show_all_tools: bool = True
+    full_ladder: bool = True
     status: str
     scene_count: int
     drafted_scene_count: int
@@ -81,6 +87,17 @@ class CardUpdate(BaseModel):
     position: float | None = None
     pinned: bool | None = None
     archived: bool | None = None
+    show_all_tools: bool | None = None
+    full_ladder: bool | None = None
+
+
+# Stories created before the simpler Design shipped keep every tool and level by default.
+SIMPLE_SINCE = datetime(2026, 10, 30, tzinfo=UTC)
+
+
+def chosen(card: "LibraryCard | None", field: str, created_at: datetime) -> bool:
+    value = getattr(card, field) if card else None
+    return value if value is not None else created_at < SIMPLE_SINCE
 
 
 def card_status(scenes: int, drafted: int, revised: int, words: int) -> str:
@@ -98,11 +115,16 @@ class LibraryController(Controller):
     @get("/overview", summary="Card arrangement, status and open items for Your stories")
     async def overview(self, request: Request, db_session: AsyncSession) -> LibraryOverviewOut:
         user_id: UUID = request.scope["state"]["storytool_user_id"]
-        story_ids = list(
-            await db_session.scalars(
-                select(Story.id).where(Story.user_id == user_id, Story.deleted_at.is_(None))
-            )
+        created = dict(
+            (
+                await db_session.execute(
+                    select(Story.id, Story.created_at).where(
+                        Story.user_id == user_id, Story.deleted_at.is_(None)
+                    )
+                )
+            ).all()
         )
+        story_ids = list(created)
         cards = {
             card.story_id: card
             for card in await db_session.scalars(
@@ -157,6 +179,8 @@ class LibraryController(Controller):
                     position=card.position if card else None,
                     pinned=bool(card and card.pinned),
                     archived=bool(card and card.archived),
+                    show_all_tools=chosen(card, "show_all_tools", created[story_id]),
+                    full_ladder=chosen(card, "full_ladder", created[story_id]),
                     status=card_status(scenes, drafted, revised, words),
                     scene_count=scenes,
                     drafted_scene_count=with_prose,
