@@ -55,6 +55,7 @@ const MODES = [
     tagline: tx('Top down, in order'),
     description: tx('Levels past the first unready one are dimmed until the structure above them is ready; you can still open them.'),
     start: tx('Start with a premise and work down the ladder.'),
+    card: tx('Plan from scratch'),
   },
   {
     name: tx('Hybrid'),
@@ -62,6 +63,7 @@ const MODES = [
     tagline: tx('Commit anywhere, any time'),
     description: tx('Everything is reachable. Missing scaffolding appears as a nudge you can ignore.'),
     start: tx('Start with a premise and a protagonist, then work wherever the idea is.'),
+    card: tx('I have an outline'),
   },
   {
     name: tx('Pantser'),
@@ -69,6 +71,7 @@ const MODES = [
     tagline: tx('Discover by writing'),
     description: tx('All levels open, readiness nudges hidden. Structure grows out of the prose.'),
     start: tx('Open Scenes, add one, and write. Place it in a chapter later.'),
+    card: tx('Just write'),
   },
 ] as const
 
@@ -169,10 +172,10 @@ export default function HowToUse() {
                 {[
                   <>{t('Sign in with Google. Your library belongs to your account.')}</>,
                   <>
-                    {t('Open Your stories, type a title, choose{0}', ' ')}
+                    {t('Open Your stories, choose how you want to start (Just write, I have an outline or Plan from scratch), type a title, choose{0}', ' ')}
                     <strong className="font-medium text-slate-900 dark:text-slate-100">{t('Create')}</strong>{t(', and open the story.')}
                   </>,
-                  <>{t('Pick an authoring mode in')}{' '}<strong className="font-medium">{t('Design → Plan → Premise')}</strong>{' '}{t('— Hybrid is the default.')}</>,
+                  <>{t('Follow')}{' '}<strong className="font-medium">{t('Your first hour')}</strong>{' '}{t('on Your stories: write a scene, add a character, run one check and, if you like, connect your AI. Each step opens the right screen.')}</>,
                   <>{t('Open')}{' '}<strong className="font-medium">{t('Write')}</strong>{t(', add an optional chapter title, and start typing. You don’t need to name a scene first.')}</>,
                   <>{t('Use')}{' '}<strong className="font-medium">{t('Design')}</strong>{' '}{t('for your premise, protagonist, outline, and timeline. Come back to structure whenever useful; half-filled entries are fine.')}</>,
                 ].map((step, index) => (
@@ -193,7 +196,8 @@ export default function HowToUse() {
                 <Item title={t('Cards or books')}>{t('Your stories shows each story as a card with its cover across the top, or switch Card style to Books for 2:3 covers on a shelf. Stories without a cover get a coloured tile with the title. Covers also appear in the story switcher, the top bar, the Pick up where you left off card and the Goals page.')}</Item>
                 <Item title={t('Read the status chip')}>{t('Planning until a story has prose, Draft once it does, and Revision when half its scenes are marked revised. It follows your scene statuses on its own.')}</Item>
                 <Item title={t('This week and Open items')}>{t('This week shows the words you typed and your writing sessions over seven days, with your streak and goal line once you set a daily goal. Open items totals TKs, agent changes waiting for review, reader comments and stories behind on a goal.')}</Item>
-                <Item title={t('Start or import a story')}>{t('Type a title and choose Create, or choose + New story to jump to the title field. Import brings in a StoryTool backup, or a Word, Scrivener, Markdown, text or EPUB file.')}</Item>
+                <Item title={t('Your first hour')}>{t('Your stories shows four first steps: Write a scene, Add a character, Run one check and Connect your AI (optional). Each opens your latest story at the right place and ticks itself off; the example stories don’t count. It goes away once the first three are done, or choose Hide.')}</Item>
+                <Item title={t('Start or import a story')}>{t('Choose how you want to start (Just write, I have an outline or Plan from scratch), type a title and choose Create, or choose + New story to jump to the title field. Import brings in a StoryTool backup, or a Word, Scrivener, Markdown, text or EPUB file.')}</Item>
                 <Item title={t('Change the interface language')}>{t('Choose the language button (EN) in the site header to use StoryTool in English, French, German, Spanish, Portuguese or Italian. Signed in, your choice follows your account. A story’s own language, used by consistency checks and reading, is set under Design → Premise.')}</Item>
               </div>
             </Section>
@@ -206,7 +210,7 @@ export default function HowToUse() {
 
             <Section id="modes" eyebrow="02" title={t('Choose how you work')}>
               <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-                {t('All three modes read the same story — the mode only decides how firmly the sidebar holds you to the order. Switch from Design → Plan → Premise; nothing you have written changes.')}
+                {t('All three modes read the same story. The mode decides which Design tools show at first and how firmly the sidebar holds you to the order. You pick it with the cards when you create a story (Just write is preselected). Change it later in Design → Plan → Premise (choose Go deeper if Premise is hidden); nothing you have written changes.')}
               </p>
               <div className="mt-5 grid gap-4 md:grid-cols-3">
                 {MODES.map((mode) => (
@@ -217,7 +221,7 @@ export default function HowToUse() {
                     <div className="flex items-center gap-2">
                       <span className={`size-2 rounded-full ${DOT[mode.status]}`} />
                       <h3 className="font-semibold">{t(mode.name)}</h3>
-                      {mode.name === 'Hybrid' && (
+                      {mode.name === 'Pantser' && (
                         <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
                           {t('default')}
                         </span>
@@ -226,6 +230,7 @@ export default function HowToUse() {
                     <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">
                       {t(mode.tagline)}
                     </p>
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('New story card: {0}', t(mode.card))}</p>
                     <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{t(mode.description)}</p>
                     <p className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-4 text-sm leading-6 text-slate-800 dark:text-slate-100">
                       {t(mode.start)}
@@ -237,7 +242,7 @@ export default function HowToUse() {
 
             <Section id="levels" eyebrow="03" title={t('Build the structure in eight levels')}>
               <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-                {t('Move between levels in the left sidebar. The dot tells you where you stand:')}
+                {t('Move between levels in the left sidebar. New stories show Premise, Acts and Scenes (Just write shows Characters); choose Go deeper for all eight. A level with nothing in it yet stays grey. Otherwise the dot tells you where you stand:')}
               </p>
               <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
                 <Legend dot={DOT.ready}>{t('ready — the level above carries enough weight')}</Legend>
@@ -359,7 +364,7 @@ export default function HowToUse() {
                 <Item title={t('Change or revoke access')}>{t('Open Share again to change a recipient’s permission or revoke access. The reader shows the author’s current saved draft; Refresh story loads newer changes. Moving the original to Trash hides it from recipients until restored. Revoking or deleting the original does not remove copies already imported.')}</Item>
               </div>
               <h3 id="beta-readers" className="mt-8 scroll-mt-24 text-xl font-semibold">{t('Beta readers, feedback and polls')}</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('Choose Beta readers beside Share on a library card or in the story header. Reader management and feedback come first; Beta polls is below them on the same page.')}</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('Choose Beta readers beside Share on a library card or in the story header; in a new story it sits inside the Share menu until a chapter is fully drafted. Reader management and feedback come first; Beta polls is below them on the same page.')}</p>
               <div className="mt-5 grid gap-5 sm:grid-cols-2">
                 <Item title={t('Publish a manuscript round')}>{t('Give the round a title and reader brief, choose all or selected chapters, and optionally set a deadline. Publish saved draft freezes that manuscript for the round while you continue writing. Readers see the manuscript and brief; planning details, AI conversations and other readers’ private feedback stay hidden. The deadline is guidance, not an automatic lock.')}</Item>
                 <Item title={t('Invite and manage readers')}>{t('Copy the invitation link and send it yourself; StoryTool does not send an email. Anyone with it must sign in and request your approval by default. Enable automatic admission if you prefer. Approved rounds appear under Shared with you. Disable or rotate the invitation without removing admitted readers, or revoke a reader’s access separately. Closing a round stops new feedback and votes while existing feedback stays readable.')}</Item>
@@ -373,10 +378,12 @@ export default function HowToUse() {
             <Section id="writing" eyebrow="08" title={t('Write, Design, and your writing flow')}>
               <div className="grid gap-5 sm:grid-cols-2">
                 <Item title={t('Draft in the editor')}>
-                  {t('Open a story’s')}{' '}<strong className="font-medium">{t('Write')}</strong>{' '}{t('tab and start typing. The Manuscript list on the left shows your chapters; the open chapter lists its scenes, each with a status dot (not started, outlined, drafted, revised), and clicking one puts the cursor there. A chapter’s scenes appear together on one scrolling page. Chapter titles and scene names are optional. Add a scene break at the end or continue into the next chapter. Prose is Markdown and autosaves; the strip along the bottom shows words in the scene, the story total and save status, with your goal, Sprint and Focus. Context shows the chapter brief and keeps the scene’s summary, POV, place, goal and value shift in view, with every other field under More details and links. The')}{' '}<strong className="font-medium">{t('Design')}</strong>{' '}{t('tab keeps the full planning workspace. Both tabs edit the same story. Right-click the prose, or select text and click the small ⋯ button beside it, for editing actions, Insert image and Add TK here. The story bar carries the rest: click the story title to switch to another story, then Write, Read and Design, search, the tools (Focus, Writing goals, History, the side panel and theme), save status, Share, Export and your account. On narrow screens the tools fold into ⋯.')}
+                  {t('Open a story’s')}{' '}<strong className="font-medium">{t('Write')}</strong>{' '}{t('tab and start typing. The Manuscript list on the left shows your chapters; the open chapter lists its scenes, each with a status dot (Draft or Done; turn on Detailed statuses in Settings for Placeholder, Outlined and Revised), and clicking one puts the cursor there. A chapter’s scenes appear together on one scrolling page. Chapter titles and scene names are optional. Add a scene break at the end or continue into the next chapter. Prose is Markdown and autosaves; the strip along the bottom shows words in the scene, the story total and save status, with your goal, Sprint and Focus. Context shows the chapter brief and keeps the scene’s summary, POV, place, goal and value shift in view, with every other field under More details and links. The')}{' '}<strong className="font-medium">{t('Design')}</strong>{' '}{t('tab keeps the full planning workspace. Both tabs edit the same story. In Write, the story bar adds Split view, Add TK, Insert image and Focus. Type / on an empty line, right-click the prose, or select text and click the small ⋯ button beside it for every writing action. The story bar carries the rest: click the story title to switch to another story, then Write, Read and Design, search, the tools (Writing goals, History, the side panel and theme), save status, Share, Export and your account. On narrow screens those tools fold into ⋯; Write’s own buttons stay in view.')}
                 </Item>
+                <Item title={t('Design tools that grow with your story')}>{t('Design shows the tools your starting mode needs. Timeline appears at 5 scenes and Pacing at 10, marked New the first time. Tools you don’t see wait in More tools at the bottom of the sidebar, and Ctrl+K lists them under Go to. The Tools group (Grid, Pacing, Agent changes, Catch up, Placeholders, History) starts collapsed: click its heading to open it. Stories created before this change show every tool.')}</Item>
+                <Item title={t('Empty panels and first-use tips')}>{t('An empty panel says what it is for and offers one button to start. Where The Last Lantern has one to show, See an example opens the same panel there in a new tab. The first time you open each tool, a one-line tip appears above it: Got it hides that tip, Turn off tips stops them all, and Settings → Tips brings them back.')}</Item>
                 <Item title={t('Check a detail beside the manuscript')}>
-                  {t('Right-click in Write and choose Open scene beside… to pick a scene, character, place, glossary term or image; right-click a defined name (a character, place or term) to open it directly. Character and glossary cards, Pacing, placeholders, Check my story findings and search results also offer Open beside. It shows read only in the side panel’s place until you close it, stays open while you change chapters, and New window ↗ moves it to its own window, e.g. on a second screen.')}
+                  {t('Choose Split view in the Write bar, or Open scene beside… from the / or right-click menu, to pick a scene, character, place, glossary term or image; right-click a defined name (a character, place or term) to open it directly. Character and glossary cards, Pacing, placeholders, Check my story findings and search results also offer Open beside. It shows read only in the side panel’s place until you close it, stays open while you change chapters, and New window ↗ moves it to its own window, e.g. on a second screen.')}
                 </Item>
                 <Item title={t('Rename a character, place or term everywhere')}>
                   {t('Change a character’s, place’s or glossary term’s name on its card and StoryTool lists every use of the old name in the prose: whole words only (Mayan is left alone), capitals and possessives kept (Maya’s becomes Kate’s), and for a two-word name the full name first, then each changed word on its own. Untick any to leave as written, optionally keep the old name as an alias, and Replace; each changed scene is snapshotted first. Your connected AI can list the same uses with find_name_uses and propose the edits for your approval. When the prose never uses the sheet’s spelling at all, Smart consistency offers the reverse: rename the sheet to match the prose.')}
@@ -388,7 +395,7 @@ export default function HowToUse() {
                   {t('In Write → Context, open Revisions and choose Compare on any snapshot: the scene is compared word by word with the current text (or with another snapshot), shown as changes or side by side. Click a change to take the earlier wording, or take them all, then Apply; the current text is snapshotted first, so this can be undone too. In Design → History, a whole-story version’s preview offers Compare prose word by word for any scene whose text differs. Any save that replaces most of a scene keeps the previous text as a “Before a large change” snapshot.')}
                 </Item>
                 <Item title={t('See the book’s pacing')}>
-                  {t('Design → Review → Pacing lines up every placed scene in reading order on three rows: scene length, whether its value shifts (filled dot), stays flat (amber ring) or is not set (dash), and its point of view, one colour per POV character with a named legend. Chapter numbers mark where chapters begin. Hover or tab to a scene for its details; click to select it and choose Open scene (with a way back to the chart) or Open beside. Table view lists the same data.')}
+                  {t('Design → Tools → Pacing (in a new story it appears once there are 10 scenes) lines up every placed scene in reading order on three rows: scene length, whether its value shifts (filled dot), stays flat (amber ring) or is not set (dash), and its point of view, one colour per POV character with a named legend. Chapter numbers mark where chapters begin. Hover or tab to a scene for its details; click to select it and choose Open scene (with a way back to the chart) or Open beside. Table view lists the same data.')}
                 </Item>
                 <Item title={t('Switch between Write, Read, and Design')}>
                   {t('All three tabs use the same chapters, scenes, and prose. Each story reopens where you left off on any device: the same tab, chapter and position, and Your stories shows a Pick up where you left off card for the story you were last in. Write saves pending prose before you switch tabs or chapters; if saving fails, resolve the error first. Write is available in Plotter, Pantser, and Hybrid.')}
@@ -434,7 +441,7 @@ export default function HowToUse() {
                   {t('Check my story opens on an Overview: Run all runs every ready check at once and lists each check’s status, with an amber dot where there is something to look at. In a check, Run reads saved scenes with the shared reader and combines evidence for craft checks. Uncertain findings offer Verify with your AI or a copy-scene prompt; verification includes only the selected scenes and their relevant thread or protagonist-belief context, and native reports remain available on return. Missing coverage is shown explicitly. In Noticed, choose')}{' '}<strong className="font-medium">{t('read prose')}</strong>{t('. When the site-provided Jev reader is available, no personal AI connection is needed. The panel names the active reader; with no model configured it matches names only. Observations you dismiss stay dismissed.')}
                 </Item>
                 <Item title={t('Leave a TK and keep writing')}>
-                  {t('When a detail can wait, type')}{' '}<code>[TK]</code>{' '}{t('or')}{' '}<code>[TK: name of the inn]</code>{' '}{t('and carry on, or right-click and choose Add TK here (a selection becomes its note). Write highlights each one so it stands out. Every placeholder is listed in the TKs tab of the side panel while you write and under Design → Placeholders, in reading order: open one, fill it in place or remove the marker. Export asks before a manuscript leaves with TKs still in it. Your connected AI can list them with run_story_check.')}
+                  {t('When a detail can wait, type')}{' '}<code>[TK]</code>{' '}{t('or')}{' '}<code>[TK: name of the inn]</code>{' '}{t('and carry on, or choose Add TK in the Write bar or Add TK here in the / or right-click menu (a selection becomes its note). Write highlights each one so it stands out. Every placeholder is listed in the TKs tab of the side panel while you write and under Design → Placeholders, in reading order: open one, fill it in place or remove the marker. Export asks before a manuscript leaves with TKs still in it. Your connected AI can list them with run_story_check.')}
                 </Item>
                 <Item title={t('Keep names and spellings consistent')}>
                   {t('Check my story’s Smart consistency check reads your prose for slips spellcheck misses. Names: a word that looks or sounds like a character, place or glossary name (Maia for Maya) is weighed by how often each spelling appears and by who is in the scene (its point of view, confirmed cast and setting), so a rare slip beside a common name is flagged while two names in steady use are only worth a look. Spelling: words from the other side of the Atlantic, following the story’s language (set under Design → Premise; your account default is in Settings). Hyphenation and capitals: one term written several ways. Every finding says why; fix all occurrences at once (a snapshot is saved first), add the variant as an alias or a new character, or keep both so it stops appearing.')}
@@ -469,7 +476,7 @@ export default function HowToUse() {
               <div className="space-y-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 <Item title={t('Give the book a cover and jacket')}>{t('In Design → Premise → Cover, on a library card’s ⋯ → Cover…, or with Set as cover on the Images page, choose or upload a front cover (2:3 works best); you can also drop an image file onto a story card. Click the cover to choose what stays in view when it is cropped, and add alt text. Shared and beta readers see the cover; tick Show on the public showcase to use it there and in link previews. The cover becomes the EPUB cover and, if you tick it under Export, the first page of Word and PDF. An optional jacket is the full wrap (back, spine and front); Preview jacket estimates the spine from your word count, trim size and paper, with bleed and safe-area guides and your blurb laid over the back.')}</Item>
                 <Item title={t('Upload and manage images')}>{t('Open Images in the story header from Write, Read or Design. Upload a JPEG, PNG or WebP, give it a name, and add an image description (alt text) and optional caption. The dedicated Images page has All images, Manuscript, Reference and Unused filters. Select a named thumbnail to edit details or see every current use, with links to its chapter and scene or planning entry. Uploads show a preview and progress; Write and reference entries also offer pickers to reuse saved images. Large photos are resized in your browser to WebP at up to 2,400 px before upload; small images stay unchanged. Alt text is optional, with a gentle reminder for screen-reader and EPUB accessibility. Limits are 5 MB per saved image, 50 images and 100 MB per story; still images must be no larger than 20 megapixels.')}</Item>
-                <Item title={t('Insert an illustration')}>{t('In Write, right-click where the image belongs and choose Insert image. The compact picker keeps that position: click a saved thumbnail to insert it, or choose Upload new image and Upload & insert. Shift+F10 opens the same menu at the keyboard cursor; Cut, Copy, Paste and Select all are also available. Write shows a thumbnail at that position, with its name and caption. Click it for a larger preview; Remove deletes only that placement. The underlying marker is kept for saving and exports, and Read displays the illustration in place.')}</Item>
+                <Item title={t('Insert an illustration')}>{t('In Write, put the cursor where the image belongs and choose Insert image in the Write bar, or from the / or right-click menu. The compact picker keeps that position: click a saved thumbnail to insert it, or choose Upload new image and Upload & insert. Shift+F10 opens the same menu at the keyboard cursor; Cut, Copy, Paste and Select all are also available. Write shows a thumbnail at that position, with its name and caption. Click it for a larger preview; Remove deletes only that placement. The underlying marker is kept for saving and exports, and Read displays the illustration in place.')}</Item>
                 <Item title={t('Keep reference art with your plan')}>{t('Choose Add reference image on a character, place, glossary entry or scene. Select or upload an image, then choose Attach image. Reference attachments appear beside that item and stay outside manuscript exports unless you also insert the image into prose. Detach image removes only that attachment.')}</Item>
                 <Item title={t('Preview while reading')}>{t('Click an image in Read to open a larger preview with its caption. Close it with Close, Escape or the backdrop, or use Open original image to view the file separately. Images follow the story’s sharing permissions; beta rounds preserve the illustrations and captions published with that draft.')}</Item>
                 <Item title={t('Delete current uses safely')}>{t('In Images, select an image and choose Delete image. The confirmation shows how many manuscript placements and reference attachments will be removed. Pending writing saves first. Scene revisions and a recovery version preserve the previous state; historical files and existing beta rounds keep the image. Files kept for history still count toward the story’s limits. Permanently deleting the story queues its retained files for storage cleanup.')}</Item>

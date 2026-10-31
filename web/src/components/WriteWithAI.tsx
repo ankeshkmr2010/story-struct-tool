@@ -19,7 +19,7 @@ export function WriteWithAI() {
   return <div className="mt-8 space-y-10">
     <section aria-labelledby="ai-quickstart"><p className="eyebrow">{t('QUICKSTART')}</p><h2 id="ai-quickstart" className="text-2xl font-semibold">{t('Connect, ask, review.')}</h2><p className="mt-3 text-sm leading-6 text-[var(--muted)]">{t('Use the AI you already talk to. It reads your story through StoryTool and can propose edits for you to review.')}</p><ol className="mt-5 space-y-3 text-sm leading-6">{[
       <>{t('Sign in to StoryTool and create, import or open a story in')}{' '}<Link to="/library" className="underline">{t('Your stories')}</Link>.</>,
-      <>{t('Follow the connection guide below for Claude, ChatGPT, Gemini or another client. Authorize your story; choose library access if you also want your AI to create or import stories.')}</>,
+      <>{t('Use Connect your AI below: pick Claude or ChatGPT, copy the link and check the connection. Gemini, Codex, Cursor and other apps are under Advanced. Authorize your story; choose library access if you also want your AI to create or import stories.')}</>,
       <>{t('Enable StoryTool in your AI conversation. Replace “[title]” in a prompt below with your story’s title and ask it to read the story first.')}</>,
       <>{t('Discuss the suggestions. Ask for one focused proposal and tell your AI to stage it without applying it.')}</>,
       <>{t('Return to')}{' '}<strong>{t('Design → Agent changes')}</strong>{t('. Review the proposed edits and accept all, some or none. Read saved craft reviews in')}{' '}<strong>{t('Design → Check my story')}</strong>.</>,
