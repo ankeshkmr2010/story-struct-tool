@@ -207,6 +207,7 @@ export default function Landing() {
       <Reveal className="lp-wrap lp-center">
         <h2>{t('Your words can always leave.')}</h2>
         <p className="lp-body">{t('Import from Word, Scrivener, EPUB or Markdown. Export whenever you like.')}</p>
+        <p className="lp-body"><strong>{t('Your story is encrypted at rest.')}</strong>{' '}{t('Prose, outlines, notes and history are stored encrypted, and opened only to show you your story and run the features you use.')}</p>
         <ul className="lp-formats">{['Word', 'Scrivener', 'EPUB', 'PDF', 'Markdown', 'HTML', t('Text')].map(name => <li key={name}>{name}</li>)}</ul>
         <div className="lp-ctas"><Link to="/try" className="lp-btn">{t('Try the guided tour')}</Link><Link to={SHOWCASE} className="lp-arrow">{t('See a finished story →')}</Link></div>
       </Reveal>
