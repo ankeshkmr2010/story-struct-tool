@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { t } from '../i18n'
+import { plural, t } from '../i18n'
 import { createPrivate, deletePrivate, getLinkedFile, listPrivate, PRIVATE_SAVED_EVENT, setLinkedFile, transact, type Backup, type PrivateSummary, type Row } from '../sandbox/storage'
 import { Menu, MenuItem } from '../ui/Menu'
 
@@ -188,7 +188,7 @@ export function PrivateShelf({ refresh }: { refresh: number }) {
     {stories?.length === 0 && <p className="private-shelf-empty">{t('No private stories yet. Tick Keep it private when you create one, or open a backup file.')}</p>}
     {error && <p role="alert" className="writer-error">{error}</p>}
     <ul>{stories?.map(story => <li key={story.id}>
-      <Link to={`/stories/${story.id}`}><strong>{story.title || t('Untitled story')}</strong><span>{t('{0} scenes · {1} words', story.scenes, story.words.toLocaleString())}</span></Link>
+      <Link to={`/stories/${story.id}`}><strong>{story.title || t('Untitled story')}</strong><span>{plural(story.scenes, '{0} scene', '{0} scenes', story.scenes)} · {plural(story.words, '{0} word', '{0} words', story.words.toLocaleString())}</span></Link>
       <button type="button" className={confirming === story.id ? 'is-confirming' : ''} onClick={() => { void remove(story.id) }} onBlur={() => setConfirming(null)}>{confirming === story.id ? t('Delete from this browser') : t('Delete')}</button>
     </li>)}</ul>
   </section>
