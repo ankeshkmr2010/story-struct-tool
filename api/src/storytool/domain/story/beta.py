@@ -12,12 +12,22 @@ from uuid import UUID
 from litestar import Controller, Request, delete, get, patch, post
 from litestar.exceptions import ClientException, NotFoundException, PermissionDeniedException
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, func, or_, select
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    String,
+    UniqueConstraint,
+    func,
+    or_,
+    select,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import StoryToolBase
+from storytool.db.encryption import EncryptedJSON, EncryptedText
 from storytool.domain.ai.commands import owned_story
 from storytool.domain.analysis import load_graph_by_id
 from storytool.domain.auth.models import User
@@ -30,11 +40,11 @@ from storytool.domain.versioning.service import fingerprint, full_state
 class BetaRound(StoryToolBase):
     __tablename__ = "beta_round"
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
-    title: Mapped[str] = mapped_column(String(200))
-    brief: Mapped[str] = mapped_column(Text, default="")
+    title: Mapped[str] = mapped_column(EncryptedText)
+    brief: Mapped[str] = mapped_column(EncryptedText, default="")
     deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     status: Mapped[str] = mapped_column(String(20), default="open")
-    snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    snapshot: Mapped[dict[str, Any]] = mapped_column(EncryptedJSON)
     source_fingerprint: Mapped[str] = mapped_column(String(64))
     allow_reader_ai: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     token: Mapped[str] = mapped_column(String(64), unique=True)
@@ -50,7 +60,7 @@ class BetaMember(StoryToolBase):
     status: Mapped[str] = mapped_column(String(20), default="pending")
     read_chapters: Mapped[list[str]] = mapped_column(JSONB, default=list)
     reading_status: Mapped[str] = mapped_column(String(20), default="not_started")
-    stopped_reason: Mapped[str | None] = mapped_column(Text, default=None)
+    stopped_reason: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
 
 class BetaThread(StoryToolBase):
@@ -59,7 +69,7 @@ class BetaThread(StoryToolBase):
     reader_id: Mapped[UUID | None] = mapped_column(ForeignKey("app_user.id", ondelete="SET NULL"))
     chapter_id: Mapped[UUID | None] = mapped_column(default=None)
     scene_id: Mapped[UUID | None] = mapped_column(default=None)
-    quote: Mapped[str | None] = mapped_column(Text, default=None)
+    quote: Mapped[str | None] = mapped_column(EncryptedText, default=None)
     paragraph: Mapped[int | None] = mapped_column(default=None)
     prose_hash: Mapped[str | None] = mapped_column(String(64), default=None)
     submitted: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -70,8 +80,8 @@ class BetaMessage(StoryToolBase):
     __tablename__ = "beta_message"
     thread_id: Mapped[UUID] = mapped_column(ForeignKey("beta_thread.id", ondelete="CASCADE"), index=True)
     user_id: Mapped[UUID | None] = mapped_column(ForeignKey("app_user.id", ondelete="SET NULL"))
-    name: Mapped[str] = mapped_column(String(300))
-    body: Mapped[str] = mapped_column(Text)
+    name: Mapped[str] = mapped_column(EncryptedText)
+    body: Mapped[str] = mapped_column(EncryptedText)
     submitted: Mapped[bool] = mapped_column(Boolean, default=True)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -80,9 +90,9 @@ class BetaPoll(StoryToolBase):
     __tablename__ = "beta_poll"
     round_id: Mapped[UUID] = mapped_column(ForeignKey("beta_round.id", ondelete="CASCADE"), index=True)
     chapter_id: Mapped[UUID | None] = mapped_column(default=None)
-    question: Mapped[str] = mapped_column(Text)
+    question: Mapped[str] = mapped_column(EncryptedText)
     kind: Mapped[str] = mapped_column(String(20), default="single")
-    options: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    options: Mapped[list[str]] = mapped_column(EncryptedJSON, default=list)
     status: Mapped[str] = mapped_column(String(20), default="draft")
     show_results: Mapped[bool] = mapped_column(Boolean, default=False)
     anonymous: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -95,8 +105,8 @@ class BetaVote(StoryToolBase):
     __table_args__ = (UniqueConstraint("poll_id", "user_id", name="one_beta_vote"),)
     poll_id: Mapped[UUID] = mapped_column(ForeignKey("beta_poll.id", ondelete="CASCADE"), index=True)
     user_id: Mapped[UUID | None] = mapped_column(ForeignKey("app_user.id", ondelete="SET NULL"))
-    choices: Mapped[list[int]] = mapped_column(JSONB, default=list)
-    answer: Mapped[str] = mapped_column(Text, default="")
+    choices: Mapped[list[int]] = mapped_column(EncryptedJSON, default=list)
+    answer: Mapped[str] = mapped_column(EncryptedText, default="")
 
 
 class RoundIn(BaseModel):

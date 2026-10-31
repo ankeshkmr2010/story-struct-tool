@@ -187,6 +187,8 @@ async def test_version_three_trashes_unedited_old_examples_and_adds_the_demo(
         edited = Story(user_id=user_id, title="The Red-Headed League", premise="Mine")
         session.add_all([untouched, edited])
         await session.flush()
+        # Read before commit: committed objects are expired, and async cannot reload them.
+        untouched_id, edited_id = str(untouched.id), str(edited.id)
         for story, origin in ((untouched, "system"), (edited, "system"), (edited, "author")):
             session.add(
                 FieldAuthorship(
@@ -200,7 +202,6 @@ async def test_version_three_trashes_unedited_old_examples_and_adds_the_demo(
                 )
             )
         await session.commit()
-        untouched_id, edited_id = str(untouched.id), str(edited.id)
     await provision(engine, user_id)
     stories = (await client.get("/api/stories")).json()
     ids = {story["id"] for story in stories}

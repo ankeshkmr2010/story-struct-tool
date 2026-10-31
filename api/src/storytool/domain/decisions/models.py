@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import StoryToolBase
+from storytool.db.encryption import EncryptedJSON
 
 
 class DecisionCache(StoryToolBase):
@@ -16,7 +17,7 @@ class DecisionCache(StoryToolBase):
     user_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("app_user.id", ondelete="CASCADE"), index=True
     )
-    answer: Mapped[dict] = mapped_column(JSONB)
+    answer: Mapped[dict] = mapped_column(EncryptedJSON)
     model: Mapped[str] = mapped_column(String(100))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     actor_key: Mapped[str | None] = mapped_column(String(64), default=None)
@@ -60,10 +61,9 @@ class DecisionBudget(StoryToolBase):
 
 class DecisionValidator(StoryToolBase):
     """An owner's private check; no executable code or access to other users' data."""
+
     __tablename__ = "decision_validator"
-    user_id: Mapped[UUID] = mapped_column(
-        ForeignKey("app_user.id", ondelete="CASCADE"), index=True
-    )
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("app_user.id", ondelete="CASCADE"), index=True)
     definition: Mapped[dict] = mapped_column(JSONB)
     enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     version: Mapped[int] = mapped_column(Integer, default=1)

@@ -2,11 +2,11 @@
 
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, Float, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import CheckConstraint, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import CompletableMixin, StoryToolBase
+from storytool.db.encryption import EncryptedJSON, EncryptedText
 
 
 class Character(StoryToolBase, CompletableMixin):
@@ -26,20 +26,20 @@ class Character(StoryToolBase, CompletableMixin):
         return ("name", "role", "want", "need") if major else ("name", "role")
 
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
-    name: Mapped[str] = mapped_column(String(200))
+    name: Mapped[str] = mapped_column(EncryptedText)
     role: Mapped[str | None] = mapped_column(String(40), default=None, index=True)
 
-    wound: Mapped[str | None] = mapped_column(Text, default=None)
-    misbelief: Mapped[str | None] = mapped_column(Text, default=None)
-    want: Mapped[str | None] = mapped_column(Text, default=None)
-    need: Mapped[str | None] = mapped_column(Text, default=None)
+    wound: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    misbelief: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    want: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    need: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     arc_type: Mapped[str | None] = mapped_column(String(20), default=None)
-    voice_notes: Mapped[str | None] = mapped_column(Text, default=None)
-    description: Mapped[str | None] = mapped_column(Text, default=None)
-    aliases: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
-    relation_to_protagonist: Mapped[str | None] = mapped_column(Text, default=None)
-    notes: Mapped[str | None] = mapped_column(Text, default=None)
+    voice_notes: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    description: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    aliases: Mapped[list[str] | None] = mapped_column(EncryptedJSON, default=None)
+    relation_to_protagonist: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    notes: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
 
 class Relationship(StoryToolBase, CompletableMixin):
@@ -56,9 +56,9 @@ class Relationship(StoryToolBase, CompletableMixin):
     character_b_id: Mapped[UUID] = mapped_column(
         ForeignKey("character.id", ondelete="CASCADE"), index=True
     )
-    history: Mapped[str | None] = mapped_column(Text, default=None)
-    current_dynamic: Mapped[str | None] = mapped_column(Text, default=None)
-    tension_notes: Mapped[str | None] = mapped_column(Text, default=None)
+    history: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    current_dynamic: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    tension_notes: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     __table_args__ = (
         CheckConstraint("character_a_id <> character_b_id", name="distinct_characters"),
@@ -87,7 +87,7 @@ class Arc(StoryToolBase, CompletableMixin):
     thread_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("thread.id", ondelete="CASCADE"), default=None, index=True
     )
-    resolution: Mapped[str | None] = mapped_column(Text, default=None)
+    resolution: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     __table_args__ = (
         CheckConstraint(
@@ -116,6 +116,6 @@ class ArcStage(StoryToolBase, CompletableMixin):
     complete_when = ("label",)
 
     arc_id: Mapped[UUID] = mapped_column(ForeignKey("arc.id", ondelete="CASCADE"), index=True)
-    label: Mapped[str] = mapped_column(String(200))
-    description: Mapped[str | None] = mapped_column(Text, default=None)
+    label: Mapped[str] = mapped_column(EncryptedText)
+    description: Mapped[str | None] = mapped_column(EncryptedText, default=None)
     sort_key: Mapped[float] = mapped_column(Float, default=0.0)

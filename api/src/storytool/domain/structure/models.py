@@ -10,10 +10,11 @@ Two conventions throughout:
 
 from uuid import UUID
 
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import CompletableMixin, StoryToolBase, metadata
+from storytool.db.encryption import EncryptedText
 
 event_character = Table(
     "event_character",
@@ -35,13 +36,13 @@ class Event(StoryToolBase, CompletableMixin):
     complete_when = ("label",)
 
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
-    label: Mapped[str] = mapped_column(String(300))
-    description: Mapped[str | None] = mapped_column(Text, default=None)
+    label: Mapped[str] = mapped_column(EncryptedText)
+    description: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     # Only ordering matters, and fictional calendars break real datetimes. An abstract
     # ordinal sorts; the display label is whatever the author wants to call it.
     sort_ordinal: Mapped[int | None] = mapped_column(Integer, default=None)
-    display_label: Mapped[str | None] = mapped_column(String(200), default=None)
+    display_label: Mapped[str | None] = mapped_column(EncryptedText, default=None)
     location_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("location.id", ondelete="SET NULL"), default=None, index=True
     )
@@ -67,13 +68,13 @@ class Act(StoryToolBase, CompletableMixin):
 
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
     number: Mapped[int] = mapped_column(Integer, default=1)
-    title: Mapped[str | None] = mapped_column(String(200), default=None)
-    summary: Mapped[str | None] = mapped_column(Text, default=None)
+    title: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    summary: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     # The brief wrote this as "hope -> doubt". Stored as two fields so it is queryable
     # instead of a string someone has to parse.
-    emotional_shift_from: Mapped[str | None] = mapped_column(String(120), default=None)
-    emotional_shift_to: Mapped[str | None] = mapped_column(String(120), default=None)
+    emotional_shift_from: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    emotional_shift_to: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     opening_turning_point_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("event.id", ondelete="SET NULL"), default=None
@@ -100,8 +101,8 @@ class Beat(StoryToolBase, CompletableMixin):
     act_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("act.id", ondelete="SET NULL"), default=None, index=True
     )
-    label: Mapped[str] = mapped_column(String(200))
-    description: Mapped[str | None] = mapped_column(Text, default=None)
+    label: Mapped[str] = mapped_column(EncryptedText)
+    description: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     # A loose string like "save_the_cat.midpoint", never an FK into a template table --
     # a framework must never become a cage.
@@ -118,7 +119,7 @@ class Thread(StoryToolBase, CompletableMixin):
 
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
     type: Mapped[str] = mapped_column(String(20))
-    title: Mapped[str | None] = mapped_column(String(200), default=None)
+    title: Mapped[str | None] = mapped_column(EncryptedText, default=None)
     owner_character_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("character.id", ondelete="SET NULL"), default=None
     )

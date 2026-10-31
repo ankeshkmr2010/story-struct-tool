@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import StoryToolBase
+from storytool.db.encryption import EncryptedText
 
 
 class ImageBlob(StoryToolBase):
@@ -25,9 +26,9 @@ class StoryImage(StoryToolBase):
 
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
     blob_id: Mapped[UUID] = mapped_column(ForeignKey("image_blob.id"))
-    name: Mapped[str] = mapped_column(String(200))
-    alt: Mapped[str] = mapped_column(String(500), default="")
-    caption: Mapped[str] = mapped_column(String(1000), default="")
+    name: Mapped[str] = mapped_column(EncryptedText)
+    alt: Mapped[str] = mapped_column(EncryptedText, default="")
+    caption: Mapped[str] = mapped_column(EncryptedText, default="")
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
     # Each entry is {entity: character|location|glossary|scene, id: UUID}.
     attachments: Mapped[list[dict[str, str]]] = mapped_column(JSONB, default=list)

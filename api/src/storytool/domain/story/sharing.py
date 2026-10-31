@@ -15,6 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from uuid_utils import uuid7
 
 from storytool.db.base import StoryToolBase
+from storytool.db.encryption import text_order
 from storytool.domain.ai.commands import ENTITIES, LINKS, owned_story
 from storytool.domain.analysis import load_graph_by_id
 from storytool.domain.auth.models import User
@@ -258,9 +259,9 @@ class SharedStoriesController(Controller):
                     StoryShare.recipient_email == recipient.email.casefold(),
                     Story.deleted_at.is_(None),
                 )
-                .order_by(Story.title)
             )
         ).all()
+        records = sorted(records, key=lambda record: text_order(record[0].title))
         result = [shared_summary(story, grant, owner) for story, grant, owner in records]
         from storytool.domain.story.beta import BetaMember, BetaRound
 

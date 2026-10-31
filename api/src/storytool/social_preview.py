@@ -93,7 +93,7 @@ async def preview_metadata(db: AsyncSession, path: str, token: str | None) -> di
     candidates = await db.scalars(
         select(Scene.content)
         .outerjoin(Chapter, Scene.chapter_id == Chapter.id)
-        .where(Scene.story_id == story.id, Scene.content.contains("storytool-image:"))
+        .where(Scene.story_id == story.id, Scene.content.is_not(None))
         .order_by(Chapter.sort_key, Chapter.number, Chapter.id, Scene.sort_key, Scene.id)
     )
     for content in candidates:

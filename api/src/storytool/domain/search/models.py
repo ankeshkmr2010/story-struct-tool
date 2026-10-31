@@ -3,11 +3,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import UserDefinedType
 
 from storytool.db.base import StoryToolBase
+from storytool.db.encryption import EncryptedText
 
 
 class Vector(UserDefinedType):
@@ -32,7 +33,7 @@ class SearchChunk(StoryToolBase):
     entity_id: Mapped[UUID] = mapped_column()
     field: Mapped[str] = mapped_column(String(60))
     ordinal: Mapped[int] = mapped_column(Integer)
-    content: Mapped[str] = mapped_column(Text)
+    content: Mapped[str] = mapped_column(EncryptedText)
     content_hash: Mapped[str] = mapped_column(String(64))
     profile: Mapped[str] = mapped_column(String(64))
     embedding: Mapped[list[float]] = mapped_column(Vector())

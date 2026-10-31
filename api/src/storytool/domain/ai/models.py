@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import StoryToolBase
+from storytool.db.encryption import EncryptedJSON, EncryptedText
 
 
 class AIConnection(StoryToolBase):
@@ -26,16 +27,16 @@ class AIRun(StoryToolBase):
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
     provider: Mapped[str] = mapped_column(String(20))
     model: Mapped[str] = mapped_column(String(200))
-    prompt: Mapped[str] = mapped_column(Text)
-    summary: Mapped[str] = mapped_column(Text)
+    prompt: Mapped[str] = mapped_column(EncryptedText)
+    summary: Mapped[str] = mapped_column(EncryptedText)
     status: Mapped[str] = mapped_column(String(20), default="proposed")
     base_fingerprint: Mapped[str] = mapped_column(String(64))
     applied_fingerprint: Mapped[str | None] = mapped_column(String(64), default=None)
-    proposal: Mapped[dict[str, Any]] = mapped_column(JSONB)
-    inverse: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
-    result: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=None)
+    proposal: Mapped[dict[str, Any]] = mapped_column(EncryptedJSON)
+    inverse: Mapped[list[dict[str, Any]]] = mapped_column(EncryptedJSON, default=list)
+    result: Mapped[dict[str, Any] | None] = mapped_column(EncryptedJSON, default=None)
     usage: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
-    evidence: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    evidence: Mapped[list[dict[str, Any]]] = mapped_column(EncryptedJSON, default=list)
 
 
 class StoryObservation(StoryToolBase):
@@ -44,7 +45,7 @@ class StoryObservation(StoryToolBase):
     scene_id: Mapped[UUID] = mapped_column(ForeignKey("scene.id", ondelete="CASCADE"), index=True)
     source: Mapped[str] = mapped_column(String(20))
     source_revision: Mapped[str] = mapped_column(String(100))
-    payload: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    payload: Mapped[dict[str, Any]] = mapped_column(EncryptedJSON)
     __table_args__ = (UniqueConstraint("scene_id", "source", name="one_observation_per_reader"),)
 
 

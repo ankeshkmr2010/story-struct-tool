@@ -139,9 +139,19 @@ PROSE = (
 
 
 async def seed_tutorial(session: AsyncSession, owner_id: UUID) -> Story:
-    existing = await session.scalar(
-        select(Story).where(Story.user_id == owner_id, Story.title == TITLE).limit(1)
+    # Titles are encrypted at rest, so they are compared after reading (plain columns, see
+    # seed_outline).
+    match = next(
+        (
+            story_id
+            for story_id, title in await session.execute(
+                select(Story.id, Story.title).where(Story.user_id == owner_id)
+            )
+            if title == TITLE
+        ),
+        None,
     )
+    existing = await session.get(Story, match) if match else None
     if existing is not None:
         return existing
     story = await seed_outline(session, owner_id, TUTORIAL)

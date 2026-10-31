@@ -11,6 +11,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from storytool.db.encryption import text_order
 from storytool.domain.auth.models import User
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
 from storytool.domain.enums import DEFAULT_LANGUAGE, CharacterRole
@@ -142,14 +143,16 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
         acts=await fetch(Act, Act.sort_key.asc()),
         beats=await fetch(Beat, Beat.sort_key.asc()),
         threads=await fetch(Thread, Thread.sort_key.asc()),
-        characters=await fetch(Character, Character.name.asc()),
+        characters=tuple(sorted(await fetch(Character), key=lambda c: text_order(c.name))),
         relationships=await fetch(Relationship),
         arcs=arcs,
         arc_stages=stages,
         chapters=chapters,
         scenes=scenes,
-        locations=await fetch(Location, Location.name.asc()),
-        glossary_entries=await fetch(GlossaryEntry, GlossaryEntry.term.asc()),
+        locations=tuple(sorted(await fetch(Location), key=lambda p: text_order(p.name))),
+        glossary_entries=tuple(
+            sorted(await fetch(GlossaryEntry), key=lambda g: (text_order(g.term), str(g.id)))
+        ),
         chapter_beats=chapter_beats,
         scene_beats=scene_beats,
         scene_threads=scene_threads,

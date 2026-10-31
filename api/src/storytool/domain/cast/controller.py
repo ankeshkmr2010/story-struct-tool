@@ -11,6 +11,7 @@ from litestar import Controller, delete, get, patch, post
 from litestar.di import Provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from storytool.db.encryption import text_order
 from storytool.domain.cast.models import Arc, ArcStage, Character, Relationship
 from storytool.domain.cast.schemas import (
     ArcCreate,
@@ -65,9 +66,8 @@ class CharacterController(Controller):
     async def list_characters(
         self, characters: CharacterService, story_id: UUID
     ) -> list[CharacterOut]:
-        records = await characters.get_many(
-            Character.story_id == story_id, order_by=Character.name.asc()
-        )
+        records = await characters.get_many(Character.story_id == story_id)
+        records.sort(key=lambda r: text_order(r.name))
         return [CharacterOut.model_validate(r) for r in records]
 
     @post(status_code=201, summary="Create a character")

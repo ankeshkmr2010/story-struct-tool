@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     google_client_id: str | None = None
     legacy_owner_email: str | None = None
     ai_encryption_key: str | None = None
+    # Story text at rest (db/encryption.py): "id:base64key,..." and the id new writes use.
+    data_keys: str = ""
+    data_key_id: str | None = None
+    # False keeps the keys for reading but writes plain text, and makes the startup step decrypt
+    # every row: the way back before deploying code that predates encryption.
+    data_encrypt_writes: bool = True
     frontend_dir: Path | None = None
     public_url: str = "https://storytool.onrender.com"
     image_bucket: str = "storytool-images"

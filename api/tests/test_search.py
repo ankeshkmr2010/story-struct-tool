@@ -7,36 +7,39 @@ from uuid import uuid4
 
 import pytest
 from litestar.exceptions import ClientException
-from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 
 from storytool.config import Settings
 from storytool.domain.search.controller import LibrarySearchController, SearchController
 from storytool.domain.search.semantic import chunks, embed, search_lifespan
-from storytool.domain.search.service import allowed_fields, fields_query, literal_pattern
+from storytool.domain.search.service import (
+    TIMELINE_FIELDS,
+    allowed_fields,
+    field_text,
+    fold,
+    load_fields,
+)
 
 
-def test_special_characters_are_literals():
-    assert literal_pattern(r"100%_\sale") == r"%100\%\_\\sale%"
+def test_special_characters_are_literals_and_accents_fold_both_ways():
+    # Matching is plain substring search over folded text: %, _ and \\ mean themselves.
+    assert fold(r"100%_\sale")[0] == r"100%_\sale"
+    assert fold("JOSÉ")[0] == "jose" and fold("jose")[0] == "jose"
+    folded, origin = fold("ﬁne café")
+    assert folded == "fine cafe" and origin[folded.index("cafe")] == 4
 
 
 def test_contexts_exclude_prose_and_private_timeline_notes():
     for context in ("scene", "character", "location", "glossary_entry", "timeline"):
         assert "content" not in allowed_fields(context)
     assert "notes" not in allowed_fields("timeline")
-    query = str(select(fields_query(uuid4(), "timeline")).compile(dialect=postgresql.dialect()))
-    assert "scene.content" not in query
-    assert "scene.notes" not in query
-    assert "event.story_id" in query and "scene.story_id" in query
+    assert {"content", "notes"}.isdisjoint(TIMELINE_FIELDS)
 
 
 def test_array_fields_use_authored_items_not_json_serialization():
-    query = str(
-        select(fields_query(uuid4(), "character", "aliases")).compile(dialect=postgresql.dialect())
-    )
-    assert "jsonb_array_elements_text" in query
-    assert "string_agg" in query
-    assert "jsonb_typeof" in query and "CASE WHEN" in query
+    assert field_text(["Mara", "The Keeper"], "aliases") == "Mara\nThe Keeper"
+    assert field_text({"not": "a list"}, "aliases") is None
+    assert field_text("plain", "title") == "plain"
 
 
 @pytest.mark.asyncio
@@ -55,14 +58,43 @@ async def test_pending_index_returns_searchable_state_without_provider(monkeypat
     assert page.indexing and page.items == []
 
 
-def test_global_scene_fields_share_the_same_untitled_label():
-    sql = str(
-        select(fields_query(uuid4(), "all")).compile(
-            dialect=postgresql.dialect(),
-            compile_kwargs={"literal_binds": True},
-        )
+@pytest.mark.asyncio
+async def test_global_scene_fields_share_the_same_untitled_label():
+    story_id, scene_id = uuid4(), uuid4()
+    story = SimpleNamespace(
+        id=story_id,
+        title="Book",
+        premise="A door.",
+        blurb=None,
+        thematic_statement=None,
+        notes=None,
+        motifs=[],
+        world_rules=[],
+        style_rules=[],
     )
-    assert "Untitled scene" in sql and "Untitled prose" not in sql
+    scene = SimpleNamespace(
+        id=scene_id,
+        story_id=story_id,
+        chapter_id=None,
+        title=None,
+        summary="She opens it.",
+        notes=None,
+        goal=None,
+        conflict=None,
+        outcome=None,
+        content="The door was warm.",
+        sort_key=100,
+    )
+
+    class DB:
+        async def scalars(self, statement):
+            entity = statement.column_descriptions[0]["entity"].__name__
+            return {"Story": [story], "Scene": [scene]}.get(entity, [])
+
+    rows = await load_fields(DB(), story_id, "all")
+    labels = {row["title"] for row in rows if row["entity"] == "scene"}
+    assert labels == {"Untitled scene"}
+    assert {row["field"] for row in rows if row["entity"] == "scene"} == {"summary", "content"}
 
 
 def test_chunking_preserves_boundaries_and_tail():
@@ -128,9 +160,9 @@ async def test_library_search_filters_owner_and_trash_before_results():
     statements = []
 
     class DB:
-        async def execute(self, statement):
+        async def scalars(self, statement):
             statements.append(statement)
-            return SimpleNamespace(mappings=lambda: SimpleNamespace(all=lambda: []))
+            return []
 
     request = SimpleNamespace(scope={"state": {"storytool_user_id": owner}})
     page = await LibrarySearchController.search.fn(None, DB(), request, "hidden door")
@@ -140,7 +172,8 @@ async def test_library_search_filters_owner_and_trash_before_results():
     )
     assert str(owner).replace("-", "") in sql.replace("-", "")
     assert "story.user_id =" in sql and "story.deleted_at IS NULL" in sql
-    assert "scene.content" in sql
+    # Nothing else is read when the owner has no live stories.
+    assert len(statements) == 1
 
 
 @pytest.mark.asyncio

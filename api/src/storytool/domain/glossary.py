@@ -6,12 +6,12 @@ from uuid import UUID
 from litestar import Controller, delete, get, patch, post
 from litestar.exceptions import ClientException, NotFoundException
 from pydantic import BaseModel, Field
-from sqlalchemy import ForeignKey, String, Text, select
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import ForeignKey, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import CompletableMixin, StoryToolBase
+from storytool.db.encryption import EncryptedJSON, EncryptedText, text_order
 from storytool.domain.common import EntityOut, apply_patch
 from storytool.domain.narrative.models import Scene
 
@@ -21,9 +21,9 @@ class GlossaryEntry(StoryToolBase, CompletableMixin):
     complete_when = ("term", "definition")
 
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
-    term: Mapped[str] = mapped_column(String(200))
-    aliases: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
-    definition: Mapped[str | None] = mapped_column(Text, default=None)
+    term: Mapped[str] = mapped_column(EncryptedText)
+    aliases: Mapped[list[str] | None] = mapped_column(EncryptedJSON, default=None)
+    definition: Mapped[str | None] = mapped_column(EncryptedText, default=None)
     first_explained_scene_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("scene.id", ondelete="SET NULL"), default=None
     )
@@ -81,11 +81,10 @@ class GlossaryController(Controller):
     @get(summary="List glossary entries")
     async def list_entries(self, db_session: AsyncSession, story_id: UUID) -> list[GlossaryOut]:
         rows = await db_session.scalars(
-            select(GlossaryEntry)
-            .where(GlossaryEntry.story_id == story_id)
-            .order_by(GlossaryEntry.term, GlossaryEntry.id)
+            select(GlossaryEntry).where(GlossaryEntry.story_id == story_id)
         )
-        return [GlossaryOut.model_validate(row) for row in rows]
+        ordered = sorted(rows, key=lambda row: (text_order(row.term), str(row.id)))
+        return [GlossaryOut.model_validate(row) for row in ordered]
 
     @post(summary="Create a glossary entry")
     async def create_entry(

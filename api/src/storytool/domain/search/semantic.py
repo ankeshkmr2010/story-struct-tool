@@ -11,12 +11,13 @@ from uuid import UUID
 
 import httpx
 from litestar.exceptions import ClientException
-from sqlalchemy import cast, delete, func, or_, select, text
+from sqlalchemy import String, cast, column, delete, func, or_, select, text, values
 
 from storytool.config import get_settings
+from storytool.db.encryption import digest as content_digest
 from storytool.domain.search.models import SearchChunk, SearchIndex
 from storytool.domain.search.schemas import SearchHit, SearchMatch, SearchPage
-from storytool.domain.search.service import CONTEXTS, fields_query, tidy_excerpt
+from storytool.domain.search.service import load_fields, tidy_excerpt
 from storytool.domain.story.models import Story
 
 log = logging.getLogger("storytool.search")
@@ -107,11 +108,7 @@ async def index_story(config: Any, story_id: UUID) -> None:
         if not story or story.deleted_at:
             return
         source_updated_at = story.updated_at
-        rows = []
-        for context in CONTEXTS:
-            if context not in {"timeline", "all"}:
-                source = fields_query(story_id, context)
-                rows.extend((await db.execute(select(source))).mappings().all())
+        rows = await load_fields(db, story_id, "all")
         cached = (
             await db.execute(
                 select(SearchChunk.content_hash, SearchChunk.embedding).where(
@@ -126,7 +123,8 @@ async def index_story(config: Any, story_id: UUID) -> None:
         for ordinal, value in enumerate(
             chunks(row["value"], max_bytes=get_settings().search_embedding_max_input_bytes)
         ):
-            digest = hashlib.sha256(value.encode()).hexdigest()
+            # Keyed when story text is encrypted, so stored hashes cannot confirm guesses.
+            digest = content_digest(value)
             documents.append(
                 dict(
                     story_id=story_id,
@@ -285,9 +283,23 @@ async def semantic_search(
         raise ClientException(
             status_code=503, detail="Meaning search is unavailable. Retry shortly."
         ) from exc
-    source = fields_query(scope, context, field)
-    if entity:
-        source = select(source).where(source.c.entity == entity).cte("restricted_fields")
+    # Story text is encrypted at rest: the allowed fields are read and decrypted here and
+    # handed to SQL as plain identifiers only.
+    scope_ids = list(await db.scalars(scope)) if library else story_id
+    fields = await load_fields(db, scope_ids, context, field, entity)
+    if not fields:
+        return SearchPage(
+            items=[],
+            semantic_available=True,
+            indexing=await library_indexing(db, story_id, current_profile) if library else False,
+        )
+    info_by_key = {(row["story_id"], row["entity"], row["id"]): row for row in fields}
+    allowed = values(
+        column("entity", String),
+        column("entity_id", String),
+        column("field", String),
+        name="allowed_fields",
+    ).data(sorted({(row["entity"], row["id"], row["field"]) for row in fields}))
     distance = SearchChunk.embedding.op("<=>")(vector)
     ranked = (
         select(
@@ -305,11 +317,10 @@ async def semantic_search(
             .label("position"),
         )
         .join(
-            source,
-            (source.c.entity == SearchChunk.entity)
-            & (source.c.story_id == cast(SearchChunk.story_id, source.c.story_id.type))
-            & (source.c.id == cast(SearchChunk.entity_id, source.c.id.type))
-            & (source.c.field == SearchChunk.field),
+            allowed,
+            (allowed.c.entity == SearchChunk.entity)
+            & (allowed.c.entity_id == cast(SearchChunk.entity_id, String))
+            & (allowed.c.field == SearchChunk.field),
         )
         .where(
             SearchChunk.story_id == story_id if not library else SearchChunk.story_id.in_(scope),
@@ -332,27 +343,9 @@ async def semantic_search(
     )
     if not library and not await index_ready(db, story_id, current_profile):
         return SearchPage(items=[], semantic_available=True, indexing=True)
-    metadata = {}
-    if rows:
-        for row in (
-            await db.execute(
-                select(
-                    source.c.story_id,
-                    source.c.story_title,
-                    source.c.entity,
-                    source.c.id,
-                    source.c.title,
-                    source.c.chapter_id,
-                    source.c.chapter_title,
-                )
-                .distinct()
-                .where(source.c.id.in_([str(hit["entity_id"]) for hit in rows[:limit]]))
-            )
-        ).mappings():
-            metadata[(row["story_id"], row["entity"], row["id"])] = row
     hits = []
     for row in rows[:limit]:
-        info = metadata.get((str(row["story_id"]), row["entity"], str(row["entity_id"])))
+        info = info_by_key.get((str(row["story_id"]), row["entity"], str(row["entity_id"])))
         if info:
             hits.append(
                 SearchHit(

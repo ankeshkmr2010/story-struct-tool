@@ -1,10 +1,14 @@
-"""Bounded SQL search: only matching excerpts leave the database for text searches."""
+"""Text search over a story's authored fields.
 
+Story text is encrypted at rest, so fields are read and decrypted, then matched in Python
+(accent- and case-insensitive), ranked and paged the way the SQL version did."""
+
+import json
+import unicodedata
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import String, case, cast, func, literal, select, union_all
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.cast.models import Character
@@ -60,88 +64,102 @@ CONTEXTS["timeline"] = ("event", "scene")
 CONTEXTS["all"] = tuple(FIELDS)
 ARRAY_FIELDS = {"aliases", "motifs", "world_rules", "style_rules"}
 TITLE_FIELDS = {"name", "title", "term", "label", "aliases"}
+TIMELINE_FIELDS = {"title", "summary", "label", "description", "display_label"}
 
 
-def text_column(model: Any, field: str) -> Any:
-    column = getattr(model, field)
-    if field in ARRAY_FIELDS:
-        array = case(
-            (func.jsonb_typeof(column) == "array", column),
-            else_=cast(literal("[]"), JSONB),
-        )
-        values = func.jsonb_array_elements_text(array).table_valued("value")
-        return select(func.string_agg(values.c.value, "\n")).scalar_subquery()
-    return column
+def field_text(value: Any, name: str) -> str | None:
+    """A field's searchable text; list fields (aliases, rules) are one line per item."""
+    if name in ARRAY_FIELDS:
+        if not isinstance(value, list):
+            return None
+        return "\n".join(item if isinstance(item, str) else json.dumps(item) for item in value)
+    return value if isinstance(value, str) else None
 
 
-def fields_query(story_id: Any, context: str, field: str | None = None) -> Any:
-    queries = []
+async def load_fields(
+    db: AsyncSession,
+    story_id: Any,
+    context: str,
+    field: str | None = None,
+    entity: str | None = None,
+) -> list[dict[str, Any]]:
+    """Every searchable field of the story (or stories), read and decrypted.
+
+    Story text is encrypted at rest, so searching happens in Python over these rows; each row
+    carries what a hit shows (titles, chapter) and what results are ordered by.
+    """
+    # One story, a list of ids, or a query of ids (library: owner and trash filters stay in SQL).
+    scope = [story_id] if isinstance(story_id, UUID) else story_id
+    stories = {
+        story.id: story for story in await db.scalars(select(Story).where(Story.id.in_(scope)))
+    }
+    if not stories:
+        return []
+    chapters: dict[Any, Chapter] | None = None
+    rows: list[dict[str, Any]] = []
     for kind in CONTEXTS[context]:
+        display_kind = "scene" if kind == "prose" else kind
+        if entity and display_kind != entity:
+            continue
         model, names = FIELDS[kind]
         if context == "timeline":
-            names = tuple(
-                name
-                for name in names
-                if name
-                in {
-                    "title",
-                    "summary",
-                    "label",
-                    "description",
-                    "display_label",
-                }
-            )
+            names = tuple(name for name in names if name in TIMELINE_FIELDS)
+        names = tuple(name for name in names if not field or name == field)
+        if not names:
+            continue
         title_field = next(
             (name for name in ("name", "term", "title", "label") if hasattr(model, name)), None
         )
-        display_kind = "scene" if kind == "prose" else kind
-        title = func.coalesce(getattr(model, title_field), f"Untitled {display_kind}")
-        for name in names:
-            if field and name != field:
+        if model is Story:
+            records: Any = list(stories.values())
+        else:
+            records = await db.scalars(select(model).where(model.story_id.in_(list(stories))))
+        if model is Scene and chapters is None:
+            chapters = {
+                chapter.id: chapter
+                for chapter in await db.scalars(
+                    select(Chapter).where(Chapter.story_id.in_(list(stories)))
+                )
+            }
+        for record in records:
+            story = record if model is Story else stories.get(record.story_id)
+            if story is None:
                 continue
-            value = text_column(model, name)
-            chapter_id = Scene.chapter_id if model is Scene else literal(None, type_=String)
-            chapter_title = Chapter.title if model is Scene else literal(None, type_=String)
-            chapter_sort = func.coalesce(Chapter.sort_key, 1e30) if model is Scene else literal(0)
-            chapter_number = func.coalesce(Chapter.number, 0) if model is Scene else literal(0)
-            chapter_tie = cast(Chapter.id, String) if model is Scene else literal("")
-            sort = getattr(model, "sort_key", literal(0))
-            query = select(
-                cast(Story.id, String).label("story_id"),
-                Story.title.label("story_title"),
-                literal("scene" if kind == "prose" else kind).label("entity"),
-                cast(model.id, String).label("id"),
-                title.label("title"),
-                cast(chapter_id, String).label("chapter_id"),
-                chapter_title.label("chapter_title"),
-                chapter_sort.label("chapter_sort"),
-                chapter_number.label("chapter_number"),
-                func.coalesce(chapter_tie, "").label("chapter_tie"),
-                sort.label("sort"),
-                literal(name).label("field"),
-                value.label("value"),
-            )
-            owner_key = model.id if model is Story else model.story_id
-            query = query.where(
-                owner_key == story_id if isinstance(story_id, UUID) else owner_key.in_(story_id)
-            )
-            if model is Scene:
-                query = query.outerjoin(Chapter, Scene.chapter_id == Chapter.id)
-            if model is not Story:
-                query = query.join(Story, Story.id == model.story_id)
-            queries.append(query.where(value.is_not(None), value != ""))
-    if not queries:
-        raise ValueError("Field is not available in this search context")
-    return union_all(*queries).cte("search_fields")
+            chapter = (chapters or {}).get(record.chapter_id) if model is Scene else None
+            title = getattr(record, title_field) if title_field else None
+            for name in names:
+                value = field_text(getattr(record, name), name)
+                if not value:
+                    continue
+                rows.append(
+                    {
+                        "story_id": str(story.id),
+                        "story_title": story.title,
+                        "entity": display_kind,
+                        "id": str(record.id),
+                        "title": title if title is not None else f"Untitled {display_kind}",
+                        "chapter_id": str(record.chapter_id)
+                        if model is Scene and record.chapter_id
+                        else None,
+                        "chapter_title": chapter.title if chapter else None,
+                        "chapter_sort": (
+                            chapter.sort_key
+                            if chapter and chapter.sort_key is not None
+                            else (1e30 if model is Scene else 0)
+                        ),
+                        "chapter_number": (chapter.number or 0) if chapter else 0,
+                        "chapter_tie": str(chapter.id) if chapter else "",
+                        "sort": getattr(record, "sort_key", 0),
+                        "field": name,
+                        "value": value,
+                    }
+                )
+    return rows
 
 
 def allowed_fields(context: str) -> set[str]:
     fields = {name for kind in CONTEXTS[context] for name in FIELDS[kind][1]}
-    return (
-        fields & {"title", "summary", "label", "description", "display_label"}
-        if context == "timeline"
-        else fields
-    )
+    return fields & TIMELINE_FIELDS if context == "timeline" else fields
 
 
 def tidy_excerpt(text: str, cut_start: bool, cut_end: bool) -> str:
@@ -157,8 +175,34 @@ def tidy_excerpt(text: str, cut_start: bool, cut_end: bool) -> str:
     return text
 
 
-def literal_pattern(query: str) -> str:
-    return "%" + query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+def fold(text: str) -> tuple[str, list[int]]:
+    """Lower-case, accent-free text, with each folded character's index in the original.
+
+    "Jose" finds "José" and "José" finds "Jose"; mapping back keeps excerpts aligned even when
+    folding changes the length (a ligature becomes two letters).
+    """
+    folded: list[str] = []
+    origin: list[int] = []
+    for index, char in enumerate(text):
+        plain = "".join(
+            c for c in unicodedata.normalize("NFKD", char) if not unicodedata.combining(c)
+        ).lower()
+        folded.append(plain)
+        origin.extend([index] * len(plain))
+    return "".join(folded), origin
+
+
+def order_key(row: dict[str, Any], rank: int) -> tuple[Any, ...]:
+    sort = row["sort"]
+    return (
+        rank,
+        row["chapter_sort"],
+        row["chapter_number"],
+        row["chapter_tie"],
+        (sort is None, sort if sort is not None else 0),
+        row["entity"],
+        row["id"],
+    )
 
 
 async def text_search(
@@ -171,78 +215,42 @@ async def text_search(
     limit: int,
     entity: str | None = None,
 ) -> SearchPage:
-    source = fields_query(story_id, context, field)
-    if entity:
-        source = select(source).where(source.c.entity == entity).cte("restricted_fields")
-    c = source.c
-    # Accents are ignored both ways: "Jose" finds "José" and "José" finds "Jose".
-    plain = func.unaccent(func.lower(c.value))
-    plain_query = func.unaccent(query.lower())
-    start = func.greatest(1, func.strpos(plain, plain_query) - 65)
+    plain_query = fold(query)[0]
     window = len(query) + 150
-    excerpt = func.substring(c.value, start, window)
-    rank = case(
-        (c.field.in_(TITLE_FIELDS) & (plain == plain_query), 0),
-        (c.field.in_(TITLE_FIELDS), 1),
-        else_=2,
-    )
-    columns = [
-        c.story_id,
-        c.story_title,
-        c.entity,
-        c.id,
-        c.title,
-        c.chapter_id,
-        c.chapter_title,
-        c.chapter_sort,
-        c.chapter_number,
-        c.chapter_tie,
-        c.sort,
-    ]
-    matches = func.jsonb_agg(
-        func.jsonb_build_object(
-            "field",
-            c.field,
-            "excerpt",
-            excerpt,
-            "cut_start",
-            start > 1,
-            "cut_end",
-            start + window <= func.length(c.value),
+    hits: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for row in await load_fields(db, story_id, context, field, entity):
+        plain, origin = fold(row["value"])
+        at = plain.find(plain_query)
+        if at < 0 or not plain_query:
+            continue
+        # Same window as before: from 65 characters ahead of the match, query length + 150.
+        start = max(1, origin[at] + 1 - 65)
+        excerpt = row["value"][start - 1 : start - 1 + window]
+        rank = (0 if plain == plain_query else 1) if row["field"] in TITLE_FIELDS else 2
+        key = (row["story_id"], row["entity"], row["id"])
+        hit = hits.setdefault(key, {"row": row, "rank": rank, "matches": []})
+        hit["rank"] = min(hit["rank"], rank)
+        hit["matches"].append(
+            SearchMatch(
+                field=row["field"],
+                excerpt=tidy_excerpt(excerpt, start > 1, start + window <= len(row["value"])),
+            )
         )
-    )
-    results = await db.execute(
-        select(*columns, matches.label("matches"), func.min(rank).label("rank"))
-        .where(plain.like(func.unaccent(literal_pattern(query.lower())), escape="\\"))
-        .group_by(*columns)
-        .order_by(
-            func.min(rank), c.chapter_sort, c.chapter_number, c.chapter_tie, c.sort, c.entity, c.id
-        )
-        .offset(offset)
-        .limit(limit + 1)
-    )
-    rows = results.mappings().all()
+    ordered = sorted(hits.values(), key=lambda hit: order_key(hit["row"], hit["rank"]))
+    page = ordered[offset : offset + limit + 1]
     return SearchPage(
         items=[
             SearchHit(
-                story_id=row["story_id"],
-                story_title=row["story_title"],
-                entity=row["entity"],
-                id=row["id"],
-                title=row["title"],
-                chapter_id=row["chapter_id"],
-                chapter_title=row["chapter_title"],
-                matches=[
-                    SearchMatch(
-                        field=match["field"],
-                        excerpt=tidy_excerpt(
-                            match["excerpt"], match["cut_start"], match["cut_end"]
-                        ),
-                    )
-                    for match in row["matches"]
-                ],
+                story_id=hit["row"]["story_id"],
+                story_title=hit["row"]["story_title"],
+                entity=hit["row"]["entity"],
+                id=hit["row"]["id"],
+                title=hit["row"]["title"],
+                chapter_id=hit["row"]["chapter_id"],
+                chapter_title=hit["row"]["chapter_title"],
+                matches=hit["matches"],
             )
-            for row in rows[:limit]
+            for hit in page[:limit]
         ],
-        next_offset=offset + limit if len(rows) > limit else None,
+        next_offset=offset + limit if len(page) > limit else None,
     )

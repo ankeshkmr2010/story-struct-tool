@@ -21,12 +21,12 @@ from sqlalchemy import (
     Integer,
     String,
     Table,
-    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import CompletableMixin, StoryToolBase, metadata
+from storytool.db.encryption import EncryptedText
 from storytool.domain.enums import DraftStatus, SceneType
 
 # --------------------------------------------------------------- join tables
@@ -83,17 +83,17 @@ class Chapter(StoryToolBase, CompletableMixin):
         ForeignKey("act.id", ondelete="SET NULL"), default=None, index=True
     )
     number: Mapped[int] = mapped_column(Integer, default=1)
-    title: Mapped[str | None] = mapped_column(String(200), default=None)
-    summary: Mapped[str | None] = mapped_column(Text, default=None)
-    epigraph: Mapped[str | None] = mapped_column(Text, default=None)
-    opening_note: Mapped[str | None] = mapped_column(Text, default=None)
-    closing_note: Mapped[str | None] = mapped_column(Text, default=None)
+    title: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    summary: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    epigraph: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    opening_note: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    closing_note: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     pov_character_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("character.id", ondelete="SET NULL"), default=None
     )
-    emotional_shift_from: Mapped[str | None] = mapped_column(String(120), default=None)
-    emotional_shift_to: Mapped[str | None] = mapped_column(String(120), default=None)
+    emotional_shift_from: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    emotional_shift_to: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     status: Mapped[str] = mapped_column(String(20), default=DraftStatus.PLACEHOLDER)
     sort_key: Mapped[float] = mapped_column(Float, default=0.0)
@@ -121,29 +121,29 @@ class Scene(StoryToolBase, CompletableMixin):
     )
 
     type: Mapped[str] = mapped_column(String(10), default=SceneType.SCENE)
-    title: Mapped[str | None] = mapped_column(String(200), default=None)
-    summary: Mapped[str | None] = mapped_column(Text, default=None)
-    notes: Mapped[str | None] = mapped_column(Text, default=None)
+    title: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    summary: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    notes: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     # Free text is the *placeholder*: a scene can name a place before that place exists as an
     # entity. `location_id` is the committed form, and continuity checks only use that --
     # they cannot reason about a string.
-    location: Mapped[str | None] = mapped_column(String(200), default=None)
+    location: Mapped[str | None] = mapped_column(EncryptedText, default=None)
     location_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("location.id", ondelete="SET NULL"), default=None, index=True
     )
     # Same reasoning as Event: only ordering is mechanical, the label is the author's.
     story_time_ordinal: Mapped[int | None] = mapped_column(Integer, default=None)
-    time_label: Mapped[str | None] = mapped_column(String(200), default=None)
+    time_label: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     pov_character_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("character.id", ondelete="SET NULL"), default=None
     )
-    goal: Mapped[str | None] = mapped_column(Text, default=None)
-    conflict: Mapped[str | None] = mapped_column(Text, default=None)
-    outcome: Mapped[str | None] = mapped_column(Text, default=None)
-    emotional_value_from: Mapped[str | None] = mapped_column(String(120), default=None)
-    emotional_value_to: Mapped[str | None] = mapped_column(String(120), default=None)
+    goal: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    conflict: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    outcome: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    emotional_value_from: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    emotional_value_to: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     # Marks a deliberate jump backwards in story time. Without it, an out-of-order scene is
     # indistinguishable from a continuity error, so the anomaly engine would accuse every
@@ -155,7 +155,7 @@ class Scene(StoryToolBase, CompletableMixin):
 
     # Prose, as Markdown. Portable, diffable, greppable for Phase 4 inference, and it
     # exports without an intermediate representation.
-    content: Mapped[str | None] = mapped_column(Text, default=None)
+    content: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
     # A *cache* of a derived value, not an authored field: recomputed server-side from
     # content on every write and never settable by a client. Stored because a chapter or
@@ -175,12 +175,12 @@ class SceneRevision(StoryToolBase):
     __tablename__ = "scene_revision"
 
     scene_id: Mapped[UUID] = mapped_column(ForeignKey("scene.id", ondelete="CASCADE"), index=True)
-    content: Mapped[str | None] = mapped_column(Text, default=None)
+    content: Mapped[str | None] = mapped_column(EncryptedText, default=None)
     # server_default so this column can be added to a table that already has rows --
     # NOT NULL with no default is rejected by Postgres on a populated table.
     word_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     # Free-text label, e.g. "before rewriting Act 2".
-    label: Mapped[str | None] = mapped_column(String(200), default=None)
+    label: Mapped[str | None] = mapped_column(EncryptedText, default=None)
 
 
 class Annotation(StoryToolBase):
@@ -198,8 +198,8 @@ class Annotation(StoryToolBase):
     scene_id: Mapped[UUID] = mapped_column(ForeignKey("scene.id", ondelete="CASCADE"), index=True)
     start_offset: Mapped[int] = mapped_column(Integer)
     end_offset: Mapped[int] = mapped_column(Integer)
-    quoted_text: Mapped[str] = mapped_column(Text)
-    note: Mapped[str | None] = mapped_column(Text, default=None)
+    quoted_text: Mapped[str] = mapped_column(EncryptedText)
+    note: Mapped[str | None] = mapped_column(EncryptedText, default=None)
     is_orphaned: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     resolved: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -245,7 +245,7 @@ class Suggestion(StoryToolBase):
 
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
     code: Mapped[str] = mapped_column(String(60), index=True)
-    message: Mapped[str] = mapped_column(Text)
+    message: Mapped[str] = mapped_column(EncryptedText)
     # Optional subjects, as real FKs rather than a polymorphic pair.
     character_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("character.id", ondelete="CASCADE"), default=None

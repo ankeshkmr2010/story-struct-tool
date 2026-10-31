@@ -51,12 +51,21 @@ class StudyOutline:
 
 
 async def seed_outline(session: AsyncSession, owner_id: UUID, outline: StudyOutline) -> Story:
-    existing = await session.scalar(
-        select(Story)
-        .where(Story.user_id == owner_id, Story.title == outline.title)
-        .order_by(Story.created_at)
-        .limit(1)
+    # Titles are encrypted at rest, so they are compared after reading. Plain columns, not
+    # Story objects: objects already in the session may be expired, and async cannot reload them.
+    match = next(
+        (
+            story_id
+            for story_id, title in await session.execute(
+                select(Story.id, Story.title)
+                .where(Story.user_id == owner_id)
+                .order_by(Story.created_at)
+            )
+            if title == outline.title
+        ),
+        None,
     )
+    existing = await session.get(Story, match) if match else None
     if existing is not None:
         return existing
     story = Story(

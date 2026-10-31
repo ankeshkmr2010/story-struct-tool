@@ -3,13 +3,12 @@
 from collections.abc import AsyncGenerator
 from uuid import UUID
 
-from advanced_alchemy.exceptions import IntegrityError as AdvancedIntegrityError
 from litestar import Controller, delete, get, patch, post
 from litestar.di import Provide
 from litestar.exceptions import ClientException, NotFoundException
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from storytool.db.encryption import text_order
 from storytool.domain.analysis import load_graph_by_id
 from storytool.domain.common import apply_patch, fetch_or_404
 from storytool.domain.continuity import AnomalyKind, run_continuity
@@ -30,6 +29,16 @@ async def provide_locations(db_session: AsyncSession) -> AsyncGenerator[Location
     yield LocationService(session=db_session)
 
 
+async def refuse_duplicate_name(
+    locations: LocationService, story_id: UUID, name: str, keep: UUID | None = None
+) -> None:
+    existing = await locations.get_many(Location.story_id == story_id)
+    if any(place.name == name and place.id != keep for place in existing):
+        raise ClientException(
+            status_code=409, detail=f'This story already has a location named "{name}".'
+        )
+
+
 class LocationController(Controller):
     """Reference data, outside the ladder -- locations never gate a level."""
 
@@ -40,25 +49,18 @@ class LocationController(Controller):
 
     @get(summary="List locations")
     async def list_locations(self, locations: LocationService, story_id: UUID) -> list[LocationOut]:
-        records = await locations.get_many(
-            Location.story_id == story_id, order_by=Location.name.asc()
-        )
+        records = await locations.get_many(Location.story_id == story_id)
+        records.sort(key=lambda r: text_order(r.name))
         return [LocationOut.model_validate(r) for r in records]
 
     @post(status_code=201, summary="Create a location")
     async def create_location(
         self, locations: LocationService, story_id: UUID, data: LocationCreate
     ) -> LocationOut:
-        try:
-            record = await locations.create(Location(story_id=story_id, **data.model_dump()))
-        except (AdvancedIntegrityError, IntegrityError) as exc:
-            # The one unique constraint on this table, surfaced as a 409 rather than a 500:
-            # duplicate names break every continuity check that compares locations.
-            # advanced-alchemy wraps SQLAlchemy's IntegrityError in its own class, so both
-            # are caught -- matching only the SQLAlchemy one silently yields a 500.
-            raise ClientException(
-                status_code=409, detail=f'This story already has a location named "{data.name}".'
-            ) from exc
+        # Duplicate names break every continuity check that compares locations. Names are
+        # encrypted at rest, so this is checked here rather than by a database constraint.
+        await refuse_duplicate_name(locations, story_id, data.name)
+        record = await locations.create(Location(story_id=story_id, **data.model_dump()))
         return LocationOut.model_validate(record)
 
     @get("/usage", summary="Where each location is used")
@@ -84,6 +86,8 @@ class LocationController(Controller):
         data: LocationUpdate,
     ) -> LocationOut:
         record = await fetch_or_404(locations, "location", id=location_id, story_id=story_id)
+        if data.name is not None and data.name != record.name:
+            await refuse_duplicate_name(locations, story_id, data.name, location_id)
         record = await locations.update(apply_patch(record, data))
         return LocationOut.model_validate(record)
 

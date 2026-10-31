@@ -7,10 +7,11 @@ belong to the story directly, and a `World` can be introduced later without movi
 
 from uuid import UUID
 
-from sqlalchemy import Float, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Float, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import CompletableMixin, StoryToolBase
+from storytool.db.encryption import EncryptedText
 
 
 class Location(StoryToolBase, CompletableMixin):
@@ -25,13 +26,9 @@ class Location(StoryToolBase, CompletableMixin):
     complete_when = ("name", "description")
 
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
-    name: Mapped[str] = mapped_column(String(200))
-    description: Mapped[str | None] = mapped_column(Text, default=None)
-    atmosphere_notes: Mapped[str | None] = mapped_column(Text, default=None)
+    name: Mapped[str] = mapped_column(EncryptedText)
+    description: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    atmosphere_notes: Mapped[str | None] = mapped_column(EncryptedText, default=None)
     sort_key: Mapped[float] = mapped_column(Float, default=0.0)
-
-    __table_args__ = (
-        # Two locations with the same name in one story is almost always a typo rather than
-        # an intent, and continuity checking depends on names being distinct.
-        UniqueConstraint("story_id", "name", name="one_name_per_story"),
-    )
+    # Names are distinct per story (continuity checking compares them). Names are encrypted at
+    # rest, so the API checks this (world/controller.refuse_duplicate_name), not a constraint.

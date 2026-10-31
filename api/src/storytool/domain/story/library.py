@@ -6,6 +6,7 @@ writes and reads (streaks, This week).
 Card status and open-item counts are derived on every read, never stored (DESIGN.md).
 """
 
+import re
 from datetime import UTC, date, datetime
 from uuid import UUID
 
@@ -95,6 +96,9 @@ class CardUpdate(BaseModel):
 
 
 # Stories created before the simpler Design shipped keep every tool and level by default.
+# A TK marker: [TK] or [TK: note], any case.
+TK_MARKER = re.compile(r"\[\s*tk\s*[\]:]", re.IGNORECASE)
+
 SIMPLE_SINCE = datetime(2026, 10, 30, tzinfo=UTC)
 
 
@@ -145,7 +149,8 @@ class LibraryController(Controller):
                 select(LibraryCard).where(LibraryCard.user_id == user_id)
             )
         }
-        counts: dict[UUID, tuple[int, int, int, int, int, int]] = {}
+        counts: dict[UUID, tuple[int, int, int, int, int]] = {}
+        tk_counts: dict[UUID, int] = {}
         pending: dict[UUID, int] = {}
         if story_ids:
             rows = await db_session.execute(
@@ -159,19 +164,18 @@ class LibraryController(Controller):
                         (Scene.word_count > 0) | Scene.status.in_(("drafted", "revised"))
                     ),
                     func.coalesce(func.sum(Scene.word_count), 0),
-                    func.coalesce(
-                        func.sum(
-                            func.regexp_count(
-                                func.coalesce(Scene.content, ""), r"\[\s*tk\s*[]:]", 1, "i"
-                            )
-                        ),
-                        0,
-                    ),
                 )
                 .where(Scene.story_id.in_(story_ids))
                 .group_by(Scene.story_id)
             )
             counts = {row[0]: tuple(int(value) for value in row[1:]) for row in rows.all()}  # type: ignore[misc]
+            # Prose is encrypted at rest, so TKs are counted after reading it.
+            for owner, content in await db_session.execute(
+                select(Scene.story_id, Scene.content).where(
+                    Scene.story_id.in_(story_ids), Scene.content.is_not(None)
+                )
+            ):
+                tk_counts[owner] = tk_counts.get(owner, 0) + len(TK_MARKER.findall(content or ""))
             from storytool.domain.cast.models import Character
 
             characters = dict(
@@ -194,9 +198,8 @@ class LibraryController(Controller):
             )
         out = []
         for story_id in story_ids:
-            scenes, drafted, revised, with_prose, words, tks = counts.get(
-                story_id, (0, 0, 0, 0, 0, 0)
-            )
+            scenes, drafted, revised, with_prose, words = counts.get(story_id, (0, 0, 0, 0, 0))
+            tks = tk_counts.get(story_id, 0)
             card = cards.get(story_id)
             out.append(
                 CardOut(

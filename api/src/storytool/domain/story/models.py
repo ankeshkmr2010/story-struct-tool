@@ -3,11 +3,11 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import CompletableMixin, StoryToolBase
+from storytool.db.encryption import EncryptedJSON, EncryptedText
 from storytool.domain.enums import AuthoringMode, StructureFramework
 
 
@@ -17,23 +17,23 @@ class Story(StoryToolBase, CompletableMixin):
     # Level 1 is premise. A story with a title but no premise is a valid placeholder.
     complete_when = ("title", "premise")
 
-    title: Mapped[str] = mapped_column(String(300))
+    title: Mapped[str] = mapped_column(EncryptedText)
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), default=None, index=True
     )
-    premise: Mapped[str | None] = mapped_column(Text, default=None)
-    blurb: Mapped[str | None] = mapped_column(Text, default=None)
-    thematic_statement: Mapped[str | None] = mapped_column(Text, default=None)
-    motifs: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
-    world_rules: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
-    style_rules: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
-    notes: Mapped[str | None] = mapped_column(Text, default=None)
-    genre: Mapped[str | None] = mapped_column(String(120), default=None)
+    premise: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    blurb: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    thematic_statement: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    motifs: Mapped[list[str] | None] = mapped_column(EncryptedJSON, default=None)
+    world_rules: Mapped[list[str] | None] = mapped_column(EncryptedJSON, default=None)
+    style_rules: Mapped[list[str] | None] = mapped_column(EncryptedJSON, default=None)
+    notes: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    genre: Mapped[str | None] = mapped_column(EncryptedText, default=None)
     pov_style: Mapped[str | None] = mapped_column(String(40), default=None)
     # None follows the author's account language.
     language: Mapped[str | None] = mapped_column(String(10), default=None)
     # Consistency findings the author chose to keep ("Keep both"), by finding key.
-    consistency_exceptions: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
+    consistency_exceptions: Mapped[list[str] | None] = mapped_column(EncryptedJSON, default=None)
     structure_framework: Mapped[str] = mapped_column(
         String(40), default=StructureFramework.THREE_ACT
     )

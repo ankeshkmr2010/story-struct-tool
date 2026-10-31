@@ -11,11 +11,11 @@ from uuid import UUID
 
 from litestar.exceptions import ClientException
 from pydantic import BaseModel, Field, model_validator
-from sqlalchemy import ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import StoryToolBase
+from storytool.db.encryption import EncryptedJSON, EncryptedText
 from storytool.domain.evaluation.engine import Review
 from storytool.domain.graph import StoryGraph
 
@@ -32,8 +32,8 @@ class EvaluationReport(StoryToolBase):
     """"mcp" (an external agent) or "assistant" (the author's connected key)."""
     model: Mapped[str | None] = mapped_column(String(200), default=None)
     base_fingerprint: Mapped[str] = mapped_column(String(64))
-    summary: Mapped[str] = mapped_column(Text)
-    verdicts: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)
+    summary: Mapped[str] = mapped_column(EncryptedText)
+    verdicts: Mapped[list[dict[str, Any]]] = mapped_column(EncryptedJSON)
 
 
 class VerdictIn(BaseModel):

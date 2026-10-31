@@ -24,16 +24,23 @@ async def retire_old_examples(session: AsyncSession, user_id: UUID) -> None:
         .where(FieldAuthorship.story_id == Story.id, FieldAuthorship.origin != "system")
         .exists()
     )
-    await session.execute(
-        update(Story)
-        .where(
-            Story.user_id == user_id,
-            Story.title.in_(RETIRED_TITLES),
-            Story.deleted_at.is_(None),
-            ~edited,
+    # Titles are encrypted at rest, so they are compared after reading.
+    candidates = (
+        await session.execute(
+            select(Story.id, Story.title).where(
+                Story.user_id == user_id, Story.deleted_at.is_(None), ~edited
+            )
         )
-        .values(deleted_at=datetime.now(UTC))
-    )
+    ).all()
+    retired = [story_id for story_id, title in candidates if title in RETIRED_TITLES]
+    if retired:
+        # "fetch": evaluating in memory would refresh expired objects, which async cannot do.
+        await session.execute(
+            update(Story)
+            .where(Story.id.in_(retired))
+            .values(deleted_at=datetime.now(UTC))
+            .execution_options(synchronize_session="fetch")
+        )
 
 
 async def seed_demo(session: AsyncSession, user_id: UUID) -> Story:

@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import StoryToolBase
+from storytool.db.encryption import EncryptedJSON, EncryptedText
 
 
 class StoryVersion(StoryToolBase):
@@ -13,9 +14,9 @@ class StoryVersion(StoryToolBase):
     story_id: Mapped[UUID] = mapped_column(ForeignKey("story.id", ondelete="CASCADE"), index=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("app_user.id", ondelete="CASCADE"), index=True)
     number: Mapped[int] = mapped_column(Integer)
-    label: Mapped[str] = mapped_column(String(200))
+    label: Mapped[str] = mapped_column(EncryptedText)
     source: Mapped[str] = mapped_column(String(30))
-    state: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    state: Mapped[dict[str, Any]] = mapped_column(EncryptedJSON)
     fingerprint: Mapped[str] = mapped_column(String(64))
     statistics: Mapped[dict[str, Any]] = mapped_column(JSONB)
     __table_args__ = (UniqueConstraint("story_id", "number", name="one_version_number_per_story"),)
