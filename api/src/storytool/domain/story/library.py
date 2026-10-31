@@ -76,6 +76,9 @@ class CardOut(BaseModel):
     cover_url: str | None = None
     cover_focus_x: float = 0.5
     cover_focus_y: float = 0.5
+    # First-hour checklist (usability phase 3): seeded examples don't count as the writer's work.
+    example: bool = False
+    character_count: int = 0
 
 
 class LibraryOverviewOut(BaseModel):
@@ -93,6 +96,16 @@ class CardUpdate(BaseModel):
 
 # Stories created before the simpler Design shipped keep every tool and level by default.
 SIMPLE_SINCE = datetime(2026, 10, 30, tzinfo=UTC)
+
+
+def is_example(title: str, genre: str | None) -> bool:
+    """The seeded study outlines, tutorial and demo story (storytool.examples)."""
+    from storytool.examples.catalog import STARTER_OUTLINES
+    from storytool.examples.tutorial import GENRE as TUTORIAL_GENRE
+
+    if genre == TUTORIAL_GENRE or genre in {outline.genre for outline in STARTER_OUTLINES}:
+        return True
+    return (title, genre) == ("The Red-Headed League", "Classic Detective Fiction")
 
 
 def chosen(card: "LibraryCard | None", field: str, created_at: datetime) -> bool:
@@ -115,16 +128,17 @@ class LibraryController(Controller):
     @get("/overview", summary="Card arrangement, status and open items for Your stories")
     async def overview(self, request: Request, db_session: AsyncSession) -> LibraryOverviewOut:
         user_id: UUID = request.scope["state"]["storytool_user_id"]
-        created = dict(
-            (
-                await db_session.execute(
-                    select(Story.id, Story.created_at).where(
-                        Story.user_id == user_id, Story.deleted_at.is_(None)
-                    )
+        created_rows = (
+            await db_session.execute(
+                select(Story.id, Story.created_at, Story.title, Story.genre).where(
+                    Story.user_id == user_id, Story.deleted_at.is_(None)
                 )
-            ).all()
-        )
+            )
+        ).all()
+        created = {row[0]: row[1] for row in created_rows}
         story_ids = list(created)
+        examples = {row[0] for row in created_rows if is_example(row[2], row[3])}
+        characters: dict[UUID, int] = {}
         cards = {
             card.story_id: card
             for card in await db_session.scalars(
@@ -158,6 +172,17 @@ class LibraryController(Controller):
                 .group_by(Scene.story_id)
             )
             counts = {row[0]: tuple(int(value) for value in row[1:]) for row in rows.all()}  # type: ignore[misc]
+            from storytool.domain.cast.models import Character
+
+            characters = dict(
+                (
+                    await db_session.execute(
+                        select(Character.story_id, func.count(Character.id))
+                        .where(Character.story_id.in_(story_ids))
+                        .group_by(Character.story_id)
+                    )
+                ).all()
+            )
             pending = dict(
                 (
                     await db_session.execute(
@@ -186,6 +211,8 @@ class LibraryController(Controller):
                     drafted_scene_count=with_prose,
                     tk_count=tks,
                     pending_agent_changes=pending.get(story_id, 0),
+                    example=story_id in examples,
+                    character_count=characters.get(story_id, 0),
                 )
             )
         # Covers replace the generated tile on cards that have one.

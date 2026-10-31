@@ -24,7 +24,7 @@ export type StoryActivity = S['StoryActivityOut']
 export type WorkspacePlace = S['WorkspacePlace']
 export type RoadmapItem = S['RoadmapOut']
 // Your stories: per-account card arrangement plus derived status and open items (api domain/story/library.py).
-export type LibraryCardState = { story_id: string; position: number | null; pinned: boolean; archived: boolean; status: 'planning' | 'draft' | 'revision'; scene_count: number; drafted_scene_count: number; tk_count: number; pending_agent_changes: number; goal_percent: number | null; goal_status: StoryGoalStatus | null; cover_url: string | null; cover_focus_x: number; cover_focus_y: number; show_all_tools: boolean; full_ladder: boolean }
+export type LibraryCardState = { story_id: string; position: number | null; pinned: boolean; archived: boolean; status: 'planning' | 'draft' | 'revision'; scene_count: number; drafted_scene_count: number; tk_count: number; pending_agent_changes: number; goal_percent: number | null; goal_status: StoryGoalStatus | null; cover_url: string | null; cover_focus_x: number; cover_focus_y: number; show_all_tools: boolean; full_ladder: boolean; example: boolean; character_count: number }
 export type LibraryOverview = { cards: LibraryCardState[] }
 // Writing goals (api domain/story/goals.py). Streaks, pace and status are derived server-side.
 export type GoalSettings = { daily_words: number | null; writing_days: number; forgive_missed: boolean; count_ai: boolean; timezone: string }

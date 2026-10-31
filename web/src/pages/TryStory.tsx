@@ -46,6 +46,8 @@ export default function TryStory() {
   const [keeping, setKeeping] = useState(false)
   const [coachHost, setCoachHost] = useState<HTMLElement | null>(null)
   const [tourRun, setTourRun] = useState(0)
+  // An example link (?open=…) shows that panel; the tour waits until the visitor resumes it.
+  const [linked, setLinked] = useState(() => new URLSearchParams(window.location.search).has('open'))
   const [tourMoving, setTourMoving] = useState(false)
   const [discoverOpen, setDiscoverOpen] = useState(false)
   useEffect(() => {
@@ -69,9 +71,9 @@ export default function TryStory() {
     if (banner) observer.observe(banner)
     if (coach) observer.observe(coach)
     return () => { observer.disconnect(); document.documentElement.style.removeProperty('--try-banner-height'); document.documentElement.style.removeProperty('--try-coach-height') }
-  }, [state?.created, state?.skipped, state?.completed, coachHost])
+  }, [state?.created, state?.skipped, state?.completed, coachHost, linked])
   useEffect(() => {
-    if (!state || state.skipped || state.completed || discoverOpen) return
+    if (!state || state.skipped || state.completed || discoverOpen || linked) return
     const selectors = [
       // Labels are translated, so the selectors use the same t() text as the buttons.
       `#workspace-panel-read [aria-label="${CSS.escape(t('Next reading page'))}"]:not([disabled])`,
@@ -102,7 +104,7 @@ export default function TryStory() {
       observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'aria-pressed'] })
     }
     return () => { observer?.disconnect(); highlighted?.removeAttribute('data-try-target') }
-  }, [state?.step, state?.skipped, state?.completed, tourRun, coachHost, discoverOpen])
+  }, [state?.step, state?.skipped, state?.completed, tourRun, coachHost, discoverOpen, linked])
   useEffect(() => {
     if (state?.step !== 5) { setCoachHost(null); return }
     const updateHost = () => {
@@ -142,6 +144,7 @@ export default function TryStory() {
   }
   // Restart goes back to step 1 from anywhere (a stuck or finished tour) and keeps the visitor's edits.
   const resumeTour = async (restart = false) => {
+    setLinked(false)
     try {
       setError('')
       if (window.storytoolTryFlush && !await window.storytoolTryFlush()) throw new Error(t('Save your writing before resuming the tour.'))
@@ -165,7 +168,7 @@ export default function TryStory() {
     finally { setTourMoving(false) }
   }
   if (!state) return <main className="p-8"><h1>{t('The Last Lantern')}</h1>{query.error ? <><p role="alert">{String(query.error)}</p><button onClick={() => void query.refetch()}>{t('Retry')}</button></> : <p>{t('Opening your browser sandbox…')}</p>}</main>
-  const coach = !state.skipped && <aside ref={coachRef} id="try-tour" className="try-coach" aria-label={t('Guided sandbox tour')}>
+  const coach = !state.skipped && !linked && <aside ref={coachRef} id="try-tour" className="try-coach" aria-label={t('Guided sandbox tour')}>
       <div className="try-progress"><span>{t('{0} of {1}', state.step, LAST_STEP)}</span><span aria-hidden="true">{events.map((_, i) => <i key={i} className={i < state.step ? 'filled' : ''} />)}</span><button onClick={() => { void transact(value => { value.skipped = true; value.events.push('try_skip') }).then(() => { void query.refetch(); void flushEvents() }).catch(e => setError(String(e))) }}>{t('Skip tour')}</button></div>
       <p>{state.completed ? t('Every change is on record. Keep this story and everything you wrote.') : t(instructions[state.step - 1] ?? '')}</p>
       {state.step === 2 && !state.completed && <button className="share-story-button" onClick={() => window.dispatchEvent(new Event('storytool-try-images'))}>{t('Try inserting an image →')}</button>}
@@ -176,7 +179,7 @@ export default function TryStory() {
   return <div className="try-page" data-try-step={state.skipped ? 0 : state.step}>
     <div ref={bannerRef} className="try-banner"><span>{t('Sandbox · your changes stay in this browser')}</span><button className="try-tour-button" aria-controls="try-tour" onClick={() => void resumeTour()}>{!state.skipped && !state.completed ? t('Tour · {0} of {1}', state.step, LAST_STEP) : state.completed || state.step === 1 ? t('Start tour') : t('Resume tour')}</button><button className="try-discover-button" onClick={() => setDiscoverOpen(true)}>{t('Discover more →')}</button><button disabled={keeping} onClick={() => void keep()}>{t('Keep this story free →')}</button><details><summary aria-label={t('Sandbox menu')}>⋯</summary><button onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); void resumeTour(true) }}>{t('Restart tour')}</button><button disabled={resetting} onClick={() => { if (!confirm(t('Reset The Last Lantern and remove your sandbox edits?'))) return; setResetting(true); void resetSandbox().then(() => { qc.removeQueries({ predicate: query => query.queryKey.includes(SANDBOX_ID) || query.queryKey[0] === 'sandbox' }); location.assign('/try') }).catch(e => { setError(String(e)); setResetting(false) }) }}>{t('Reset sandbox')}</button></details></div>
     {error && <p role="alert" className="p-3 writer-error">{error}</p>}
-    <Workspace storyId={SANDBOX_ID} sandboxStep={state.skipped ? 0 : state.step} sandboxRun={tourRun} sandboxHistory={state} />
+    <Workspace storyId={SANDBOX_ID} sandboxStep={state.skipped || linked ? 0 : state.step} sandboxRun={tourRun} sandboxHistory={state} />
     <DiscoverTour open={discoverOpen} onClose={() => setDiscoverOpen(false)} onKeep={() => { setDiscoverOpen(false); void keep() }} />
     {coachHost ? createPortal(coach, coachHost) : coach}
   </div>

@@ -3692,6 +3692,10 @@ export interface components {
             position: number | null;
             pinned: boolean;
             archived: boolean;
+            /** @default true */
+            show_all_tools: boolean;
+            /** @default true */
+            full_ladder: boolean;
             status: string;
             scene_count: number;
             drafted_scene_count: number;
@@ -3704,12 +3708,18 @@ export interface components {
             cover_focus_x: number;
             /** @default 0.5 */
             cover_focus_y: number;
+            /** @default false */
+            example: boolean;
+            /** @default 0 */
+            character_count: number;
         };
         /** CardUpdate */
         CardUpdate: {
             position?: number | null;
             pinned?: boolean | null;
             archived?: boolean | null;
+            show_all_tools?: boolean | null;
+            full_ladder?: boolean | null;
         };
         /** ChapterBriefOut */
         ChapterBriefOut: {
@@ -4258,6 +4268,23 @@ export interface components {
         /** GoogleCredential */
         GoogleCredential: {
             credential: string;
+        };
+        /** GuideIn */
+        GuideIn: {
+            checklist_dismissed?: boolean | null;
+            check_run?: boolean | null;
+            tips_off?: boolean | null;
+            tip_seen?: string | null;
+        };
+        /** GuideOut */
+        GuideOut: {
+            /** @default false */
+            checklist_dismissed: boolean;
+            /** @default false */
+            check_run: boolean;
+            /** @default false */
+            tips_off: boolean;
+            tips_seen?: string[];
         };
         /** HabitOut */
         HabitOut: {
@@ -4822,6 +4849,7 @@ export interface components {
             ui_language?: components["schemas"]["UiLanguage"] | null;
             /** @description Show Placeholder, Outlined and Revised beside Draft and Done. */
             detailed_statuses?: boolean | null;
+            guide?: components["schemas"]["GuideIn"] | null;
         };
         /** ProgressIn */
         ProgressIn: {
@@ -5750,6 +5778,7 @@ export interface components {
             ui_language?: string | null;
             /** @default false */
             detailed_statuses: boolean;
+            guide?: components["schemas"]["GuideOut"];
         };
         /** ValidatorCreate */
         ValidatorCreate: {

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { FirstHourChecklist } from '../components/FirstHourChecklist'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, type Story, type DocxImport, type ImportFormat, type LibraryCardState, type LibraryCardUpdate, type LibraryOverview } from '../api/client'
@@ -243,6 +244,7 @@ export default function StoryList() {
       <p className="mt-2 text-xs leading-5 text-slate-400">
         {t('Your library includes editable study examples and an original timeline-and-arc tutorial. Each account has its own copies.')}
       </p>
+      {stories.data && overview.data && <FirstHourChecklist stories={stories.data} cards={overview.data.cards} onNewStory={() => { newTitle.current?.focus(); newTitle.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }) }} />}
       {lastPlace.data && <ContinueCard storyId={lastPlace.data.story_id} title={lastPlace.data.title} mode={{ write: t('Writing'), read: t('Reading'), design: t('Designing') }[lastPlace.data.position.mode ?? 'design']} edited={editedLabel(lastStory?.updated_at ?? lastPlace.data.updated_at)} card={cardOf(lastPlace.data.story_id)} feedback={feedbackCounts.data?.[lastPlace.data.story_id] ?? 0} />}
       {stories.data?.find((story) => story.genre === 'Tutorial · timelines and arcs') && <Link to={`/stories/${stories.data.find((story) => story.genre === 'Tutorial · timelines and arcs')!.id}`} className="lib-tutorial-link">{t('Learn timelines and arcs with The Last Lantern →')}</Link>}
 

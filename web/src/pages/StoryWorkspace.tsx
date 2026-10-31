@@ -30,6 +30,7 @@ import { BesidePanel } from '../components/BesidePanel'
 import { RenameDialog } from '../components/RenameDialog'
 import { OPEN_BESIDE_EVENT, isBesideItem, openBeside, type BesideTarget } from '../components/beside'
 import { writerAction } from '../components/writerActions'
+import { useGuide } from '../components/guide'
 import { LANGUAGES, languageLabel } from '../components/languages'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
@@ -91,6 +92,9 @@ const HISTORY_VIEW = 107
 // Check my story (usability phase 1): Health, Continuity, Evaluate and Noticed in one place.
 // It keeps Evaluate's view id so saved positions and existing links still land here.
 const EVALUATE_VIEW = 108
+// ?open=write or ?open=<level or view id> opens a story at that place (first-hour checklist, empty-state examples).
+const linkedOpen = () => { try { return new URLSearchParams(window.location.search).get('open') } catch { return null } }
+const linkedView = () => { const view = Number(linkedOpen()); return (view >= 1 && view <= 8) || (view >= 100 && view < 200) ? view : undefined }
 type CheckTab = 'needs' | 'craft' | 'ai'
 const PLACEHOLDERS_VIEW = 109
 const PACING_VIEW = 110
@@ -136,7 +140,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const [savedSearchContext] = useState(() => {
     try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' ? JSON.parse(localStorage.getItem(`storytool-search-context:${storyId}`) || '{}') : {} } catch { return {} }
   })
-  const [level, setLevel] = useState(() => initialPosition?.level ?? ([1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW, PLACEHOLDERS_VIEW, PACING_VIEW, STRUCTURE_VIEW, TIMELINE_VIEW, PLACES_VIEW, GLOSSARY_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1))
+  const [level, setLevel] = useState(() => linkedView() ?? initialPosition?.level ?? ([1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW, PLACEHOLDERS_VIEW, PACING_VIEW, STRUCTURE_VIEW, TIMELINE_VIEW, PLACES_VIEW, GLOSSARY_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1))
   // Levels 1-8 are the Plan; ids from 104 up are full-width Design pages (Grid, History, …).
   const isView = level >= INBOX_VIEW
   const planLevel = useRef(1)
@@ -152,6 +156,8 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   if (!isView) planLevel.current = level
   const [historyTab, setHistoryTab] = useState<'versions' | 'authorship'>('versions')
   const [tab, setTab] = useState<'write' | 'read' | 'design'>(() => {
+    if (linkedOpen() === 'write') return 'write'
+    if (linkedView()) return 'design'
     if (initialPosition?.mode) return initialPosition.mode
     if (['write', 'read', 'design'].includes(savedSearchContext.tab)) return savedSearchContext.tab
     try { const saved = localStorage.getItem(`storytool-workspace:${storyId}`); return saved === 'write' || saved === 'read' ? saved : 'design' } catch { return 'design' }
@@ -357,6 +363,9 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const baseViews = viewMode === 'pantser' ? [PLACES_VIEW] : viewMode === 'hybrid' ? [STRUCTURE_VIEW, PLACES_VIEW, EVALUATE_VIEW] : [STRUCTURE_VIEW, PLACES_VIEW, GLOSSARY_VIEW, EVALUATE_VIEW, GRID_VIEW]
   const unlocked = (view: number) => (view === TIMELINE_VIEW && sceneTotal >= 5) || (view === PACING_VIEW && sceneTotal >= 10)
   const shows = (view: number) => showAll || baseViews.includes(view) || unlocked(view) || (view === INBOX_VIEW && pendingRuns > 0) || level === view
+  // Opening Check my story ticks "Run one check" on the first-hour checklist.
+  const { guide, update: updateGuide } = useGuide()
+  useEffect(() => { if (!sandbox && level === EVALUATE_VIEW && guide && !guide.check_run) updateGuide({ check_run: true }) })
   const inTools = (view: number) => shows(view) && (railTools || level === view)
   const ladderLevels = fullLadder ? undefined : viewMode === 'pantser' ? [3] : [1, 4, 8]
   const seenKey = (view: number) => `storytool-unlocked:${storyId}:${view}`

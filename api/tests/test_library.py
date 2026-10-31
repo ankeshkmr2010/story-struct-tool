@@ -83,3 +83,17 @@ async def test_design_view_choices_default_by_story_age_and_can_be_set(client, m
     assert (await read())["show_all_tools"] is True
     await client.patch(f"/api/library/cards/{story_id}", json={"show_all_tools": False})
     assert (await read())["show_all_tools"] is False
+
+
+async def test_cards_count_characters_and_mark_seeded_examples(client):
+    mine = (await client.post("/api/stories", json={"title": "Mine"})).json()["id"]
+    demo = (
+        await client.post(
+            "/api/stories",
+            json={"title": "The Red-Headed League", "genre": "Classic Detective Fiction"},
+        )
+    ).json()["id"]
+    await client.post(f"/api/stories/{mine}/characters", json={"name": "Ada"})
+    cards = {c["story_id"]: c for c in (await client.get("/api/library/overview")).json()["cards"]}
+    assert cards[mine]["character_count"] == 1 and cards[mine]["example"] is False
+    assert cards[demo]["example"] is True

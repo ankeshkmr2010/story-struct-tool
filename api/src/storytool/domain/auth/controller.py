@@ -42,6 +42,7 @@ class UserOut(BaseModel):
     language: str
     ui_language: str | None = None
     detailed_statuses: bool = False
+    guide: "GuideOut" = Field(default_factory=lambda: GuideOut())
 
     @classmethod
     def from_user(cls, user: User) -> "UserOut":
@@ -54,7 +55,29 @@ class UserOut(BaseModel):
             language=user.language,
             ui_language=user.ui_language,
             detailed_statuses=user.detailed_statuses,
+            guide=GuideOut.model_validate(user.guide or {}),
         )
+
+
+class GuideOut(BaseModel):
+    """First-hour checklist and first-use tips (usability phase 3)."""
+
+    checklist_dismissed: bool = False
+    check_run: bool = False
+    tips_off: bool = False
+    tips_seen: list[str] = Field(default_factory=list)
+
+
+class GuideIn(BaseModel):
+    """Only the fields sent change; `tip_seen` adds one tip id to tips_seen."""
+
+    checklist_dismissed: bool | None = None
+    check_run: bool | None = None
+    tips_off: bool | None = None
+    tip_seen: str | None = Field(default=None, max_length=60)
+
+
+UserOut.model_rebuild()
 
 
 class ProfileIn(BaseModel):
@@ -70,6 +93,7 @@ class ProfileIn(BaseModel):
     detailed_statuses: bool | None = Field(
         default=None, description="Show Placeholder, Outlined and Revised beside Draft and Done."
     )
+    guide: GuideIn | None = None
 
 
 def verify_google_credential(credential: str, client_id: str) -> dict[str, object]:
@@ -177,6 +201,14 @@ class AuthController(Controller):
             user.ui_language = data.ui_language
         if data.detailed_statuses is not None:
             user.detailed_statuses = data.detailed_statuses
+        if data.guide is not None:
+            guide = GuideOut.model_validate(user.guide or {})
+            for field in ("checklist_dismissed", "check_run", "tips_off"):
+                if getattr(data.guide, field) is not None:
+                    setattr(guide, field, getattr(data.guide, field))
+            if data.guide.tip_seen and data.guide.tip_seen not in guide.tips_seen:
+                guide.tips_seen = [*guide.tips_seen, data.guide.tip_seen][-200:]
+            user.guide = guide.model_dump()
         await db_session.flush()
         return UserOut.from_user(user)
 

@@ -1757,3 +1757,18 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 .ws-write-tools { display: flex; align-items: center; gap: 4px; padding-right: 6px; border-right: 1px solid var(--line); }
 .ws-write-tools .ui-icon-btn { border-color: transparent; border-radius: 50%; }
 .ws-tk-glyph { font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+
+/* Usability phase 3, item 9: first-hour checklist on the Library. */
+.first-hour { margin-top: 20px; padding: 16px 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.first-hour header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.first-hour h2 { margin: 0; color: var(--ink); font-size: 15px; font-weight: 600; }
+.first-hour header button { color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
+.first-hour ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.first-hour li { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
+.first-hour li a, .first-hour li button { color: var(--accent); font-weight: 600; text-align: left; }
+.first-hour li.is-done { color: var(--muted); }
+.first-hour-mark { display: inline-grid; flex: none; width: 18px; height: 18px; place-items: center; border: 1.5px solid var(--line); border-radius: 50%; color: var(--accent); font-size: 11px; font-weight: 700; }
+.first-hour li.is-done .first-hour-mark { border-color: var(--accent); background: var(--accent-soft); }
+.first-hour-optional { margin-left: auto; color: var(--muted); font-size: 11px; }
+@media (max-width: 760px) { .first-hour ol { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .first-hour ol { grid-template-columns: 1fr; } }

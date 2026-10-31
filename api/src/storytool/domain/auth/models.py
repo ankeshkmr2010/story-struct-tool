@@ -1,10 +1,12 @@
 """App users are keyed by Google's stable subject, not their mutable email address."""
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from advanced_alchemy.types import DateTimeUTC
 from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import StoryToolBase
@@ -24,6 +26,8 @@ class User(StoryToolBase):
     # New accounts start simple; accounts that existed before 2026-10-31 keep detailed.
     detailed_statuses: Mapped[bool] = mapped_column(Boolean, default=False)
     picture_url: Mapped[str | None] = mapped_column(String(1000), default=None)
+    # Teach-in-place state (usability phase 3): checklist_dismissed, check_run, tips_off, tips_seen.
+    guide: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     examples_seed_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
