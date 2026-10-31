@@ -2188,6 +2188,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/funnel/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** First-run measures per account, newest signups first (site admin only) */
+        get: operations["ApiAdminFunnelAccountsAccounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/site/tool-open": {
         parameters: {
             query?: never;
@@ -3362,6 +3379,27 @@ export interface components {
         AIReviewRequest: {
             /** Format: uuid */
             connection_id: string;
+        };
+        /** AccountOut */
+        AccountOut: {
+            email: string;
+            signed_up: string | null;
+            first_scene: string | null;
+            hours_to_first_scene: number | null;
+            ai_connected: string | null;
+            added_a_character: boolean;
+            ran_a_check: boolean;
+            hid_checklist: boolean;
+            tools: components["schemas"]["AccountToolOut"][];
+        };
+        /** AccountToolOut */
+        AccountToolOut: {
+            tool: string;
+            sessions: number;
+            /** Format: date-time */
+            first_opened: string;
+            /** Format: date-time */
+            last_opened: string;
         };
         /** ActCreate */
         ActCreate: {
@@ -11566,6 +11604,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FirstRunOut"];
+                };
+            };
+        };
+    };
+    ApiAdminFunnelAccountsAccounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountOut"][];
                 };
             };
         };

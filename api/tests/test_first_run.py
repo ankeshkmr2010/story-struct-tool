@@ -39,3 +39,22 @@ async def test_tool_opens_and_checklist_steps_are_counted(
     assert data["checklist"]["ran_a_check"] == 1
     assert data["accounts"] >= 1
     assert data["hours_to_first_scene"][0]["label"] == "Under 1 hour"
+
+
+async def test_accounts_view_lists_each_account_by_email_for_the_admin_only(
+    client: AsyncTestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assert (await client.get("/api/admin/funnel/accounts")).status_code == 403
+    monkeypatch.setenv("STORYTOOL_ADMIN_EMAILS", "Author@Example.com")
+    from storytool.config import get_settings
+
+    get_settings.cache_clear()
+    me = (await client.get("/api/auth/me")).json()
+    story = (await client.post("/api/stories", json={"title": "Mine"})).json()
+    await client.post(f"/api/stories/{story['id']}/characters", json={"name": "Ada"})
+    await client.post("/api/site/tool-open", json={"tool": "grid"})
+    rows = (await client.get("/api/admin/funnel/accounts")).json()
+    row = next(row for row in rows if row["email"] == me["email"])
+    assert row["added_a_character"] is True and row["ran_a_check"] is False
+    assert [tool["tool"] for tool in row["tools"]] == ["grid"] and row["tools"][0]["sessions"] == 1
+    get_settings.cache_clear()

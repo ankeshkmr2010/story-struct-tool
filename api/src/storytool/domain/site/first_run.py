@@ -198,3 +198,94 @@ class FirstRunController(Controller):
             checklist=checklist,
             tools=tools,
         )
+
+
+class AccountToolOut(BaseModel):
+    tool: str
+    sessions: int
+    first_opened: datetime
+    last_opened: datetime
+
+
+class AccountOut(BaseModel):
+    email: str
+    signed_up: datetime | None
+    first_scene: datetime | None
+    hours_to_first_scene: float | None
+    ai_connected: datetime | None
+    added_a_character: bool
+    ran_a_check: bool
+    hid_checklist: bool
+    tools: list[AccountToolOut]
+
+
+class FirstRunAccountsController(Controller):
+    """First-run measures per account, by email (site admin only; not anonymised for now)."""
+
+    path = "/api/admin/funnel/accounts"
+    tags = ["site"]  # noqa: RUF012
+    signature_namespace = {"AsyncSession": AsyncSession}  # noqa: RUF012
+
+    @get(summary="First-run measures per account, newest signups first (site admin only)")
+    async def accounts(self, request: Request, db_session: AsyncSession) -> list[AccountOut]:
+        await require_admin(request, db_session)
+        from storytool.domain.auth.models import User
+        from storytool.domain.cast.models import Character
+        from storytool.domain.story.library import is_example
+        from storytool.domain.story.models import Story
+
+        users = (await db_session.execute(select(User.id, User.email, User.guide))).all()
+        events: dict[str, dict] = {"signup": {}, "first_scene": {}, "ai_connected": {}}
+        for kind, subject, at in (
+            await db_session.execute(
+                select(FunnelEvent.kind, FunnelEvent.subject_id, FunnelEvent.created_at).where(
+                    FunnelEvent.kind.in_(list(events))
+                )
+            )
+        ).all():
+            events[kind][subject] = at
+        cast = {
+            owner
+            for owner, title, genre in (
+                await db_session.execute(
+                    select(Story.user_id, Story.title, Story.genre)
+                    .join(Character, Character.story_id == Story.id)
+                    .where(Story.deleted_at.is_(None))
+                    .distinct()
+                )
+            ).all()
+            if not is_example(title, genre)
+        }
+        tools: dict[UUID, list[AccountToolOut]] = {}
+        for row in await db_session.scalars(select(ToolUse).order_by(ToolUse.updated_at.desc())):
+            tools.setdefault(row.user_id, []).append(
+                AccountToolOut(
+                    tool=row.tool,
+                    sessions=row.sessions,
+                    first_opened=row.created_at,
+                    last_opened=row.updated_at,
+                )
+            )
+        out = []
+        for user_id, email, guide in users:
+            signed_up, first_scene = (
+                events["signup"].get(user_id),
+                events["first_scene"].get(user_id),
+            )
+            out.append(
+                AccountOut(
+                    email=email,
+                    signed_up=signed_up,
+                    first_scene=first_scene,
+                    hours_to_first_scene=round((first_scene - signed_up).total_seconds() / 3600, 1)
+                    if signed_up and first_scene
+                    else None,
+                    ai_connected=events["ai_connected"].get(user_id),
+                    added_a_character=user_id in cast,
+                    ran_a_check=bool((guide or {}).get("check_run")),
+                    hid_checklist=bool((guide or {}).get("checklist_dismissed")),
+                    tools=tools.get(user_id, []),
+                )
+            )
+        never = datetime.min.replace(tzinfo=UTC)
+        return sorted(out, key=lambda row: row.signed_up or never, reverse=True)

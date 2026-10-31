@@ -30,5 +30,33 @@ export function FirstRunStats() {
       <thead><tr className="text-xs text-[var(--muted)]"><th className="py-1">{t('Tool')}</th><th>{t('Accounts')}</th><th>{t('Dropped')}</th></tr></thead>
       <tbody>{d.tools.map(row => <tr key={row.tool} className="border-t border-[var(--line)]"><td className="py-1">{row.tool}</td><td>{row.accounts}</td><td>{row.dropped}{row.accounts ? ` (${Math.round(row.dropped / row.accounts * 100)}%)` : ''}</td></tr>)}</tbody>
     </table>}
+    <AccountsTable />
   </section>
+}
+
+const day = (iso?: string | null) => iso ? new Date(iso).toLocaleDateString() : '—'
+
+/** Usage per account, by email (admin only). Usage only: no story content is recorded. */
+function AccountsTable() {
+  const accounts = useQuery({ queryKey: ['first-run-accounts'], queryFn: api.firstRunAccounts })
+  if (accounts.isPending) return <p className="mt-3 text-sm">{t('Loading counts…')}</p>
+  if (accounts.error) return <p role="alert" className="mt-3 text-sm">{errorText(accounts.error)}</p>
+  const tick = (done: boolean) => done ? '✓' : '—'
+  return <>
+    <h3 className="mt-5 text-sm font-semibold">{t('By account')}</h3>
+    <div className="mt-2 overflow-x-auto">
+      <table className="w-full min-w-[720px] text-left text-sm">
+        <thead><tr className="text-xs text-[var(--muted)]"><th className="py-1">{t('Email')}</th><th>{t('Signed up')}</th><th>{t('First scene')}</th><th>{t('Character')}</th><th>{t('Check')}</th><th>{t('AI')}</th><th>{t('Tools opened (sessions)')}</th></tr></thead>
+        <tbody>{accounts.data.map(row => <tr key={row.email} className="border-t border-[var(--line)] align-top">
+          <td className="py-1 pr-3">{row.email}</td>
+          <td className="pr-3">{day(row.signed_up)}</td>
+          <td className="pr-3">{row.hours_to_first_scene === null ? day(row.first_scene) : t('{0} h', row.hours_to_first_scene)}</td>
+          <td>{tick(row.added_a_character)}</td>
+          <td>{tick(row.ran_a_check)}</td>
+          <td className="pr-3">{day(row.ai_connected)}</td>
+          <td className="text-xs">{row.tools.length ? row.tools.map(tool => `${tool.tool} (${tool.sessions})`).join(', ') : '—'}</td>
+        </tr>)}</tbody>
+      </table>
+    </div>
+  </>
 }
