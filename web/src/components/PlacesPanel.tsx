@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { DeleteButton, InlineText } from './fields'
 import { offerRename } from './rename'
+import { TeachEmpty } from './TeachEmpty'
 
 /**
  * Locations, and where they are actually used.
@@ -117,7 +118,7 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
       </ul>
 
       {locations.data?.length === 0 && (
-        <p className="mt-4 text-sm text-slate-400">{t('No places yet.')}</p>
+        <TeachEmpty storyId={storyId} example={113} purpose={t('Places keep your settings consistent: what each one looks like and how it feels.')} start={t('Add your first place')} field={t('Place name…')} />
       )}
     </div>
   )

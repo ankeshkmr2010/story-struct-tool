@@ -7,6 +7,7 @@ import { SceneDetails } from './SceneDetails'
 import { plural, t } from '../i18n'
 import { DETAILED, SIMPLE, dotStatus, isDrafted, shownStatus, statusName, storedStatus, useDetailedStatuses } from './sceneStatus'
 import { CraftTerm, craftPlain } from './CraftTerm'
+import { TeachEmpty, openStoryAt } from './TeachEmpty'
 
 // A scene with prose is at least drafted, so its status only moves between drafted and revised.
 const WRITTEN = ['drafted', 'revised']
@@ -271,7 +272,7 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
         {agentEdits.size > 0 && <button type="button" onClick={onOpenInbox} className="ml-auto rounded-full border border-[var(--accent)] px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">{t('{0} agent edits since your last visit →', agentEdits.size)}</button>}
       </div>
       {scenes.isLoading && <p className="mt-4 text-sm text-slate-500">{t('Loading scenes…')}</p>}
-      {scenes.data && all.length === 0 && <p className="mt-4 text-sm text-slate-500">{t('No scenes yet.')}</p>}
+      {scenes.data && all.length === 0 && <TeachEmpty storyId={storyId} example={105} purpose={t('The grid shows every scene side by side: who is in it, where it happens, and what changes.')} start={t('Write your first scene')} onStart={() => openStoryAt(storyId, 'write')} />}
       {all.length > 0 && (
         <div tabIndex={0} onKeyDown={onKeyDown} className="mt-4 max-h-[calc(100vh-10rem)] overflow-auto rounded-md border border-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:border-slate-700">
           <table className="w-full table-fixed border-collapse text-left text-sm" style={{ minWidth: 560 + flexible * 200 }}>

@@ -5,6 +5,7 @@ import { errorText } from '../api/errors'
 import { DeleteButton, InlineSelect, InlineText } from './fields'
 import { OpenBesideButton } from './BesidePanel'
 import { offerRename } from './rename'
+import { TeachEmpty } from './TeachEmpty'
 
 export function GlossaryPanel({ storyId }: { storyId: string }) {
   const qc = useQueryClient()
@@ -26,7 +27,7 @@ export function GlossaryPanel({ storyId }: { storyId: string }) {
     </form>
     {(entries.isError || create.isError || update.isError || remove.isError) && <p role="alert" className="writer-error">{errorText(entries.error ?? create.error ?? update.error ?? remove.error)}</p>}
     {entries.isPending && <p className="writer-help mt-4">{t('Loading glossary…')}</p>}
-    {entries.data?.length === 0 && <p className="writer-help mt-4">{t('No terms yet. Define a magic system, a rank, or an unfamiliar word for your readers.')}</p>}
+    {entries.data?.length === 0 && <TeachEmpty storyId={storyId} purpose={t('Your world’s terms in one place: a magic system, a rank, or an unfamiliar word, so names and rules stay consistent.')} start={t('Add your first term')} field={t('Term, e.g. qi…')} />}
     <div className="mt-5 space-y-4">{entries.data?.map(item => {
       const save = (body: GlossaryUpdate) => update.mutateAsync({ id: item.id, body })
       return <article key={item.id} id={`search-glossary_entry-${item.id}`} className="scroll-mt-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">

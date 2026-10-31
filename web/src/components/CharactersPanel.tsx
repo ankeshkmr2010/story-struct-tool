@@ -12,6 +12,7 @@ import { HelpTip } from './HelpTip'
 import { ReferenceImages } from './StoryImages'
 import { plural, t } from '../i18n'
 import { CraftTerm } from './CraftTerm'
+import { TeachEmpty } from './TeachEmpty'
 
 const ROLES = ['protagonist', 'antagonist', 'mentor', 'foil', 'supporting', 'minor'] as const
 const ARC_TYPES = ['positive', 'negative', 'flat'] as const
@@ -233,7 +234,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
       </ul>
 
       {characters.data?.length === 0 && (
-        <p className="mt-4 text-sm text-slate-400">{t('No characters yet.')}</p>
+        <TeachEmpty storyId={storyId} example={3} purpose={t('Characters are the people your story follows: who they are, what they want, and how they change.')} start={t('Add your first character')} field={t('Character name…')} />
       )}
       <RelationshipsSection storyId={storyId} characters={characters.data ?? []} />
     </div>

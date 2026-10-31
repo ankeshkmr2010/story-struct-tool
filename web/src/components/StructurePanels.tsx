@@ -4,6 +4,7 @@ import { AddForm, Chip, DeleteButton, Field, InlineNumber, InlineSelect, InlineT
 import { HelpTip } from './HelpTip'
 import { t } from '../i18n'
 import { CraftTerm } from './CraftTerm'
+import { TeachEmpty } from './TeachEmpty'
 
 function useRefresh(storyId: string, collection: string) {
   const qc = useQueryClient()
@@ -61,7 +62,7 @@ export function EventsPanel({ storyId }: { storyId: string }) {
           </li>
         ))}
       </ul>
-      {events.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">{t('No events yet.')}</p>}
+      {events.data?.length === 0 && <TeachEmpty storyId={storyId} purpose={t('Turning points are the moments that change your story’s direction, like the inciting incident, the midpoint and the climax.')} start={t('Add a turning point')} field={t('Turning point…')} />}
     </div>
   )
 }
@@ -115,7 +116,7 @@ export function ActsPanel({ storyId, framework }: { storyId: string; framework: 
           </li>
         ))}
       </ul>
-      {acts.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">{t('No acts yet.')}</p>}
+      {acts.data?.length === 0 && <TeachEmpty storyId={storyId} example={4} purpose={t('Acts split the story into its big movements, each ending in a change.')} start={t('Add your first act')} field={t('New act title…')} />}
     </div>
   )
 }
@@ -159,7 +160,7 @@ export function BeatsPanel({ storyId, framework }: { storyId: string; framework:
           </li>
         ))}
       </ul>
-      {beats.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">{t('No beats yet.')}</p>}
+      {beats.data?.length === 0 && <TeachEmpty storyId={storyId} example={5} purpose={t('Beats are the moments the story must reach inside each act, like the hero refusing the call.')} start={t('Add your first beat')} field={t('New beat label…')} />}
     </div>
   )
 }
@@ -196,7 +197,7 @@ export function ThreadsPanel({ storyId }: { storyId: string }) {
           </li>
         ))}
       </ul>
-      {threads.data?.length === 0 && <p className="mt-3 text-sm text-slate-400">{t('No threads yet.')}</p>}
+      {threads.data?.length === 0 && <TeachEmpty storyId={storyId} example={6} purpose={t('Threads are the storylines that run through the book: the main plot and its subplots.')} start={t('Add your first thread')} field={t('Thread title…')} />}
     </div>
   )
 }

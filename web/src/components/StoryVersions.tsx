@@ -5,6 +5,7 @@ import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/
 import { api, type StoryVersion } from '../api/client'
 import { errorText } from '../api/errors'
 import { getUiLanguage, plural, t } from '../i18n'
+import { TeachEmpty } from './TeachEmpty'
 
 function counts(version: StoryVersion) {
   const items = (version.statistics.counts ?? {}) as Record<string, number>
@@ -52,7 +53,7 @@ export function StoryVersions({ storyId, beforeEdit = async () => true }: { stor
         {save.isError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(save.error)}</p>}
         {versions.isPending && <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">{t('Loading versions…')}</p>}
         {versions.isError && <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-300">{errorText(versions.error)}</p>}
-        {versions.data?.length === 0 && <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">{t('Save your first named version, or edit the story to start automatic checkpoint history.')}</p>}
+        {versions.data?.length === 0 && <TeachEmpty storyId={storyId} example={107} purpose={t('Versions are snapshots you can compare and go back to. Editing the story also saves checkpoints automatically.')} start={t('Save a version now')} field={t('Before rewriting Act 2')} />}
         {(versions.data?.length ?? 0) > 0 && <div className="mt-5 grid gap-5 md:grid-cols-[260px_minmax(0,1fr)]">
           <div className="max-h-[28rem] space-y-2 overflow-y-auto" aria-label={t('Saved story versions')}>{versions.data?.map((version) => <button key={version.id} type="button" onClick={() => { setSelectedId(version.id); restore.reset() }} aria-pressed={selected?.id === version.id} className={`block w-full rounded-lg border p-3 text-left ${selected?.id === version.id ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-950'}`}>
             <p className="break-words text-sm font-medium">{t('v{0} · {1}', version.number, version.label)}</p><p className="mt-1 text-[11px] capitalize text-slate-500 dark:text-slate-400">{version.source} · {new Date(version.created_at).toLocaleString()}</p><p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{counts(version)}</p>

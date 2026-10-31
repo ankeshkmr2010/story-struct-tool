@@ -5,6 +5,7 @@ import { errorText } from '../api/errors'
 import { t, tx } from '../i18n'
 import { valueLabel } from '../i18n/server'
 import { craftPlain } from './CraftTerm'
+import { TeachEmpty } from './TeachEmpty'
 
 type Operation = AIRun['proposal']['operations'][number]
 type StatusFilter = 'pending' | 'applied' | 'closed' | 'all'
@@ -75,7 +76,7 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
       {runs.isPending && <p className="text-sm text-slate-500 dark:text-slate-400">{t('Loading changes…')}</p>}
       {runs.isError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(runs.error)}</p>}
       {act.isError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{errorText(act.error)}</p>}
-      {runs.isSuccess && shown.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{status === 'pending' ? t('Nothing waiting for review.') : t('No batches match these filters.')}</p>}
+      {runs.isSuccess && shown.length === 0 && (status === 'pending' ? <TeachEmpty storyId={storyId} purpose={t('When your AI suggests edits, they wait here for you to accept or undo. Nothing is waiting now.')} start={t('Connect your AI')} onStart={() => window.location.assign('/how-to-use#write-with-ai')} /> : <p className="text-sm text-slate-500 dark:text-slate-400">{t('No batches match these filters.')}</p>)}
       <ul className="space-y-3">
         {shown.map((run) => {
           const open = openId === run.id
