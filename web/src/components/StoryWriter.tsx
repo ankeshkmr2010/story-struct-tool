@@ -26,12 +26,12 @@ import { getUiLanguage, plural, t } from '../i18n'
 import { GoalBar, StoryGoalCard } from './Goals'
 import { dotStatus, shownStatus, statusName, useDetailedStatuses } from './sceneStatus'
 import { WRITER_ACTION_EVENT, type WriterAction } from './writerActions'
+import { FirstUseTip } from './FirstUseTip'
 
 /** The passage Write's top-bar buttons act on: the one last focused. */
 let lastWriter: object | null = null
 
 type Named = { label: string; item: BesideItem }
-const WRITE_TIP_KEY = 'storytool-write-tip'
 
 const imageMarkdown = (image: StoryImage) => `![${image.alt.replace(/[\]\n]/g, ' ')}](storytool-image:${image.id})`
 const proseWords = (text: string) => text.replace(/!\[[^\]\n]*\]\(storytool-image:[0-9a-fA-F-]{36}\)/g, '').trim().split(/\s+/).filter(Boolean).length
@@ -40,8 +40,6 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
   const qc = useQueryClient()
   const me = useQuery({ queryKey: [storyId === SANDBOX_ID ? 'sandbox-me' : 'me'], queryFn: api.currentUser })
   // Write has no toolbar, so say once where its actions live; dismissing it is remembered.
-  const [tipShown, setTipShown] = useState(() => { try { return localStorage.getItem(WRITE_TIP_KEY) !== 'dismissed' } catch { return false } })
-  const dismissTip = () => { setTipShown(false); try { localStorage.setItem(WRITE_TIP_KEY, 'dismissed') } catch { /* Optional browser storage. */ } }
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
   const prefix = `storytool-writer:${me.data?.id}:${storyId}:`
@@ -187,7 +185,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
 
   return <div className={`story-writer ${focus ? 'writer-focus' : ''}`}>
     {focus && <div className="writer-toolbar"><span className="writer-toolbar-spacer" /><button type="button" onClick={() => onFocusChange(false)}>{t('Exit focus')}</button></div>}
-    {tipShown && !focus && <p className="writer-tip" role="note"><span>{t('Tip: right-click the prose, or select text and click')}{' '}<strong>⋯</strong>{t(', for editing actions, Insert image, Add TK here and Open beside.')}</span><button type="button" onClick={dismissTip}>{t('Got it')}</button></p>}
+    {!focus && <FirstUseTip id="write" className="writer-tip" />}
     {error && <p role="alert" className="writer-error">{error}</p>}
     <div className={`writer-layout ${!showNavigation || focus ? 'writer-no-navigation' : ''}`}>
       {!focus && <nav aria-label={t('Manuscript chapters')} className={`writer-navigation ${showNavigation ? 'writer-navigation-open' : ''}`}>

@@ -1778,3 +1778,9 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 .teach-empty > p { max-width: 60ch; margin: 0; color: var(--ink); font-size: 14px; line-height: 1.5; }
 .teach-empty-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 12px; }
 .teach-empty-actions a { color: var(--accent); font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Usability phase 3, item 11: first-use tips (Write keeps its .writer-tip look). */
+.first-use-tip { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--accent-soft); color: var(--ink); font-size: 13px; }
+.first-use-tip-actions { display: inline-flex; gap: 12px; }
+.first-use-tip button, .writer-tip .first-use-tip-actions button { color: var(--accent); font-weight: 600; }
+.first-use-tip-actions button + button { color: var(--muted); font-weight: 500; }

@@ -18,5 +18,6 @@ export function useGuide() {
     } })
     void api.saveProfile({ guide: change }).then(user => qc.setQueryData(['me'], user)).catch(() => { /* Kept locally until the next reload. */ })
   }
-  return { guide: me.data?.guide, update }
+  // The /try sandbox's stand-in user has no guide; its tips are kept in the browser instead.
+  return { guide: me.data?.guide, signedIn: Boolean(me.data?.guide), pending: me.isPending, update }
 }

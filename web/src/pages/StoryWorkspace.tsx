@@ -31,6 +31,7 @@ import { RenameDialog } from '../components/RenameDialog'
 import { OPEN_BESIDE_EVENT, isBesideItem, openBeside, type BesideTarget } from '../components/beside'
 import { writerAction } from '../components/writerActions'
 import { useGuide } from '../components/guide'
+import { FirstUseTip } from '../components/FirstUseTip'
 import { LANGUAGES, languageLabel } from '../components/languages'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
 import { StoryVersions } from '../components/StoryVersions'
@@ -607,6 +608,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         {writerOpened && <Suspense fallback={<p className="p-6">{t('Loading writing workspace…')}</p>}><StoryWriter storyId={storyId} focus={writerFocus} onFocusChange={setWriterFocus} liveHints={liveHints} contextSlot={activePanel === 'context' ? contextSlot : null} hintsSlot={activePanel === 'hints' ? hintsSlot : null} initialChapter={initialPosition?.write_chapter_id} onChapterChange={rememberChapter} registerFlush={registerFlush} openScene={writerScene} /></Suspense>}
       </div>
       <div id="workspace-panel-read" role="tabpanel" aria-labelledby="workspace-tab-read" hidden={tab !== 'read'}>
+        {tab === 'read' && !sandboxStep && <FirstUseTip id="read" />}
         {tab === 'read' && <Suspense fallback={<p className="p-6">{t('Loading reader…')}</p>}><StoryReader storyId={storyId} owned embedded initialPosition={readerResume} onPosition={rememberReading} openTarget={readerScene} /></Suspense>}
       </div>
       <div id="workspace-panel-design" role="tabpanel" aria-labelledby="workspace-tab-design" hidden={tab !== 'design'}>
@@ -637,6 +639,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
         <div className="min-w-0">
       {story.data.genre === 'Tutorial · timelines and arcs' && <TutorialWalkthrough onTimeline={() => setRefPanel('timeline')} onCharacters={() => setLevel(3)} onScenes={() => setLevel(8)} onPractice={() => { const practice = scenes.data?.find((item) => item.title?.startsWith('Practice placeholder')); if (practice) { setSceneId(practice.id); setChapterId(practice.chapter_id) }; setLevel(8) }} />}
         <section ref={levelSection} id="story-search-design-section" className="min-w-0 scroll-mt-4">
+          {tab === 'design' && !sandboxStep && <FirstUseTip key={level} id={`view-${level}`} />}
           {level === INBOX_VIEW && <ProposalInbox storyId={storyId} />}
           {level === STRUCTURE_VIEW && <StructureBoard storyId={storyId} onOpenScene={openScene} />}
           {level === TIMELINE_VIEW && <TimelineLanes storyId={storyId} onOpenScene={openScene} />}

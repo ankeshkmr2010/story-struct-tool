@@ -7,6 +7,7 @@ import { LANGUAGES, type LanguageId } from '../components/languages'
 import { t } from '../i18n'
 import { serverText } from '../i18n/server'
 import { HabitGoalForm } from '../components/Goals'
+import { useGuide } from '../components/guide'
 
 function AuthorNameSettings() {
   const qc = useQueryClient()
@@ -65,6 +66,16 @@ function StatusSettings() {
   </section>
 }
 
+// First-use tips (usability phase 3): the switch that "Turn off tips" flips, so tips can come back.
+function TipSettings() {
+  const { guide, update } = useGuide()
+  return <section id="tips" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6">
+    <h2 className="text-lg font-semibold">{t('Tips')}</h2>
+    <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('A short tip appears the first time you open each tool.')}</p>
+    <label className="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" checked={!(guide?.tips_off ?? false)} disabled={!guide} onChange={(event) => update({ tips_off: !event.target.checked })} />{t('Show tips')}</label>
+  </section>
+}
+
 export default function UserSettings() {
   const qc = useQueryClient()
   const connections = useQuery({ queryKey: ['ai-connections'], queryFn: api.listAIConnections })
@@ -116,6 +127,7 @@ export default function UserSettings() {
       <AuthorNameSettings />
       <LanguageSettings />
       <StatusSettings />
+      <TipSettings />
       <section id="writing-goal" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6"><h2 className="text-lg font-semibold">{t('Writing goal')}</h2><p className="writer-help mb-3">{t('A daily habit across all your stories. Set a goal for one story from its Write screen or Design.')}</p><HabitGoalForm /></section>
       <section id="ai-clients" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6">
         <h2 className="text-lg font-semibold">{t('Connect an AI client · MCP')}</h2>
