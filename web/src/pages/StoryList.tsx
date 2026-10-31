@@ -113,6 +113,7 @@ export default function StoryList() {
   // Private library: a private story is created in this browser only and opened straight away.
   const [keepPrivate, setKeepPrivate] = useState(false)
   const [shelf, setShelf] = useState(0)
+  const [privateCount, setPrivateCount] = useState(0)
   const createLocal = useMutation({
     mutationFn: () => createPrivateStory(title, startMode),
     onSuccess: id => { setTitle(''); setShelf(n => n + 1); navigate(`/stories/${id}`) },
@@ -286,7 +287,7 @@ export default function StoryList() {
           disabled={!title.trim() || create.isPending || createLocal.isPending}
           className="rounded bg-slate-900 dark:bg-slate-200 px-4 py-2 text-sm text-white dark:text-slate-950 disabled:opacity-40"
         >
-          {t('Create')}
+          {keepPrivate ? t('Create private story') : t('Create')}
         </button>
         <input
           ref={backupInput}
@@ -301,7 +302,7 @@ export default function StoryList() {
         />
       </form>
       {createLocal.error && <p role="alert" className="writer-error">{String((createLocal.error as Error).message)}</p>}
-      <PrivateShelf refresh={shelf} />
+      <PrivateShelf refresh={shelf} onCount={setPrivateCount} />
       {importBackup.isError && <p role="alert" className="mt-2 text-sm text-red-700 dark:text-red-300">{errorText(importBackup.error)}</p>}
       </>}
 
@@ -333,7 +334,7 @@ export default function StoryList() {
       </ul> : <div className="lib-layout">
         <div className="min-w-0">
           {libraryStories && <div className="lib-list-head">
-            <p className="eyebrow">{t('All stories · {0}', libraryStories.length)}</p>
+            <p className="eyebrow">{privateCount ? `${plural(libraryStories.length, '{0} story', '{0} stories', libraryStories.length)} · ${t('{0} private', privateCount)}` : t('All stories · {0}', libraryStories.length)}</p>
             <label className="lib-sort">{t('Sort')}<select value={sort} onChange={event => setSort(event.target.value as SortMode)}>
               <option value="mine">{t('My order')}</option><option value="edited">{t('Last edited')}</option><option value="title">{t('Title')}</option>
             </select></label>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { plural, t } from '../i18n'
-import { createPrivate, deletePrivate, getLinkedFile, listPrivate, PRIVATE_SAVED_EVENT, setLinkedFile, transact, type Backup, type PrivateSummary, type Row } from '../sandbox/storage'
+import { getUiLanguage, plural, t } from '../i18n'
+import { createPrivate, deletePrivate, getLinkedFile, getPrivateMeta, listPrivate, privateSize, PRIVATE_META_EVENT, PRIVATE_SAVED_EVENT, setLinkedFile, setPrivateMeta, transact, type Backup, type PrivateMeta, type PrivateSummary, type Row } from '../sandbox/storage'
 import { Menu, MenuItem } from '../ui/Menu'
 
 /**
@@ -53,7 +53,7 @@ export function PrivateExportMenu({ storyId, beforeExport }: { storyId: string; 
     const name = fileName(String((backup.state.story as Row[] | undefined)?.[0]?.title ?? backup.title))
     if (kind === 'md') download(`${name}.md`, 'text/markdown', asMarkdown(backup.state))
     if (kind === 'txt') download(`${name}.txt`, 'text/plain', asText(backup.state))
-    if (kind === 'json') download(`${name}.storytool.json`, 'application/json', JSON.stringify(backup, null, 1))
+    if (kind === 'json') await downloadBackup(storyId)
   }
   return <>
     <Menu label={t('Download')} triggerClassName="share-story-button">
@@ -69,12 +69,46 @@ type FileState = 'none' | 'linked' | 'reconnect' | 'unsupported'
 type Picker = (options: object) => Promise<FileSystemFileHandle>
 type Permitted = FileSystemFileHandle & { queryPermission?: (o: object) => Promise<string>; requestPermission?: (o: object) => Promise<string> }
 const picker = () => (window as unknown as { showSaveFilePicker?: Picker }).showSaveFilePicker
+const titleOf = (storyId: string) => transact(value => String((value.backup.state.story as Row[] | undefined)?.[0]?.title || value.backup.title || ''), false, storyId)
 
 async function writeBackup(storyId: string, handle: FileSystemFileHandle) {
   const backup = await transact(value => value.backup, false, storyId)
   const writable = await handle.createWritable()
   await writable.write(JSON.stringify(backup, null, 1))
   await writable.close()
+  await setPrivateMeta(storyId, { lastFileSave: new Date().toISOString() })
+}
+
+/** Downloads the JSON backup and notes when (the shelf and the backup nudge show it). */
+export async function downloadBackup(storyId: string) {
+  const backup = await transact(value => value.backup, false, storyId)
+  download(`${fileName(await titleOf(storyId))}.storytool.json`, 'application/json', JSON.stringify(backup, null, 1))
+  await setPrivateMeta(storyId, { lastBackup: new Date().toISOString() })
+}
+
+/** Picks a file, remembers it and writes the story to it now. Throws AbortError if cancelled. */
+export async function linkPrivateFile(storyId: string): Promise<FileSystemFileHandle> {
+  const chosen = await picker()!({ suggestedName: `${fileName(await titleOf(storyId))}.storytool.json`, types: [{ description: t('StoryTool backup'), accept: { 'application/json': ['.json'] } }] })
+  await setLinkedFile(storyId, chosen)
+  await writeBackup(storyId, chosen)
+  return chosen
+}
+
+/** "5 minutes ago" in the interface language. */
+function ago(iso: string) {
+  const seconds = Math.round((Date.parse(iso) - Date.now()) / 1000)
+  const format = new Intl.RelativeTimeFormat(getUiLanguage(), { numeric: 'auto' })
+  for (const [unit, size] of [['day', 86400], ['hour', 3600], ['minute', 60]] as const) {
+    if (Math.abs(seconds) >= size) return format.format(Math.round(seconds / size), unit)
+  }
+  return format.format(0, 'minute')
+}
+
+/** The newest of a linked-file save and a downloaded backup, for the shelf. */
+function backupLine(meta: PrivateMeta) {
+  const file = meta.lastFileSave ?? '', backup = meta.lastBackup ?? ''
+  if (!file && !backup) return t('No backup yet')
+  return file >= backup ? t('Saved to file {0}', ago(file)) : t('Backup downloaded {0}', ago(backup))
 }
 
 /**
@@ -91,12 +125,16 @@ export function LinkedFile({ storyId }: { storyId: string }) {
   useEffect(() => {
     if (!picker()) return
     let alive = true
-    void getLinkedFile(storyId).then(async found => {
+    const refresh = () => getLinkedFile(storyId).then(async found => {
       if (!alive || !found) return
       handle.current = found; setName(found.name)
       const permission = await (found as Permitted).queryPermission?.({ mode: 'readwrite' })
       setState(permission === 'granted' ? 'linked' : 'reconnect')
     })
+    void refresh()
+    // The backup nudge can link a file too.
+    const linked = (event: Event) => { if ((event as CustomEvent<string>).detail === storyId) void refresh() }
+    window.addEventListener(PRIVATE_META_EVENT, linked)
     const saved = (event: Event) => {
       if ((event as CustomEvent<string>).detail !== storyId || !handle.current) return
       window.clearTimeout(timer.current)
@@ -111,17 +149,15 @@ export function LinkedFile({ storyId }: { storyId: string }) {
       }, 1000)
     }
     window.addEventListener(PRIVATE_SAVED_EVENT, saved)
-    return () => { alive = false; window.removeEventListener(PRIVATE_SAVED_EVENT, saved); window.clearTimeout(timer.current) }
+    return () => { alive = false; window.removeEventListener(PRIVATE_SAVED_EVENT, saved); window.removeEventListener(PRIVATE_META_EVENT, linked); window.clearTimeout(timer.current) }
   }, [storyId])
-  if (state === 'unsupported') return null
+  // Safari and Firefox cannot write to a chosen file; downloads and the backup nudge cover them.
+  if (state === 'unsupported') return <span className="private-file-note">{t('Save to a file… needs Chrome or Edge. Download a backup instead.')}</span>
   const link = async () => {
     setError('')
     try {
-      const title = await transact(value => String(value.backup.state.story && (value.backup.state.story as Row[])[0]?.title || ''), false, storyId)
-      const chosen = await picker()!({ suggestedName: `${fileName(title)}.storytool.json`, types: [{ description: t('StoryTool backup'), accept: { 'application/json': ['.json'] } }] })
-      await setLinkedFile(storyId, chosen)
+      const chosen = await linkPrivateFile(storyId)
       handle.current = chosen; setName(chosen.name)
-      await writeBackup(storyId, chosen)
       setState('linked')
     } catch (failure) {
       if ((failure as Error)?.name !== 'AbortError') setError(String((failure as Error)?.message ?? failure))
@@ -152,18 +188,19 @@ export async function readBackupFile(file: File): Promise<Backup> {
 }
 
 /** The private shelf on Your stories. */
-export function PrivateShelf({ refresh }: { refresh: number }) {
+export function PrivateShelf({ refresh, onCount }: { refresh: number; onCount?: (count: number) => void }) {
   const navigate = useNavigate()
   const opener = useRef<HTMLInputElement>(null)
   const [stories, setStories] = useState<PrivateSummary[] | null>(null)
   const [error, setError] = useState('')
   const [confirming, setConfirming] = useState<string | null>(null)
   useEffect(() => {
-    const load = () => listPrivate().then(setStories, failure => setError(String(failure?.message ?? failure)))
+    const load = () => listPrivate().then(list => { setStories(list); onCount?.(list.length) }, failure => setError(String(failure?.message ?? failure)))
     void load()
     window.addEventListener(PRIVATE_SAVED_EVENT, load)
-    return () => window.removeEventListener(PRIVATE_SAVED_EVENT, load)
-  }, [refresh])
+    window.addEventListener(PRIVATE_META_EVENT, load)
+    return () => { window.removeEventListener(PRIVATE_SAVED_EVENT, load); window.removeEventListener(PRIVATE_META_EVENT, load) }
+  }, [refresh, onCount])
   // Opening a backup creates a private story from it, in this browser only.
   const open = async (file: File | undefined) => {
     if (!file) return
@@ -178,7 +215,8 @@ export function PrivateShelf({ refresh }: { refresh: number }) {
     if (confirming !== id) { setConfirming(id); return }
     setConfirming(null)
     await deletePrivate(id)
-    setStories(await listPrivate())
+    const list = await listPrivate()
+    setStories(list); onCount?.(list.length)
   }
   return <section className="private-shelf" aria-labelledby="private-shelf-title">
     <header><div><h2 id="private-shelf-title">{t('Private library')}</h2><p>{t('Only in this browser. Never sent to StoryTool’s servers; clearing this browser’s data deletes them, so link a file or download a backup.')}</p></div>
@@ -188,10 +226,49 @@ export function PrivateShelf({ refresh }: { refresh: number }) {
     {stories?.length === 0 && <p className="private-shelf-empty">{t('No private stories yet. Tick Keep it private when you create one, or open a backup file.')}</p>}
     {error && <p role="alert" className="writer-error">{error}</p>}
     <ul>{stories?.map(story => <li key={story.id}>
-      <Link to={`/stories/${story.id}`}><strong>{story.title || t('Untitled story')}</strong><span>{plural(story.scenes, '{0} scene', '{0} scenes', story.scenes)} · {plural(story.words, '{0} word', '{0} words', story.words.toLocaleString())}</span></Link>
+      <Link to={`/stories/${story.id}`}><strong>{story.title || t('Untitled story')}<span className="story-card-tag private-tag">{t('Private')}</span></strong><span>{plural(story.scenes, '{0} scene', '{0} scenes', story.scenes)} · {plural(story.words, '{0} word', '{0} words', story.words.toLocaleString())} · {backupLine(story)}</span></Link>
       <button type="button" className={confirming === story.id ? 'is-confirming' : ''} onClick={() => { void remove(story.id) }} onBlur={() => setConfirming(null)}>{confirming === story.id ? t('Delete from this browser') : t('Delete')}</button>
     </li>)}</ul>
   </section>
+}
+
+const NUDGE_WORDS = 500
+const NUDGE_AGE = 24 * 60 * 60 * 1000
+
+/**
+ * Backup nudge: a private story with no linked file and no downloaded backup, once it has 500
+ * words or is a day old. Lives only in this browser, so one cleared cache would lose it.
+ */
+export function BackupNudge({ storyId }: { storyId: string }) {
+  const [show, setShow] = useState(false)
+  const [error, setError] = useState('')
+  const dismissKey = `storytool-backup-nudge:${storyId}`
+  useEffect(() => {
+    let alive = true
+    const check = async () => {
+      try { if (sessionStorage.getItem(dismissKey)) { setShow(false); return } } catch { /* Optional browser storage. */ }
+      const [meta, file, size] = await Promise.all([getPrivateMeta(storyId), getLinkedFile(storyId), privateSize(storyId)])
+      if (alive) setShow(!meta.lastFileSave && !meta.lastBackup && !file && (size.words >= NUDGE_WORDS || Date.now() - size.created >= NUDGE_AGE))
+    }
+    void check()
+    window.addEventListener(PRIVATE_SAVED_EVENT, check)
+    window.addEventListener(PRIVATE_META_EVENT, check)
+    return () => { alive = false; window.removeEventListener(PRIVATE_SAVED_EVENT, check); window.removeEventListener(PRIVATE_META_EVENT, check) }
+  }, [storyId, dismissKey])
+  if (!show) return null
+  const act = async (run: () => Promise<unknown>) => {
+    setError('')
+    try { await run() } catch (failure) { if ((failure as Error)?.name !== 'AbortError') setError(String((failure as Error)?.message ?? failure)) }
+  }
+  return <div className="backup-nudge" role="status">
+    <span>{t('This story is only in this browser, with no backup yet. Clearing the browser’s data would delete it.')}</span>
+    <span className="backup-nudge-actions">
+      {picker() && <button type="button" className="ui-btn ui-btn-secondary" onClick={() => { void act(() => linkPrivateFile(storyId)) }}>{t('Save to a file…')}</button>}
+      <button type="button" className="ui-btn ui-btn-secondary" onClick={() => { void act(() => downloadBackup(storyId)) }}>{t('Download backup')}</button>
+      <button type="button" className="backup-nudge-later" onClick={() => { try { sessionStorage.setItem(dismissKey, '1') } catch { /* Optional browser storage. */ } setShow(false) }}>{t('Not now')}</button>
+    </span>
+    {error && <span role="alert" className="writer-error">{error}</span>}
+  </div>
 }
 
 export async function createPrivateStory(title: string, mode: string) {

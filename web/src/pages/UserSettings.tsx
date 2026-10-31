@@ -132,6 +132,8 @@ export default function UserSettings() {
       <section id="writing-goal" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6"><h2 className="text-lg font-semibold">{t('Writing goal')}</h2><p className="writer-help mb-3">{t('A daily habit across all your stories. Set a goal for one story from its Write screen or Design.')}</p><HabitGoalForm /></section>
       <section id="ai-clients" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6">
         <ConnectWizard />
+        {/* True by construction: private stories never reach the server that AI clients read. */}
+        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{t('Private stories are never visible to connected AI.')}</p>
         <details className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-700">
           <summary className="cursor-pointer text-sm font-semibold">{t('Advanced: connection details')}</summary>
         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('Connect Claude or ChatGPT through browser sign-in, then choose the stories and permissions it can use. Your client supplies the model; no provider API key or token copying is needed here.')}{' '}<Link to="/#mcp" className="underline">{t('Open the connection guides →')}</Link></p>

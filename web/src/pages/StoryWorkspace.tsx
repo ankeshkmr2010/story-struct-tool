@@ -55,7 +55,7 @@ import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
 import { SANDBOX_ID, FIRST_SCENE, isLocalStory, isPrivateId, tourEvent, type Sandbox } from '../sandbox/storage'
 import { setActivePrivate } from '../sandbox/adapter'
-import { LinkedFile, PrivateExportMenu } from '../components/PrivateLibrary'
+import { BackupNudge, LinkedFile, PrivateExportMenu } from '../components/PrivateLibrary'
 import { SandboxHistory } from '../sandbox/History'
 import { getUiLanguage, plural, t, tx, useUiLanguage } from '../i18n'
 import { levelLabel, valueLabel } from '../i18n/server'
@@ -625,6 +625,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
       {tabError && <p role="alert" className="writer-error">{tabError}</p>}
       <div className={`ws-body${hasPanel ? ' has-panel' : ''}`}>
       <div className="min-w-0">
+      {privateStory && <BackupNudge storyId={storyId} />}
       <div id="workspace-panel-write" role="tabpanel" aria-labelledby="workspace-tab-write" hidden={tab !== 'write'}>
         {writerOpened && <Suspense fallback={<p className="p-6">{t('Loading writing workspace…')}</p>}><StoryWriter storyId={storyId} focus={writerFocus} onFocusChange={setWriterFocus} liveHints={liveHints} contextSlot={activePanel === 'context' ? contextSlot : null} hintsSlot={activePanel === 'hints' ? hintsSlot : null} initialChapter={initialPosition?.write_chapter_id} onChapterChange={rememberChapter} registerFlush={registerFlush} openScene={writerScene} /></Suspense>}
       </div>
@@ -681,8 +682,11 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
               {!sandbox && <><h3 className="check-subhead">{t('Continuity')}</h3>
               <ContinuityPanel storyId={storyId} /></>}
             </div>}
-            {checkTab === 'ai' && <div><p className="writer-help">{t('What a reader noticed in your prose: things the plan could follow. Dismissed notices stay dismissed.')}</p><SuggestionsPanel storyId={storyId} /></div>}
-            {checkTab === 'craft' && <StoryEvaluation storyId={storyId} beforeEdit={() => writerFlush.current()} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
+            {/* Private stories: craft checks and AI reading need the server, so they are off. */}
+            {privateStory && checkTab === 'ai' && <p className="writer-help">{t('AI is off for private stories, so nothing leaves this browser.')}</p>}
+            {privateStory && checkTab === 'craft' && <p className="writer-help">{t('Craft checks run on StoryTool’s server, so they are off for private stories.')}</p>}
+            {!privateStory && checkTab === 'ai' && <div><p className="writer-help">{t('What a reader noticed in your prose: things the plan could follow. Dismissed notices stay dismissed.')}</p><SuggestionsPanel storyId={storyId} /></div>}
+            {!privateStory && checkTab === 'craft' && <StoryEvaluation storyId={storyId} beforeEdit={() => writerFlush.current()} onOpenPassage={openPassage} onOpenInbox={() => setLevel(INBOX_VIEW)} onOpenScene={(scene) => { setChapterId(scene.chapter_id); setSceneId(scene.id); setLevel(8); void revealSearchTarget('story-search-design-section').catch(error => setTabError(String(error))) }} onOpenThreads={(id) => { setLevel(6); void revealSearchTarget(`search-thread-${id}`).catch(error => setTabError(String(error))) }} onOpenCharacters={(id) => { setLevel(3); void revealSearchTarget(`character-${id}`).catch(error => setTabError(String(error))) }} onOpenStory={() => setLevel(1)} />}
           </section>}
           {level === PACING_VIEW && <section><h2 className="level-title">{t('Pacing')}</h2><PacingView storyId={storyId} onOpenScene={(scene) => { setChapterId(scene.chapter_id ?? null); setSceneId(scene.id); setLevel(8); setBackToPacing(true) }} /></section>}
           {level === 8 && backToPacing && <button type="button" className="ws-back-link" onClick={() => { setBackToPacing(false); setLevel(PACING_VIEW) }}>{t('← Back to Pacing')}</button>}

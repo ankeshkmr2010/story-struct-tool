@@ -1830,3 +1830,8 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 .private-shelf-empty { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
 .private-file { display: inline-flex; align-items: center; gap: 6px; }
 .private-file-linked { padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--muted); font-size: 12px; }
+.private-tag { margin-left: 8px; vertical-align: 2px; }
+.private-file-note { color: var(--muted); font-size: 12px; }
+.backup-nudge { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 16px 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--accent-soft); color: var(--ink); font-size: 13px; }
+.backup-nudge-actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.backup-nudge-later { color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }

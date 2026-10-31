@@ -82,22 +82,57 @@ export function tourEvent(name: string) {
   window.dispatchEvent(new CustomEvent('storytool-try-event', { detail: name }))
 }
 export const PRIVATE_SAVED_EVENT = 'storytool:private-saved'
-export type PrivateSummary = { id: string; title: string; updated: string; scenes: number; words: number }
+export const PRIVATE_META_EVENT = 'storytool:private-meta'
+/** When a private story last reached disk: its linked file, or a downloaded backup. */
+export type PrivateMeta = { lastFileSave?: string; lastBackup?: string }
+export type PrivateSummary = { id: string; title: string; updated: string; created: number; scenes: number; words: number } & PrivateMeta
+
+const wordsIn = (value: Sandbox) => rows(value, 'scene').reduce((sum, scene) => sum + String(scene.content ?? '').trim().split(/\s+/).filter(Boolean).length, 0)
+
+/** Kept beside the story, not in it: recording a file save must not count as an edit (and re-save). */
+export async function getPrivateMeta(id: string): Promise<PrivateMeta> {
+  const db = await database()
+  return new Promise((resolve, reject) => {
+    const request = db.transaction('stories').objectStore('stories').get(`meta:${id}`)
+    request.onsuccess = () => resolve(request.result ?? {})
+    request.onerror = () => reject(request.error)
+  })
+}
+
+export async function setPrivateMeta(id: string, change: PrivateMeta) {
+  const next = { ...await getPrivateMeta(id), ...change }
+  const db = await database()
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction('stories', 'readwrite')
+    transaction.objectStore('stories').put(next, `meta:${id}`)
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(transaction.error)
+  })
+  window.dispatchEvent(new CustomEvent(PRIVATE_META_EVENT, { detail: id }))
+}
+
+/** Words and age of one private story, for the backup nudge. */
+export async function privateSize(id: string) {
+  const value = await read(storeKey(id))
+  return { words: value ? wordsIn(value) : 0, created: value?.created ?? Date.now() }
+}
 
 /** The private library shelf: every private story in this browser, newest first. */
 export async function listPrivate(): Promise<PrivateSummary[]> {
   const db = await database()
   const found: PrivateSummary[] = await new Promise((resolve, reject) => {
     const out: PrivateSummary[] = []
+    const metas: Record<string, PrivateMeta> = {}
     const request = db.transaction('stories').objectStore('stories').openCursor()
     request.onsuccess = () => {
       const cursor = request.result
-      if (!cursor) { resolve(out); return }
-      if (String(cursor.key).startsWith('private:')) {
+      if (!cursor) { resolve(out.map(story => ({ ...story, ...metas[story.id] }))); return }
+      const name = String(cursor.key)
+      if (name.startsWith('meta:')) metas[name.slice(5)] = cursor.value as PrivateMeta
+      if (name.startsWith('private:')) {
         const value = cursor.value as Sandbox
         const story = rows(value, 'story')[0] ?? {}
-        const scenes = rows(value, 'scene')
-        out.push({ id: String(story.id), title: String(story.title ?? ''), updated: String(story.updated_at ?? new Date(value.created).toISOString()), scenes: scenes.length, words: scenes.reduce((sum, scene) => sum + String(scene.content ?? '').trim().split(/\s+/).filter(Boolean).length, 0) })
+        out.push({ id: String(story.id), title: String(story.title ?? ''), updated: String(story.updated_at ?? new Date(value.created).toISOString()), created: value.created, scenes: rows(value, 'scene').length, words: wordsIn(value) })
       }
       cursor.continue()
     }
@@ -111,6 +146,8 @@ export async function createPrivate(title: string, mode: string, backup?: Backup
   const now = new Date().toISOString()
   const fresh: Backup = backup ? rehome(backup, id) : { format: 'storytool-backup', version: 1, title, state: { format_version: 1, story: [{ id, title, premise: null, authoring_mode: mode, structure_framework: 'three_act', created_at: now, updated_at: now }] } }
   await write({ backup: fresh, created: Date.now(), step: 0, skipped: true, completed: true, editedScene: '', edits: [], events: [], importId: crypto.randomUUID() }, storeKey(id))
+  // Ask the browser not to evict this storage under pressure (granted silently in most browsers).
+  void navigator.storage?.persist?.().catch(() => false)
   return id
 }
 
@@ -141,6 +178,7 @@ export async function deletePrivate(id: string) {
     const transaction = db.transaction('stories', 'readwrite')
     transaction.objectStore('stories').delete(storeKey(id))
     transaction.objectStore('stories').delete(`file:${id}`)
+    transaction.objectStore('stories').delete(`meta:${id}`)
     transaction.oncomplete = () => resolve()
     transaction.onerror = () => reject(transaction.error)
   })
