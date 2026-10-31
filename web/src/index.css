@@ -1826,3 +1826,7 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 .private-shelf li button { color: var(--muted); font-size: 12px; }
 .private-shelf li button.is-confirming { color: var(--danger, #b42318); font-weight: 600; }
 .ws-private-badge { padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--muted); font-size: 11px; white-space: nowrap; }
+.private-shelf header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.private-shelf-empty { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+.private-file { display: inline-flex; align-items: center; gap: 6px; }
+.private-file-linked { padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--muted); font-size: 12px; }

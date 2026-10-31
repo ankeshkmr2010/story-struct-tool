@@ -55,7 +55,7 @@ import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
 import { SANDBOX_ID, FIRST_SCENE, isLocalStory, isPrivateId, tourEvent, type Sandbox } from '../sandbox/storage'
 import { setActivePrivate } from '../sandbox/adapter'
-import { PrivateExportMenu } from '../components/PrivateLibrary'
+import { LinkedFile, PrivateExportMenu } from '../components/PrivateLibrary'
 import { SandboxHistory } from '../sandbox/History'
 import { getUiLanguage, plural, t, tx, useUiLanguage } from '../i18n'
 import { levelLabel, valueLabel } from '../i18n/server'
@@ -613,6 +613,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
           {/* Export is first-class: the words must always be able to leave. */}
           {!sandbox && <DownloadMenu storyId={storyId} onShowPlaceholders={() => { void openView(PLACEHOLDERS_VIEW) }} />}
           {privateStory && <PrivateExportMenu storyId={storyId} beforeExport={() => writerFlush.current()} />}
+          {privateStory && <LinkedFile storyId={storyId} />}
           {/* The site header is hidden while a workspace is open; its links live here. */}
           {!tour && <Menu label="⋯" ariaLabel={t('Site menu')} triggerClassName="share-story-button"><MenuItem onSelect={() => navigate('/library')}>{t('Your stories')}</MenuItem><MenuItem onSelect={() => navigate('/how-to-use')}>{t('How to use')}</MenuItem><MenuItem onSelect={() => navigate('/roadmap')}>{t('Roadmap')}</MenuItem><MenuItem onSelect={() => navigate('/about')}>{t('About')}</MenuItem><MenuItem onSelect={() => navigate('/how-to-use#mcp')}>{t('Connect AI')}</MenuItem><MenuItem onSelect={() => navigate('/feedback')}>{t('Feedback')}</MenuItem></Menu>}
           {/* Leaving the sandbox keeps it in this browser; save the open line first. */}

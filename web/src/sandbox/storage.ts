@@ -114,11 +114,33 @@ export async function createPrivate(title: string, mode: string, backup?: Backup
   return id
 }
 
+/** The file a private story also saves to (Private library, linked file). Handles survive reloads. */
+export async function getLinkedFile(id: string): Promise<FileSystemFileHandle | undefined> {
+  const db = await database()
+  return new Promise((resolve, reject) => {
+    const request = db.transaction('stories').objectStore('stories').get(`file:${id}`)
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+export async function setLinkedFile(id: string, handle: FileSystemFileHandle | null) {
+  const db = await database()
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction('stories', 'readwrite')
+    if (handle) transaction.objectStore('stories').put(handle, `file:${id}`)
+    else transaction.objectStore('stories').delete(`file:${id}`)
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(transaction.error)
+  })
+}
+
 export async function deletePrivate(id: string) {
   const db = await database()
   await new Promise<void>((resolve, reject) => {
     const transaction = db.transaction('stories', 'readwrite')
     transaction.objectStore('stories').delete(storeKey(id))
+    transaction.objectStore('stories').delete(`file:${id}`)
     transaction.oncomplete = () => resolve()
     transaction.onerror = () => reject(transaction.error)
   })

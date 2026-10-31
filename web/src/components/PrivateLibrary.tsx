@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { t } from '../i18n'
-import { createPrivate, deletePrivate, listPrivate, PRIVATE_SAVED_EVENT, transact, type PrivateSummary, type Row } from '../sandbox/storage'
+import { createPrivate, deletePrivate, getLinkedFile, listPrivate, PRIVATE_SAVED_EVENT, setLinkedFile, transact, type Backup, type PrivateSummary, type Row } from '../sandbox/storage'
 import { Menu, MenuItem } from '../ui/Menu'
 
 /**
@@ -65,8 +65,96 @@ export function PrivateExportMenu({ storyId, beforeExport }: { storyId: string; 
   </>
 }
 
+type FileState = 'none' | 'linked' | 'reconnect' | 'unsupported'
+type Picker = (options: object) => Promise<FileSystemFileHandle>
+type Permitted = FileSystemFileHandle & { queryPermission?: (o: object) => Promise<string>; requestPermission?: (o: object) => Promise<string> }
+const picker = () => (window as unknown as { showSaveFilePicker?: Picker }).showSaveFilePicker
+
+async function writeBackup(storyId: string, handle: FileSystemFileHandle) {
+  const backup = await transact(value => value.backup, false, storyId)
+  const writable = await handle.createWritable()
+  await writable.write(JSON.stringify(backup, null, 1))
+  await writable.close()
+}
+
+/**
+ * Linked file (Chrome, Edge): every save of this private story is also written to a file the
+ * writer chose, so it survives clearing the browser. The browser asks again for permission after
+ * a restart, which only a click can grant: hence "Reconnect file".
+ */
+export function LinkedFile({ storyId }: { storyId: string }) {
+  const [state, setState] = useState<FileState>(picker() ? 'none' : 'unsupported')
+  const [name, setName] = useState('')
+  const [error, setError] = useState('')
+  const handle = useRef<FileSystemFileHandle | null>(null)
+  const timer = useRef<number | undefined>(undefined)
+  useEffect(() => {
+    if (!picker()) return
+    let alive = true
+    void getLinkedFile(storyId).then(async found => {
+      if (!alive || !found) return
+      handle.current = found; setName(found.name)
+      const permission = await (found as Permitted).queryPermission?.({ mode: 'readwrite' })
+      setState(permission === 'granted' ? 'linked' : 'reconnect')
+    })
+    const saved = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== storyId || !handle.current) return
+      window.clearTimeout(timer.current)
+      // At most one file write a second while typing.
+      timer.current = window.setTimeout(() => {
+        const current = handle.current
+        if (!current) return
+        void (current as Permitted).queryPermission?.({ mode: 'readwrite' }).then(permission => {
+          if (permission !== 'granted') { setState('reconnect'); return }
+          return writeBackup(storyId, current).then(() => setError(''), failure => setError(String(failure?.message ?? failure)))
+        })
+      }, 1000)
+    }
+    window.addEventListener(PRIVATE_SAVED_EVENT, saved)
+    return () => { alive = false; window.removeEventListener(PRIVATE_SAVED_EVENT, saved); window.clearTimeout(timer.current) }
+  }, [storyId])
+  if (state === 'unsupported') return null
+  const link = async () => {
+    setError('')
+    try {
+      const title = await transact(value => String(value.backup.state.story && (value.backup.state.story as Row[])[0]?.title || ''), false, storyId)
+      const chosen = await picker()!({ suggestedName: `${fileName(title)}.storytool.json`, types: [{ description: t('StoryTool backup'), accept: { 'application/json': ['.json'] } }] })
+      await setLinkedFile(storyId, chosen)
+      handle.current = chosen; setName(chosen.name)
+      await writeBackup(storyId, chosen)
+      setState('linked')
+    } catch (failure) {
+      if ((failure as Error)?.name !== 'AbortError') setError(String((failure as Error)?.message ?? failure))
+    }
+  }
+  const reconnect = async () => {
+    const current = handle.current as Permitted | null
+    if (!current) return
+    if (await current.requestPermission?.({ mode: 'readwrite' }) === 'granted') { await writeBackup(storyId, current); setState('linked') }
+  }
+  const unlink = async () => { await setLinkedFile(storyId, null); handle.current = null; setName(''); setState('none') }
+  return <span className="private-file">
+    {state === 'none' && <button type="button" className="share-story-button" onClick={() => { void link() }} title={t('Every save is also written to a file you choose, so the story survives clearing this browser.')}>{t('Save to a file…')}</button>}
+    {state === 'reconnect' && <button type="button" className="share-story-button" onClick={() => { void reconnect() }}>{t('Reconnect file')}</button>}
+    {state === 'linked' && <Menu label={t('Saving to {0}', name)} triggerClassName="private-file-linked"><MenuItem onSelect={() => { void unlink() }}>{t('Stop saving to this file')}</MenuItem></Menu>}
+    {error && <span role="alert" className="writer-error">{error}</span>}
+  </span>
+}
+
+/** A StoryTool backup (.json) from disk, checked before it becomes a private story. */
+export async function readBackupFile(file: File): Promise<Backup> {
+  let parsed: unknown
+  try { parsed = JSON.parse(await file.text()) } catch { throw new Error(t('This file is not a StoryTool backup.')) }
+  const backup = parsed as Backup
+  const story = (backup?.state?.story as Row[] | undefined)?.[0]
+  if (backup?.format !== 'storytool-backup' || !story?.id) throw new Error(t('This file is not a StoryTool backup.'))
+  return backup
+}
+
 /** The private shelf on Your stories. */
 export function PrivateShelf({ refresh }: { refresh: number }) {
+  const navigate = useNavigate()
+  const opener = useRef<HTMLInputElement>(null)
   const [stories, setStories] = useState<PrivateSummary[] | null>(null)
   const [error, setError] = useState('')
   const [confirming, setConfirming] = useState<string | null>(null)
@@ -76,7 +164,16 @@ export function PrivateShelf({ refresh }: { refresh: number }) {
     window.addEventListener(PRIVATE_SAVED_EVENT, load)
     return () => window.removeEventListener(PRIVATE_SAVED_EVENT, load)
   }, [refresh])
-  if (!stories?.length && !error) return null
+  // Opening a backup creates a private story from it, in this browser only.
+  const open = async (file: File | undefined) => {
+    if (!file) return
+    setError('')
+    try {
+      const backup = await readBackupFile(file)
+      const story = (backup.state.story as Row[])[0]
+      navigate(`/stories/${await createPrivate(String(story.title ?? backup.title ?? ''), String(story.authoring_mode ?? 'hybrid'), backup)}`)
+    } catch (failure) { setError(String((failure as Error)?.message ?? failure)) }
+  }
   const remove = async (id: string) => {
     if (confirming !== id) { setConfirming(id); return }
     setConfirming(null)
@@ -84,7 +181,11 @@ export function PrivateShelf({ refresh }: { refresh: number }) {
     setStories(await listPrivate())
   }
   return <section className="private-shelf" aria-labelledby="private-shelf-title">
-    <header><h2 id="private-shelf-title">{t('Private library')}</h2><p>{t('Only in this browser. Never sent to StoryTool’s servers; clearing this browser’s data deletes them, so download a backup now and then.')}</p></header>
+    <header><div><h2 id="private-shelf-title">{t('Private library')}</h2><p>{t('Only in this browser. Never sent to StoryTool’s servers; clearing this browser’s data deletes them, so link a file or download a backup.')}</p></div>
+      <button type="button" className="ui-btn ui-btn-secondary" onClick={() => opener.current?.click()}>{t('Open backup file…')}</button>
+      <input ref={opener} type="file" accept=".json,application/json" hidden onChange={event => { void open(event.target.files?.[0]); event.target.value = '' }} />
+    </header>
+    {stories?.length === 0 && <p className="private-shelf-empty">{t('No private stories yet. Tick Keep it private when you create one, or open a backup file.')}</p>}
     {error && <p role="alert" className="writer-error">{error}</p>}
     <ul>{stories?.map(story => <li key={story.id}>
       <Link to={`/stories/${story.id}`}><strong>{story.title || t('Untitled story')}</strong><span>{t('{0} scenes · {1} words', story.scenes, story.words.toLocaleString())}</span></Link>
