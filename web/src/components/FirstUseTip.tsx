@@ -19,7 +19,7 @@ const TIPS: Record<string, string> = {
   'view-7': tx('Chapters group scenes for the reader. Their order is the book’s order.'),
   'view-8': tx('Scenes are where the writing lives. Open one in Write to draft it.'),
   'view-104': tx('Accept a batch to keep your AI’s edits; you can undo it from here later.'),
-  'view-105': tx('Click a scene for its details. Filters narrow the grid by status or POV.'),
+  'view-105': tx('Click a scene for its details. Use the filters to narrow by status or POV.'),
   'view-106': tx('Catch up lists drafted scenes whose outline has fallen behind the prose.'),
   'view-107': tx('Save a named version before a big rewrite. You can preview and restore any version.'),
   'view-108': tx('Start with Needs attention. Craft checks go deeper when you want them.'),

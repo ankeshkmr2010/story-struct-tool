@@ -248,26 +248,31 @@ export function StoryGrid({ storyId, onOpenScene, onOpenInbox }: { storyId: stri
       <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('Every scene at a glance')}</h2>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t('Click a row to edit')}<span className="hidden sm:inline">{' '}{t('· ↑ ↓ Enter Esc · drag rows to reorder')}</span>{' '}{t('· click a title for details.')}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <select aria-label={t('Filter by status')} value={prefs.status} onChange={(event) => setPrefs({ status: event.target.value })} className={filter}>
-          <option value="">{t('All statuses')}</option>
-          {statuses.map((status) => <option key={status} value={status}>{statusName(status)}</option>)}
-        </select>
-        <select aria-label={t('Filter by POV')} value={prefs.pov} onChange={(event) => setPrefs({ pov: event.target.value })} className={filter}>
-          <option value="">{t('All POVs')}</option>
-          <option value="none">{t('No POV set')}</option>
-          {characterOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-        </select>
-        <button type="button" aria-pressed={prefs.noShift} onClick={() => setPrefs({ noShift: !prefs.noShift })} className={toolButton(prefs.noShift)}>{t('No value shift')}</button>
-        <span className="mx-1 h-5 w-px bg-slate-300 dark:bg-slate-600" />
-        <button type="button" aria-pressed={prefs.gaps} onClick={() => setPrefs({ gaps: !prefs.gaps })} className={toolButton(prefs.gaps)} title={t('Fade filled cells and highlight empty ones')}>{t('Gaps')}</button>
-        <button type="button" aria-pressed={prefs.compact} onClick={() => setPrefs({ compact: !prefs.compact })} className={toolButton(prefs.compact)}>{t('Compact')}</button>
-        <details className="relative">
-          <summary className={`${toolButton(false)} cursor-pointer list-none`}>{t('Columns ▾')}</summary>
-          <div className="absolute z-30 mt-1 w-44 rounded-md border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-            {columns.map((column) => <label key={column.key} className="flex items-center gap-2 py-0.5 text-sm text-slate-700 dark:text-slate-200"><input type="checkbox" checked={!prefs.hidden.includes(column.key)} onChange={() => toggleColumn(column.key)} />{column.label}</label>)}
-          </div>
-        </details>
-        <button type="button" onClick={() => setPrefs({ collapsed: prefs.collapsed.length ? [] : groupsAll.map((group) => group.key) })} className={toolButton(false)}>{t('{0} all', prefs.collapsed.length ? t('Expand') : t('Collapse'))}</button>
+        {/* Filters narrow the rows; view options change how they are shown. */}
+        <div role="group" aria-label={t('Filters')} className="flex flex-wrap items-center gap-2">
+          <select aria-label={t('Filter by status')} value={prefs.status} onChange={(event) => setPrefs({ status: event.target.value })} className={filter}>
+            <option value="">{t('All statuses')}</option>
+            {statuses.map((status) => <option key={status} value={status}>{statusName(status)}</option>)}
+          </select>
+          <select aria-label={t('Filter by POV')} value={prefs.pov} onChange={(event) => setPrefs({ pov: event.target.value })} className={filter}>
+            <option value="">{t('All POVs')}</option>
+            <option value="none">{t('No POV set')}</option>
+            {characterOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+          <button type="button" aria-pressed={prefs.noShift} onClick={() => setPrefs({ noShift: !prefs.noShift })} className={toolButton(prefs.noShift)}>{t('No value shift')}</button>
+          <button type="button" aria-pressed={prefs.gaps} onClick={() => setPrefs({ gaps: !prefs.gaps })} className={toolButton(prefs.gaps)} title={t('Fade filled cells and highlight empty ones')}>{t('Gaps')}</button>
+        </div>
+        <span role="separator" aria-orientation="vertical" className="mx-1 h-6 w-px self-center bg-slate-400 dark:bg-slate-500" />
+        <div role="group" aria-label={t('View options')} className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => setPrefs({ collapsed: prefs.collapsed.length ? [] : groupsAll.map((group) => group.key) })} className={toolButton(false)}>{t('{0} all', prefs.collapsed.length ? t('Expand') : t('Collapse'))}</button>
+          <button type="button" aria-pressed={prefs.compact} onClick={() => setPrefs({ compact: !prefs.compact })} className={toolButton(prefs.compact)}>{t('Compact')}</button>
+          <details className="relative">
+            <summary className={`${toolButton(false)} cursor-pointer list-none`}>{t('Columns ▾')}</summary>
+            <div className="absolute z-30 mt-1 w-44 rounded-md border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              {columns.map((column) => <label key={column.key} className="flex items-center gap-2 py-0.5 text-sm text-slate-700 dark:text-slate-200"><input type="checkbox" checked={!prefs.hidden.includes(column.key)} onChange={() => toggleColumn(column.key)} />{column.label}</label>)}
+            </div>
+          </details>
+        </div>
         {moving && <span role="status" className="flex items-center gap-1 text-xs text-slate-500"><span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600 dark:border-slate-600 dark:border-t-slate-200" />{t('Saving order…')}</span>}
         {agentEdits.size > 0 && <button type="button" onClick={onOpenInbox} className="ml-auto rounded-full border border-[var(--accent)] px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">{t('{0} agent edits since your last visit →', agentEdits.size)}</button>}
       </div>

@@ -31,6 +31,7 @@ import { RenameDialog } from '../components/RenameDialog'
 import { OPEN_BESIDE_EVENT, isBesideItem, openBeside, type BesideTarget } from '../components/beside'
 import { writerAction } from '../components/writerActions'
 import { useGuide } from '../components/guide'
+import { ladderLevels as railLevels, railChoice, startTab } from '../components/railView'
 import { FirstUseTip } from '../components/FirstUseTip'
 import { LANGUAGES, languageLabel } from '../components/languages'
 import { TutorialWalkthrough } from '../components/TutorialWalkthrough'
@@ -117,11 +118,12 @@ export default function StoryWorkspace() {
 
 function SavedWorkspace({ storyId }: { storyId: string }) {
   const position = useQuery({ queryKey: ['workspace-position', storyId], queryFn: () => api.getWorkspacePosition(storyId), retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false, staleTime: 0, gcTime: 0 })
-  if (position.isPending) return <p className="p-6">{t('Opening your story…')}</p>
-  return <><Workspace storyId={storyId} initialPosition={position.data} syncPosition={!position.isError} />{position.isError && <p role="status" className="p-4">{t('Your synced place could not be loaded. This session will not overwrite it. Reopen the story to retry.')}</p>}</>
+  const story = useQuery({ queryKey: ['story', storyId], queryFn: () => api.getStory(storyId) })
+  if (position.isPending || story.isPending) return <p className="p-6">{t('Opening your story…')}</p>
+  return <><Workspace storyId={storyId} storyMode={story.data?.authoring_mode} initialPosition={position.data} syncPosition={!position.isError} />{position.isError && <p role="status" className="p-4">{t('Your synced place could not be loaded. This session will not overwrite it. Reopen the story to retry.')}</p>}</>
 }
 
-export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, initialPosition, syncPosition = false }: { storyId: string; sandboxStep?: number; sandboxRun?: number; sandboxHistory?: Sandbox; initialPosition?: WorkspacePlace | null; syncPosition?: boolean }) {
+export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandboxHistory, initialPosition, syncPosition = false }: { storyId: string; storyMode?: string; sandboxStep?: number; sandboxRun?: number; sandboxHistory?: Sandbox; initialPosition?: WorkspacePlace | null; syncPosition?: boolean }) {
   const sandbox = storyId === SANDBOX_ID
   const placeholders = usePlaceholders(storyId)
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, enabled: !sandbox })
@@ -161,7 +163,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
     if (linkedView()) return 'design'
     if (initialPosition?.mode) return initialPosition.mode
     if (['write', 'read', 'design'].includes(savedSearchContext.tab)) return savedSearchContext.tab
-    try { const saved = localStorage.getItem(`storytool-workspace:${storyId}`); return saved === 'write' || saved === 'read' ? saved : 'design' } catch { return 'design' }
+    try { const saved = localStorage.getItem(`storytool-workspace:${storyId}`); return startTab(storyMode, saved === 'write' || saved === 'read' || saved === 'design' ? saved : null) } catch { return startTab(storyMode) }
   })
   const [writerOpened, setWriterOpened] = useState(tab === 'write')
   const [readerResume, setReaderResume] = useState(initialPosition?.reading)
@@ -356,8 +358,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   // I have an outline = hybrid, Plan from scratch = plotter); more unlock as the story grows,
   // and the rest wait under More tools and Ctrl+K. Older stories show everything.
   const myCard = libraryCards.data?.cards.find(card => card.story_id === storyId)
-  const showAll = sandbox || (myCard?.show_all_tools ?? true)
-  const fullLadder = showAll || (myCard?.full_ladder ?? true)
+  const { showAll, fullLadder } = railChoice(myCard, story.data?.created_at, sandbox)
   const viewMode = story.data?.authoring_mode
   const sceneTotal = scenes.data?.length ?? 0
   const fullChapter = (chapters.data ?? []).some(chapter => { const own = (scenes.data ?? []).filter(scene => scene.chapter_id === chapter.id); return own.length > 0 && own.every(isDrafted) })
@@ -368,7 +369,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const { guide, update: updateGuide } = useGuide()
   useEffect(() => { if (!sandbox && level === EVALUATE_VIEW && guide && !guide.check_run) updateGuide({ check_run: true }) })
   const inTools = (view: number) => shows(view) && (railTools || level === view)
-  const ladderLevels = fullLadder ? undefined : viewMode === 'pantser' ? [3] : [1, 4, 8]
+  const ladderLevels = railLevels(fullLadder)
   const seenKey = (view: number) => `storytool-unlocked:${storyId}:${view}`
   const fresh = (view: number) => { if (showAll || !unlocked(view)) return false; try { return localStorage.getItem(seenKey(view)) !== 'seen' } catch { return false } }
   useEffect(() => { if (fresh(level)) { try { localStorage.setItem(seenKey(level), 'seen') } catch { /* Optional browser storage. */ } } })
@@ -622,7 +623,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {shows(PLACES_VIEW) && viewItem(PLACES_VIEW, t('Places'))}
           {shows(GLOSSARY_VIEW) && viewItem(GLOSSARY_VIEW, t('Glossary'))}
           {shows(EVALUATE_VIEW) && <h2>{t('Review')}</h2>}
-          {shows(EVALUATE_VIEW) && <button type="button" aria-current={level === EVALUATE_VIEW ? 'page' : undefined} onClick={() => { setCheckTab('needs'); setLevel(EVALUATE_VIEW) }}>{t('Check my story')}{(health.data?.warning_count ?? 0) > 0 && <span className="workspace-nav-badge" aria-label={t('{0} to fix', health.data?.warning_count)}>{health.data?.warning_count}</span>}</button>}
+          {shows(EVALUATE_VIEW) && <button type="button" aria-current={level === EVALUATE_VIEW ? 'page' : undefined} onClick={() => { setCheckTab('needs'); setLevel(EVALUATE_VIEW) }}>{t('Check my story')}{(health.data?.warning_count ?? 0) > 0 && <span className="workspace-nav-badge is-labelled">{t('{0} to fix', health.data?.warning_count)}</span>}</button>}
           {/* Tools is collapsed by default; the open tool stays visible while collapsed. */}
           {[GRID_VIEW, PACING_VIEW, INBOX_VIEW, CATCHUP_VIEW, PLACEHOLDERS_VIEW, HISTORY_VIEW].some(shows) && <h2><button type="button" className="rail-group-toggle" aria-expanded={railTools} onClick={() => setRailTools(open => !open)}>{t('Tools')}</button></h2>}
           {inTools(GRID_VIEW) && viewItem(GRID_VIEW, t('Grid'))}
@@ -684,6 +685,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Point of view')}</span><HelpTip label={t('point of view')}>{t('Whose eyes the reader sees the story through.{0}', choiceList(localized(POV_OPTIONS)))}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.pov_style} options={localized(POV_OPTIONS)} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></span><span className="help-text mt-1 block">{describe(localized(POV_OPTIONS), story.data.pov_style)}</span></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Framework')}</span><HelpTip label={t('a framework')}>{t('The story shape used to seed your acts and beats. You can change any of them afterwards.{0}', choiceList(localized(FRAMEWORK_OPTIONS)))}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.structure_framework} options={localized(FRAMEWORK_OPTIONS)} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /></span><span className="help-text mt-1 block">{describe(localized(FRAMEWORK_OPTIONS), story.data.structure_framework)}</span></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Mode')}</span><HelpTip label={t('mode')}>{t('How much the plan guides you. It only changes what is flagged; nothing is ever blocked.{0}', choiceList(localized(MODE_OPTIONS)))}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.authoring_mode} options={localized(MODE_OPTIONS)} onSave={(authoring_mode) => updateStory.mutateAsync({ authoring_mode })} /></span><span className="help-text mt-1 block">{describe(localized(MODE_OPTIONS), story.data.authoring_mode)}</span></label>
+                {!sandbox && <label className="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400"><input type="checkbox" className="mt-0.5" checked={showAll} onChange={event => setView({ show_all_tools: event.target.checked })} /><span><span className="field-label">{t('Show all tools')}</span><span className="help-text block">{t('Off shows the tools this mode needs; the rest wait in More tools and Ctrl+K.')}</span></span></label>}
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Language')}</span><HelpTip label={t('language')}>{t('The spelling convention for this story. Smart consistency in Check my story flags spellings from the other variety (colour in a US story, color in a UK one). Leave it on the default to follow your account setting.')}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.language} options={LANGUAGES.map(language => ({ value: language.id, label: t(language.label) }))} placeholder={t('Account default ({0})', languageLabel(me.data?.language))} onSave={(language) => updateStory.mutateAsync({ language: language as StoryUpdate['language'] })} /></span></label>
               </div>
               <details className="mt-5 rounded border border-slate-200 p-3 dark:border-slate-700"><summary className="cursor-pointer text-sm font-medium">{t('World, style, theme, and notes')}</summary><div className="mt-3 space-y-3">

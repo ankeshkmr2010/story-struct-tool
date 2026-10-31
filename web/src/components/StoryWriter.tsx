@@ -202,8 +202,8 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
           <p className="writer-help">{t('Write freely. Scene names and structure can come later.')}</p>
         </header>
         {!unfiled && chapter && <div className="writer-chapter-extras" key={`top-${chapter.id}`}><ChapterExtra label={t('Epigraph')} add={t('Add epigraph')} value={chapter.epigraph} placeholder={t('Opening quote')} onSave={async epigraph => { await api.updateChapter(storyId, chapter.id, { epigraph }); refresh() }} /><ChapterExtra label={t('Opening note')} add={t('Add opening note')} value={chapter.opening_note} placeholder={t('Opening flavour text')} onSave={async opening_note => { await api.updateChapter(storyId, chapter.id, { opening_note }); refresh() }} /></div>}
-        {chapterScenes.map((scene, index) => <Passage key={scene.id} {...{ storyId, prefix, scene, hintsSlot }} liveHints={liveHints && contextScene?.id === scene.id} separator={index > 0} focus={focusTarget === scene.id} onFocus={() => setActiveScene(scene.id)} refresh={refresh} />)}
-        {chapterScenes.length === 0 && <Passage key={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} {...{ storyId, prefix }} draftKey={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} focus={focusTarget === 'blank'} createScene={createScene} onCreated={onCreated} onFocus={() => {}} refresh={refresh} />}
+        {chapterScenes.map((scene, index) => <Passage key={scene.id} {...{ storyId, prefix, scene, hintsSlot }} onFocusMode={() => onFocusChange(true)} liveHints={liveHints && contextScene?.id === scene.id} separator={index > 0} focus={focusTarget === scene.id} onFocus={() => setActiveScene(scene.id)} refresh={refresh} />)}
+        {chapterScenes.length === 0 && <Passage onFocusMode={() => onFocusChange(true)} key={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} {...{ storyId, prefix }} draftKey={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} focus={focusTarget === 'blank'} createScene={createScene} onCreated={onCreated} onFocus={() => {}} refresh={refresh} />}
         {!unfiled && chapter && <div className="writer-chapter-extras" key={`end-${chapter.id}`}><ChapterExtra label={t('Closing note')} add={t('Add closing note')} value={chapter.closing_note} placeholder={t('Closing flavour text')} onSave={async closing_note => { await api.updateChapter(storyId, chapter.id, { closing_note }); refresh() }} /></div>}
         <div className="writer-continuation">
           {chapterScenes.length > 0 && <button type="button" disabled={adding} onClick={() => { void addScene() }}>{t('+ Scene break at end')}</button>}
@@ -233,17 +233,18 @@ function SaveState({ storyId }: { storyId: string }) {
   return <>{status === 'error' ? t('Not saved') : status === 'saving' ? t('Saving…') : status === 'unsaved' ? t('Unsaved changes') : t('Saved')}</>
 }
 
-function Passage({ storyId, prefix, scene, draftKey, separator = false, focus = false, liveHints = false, hintsSlot, createScene, onCreated, onFocus, refresh }: {
+function Passage({ storyId, prefix, scene, draftKey, separator = false, focus = false, liveHints = false, hintsSlot, createScene, onCreated, onFocus, onFocusMode, refresh }: {
+  onFocusMode?: () => void
   storyId: string; prefix: string; scene?: Scene; draftKey?: string; separator?: boolean; focus?: boolean; liveHints?: boolean; hintsSlot?: HTMLElement | null
   createScene?: () => Promise<Scene>; onCreated?: (scene: Scene, content: string) => void; onFocus: () => void; refresh: () => void
 }) {
   const content = useQuery({ queryKey: ['content', storyId, scene?.id], queryFn: () => api.getContent(storyId, scene!.id), enabled: Boolean(scene) })
   if (scene && content.isPending) return <p className="writer-help">{t('Loading passage…')}</p>
   if (content.isError) return <p role="alert" className="writer-error">{errorText(content.error)} <button type="button" onClick={() => { void content.refetch() }}>{t('Retry')}</button></p>
-  return <PassageEditor {...{ storyId, prefix, scene, draftKey, separator, focus, liveHints, hintsSlot, createScene, onCreated, onFocus, refresh }} initial={content.data?.content ?? ''} />
+  return <PassageEditor {...{ storyId, prefix, scene, draftKey, separator, focus, liveHints, hintsSlot, createScene, onCreated, onFocus, onFocusMode, refresh }} initial={content.data?.content ?? ''} />
 }
 
-function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, focus, liveHints, hintsSlot, createScene, onCreated, onFocus, refresh }: Parameters<typeof Passage>[0] & { initial: string }) {
+function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, focus, liveHints, hintsSlot, createScene, onCreated, onFocus, onFocusMode, refresh }: Parameters<typeof Passage>[0] & { initial: string }) {
   const qc = useQueryClient()
   const { theme } = useTheme()
   const view = useRef<EditorView | null>(null)
@@ -257,8 +258,8 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   const [previewImage, setPreviewImage] = useState<StoryImage | null>(null)
   const [hintParagraph, setHintParagraph] = useState(1)
   const [imageAnchor, setImageAnchor] = useState<{ x: number; y: number; at: number } | null>(null)
-  // `slash`: opened by typing / on an empty line; Esc then types the / after all.
-  const [context, setContext] = useState<{ x: number; y: number; at: number; hasSelection: boolean; named: Named | null; slash?: boolean } | null>(null)
+  // `slash`: where the / was typed that opened this menu; Esc or a menu action removes it again.
+  const [context, setContext] = useState<{ x: number; y: number; at: number; hasSelection: boolean; named: Named | null; slash?: number } | null>(null)
   const writerId = useRef({})
   const [clipboardError, setClipboardError] = useState('')
   // A small button beside a selection opens the same actions as right-click, so they are discoverable.
@@ -309,7 +310,12 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     try { setReviewError(null); setLatest(realScene.current ? (await api.getContent(storyId, realScene.current.id)).content ?? '' : '') }
     catch (error) { setReviewError(errorText(error)) }
   }
-  const openContext = (editor: EditorView, x: number, y: number, pointer: boolean, slash = false) => {
+  const removeSlash = (at?: number) => {
+    const editor = view.current
+    if (at === undefined || !editor || editor.state.sliceDoc(at, at + 1) !== '/') return
+    editor.dispatch({ changes: { from: at, to: at + 1 }, selection: { anchor: at } })
+  }
+  const openContext = (editor: EditorView, x: number, y: number, pointer: boolean, slash?: number) => {
     const position = pointer ? editor.posAtCoords({ x, y }) : editor.state.selection.main.head
     const selected = editor.state.selection.main
     if (position !== null && (selected.empty || position < selected.from || position > selected.to)) editor.dispatch({ selection: { anchor: position } })
@@ -321,14 +327,14 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     const outside = (event: PointerEvent) => { if (!menu.current?.contains(event.target as Node)) setContext(null) }
     const dismiss = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
-      event.preventDefault(); setContext(null)
-      const editor = view.current
-      if (context.slash && editor) { const at = editor.state.selection.main.head; editor.dispatch({ changes: { from: at, insert: '/' }, selection: { anchor: at + 1 }, userEvent: 'input' }) }
-      editor?.focus()
+      event.preventDefault(); setContext(null); removeSlash(context.slash)
+      view.current?.focus()
     }
+    // Typing can scroll the caret into view just after the menu opens; only later scrolls close it.
     const scroll = () => setContext(null)
-    window.addEventListener('pointerdown', outside); window.addEventListener('keydown', dismiss); window.addEventListener('scroll', scroll, true)
-    return () => { window.removeEventListener('pointerdown', outside); window.removeEventListener('keydown', dismiss); window.removeEventListener('scroll', scroll, true) }
+    const listen = window.setTimeout(() => window.addEventListener('scroll', scroll, true), 400)
+    window.addEventListener('pointerdown', outside); window.addEventListener('keydown', dismiss)
+    return () => { window.clearTimeout(listen); window.removeEventListener('pointerdown', outside); window.removeEventListener('keydown', dismiss); window.removeEventListener('scroll', scroll, true) }
   }, [context])
   useEffect(() => {
     if (!selectionChip) return
@@ -408,8 +414,9 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       // Typing / on an empty line opens the writing actions at the caret (usability phase 2, item 7).
       EditorView.inputHandler.of((editor, from, to, text) => {
         if (text !== '/' || from !== to || editor.state.doc.lineAt(from).text.trim() !== '') return false
-        const coords = editor.coordsAtPos(from)
-        openContext(editor, coords?.left ?? 20, coords?.bottom ?? 100, false, true)
+        editor.dispatch({ changes: { from, insert: '/' }, selection: { anchor: from + 1 }, scrollIntoView: true, userEvent: 'input' })
+        // Place the menu once the caret has been scrolled into view.
+        requestAnimationFrame(() => { const coords = editor.coordsAtPos(from + 1); openContext(editor, coords?.left ?? 20, coords?.bottom ?? 100, false, from) })
         return true
       }),
       EditorView.domEventHandlers({
@@ -470,12 +477,19 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
         buttons[(index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length]?.focus()
       }
     }}>
+      {context.slash !== undefined ? <>
+        <button type="button" role="menuitem" onClick={() => { removeSlash(context.slash); addPlaceholder() }}>{t('Add TK here')}</button>
+        <button type="button" role="menuitem" onClick={() => { removeSlash(context.slash); setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor({ x: context.x, y: context.y, at: context.slash! }) }}>{t('Insert image…')}</button>
+        <button type="button" role="menuitem" onClick={() => { removeSlash(context.slash); setContext(null); openBeside({ kind: 'pick' }) }}>{t('Split view: open a scene, character, place or image beside')}</button>
+        {onFocusMode && <button type="button" role="menuitem" onClick={() => { removeSlash(context.slash); setContext(null); onFocusMode() }}>{t('Focus mode')}</button>}
+      </> : <>
       <button type="button" role="menuitem" onClick={addPlaceholder}>{t('Add TK here')}</button>
       {context.named && <button type="button" role="menuitem" onClick={() => { openBeside(context.named!.item); setContext(null) }}>{t('Open {0} beside', context.named.label)}</button>}
       <button type="button" role="menuitem" onClick={() => { openBeside({ kind: 'pick' }); setContext(null) }}>{t('Open scene beside…')}</button>
       <button type="button" role="menuitem" onClick={() => { const anchor = context; setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor(anchor) }}>{t('Insert image…')}</button>
       {(['cut', 'copy', 'paste', 'select'] as const).map(action => <button type="button" role="menuitem" key={action} disabled={(action === 'cut' || action === 'copy') && !context.hasSelection} onClick={() => { void editClipboard(action) }}>{({ cut: t('Cut'), copy: t('Copy'), paste: t('Paste'), select: t('Select all') })[action]}</button>)}
       <a role="menuitem" href="https://emojidb.org/" target="_blank" rel="noopener noreferrer" onClick={() => setContext(null)}>{t('Find emojis ↗')}</a>
+      </>}
       {clipboardError && <p role="alert">{clipboardError}</p>}
     </div>}
     {imageAnchor && <ImageInsertionPicker storyId={storyId} anchor={imageAnchor} onClose={() => { setImageAnchor(null); view.current?.focus() }} onInsert={async image => {
