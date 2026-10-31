@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { api, type SearchContext, type SearchHit, type StoryUpdate, type WorkspacePlace } from '../api/client'
+import { api, type SearchContext, type SearchHit, type StoryUpdate, type ToolKind, type WorkspacePlace } from '../api/client'
 import { useWorkspacePosition } from '../components/useWorkspacePosition'
 import { SearchDialog } from '../components/StorySearch'
 import { Ladder, type AuthoringMode } from '../components/Ladder'
@@ -106,6 +106,8 @@ const STRUCTURE_VIEW = 111
 const TIMELINE_VIEW = 112
 const PLACES_VIEW = 113
 const GLOSSARY_VIEW = 114
+// Names the first-run measures use for each Design page.
+const TOOL_NAMES: Record<number, string> = { [INBOX_VIEW]: 'agent-changes', [GRID_VIEW]: 'grid', [CATCHUP_VIEW]: 'catch-up', [HISTORY_VIEW]: 'history', [EVALUATE_VIEW]: 'check', [PLACEHOLDERS_VIEW]: 'placeholders', [PACING_VIEW]: 'pacing', [STRUCTURE_VIEW]: 'structure', [TIMELINE_VIEW]: 'timeline', [PLACES_VIEW]: 'places', [GLOSSARY_VIEW]: 'glossary' }
 
 // One docked side panel; which tabs it offers depends on the mode (Context and Hints belong to Write).
 type RefPanel = 'context' | 'hints' | 'cast' | 'insights' | 'feedback' | 'placeholders' | 'timeline' | 'places' | 'glossary' | 'assistant'
@@ -365,6 +367,14 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
   const baseViews = viewMode === 'pantser' ? [PLACES_VIEW] : viewMode === 'hybrid' ? [STRUCTURE_VIEW, PLACES_VIEW, EVALUATE_VIEW] : [STRUCTURE_VIEW, PLACES_VIEW, GLOSSARY_VIEW, EVALUATE_VIEW, GRID_VIEW]
   const unlocked = (view: number) => (view === TIMELINE_VIEW && sceneTotal >= 5) || (view === PACING_VIEW && sceneTotal >= 10)
   const shows = (view: number) => showAll || baseViews.includes(view) || unlocked(view) || (view === INBOX_VIEW && pendingRuns > 0) || level === view
+  // First-run measures (usability phase 4): which tools a writer opens, once per browser session.
+  useEffect(() => {
+    if (sandbox) return
+    const tool = tab !== 'design' ? tab : level <= 8 ? `level-${level}` : TOOL_NAMES[level]
+    if (!tool) return
+    try { const key = `storytool-tool-open:${tool}`; if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1') } catch { return }
+    void api.toolOpen(tool as ToolKind).catch(() => { /* Telemetry is optional. */ })
+  }, [sandbox, tab, level])
   // Opening Check my story ticks "Run one check" on the first-hour checklist.
   const { guide, update: updateGuide } = useGuide()
   useEffect(() => { if (!sandbox && level === EVALUATE_VIEW && guide && !guide.check_run) updateGuide({ check_run: true }) })

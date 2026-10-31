@@ -44,6 +44,7 @@ from storytool.domain.rename import RenameController
 from storytool.domain.search.controller import LibrarySearchController, SearchController
 from storytool.domain.search.semantic import search_lifespan
 from storytool.domain.site.feedback import AdminFeedbackController, ProductFeedbackController
+from storytool.domain.site.first_run import FirstRunController, ToolOpenController
 from storytool.domain.site.funnel import FunnelController, TryController, VisitController
 from storytool.domain.site.roadmap import AdminRoadmapController, PublicRoadmapController
 from storytool.domain.site.shoutouts import AdminShoutoutController, PublicShoutoutController
@@ -154,6 +155,8 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             VisitController,
             TryController,
             FunnelController,
+            FirstRunController,
+            ToolOpenController,
             EventController,
             ActController,
             BeatController,

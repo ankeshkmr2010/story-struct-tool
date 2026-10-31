@@ -30,6 +30,7 @@ from storytool.domain.narrative.models import (
 )
 from storytool.domain.search.models import SearchChunk, SearchIndex
 from storytool.domain.site.feedback import ProductFeedback
+from storytool.domain.site.first_run import ToolUse
 from storytool.domain.site.funnel import FunnelEvent
 from storytool.domain.site.roadmap import RoadmapItem
 from storytool.domain.site.shoutouts import Shoutout
@@ -108,6 +109,7 @@ __all__ = (
     "StoryVersion",
     "Suggestion",
     "Thread",
+    "ToolUse",
     "User",
     "UserSession",
     "WorkspacePosition",

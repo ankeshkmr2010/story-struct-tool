@@ -2171,6 +2171,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/funnel/first-run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** First-run measures (site admin only) */
+        get: operations["ApiAdminFunnelFirstRunFirstRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/site/tool-open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record that the signed-in writer opened a workspace tool */
+        post: operations["ApiSiteToolOpenToolOpen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/events": {
         parameters: {
             query?: never;
@@ -3664,6 +3698,11 @@ export interface components {
             unavailable_count: number;
             notice?: string | null;
         };
+        /** Bucket */
+        Bucket: {
+            label: string;
+            count: number;
+        };
         /** CalibrationBand */
         CalibrationBand: {
             lower: number;
@@ -4185,6 +4224,17 @@ export interface components {
             paragraph: number;
             text: string;
             label: string;
+        };
+        /** FirstRunOut */
+        FirstRunOut: {
+            first_scene_count: number;
+            median_hours_to_first_scene: number | null;
+            hours_to_first_scene: components["schemas"]["Bucket"][];
+            accounts: number;
+            checklist: {
+                [key: string]: number;
+            };
+            tools: components["schemas"]["ToolOut"][];
         };
         /** FunnelOut */
         FunnelOut: {
@@ -5736,6 +5786,17 @@ export interface components {
             story_id: string;
             /** @default Story agent */
             label: string;
+        };
+        /** ToolOpenIn */
+        ToolOpenIn: {
+            /** @enum {string} */
+            tool: "write" | "read" | "level-1" | "level-2" | "level-3" | "level-4" | "level-5" | "level-6" | "level-7" | "level-8" | "structure" | "timeline" | "places" | "glossary" | "check" | "grid" | "pacing" | "agent-changes" | "catch-up" | "placeholders" | "history";
+        };
+        /** ToolOut */
+        ToolOut: {
+            tool: string;
+            accounts: number;
+            dropped: number;
         };
         /** TryEventsIn */
         TryEventsIn: {
@@ -11484,6 +11545,63 @@ export interface operations {
                 content: {
                     "application/json": {
                         [key: string]: number;
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminFunnelFirstRunFirstRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FirstRunOut"];
+                };
+            };
+        };
+    };
+    ApiSiteToolOpenToolOpen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToolOpenIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
                     };
                 };
             };
