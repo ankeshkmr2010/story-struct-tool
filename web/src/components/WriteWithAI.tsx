@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MCPSetup } from './MCPSetup'
+import { ConnectWizard } from './ConnectWizard'
 import { t, tx } from '../i18n'
 
 const prompts = [
@@ -23,7 +24,9 @@ export function WriteWithAI() {
       <>{t('Discuss the suggestions. Ask for one focused proposal and tell your AI to stage it without applying it.')}</>,
       <>{t('Return to')}{' '}<strong>{t('Design → Agent changes')}</strong>{t('. Review the proposed edits and accept all, some or none. Read saved craft reviews in')}{' '}<strong>{t('Design → Check my story')}</strong>.</>,
     ].map((step, index) => <li key={index} className="flex gap-3"><strong className="shrink-0 text-[var(--accent)]">{t('Step {0}', index + 1)}</strong><span>{step}</span></li>)}</ol></section>
-    <MCPSetup />
+    <ConnectWizard />
+    {/* Every other client and the technical detail stay one click away (usability phase 3, item 12). */}
+    <details className="connect-advanced" open={window.location.hash === '#mcp'}><summary>{t('Advanced: other AI apps and technical details')}</summary><MCPSetup /></details>
     <section aria-labelledby="ai-prompts"><p className="eyebrow">{t('COPY A STARTER PROMPT')}</p><h2 id="ai-prompts" className="text-2xl font-semibold">{t('Give your AI a clear job.')}</h2><p className="mt-3 text-sm text-[var(--muted)]">{t('Replace the bracketed parts. Start small, check the result, then ask for the next change.')}</p><div className="mt-5 grid gap-4 md:grid-cols-2">{prompts.map(([title, prompt]) => <article key={title} className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5"><h3 className="font-semibold">{t(title)}</h3><p className="my-3 text-sm leading-6">{prompt}</p><button type="button" className="share-story-button" onClick={async () => { try { await navigator.clipboard.writeText(prompt); setCopied(title); setError('') } catch { setError(t('Could not copy. Select the prompt above and copy it manually.')) } }}>{copied === title ? t('Copied') : t('Copy prompt')}</button></article>)}</div>{error && <p role="alert" className="writer-error mt-3">{error}</p>}</section>
     <section className="rounded-xl border border-[var(--line)] p-5"><h2 className="text-lg font-semibold">{t('Prefer the assistant inside StoryTool?')}</h2><p className="mt-2 text-sm leading-6">{t('Save your provider connection in')}{' '}<Link to="/settings" className="underline">{t('Settings')}</Link>{t(', then open Assistant in your story. The same principle applies: ask for a focused proposal, review it in Agent changes, and choose what to keep. Catch up and AI reviews also work through a connected provider.')}</p></section>
   </div>

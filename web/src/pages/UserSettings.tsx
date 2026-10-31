@@ -8,6 +8,7 @@ import { t } from '../i18n'
 import { serverText } from '../i18n/server'
 import { HabitGoalForm } from '../components/Goals'
 import { useGuide } from '../components/guide'
+import { ConnectWizard } from '../components/ConnectWizard'
 
 function AuthorNameSettings() {
   const qc = useQueryClient()
@@ -130,13 +131,16 @@ export default function UserSettings() {
       <TipSettings />
       <section id="writing-goal" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 p-5 dark:border-slate-700 sm:p-6"><h2 className="text-lg font-semibold">{t('Writing goal')}</h2><p className="writer-help mb-3">{t('A daily habit across all your stories. Set a goal for one story from its Write screen or Design.')}</p><HabitGoalForm /></section>
       <section id="ai-clients" className="mt-6 scroll-mt-24 rounded-xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6">
-        <h2 className="text-lg font-semibold">{t('Connect an AI client · MCP')}</h2>
+        <ConnectWizard />
+        <details className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-700">
+          <summary className="cursor-pointer text-sm font-semibold">{t('Advanced: connection details')}</summary>
         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{t('Connect Claude or ChatGPT through browser sign-in, then choose the stories and permissions it can use. Your client supplies the model; no provider API key or token copying is needed here.')}{' '}<Link to="/#mcp" className="underline">{t('Open the connection guides →')}</Link></p>
         <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-xs leading-5">
           <label className="block font-medium" htmlFor="mcp-endpoint">{t('MCP server URL')}</label>
           <div className="mt-1 flex flex-wrap gap-2"><input id="mcp-endpoint" readOnly value={`${window.location.origin}/mcp`} className="min-w-0 flex-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-2 font-mono" /><button type="button" onClick={() => { void navigator.clipboard.writeText(`${window.location.origin}/mcp`).then(() => setEndpointCopied(true)).catch(() => setEndpointCopied(false)) }} className="rounded border border-slate-300 dark:border-slate-600 px-3">{endpointCopied ? t('Copied') : t('Copy URL')}</button></div>
           <p className="mt-2 text-slate-500 dark:text-slate-400">{t('Add this URL in your client\'s connector settings and choose OAuth sign-in. Other compatible clients can use the same flow.')}</p>
         </div>
+        </details>
         <div className="mt-5 space-y-3 border-t border-slate-200 pt-4 dark:border-slate-700"><h3 className="text-sm font-semibold">{t('OAuth connections')}</h3><p className="text-xs text-slate-500 dark:text-slate-400">{t('These apps were authorized through a browser consent screen. Revoking disconnects their access and refresh tokens immediately.')}</p>{oauthGrants.isPending && <p className="text-xs">{t('Loading connections…')}</p>}{oauthGrants.data?.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('No OAuth connections yet.')}</p>}{grantGroups.map(group => { const grant = group.reduce((latest, item) => item.expires_at > latest.expires_at ? item : latest); return <div key={grant.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-950"><div className="min-w-0"><p className="break-words text-sm font-medium">{grant.client_name} · {serverText(grant.story_title)}{group.length > 1 ? t(' · {0} sign-ins', group.length) : ''}</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{grant.revoked_at ? t('Revoked') : t('Expires {0}', new Date(grant.expires_at).toLocaleDateString())} · {grant.scopes.includes('story:write') ? t('Can edit') : t('Read only')}{grant.scopes.includes('prose:read') ? t(' · Prose shared') : ''}</p></div>{!grant.revoked_at && <button type="button" disabled={revokeOAuth.isPending} onClick={() => revokeOAuth.mutate(group.map(item => item.id))} className="text-xs text-red-600 dark:text-red-300">{group.length > 1 ? t('Revoke all') : t('Revoke connection')}</button>}</div> })}{(oauthGrants.isError || revokeOAuth.isError) && <p role="alert" className="text-xs text-red-600 dark:text-red-300">{errorText(oauthGrants.error ?? revokeOAuth.error)}</p>}</div>
         <details className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-700">
           <summary className="cursor-pointer text-sm font-semibold">{t('Manual tokens for other clients')}</summary>

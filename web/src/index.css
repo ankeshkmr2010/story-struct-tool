@@ -1784,3 +1784,26 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 .first-use-tip-actions { display: inline-flex; gap: 12px; }
 .first-use-tip button, .writer-tip .first-use-tip-actions button { color: var(--accent); font-weight: 600; }
 .first-use-tip-actions button + button { color: var(--muted); font-weight: 500; }
+
+/* Usability phase 3, item 12: connect-your-AI wizard. */
+.connect-wizard { padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.connect-wizard h2 { margin: 0; color: var(--ink); font-size: 20px; font-weight: 600; }
+.connect-lead { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.connect-steps { display: grid; gap: 18px; margin: 18px 0 0; padding: 0; list-style: none; }
+.connect-steps h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; color: var(--ink); font-size: 15px; font-weight: 600; }
+.connect-steps h3 > span { display: inline-grid; width: 24px; height: 24px; place-items: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 700; }
+.connect-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.connect-choices button { min-width: 140px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--page); color: var(--ink); font-weight: 600; }
+.connect-choices button[aria-checked=true] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.connect-link { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.connect-link code { flex: 1 1 260px; min-width: 0; padding: 8px 10px; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: 8px; background: var(--page); font-size: 13px; }
+.connect-howto { margin: 10px 0 0; padding-left: 20px; color: var(--muted); font-size: 13px; line-height: 1.6; list-style: decimal; }
+.connect-result { min-height: 20px; margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+.connect-ok { display: inline-flex; align-items: center; gap: 6px; color: #15803d; font-weight: 600; }
+.connect-ok > span { display: inline-grid; width: 20px; height: 20px; place-items: center; border-radius: 50%; background: #16a34a; color: #fff; font-size: 12px; }
+.connect-note { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.connect-advanced { margin-top: 12px; }
+.connect-advanced > summary { color: var(--muted); font-size: 14px; font-weight: 600; cursor: pointer; }
+.connect-advanced[open] > summary { margin-bottom: 12px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .connect-ok { color: #4ade80; } }
+:root[data-theme="dark"] .connect-ok { color: #4ade80; }
