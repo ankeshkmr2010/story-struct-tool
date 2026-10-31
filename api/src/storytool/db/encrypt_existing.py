@@ -144,7 +144,11 @@ async def encrypt_existing(engine: AsyncEngine | None = None) -> dict[str, int]:
         return {}
     step = encrypt_table if enabled() else decrypt_table
     own = engine is None
-    engine = engine or create_async_engine(get_settings().database_url)
+    settings = get_settings()
+    # Same TLS setup as the app's engine (db/plugin.py): Neon needs the certifi CA context.
+    engine = engine or create_async_engine(
+        settings.database_url, connect_args=settings.database_connect_args
+    )
     try:
         counts = {}
         for table in metadata.sorted_tables:

@@ -5,5 +5,6 @@ set -eu
 # checks/applies migrations before accepting requests, including after cold starts.
 python -m litestar --app storytool.app:app database upgrade --no-prompt
 # Story text at rest: encrypt any rows still stored plain (a no-op without STORYTOOL_DATA_KEYS).
-python -m storytool.db.encrypt_existing
+# Never blocks startup: the app reads plain and encrypted rows alike, and the next start retries.
+python -m storytool.db.encrypt_existing || echo "Story text encryption step failed; starting anyway"
 exec uvicorn storytool.app:app --host 0.0.0.0 --port "${PORT:-8000}"
