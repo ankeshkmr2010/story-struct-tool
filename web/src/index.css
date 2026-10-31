@@ -1746,7 +1746,10 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 .rail-more > summary { padding: 4px 12px; color: var(--muted); font-size: 13px; cursor: pointer; }
 .rail-more > button { display: block; width: 100%; padding: 6px 12px 6px 24px; border-radius: 8px; color: var(--muted); font-size: 13px; text-align: left; }
 .rail-more > button:hover { background: var(--band); color: var(--ink); }
-.rail-showall { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 4px 12px; color: var(--muted); font-size: 12px; }
+.rail-group-toggle { display: flex; width: 100%; align-items: center; gap: 6px; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; cursor: pointer; }
+.rail-group-toggle::before { content: "\25B8"; font-size: 10px; transition: transform .15s; }
+.rail-group-toggle[aria-expanded=true]::before { transform: rotate(90deg); }
+.rail-group-toggle:hover { color: var(--ink); }
 .search-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
 .search-tools > span { color: var(--muted); font-size: 12px; }
 .search-tools .lib-chip:hover { border-color: var(--accent); color: var(--ink); }

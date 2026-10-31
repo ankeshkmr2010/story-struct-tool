@@ -319,6 +319,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const coverOf = (id: string) => libraryCards.data?.cards.find(card => card.story_id === id)?.cover_url
   const storyGoal = useQuery({ queryKey: ['story-goal', storyId], queryFn: () => api.storyGoal(storyId), enabled: !sandbox })
   const [toolsOpen, setToolsOpen] = useState(false)
+  const [railTools, setRailTools] = useState(false)
   const [goalsOpen, setGoalsOpen] = useState(false)
   const [checkTab, setCheckTab] = useState<CheckTab>('needs')
   const openCheck = (section: CheckTab) => { setCheckTab(section); void openView(EVALUATE_VIEW) }
@@ -356,6 +357,7 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
   const baseViews = viewMode === 'pantser' ? [PLACES_VIEW] : viewMode === 'hybrid' ? [STRUCTURE_VIEW, PLACES_VIEW, EVALUATE_VIEW] : [STRUCTURE_VIEW, PLACES_VIEW, GLOSSARY_VIEW, EVALUATE_VIEW, GRID_VIEW]
   const unlocked = (view: number) => (view === TIMELINE_VIEW && sceneTotal >= 5) || (view === PACING_VIEW && sceneTotal >= 10)
   const shows = (view: number) => showAll || baseViews.includes(view) || unlocked(view) || (view === INBOX_VIEW && pendingRuns > 0) || level === view
+  const inTools = (view: number) => shows(view) && (railTools || level === view)
   const ladderLevels = fullLadder ? undefined : viewMode === 'pantser' ? [3] : [1, 4, 8]
   const seenKey = (view: number) => `storytool-unlocked:${storyId}:${view}`
   const fresh = (view: number) => { if (showAll || !unlocked(view)) return false; try { return localStorage.getItem(seenKey(view)) !== 'seen' } catch { return false } }
@@ -610,17 +612,17 @@ export function Workspace({ storyId, sandboxStep, sandboxRun, sandboxHistory, in
           {shows(GLOSSARY_VIEW) && viewItem(GLOSSARY_VIEW, t('Glossary'))}
           {shows(EVALUATE_VIEW) && <h2>{t('Review')}</h2>}
           {shows(EVALUATE_VIEW) && <button type="button" aria-current={level === EVALUATE_VIEW ? 'page' : undefined} onClick={() => { setCheckTab('needs'); setLevel(EVALUATE_VIEW) }}>{t('Check my story')}{(health.data?.warning_count ?? 0) > 0 && <span className="workspace-nav-badge" aria-label={t('{0} to fix', health.data?.warning_count)}>{health.data?.warning_count}</span>}</button>}
-          {[GRID_VIEW, PACING_VIEW, INBOX_VIEW, CATCHUP_VIEW, PLACEHOLDERS_VIEW, HISTORY_VIEW].some(shows) && <h2>{t('Tools')}</h2>}
-          {shows(GRID_VIEW) && viewItem(GRID_VIEW, t('Grid'))}
-          {shows(PACING_VIEW) && viewItem(PACING_VIEW, <>{t('Pacing')}{fresh(PACING_VIEW) && <span className="rail-new">{t('New')}</span>}</>)}
-          {!sandbox && shows(INBOX_VIEW) && viewItem(INBOX_VIEW, <>{t('Agent changes')}{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={t('{0} pending', pendingRuns)}>{pendingRuns}</span>}</>)}
-          {!sandbox && shows(CATCHUP_VIEW) && viewItem(CATCHUP_VIEW, t('Catch up'))}
-          {shows(PLACEHOLDERS_VIEW) && viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>{t('Placeholders')}<span className="workspace-nav-badge" aria-label={t('{0} left', placeholderCount)}>{placeholderCount}</span></> : t('Placeholders'))}
-          {shows(HISTORY_VIEW) && viewItem(HISTORY_VIEW, t('History'))}
-          {!sandbox && <details className="rail-more">
+          {/* Tools is collapsed by default; the open tool stays visible while collapsed. */}
+          {[GRID_VIEW, PACING_VIEW, INBOX_VIEW, CATCHUP_VIEW, PLACEHOLDERS_VIEW, HISTORY_VIEW].some(shows) && <h2><button type="button" className="rail-group-toggle" aria-expanded={railTools} onClick={() => setRailTools(open => !open)}>{t('Tools')}</button></h2>}
+          {inTools(GRID_VIEW) && viewItem(GRID_VIEW, t('Grid'))}
+          {inTools(PACING_VIEW) && viewItem(PACING_VIEW, <>{t('Pacing')}{fresh(PACING_VIEW) && <span className="rail-new">{t('New')}</span>}</>)}
+          {!sandbox && inTools(INBOX_VIEW) && viewItem(INBOX_VIEW, <>{t('Agent changes')}{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={t('{0} pending', pendingRuns)}>{pendingRuns}</span>}</>)}
+          {!sandbox && inTools(CATCHUP_VIEW) && viewItem(CATCHUP_VIEW, t('Catch up'))}
+          {inTools(PLACEHOLDERS_VIEW) && viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>{t('Placeholders')}<span className="workspace-nav-badge" aria-label={t('{0} left', placeholderCount)}>{placeholderCount}</span></> : t('Placeholders'))}
+          {inTools(HISTORY_VIEW) && viewItem(HISTORY_VIEW, t('History'))}
+          {!sandbox && hiddenTools.length > 0 && <details className="rail-more">
             <summary>{t('More tools')}</summary>
             {hiddenTools.map(tool => <button key={tool.label} type="button" onClick={tool.open}>{tool.label}</button>)}
-            <label className="rail-showall"><input type="checkbox" checked={showAll} onChange={event => setView({ show_all_tools: event.target.checked })} />{t('Show all tools')}</label>
           </details>}
         </nav>
         <div className="min-w-0">
