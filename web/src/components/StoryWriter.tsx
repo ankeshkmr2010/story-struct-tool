@@ -13,7 +13,7 @@ import { SceneDelete } from './SceneDelete'
 import { SceneRevisions } from './SceneRevisions'
 import { InlineText } from './fields'
 import { useTheme } from './theme-context'
-import { SANDBOX_ID, tourEvent } from '../sandbox/storage'
+import { SANDBOX_ID, tourEvent, isLocalStory, isPrivateId } from '../sandbox/storage'
 import { flushWriter, useWriterStatus, writerDraft, writerHasUnsaved } from './writerDraft'
 import { ImagePreview } from './StoryImages'
 import { writerImages } from './writerImages'
@@ -212,7 +212,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
         </div>
       </article>
       {contextSlot && !focus && createPortal(<div className="writer-context" aria-label={t('Writing context')}>
-        {storyId !== SANDBOX_ID && <StoryGoalCard storyId={storyId} />}
+        {!isLocalStory(storyId) && <StoryGoalCard storyId={storyId} />}
         {brief.data && <ChapterBriefCard brief={brief.data} />}
         {contextScene ? <SceneDetails key={contextScene.id} storyId={storyId} scene={contextScene} essentials onDeleted={() => { setActiveScene(null); refresh() }} /> : <p>{t('Start writing to add scene details. Beats, characters, and locations are optional.')}</p>}
         {contextScene && <SceneRevisions key={`rev-${contextScene.id}`} storyId={storyId} sceneId={contextScene.id} flush={() => flushWriter(prefix)} onRestored={text => writerDraft(prefix + contextScene.id, text).useLatest(text)} />}
@@ -222,7 +222,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
     {/* Status strip along the bottom of Write, outside the page so it never covers prose. */}
     <div className="writer-statusbar">
       <span>{[plural(sceneWords, '{0} word in scene', '{0} words in scene', sceneWords.toLocaleString(getUiLanguage())), t('{0} total', totalWords.toLocaleString(getUiLanguage()))].join(' · ')} · <SaveState storyId={storyId} /></span>
-      {storyId === SANDBOX_ID ? <button type="button" onClick={() => onFocusChange(!focus)} aria-pressed={focus}>{t('Focus')}</button> : <GoalBar storyId={storyId} focus={focus} onFocus={onFocusChange} />}
+      {isLocalStory(storyId) ? <button type="button" onClick={() => onFocusChange(!focus)} aria-pressed={focus}>{t('Focus')}</button> : <GoalBar storyId={storyId} focus={focus} onFocus={onFocusChange} />}
     </div>
   </div>
 }
@@ -252,7 +252,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   const createdAnnounced = useRef(Boolean(scene))
   const lastCheckpoint = useRef(0)
   const draft = writerDraft(prefix + (scene?.id ?? draftKey!), initial)
-  const feedback = useQuery({ queryKey: ['beta-feedback', storyId, 'open'], queryFn: () => api.betaFeedback(storyId), enabled: storyId !== SANDBOX_ID && !!scene, staleTime: 60_000 })
+  const feedback = useQuery({ queryKey: ['beta-feedback', storyId, 'open'], queryFn: () => api.betaFeedback(storyId), enabled: !isLocalStory(storyId) && !!scene, staleTime: 60_000 })
   const comments = (feedback.data ?? []).filter(item => item.scene_id === scene?.id && item.quote).map(item => ({ id: item.id, quote: item.quote! }))
   const state = useSyncExternalStore(draft.subscribe, draft.snapshot)
   const [previewImage, setPreviewImage] = useState<StoryImage | null>(null)
@@ -265,7 +265,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   // A small button beside a selection opens the same actions as right-click, so they are discoverable.
   const [selectionChip, setSelectionChip] = useState<{ x: number; y: number } | null>(null)
   const menu = useRef<HTMLDivElement>(null)
-  const images = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: storyId !== SANDBOX_ID })
+  const images = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: !isLocalStory(storyId) })
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId) })
   const locations = useQuery({ queryKey: ['locations', storyId], queryFn: () => api.listLocations(storyId) })
   const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId) })
@@ -479,14 +479,14 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     }}>
       {context.slash !== undefined ? <>
         <button type="button" role="menuitem" onClick={() => { removeSlash(context.slash); addPlaceholder() }}>{t('Add TK here')}</button>
-        <button type="button" role="menuitem" onClick={() => { removeSlash(context.slash); setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor({ x: context.x, y: context.y, at: context.slash! }) }}>{t('Insert image…')}</button>
+        {!isPrivateId(storyId) && <button type="button" role="menuitem" onClick={() => { removeSlash(context.slash); setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor({ x: context.x, y: context.y, at: context.slash! }) }}>{t('Insert image…')}</button>}
         <button type="button" role="menuitem" onClick={() => { removeSlash(context.slash); setContext(null); openBeside({ kind: 'pick' }) }}>{t('Split view: open a scene, character, place or image beside')}</button>
         {onFocusMode && <button type="button" role="menuitem" onClick={() => { removeSlash(context.slash); setContext(null); onFocusMode() }}>{t('Focus mode')}</button>}
       </> : <>
       <button type="button" role="menuitem" onClick={addPlaceholder}>{t('Add TK here')}</button>
       {context.named && <button type="button" role="menuitem" onClick={() => { openBeside(context.named!.item); setContext(null) }}>{t('Open {0} beside', context.named.label)}</button>}
       <button type="button" role="menuitem" onClick={() => { openBeside({ kind: 'pick' }); setContext(null) }}>{t('Open scene beside…')}</button>
-      <button type="button" role="menuitem" onClick={() => { const anchor = context; setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor(anchor) }}>{t('Insert image…')}</button>
+      {!isPrivateId(storyId) && <button type="button" role="menuitem" onClick={() => { const anchor = context; setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor(anchor) }}>{t('Insert image…')}</button>}
       {(['cut', 'copy', 'paste', 'select'] as const).map(action => <button type="button" role="menuitem" key={action} disabled={(action === 'cut' || action === 'copy') && !context.hasSelection} onClick={() => { void editClipboard(action) }}>{({ cut: t('Cut'), copy: t('Copy'), paste: t('Paste'), select: t('Select all') })[action]}</button>)}
       <a role="menuitem" href="https://emojidb.org/" target="_blank" rel="noopener noreferrer" onClick={() => setContext(null)}>{t('Find emojis ↗')}</a>
       </>}

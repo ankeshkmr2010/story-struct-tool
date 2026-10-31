@@ -7,7 +7,7 @@ import { AddForm, Chip, DeleteButton, InlineSelect, InlineText } from './fields'
 import { OpenBesideButton } from './BesidePanel'
 import { offerRename } from './rename'
 import { MergeCharacter } from './MergeCharacter'
-import { SANDBOX_ID } from '../sandbox/storage'
+import { isLocalStory } from '../sandbox/storage'
 import { HelpTip } from './HelpTip'
 import { ReferenceImages } from './StoryImages'
 import { plural, t } from '../i18n'
@@ -147,7 +147,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                 />
                 <Chip complete={character.completeness.is_complete} missing={character.completeness.missing} />
                 <OpenBesideButton item={{ kind: 'character', id: character.id }} label={character.name} />
-                {storyId !== SANDBOX_ID && <MergeCharacter storyId={storyId} character={character} characters={characters.data ?? []} />}
+                {!isLocalStory(storyId) && <MergeCharacter storyId={storyId} character={character} characters={characters.data ?? []} />}
                 <DeleteButton onConfirm={() => remove.mutate(character.id)} what="character" />
               </div>
 

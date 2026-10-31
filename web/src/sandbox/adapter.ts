@@ -1,4 +1,4 @@
-import { rows, SANDBOX_ID, transact, type Row, type Sandbox } from './storage'
+import { isPrivateId, PRIVATE_PREFIX, rows, SANDBOX_ID, transact, type Row, type Sandbox } from './storage'
 import { replacesMostOf, sandboxEvaluation, sandboxNameUses } from './checks'
 import { foldAccents } from '../components/languages'
 import { t } from '../i18n'
@@ -27,11 +27,11 @@ function deleteEntity(s: Sandbox, kind: string, id: string) {
     }
   }
 }
-function timeline(s: Sandbox) {
+function timeline(s: Sandbox, sid: string) {
   const chapters = sorted(rows(s, 'chapter'))
   const scenes = sorted(rows(s, 'scene')).sort((a, b) => chapters.findIndex(c => c.id === a.chapter_id) - chapters.findIndex(c => c.id === b.chapter_id))
   const characters = rows(s, 'character')
-  return { story_id: SANDBOX_ID, characters, entries: [...scenes.map((row, index) => {
+  return { story_id: sid, characters, entries: [...scenes.map((row, index) => {
     const presence = rows(s, 'scene_presence').filter(p => p.scene_id === row.id && !p.is_rejected)
     const cast = characters.filter(c => c.id === row.pov_character_id || presence.some(p => p.character_id === c.id))
     return { id: row.id, kind: 'scene', scene_id: row.id, title: row.title ?? 'Untitled scene', summary: row.summary, ordinal: row.story_time_ordinal ?? null, time_label: row.time_label, location_id: row.location_id, location_name: rows(s, 'location').find(p => p.id === row.location_id)?.name, is_flashback: row.is_flashback ?? false, is_turning_point: false, is_on_page: true, reading_order: index + 1, reading_label: `Scene ${index + 1}`, participants: cast.map(c => ({ character_id: c.id, name: c.name, source: 'author', is_pov: c.id === row.pov_character_id })), threads: [], beats: [], arc_stages: [] }
@@ -46,7 +46,7 @@ function brief(s: Sandbox, id: string) {
   const arcs = rows(s, 'arc').filter(arc => rows(s, 'arc_stage').some(stage => stage.arc_id === arc.id && stageIds.includes(stage.id)))
   return { ...chapter, chapter_id: id, act_number: act?.number, act_title: act?.title, beats: rows(s, 'beat').filter(beat => beatIds.includes(beat.id)).map(beat => ({ beat_id: beat.id, label: beat.label, framework_position: beat.framework_position, is_fulfilled: scenes.some(scene => linked(s, 'scene_beat', 'scene_id', scene.id, 'beat_id').includes(beat.id)) })), arcs_advancing: arcs.map(arc => ({ arc_id: arc.id, summary: `${rows(s, 'character').find(c => c.id === arc.character_id)?.name ?? 'Character'} (${sorted(rows(s, 'arc_stage').filter(stage => stage.arc_id === arc.id)).map(stage => stage.label).join(' → ')})` })), threads: rows(s, 'thread').filter(thread => scenes.some(scene => linked(s, 'scene_thread', 'scene_id', scene.id, 'thread_id').includes(thread.id))).map(thread => String(thread.title || String(thread.type).replaceAll('_', '-'))), pov_character_name: rows(s, 'character').find(c => c.id === scenes[0]?.pov_character_id)?.name, emotional_shift_from: act?.emotional_shift_from, emotional_shift_to: act?.emotional_shift_to, emotional_shift_inherited: true, scenes: scenes.map(scene => ({ scene_id: scene.id, title: scene.title, type: scene.type, status: scene.status, is_complete: out(scene, 'scene').completeness.is_complete })), placeholder_scene_count: scenes.filter(scene => !scene.content).length }
 }
-function search(s: Sandbox, params: URLSearchParams) {
+function search(s: Sandbox, params: URLSearchParams, sid: string) {
   const query = foldAccents(params.get('q') ?? '')
   const context = params.get('context') ?? 'prose'
   const field = params.get('field')
@@ -54,13 +54,27 @@ function search(s: Sandbox, params: URLSearchParams) {
   const allowed = context === 'prose' ? ['scene'] : context === 'timeline' ? ['scene', 'event'] : [context]
   const hits = allowed.filter(kind => !entity || entity === kind).flatMap(kind => rows(s, kind).flatMap(row => {
     const matches = Object.entries(row).filter(([name, value]) => typeof value === 'string' && !name.endsWith('_id') && name !== 'id' && (!field || field === name) && (context !== 'prose' || name === 'content') && foldAccents(value).includes(query)).map(([name, value]) => { const text = String(value), at = foldAccents(text).indexOf(query); return { field: name, excerpt: text.slice(Math.max(0, at - 80), at + query.length + 160) } })
-    return matches.length ? [{ story_id: SANDBOX_ID, story_title: rows(s, 'story')[0].title, entity: kind, id: row.id, title: row.title ?? row.name ?? row.label ?? row.term, chapter_id: row.chapter_id, chapter_title: rows(s, 'chapter').find(c => c.id === row.chapter_id)?.title, matches }] : []
+    return matches.length ? [{ story_id: sid, story_title: rows(s, 'story')[0].title, entity: kind, id: row.id, title: row.title ?? row.name ?? row.label ?? row.term, chapter_id: row.chapter_id, chapter_title: rows(s, 'chapter').find(c => c.id === row.chapter_id)?.title, matches }] : []
   }))
   const offset = Number(params.get('offset') ?? 0)
   return { items: hits.slice(offset, offset + 30), next_offset: hits.length > offset + 30 ? offset + 30 : null, semantic_available: false, indexing: false }
 }
+// The private story open in this tab: arc-stage paths (/api/arcs/…) carry no story id.
+let activePrivate: string | null = null
+export const setActivePrivate = (id: string | null) => { activePrivate = id }
+const STORY_PATH = /^\/api\/stories\/([^/?]+)/
+
+/** The local story a request belongs to: the /try sandbox or a private story; null for the server. */
+function localStoryFor(path: string): string | null {
+  const id = STORY_PATH.exec(path)?.[1]
+  if (id === SANDBOX_ID || isPrivateId(id)) return id!
+  if (location.pathname === '/try' && (path.startsWith('/api/arcs/') || path === '/api/auth/me' || path === '/api/noticing')) return SANDBOX_ID
+  if (activePrivate && path.startsWith('/api/arcs/')) return activePrivate
+  return null
+}
 export function isSandboxRequest(path: string) {
-  return path.startsWith(`/api/stories/${SANDBOX_ID}`) || (location.pathname === '/try' && (path.startsWith('/api/arcs/') || path === '/api/auth/me' || path === '/api/noticing'))
+  // Anything naming a private story is answered here or refused: it never reaches the server.
+  return localStoryFor(path) !== null || path.includes(PRIVATE_PREFIX)
 }
 export async function sandboxRequest(path: string, init?: RequestInit): Promise<unknown> {
   const url = new URL(path, location.origin)
@@ -68,6 +82,14 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
   const body = init?.body ? JSON.parse(String(init.body)) as Row : {}
   if (path === '/api/auth/me') return { id: SANDBOX_ID, name: 'You', email: '', author_name: null, language: 'en-US' }
   if (path === '/api/noticing') return { noticer: 'deterministic', model: null, claude_available: false, jev_available: false, shared: false }
+  const sid = localStoryFor(path)
+  if (!sid) {
+    // Account-level calls that name a private story: its place and card stay in this browser.
+    if (path.startsWith('/api/workspace-position/')) return method === 'GET' ? null : undefined
+    if (path.startsWith('/api/library/cards/')) return undefined
+    throw new Error(t('Not available for private stories.'))
+  }
+  const unavailable = () => new Error(sid === SANDBOX_ID ? t('Available with a free account') : t('Not available for private stories.'))
   return transact(s => {
     if (method !== 'GET' && s.imported) {
       s.importId = crypto.randomUUID()
@@ -75,22 +97,22 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
       delete s.importedUser
     }
     const story = rows(s, 'story')[0]
-    const parts = url.pathname.replace(`/api/stories/${SANDBOX_ID}`, '').split('/').filter(Boolean)
+    const parts = url.pathname.replace(`/api/stories/${sid}`, '').split('/').filter(Boolean)
     if (url.pathname.startsWith('/api/arcs/')) parts.splice(0, parts.length, 'stages', url.pathname.split('/')[3], ...url.pathname.split('/').slice(5))
     const [collection, id, action, linkedId] = parts
     if (!collection) { if (method === 'PATCH') Object.assign(story, body); return out(story, 'story') }
     if (collection === 'activity') return { change_token: `${s.edits.length}:${story.updated_at ?? s.created}` }
-    if (collection === 'reader') return { share: { title: story.title, owner_name: 'You', allow_import: false }, structure: s.backup.state, timeline: timeline(s), base_fingerprint: 'local' }
-    if (collection === 'timeline') return timeline(s)
+    if (collection === 'reader') return { share: { title: story.title, owner_name: 'You', allow_import: false }, structure: s.backup.state, timeline: timeline(s, sid), base_fingerprint: 'local' }
+    if (collection === 'timeline') return timeline(s, sid)
     if (collection === 'search') {
       if (id === 'capabilities') return { semantic_available: false }
       if (id === 'target') { const row = rows(s, url.searchParams.get('entity')!).find(r => r.id === url.searchParams.get('id')); if (!row) throw new Error(t('This item was removed.')); return row }
-      return search(s, url.searchParams)
+      return search(s, url.searchParams, sid)
     }
     if (collection === 'ladder') {
       const levelKinds = ['story', 'event', 'character', 'act', 'beat', 'thread', 'chapter', 'scene']
       const levels = ['Premise', 'Events', 'Characters', 'Acts', 'Beats', 'Threads', 'Chapters', 'Scenes'].map((label, i) => { const records = rows(s, levelKinds[i]); const missing = [...new Set(records.flatMap(row => out(row, levelKinds[i]).completeness.missing))]; return { level: i + 1, label, is_ready: records.length > 0 && !missing.length, blocked_by: !records.length ? [`Add ${label.toLowerCase()}`] : missing } })
-      return { story_id: SANDBOX_ID, furthest_ready_level: levels.find(level => !level.is_ready)?.level ?? 8, snapshot: {}, levels }
+      return { story_id: sid, furthest_ready_level: levels.find(level => !level.is_ready)?.level ?? 8, snapshot: {}, levels }
     }
     if (collection === 'health') return { findings: [], counts: {} }
     if (collection === 'continuity') return { contradictions: [], possible_anomalies: [], findings: [] }
@@ -105,7 +127,7 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
       return { location_id: place.id, scene_count: scenes.length, chapter_numbers: [...new Set(rows(s, 'chapter').filter(chapter => scenes.some(scene => scene.chapter_id === chapter.id)).map(chapter => chapter.number))], first_story_time: times.length ? Math.min(...times) : null, last_story_time: times.length ? Math.max(...times) : null }
     })
     const kind = kinds[collection]
-    if (!kind) throw new Error(t('Available with a free account'))
+    if (!kind) throw unavailable()
     const list = rows(s, kind)
     if (!s.backup.state[kind]) s.backup.state[kind] = list
     const row = list.find(r => r.id === id)
@@ -121,7 +143,7 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
     }
     if (!id) {
       if (method === 'GET') return sorted(list).map(r => out(r, kind))
-      if (method === 'POST') { const created = { type: kind === 'thread' ? 'a_story' : 'scene', status: 'placeholder', sort_key: 100, ...body, id: crypto.randomUUID(), story_id: SANDBOX_ID, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }; if (kind !== 'scene' && kind !== 'thread') delete (created as Row).type; if (kind !== 'scene' && kind !== 'chapter') delete (created as Row).status; if (!['scene', 'chapter', 'act', 'beat', 'thread'].includes(kind)) delete (created as Row).sort_key; list.push(created); return out(created, kind) }
+      if (method === 'POST') { const created = { type: kind === 'thread' ? 'a_story' : 'scene', status: 'placeholder', sort_key: 100, ...body, id: crypto.randomUUID(), story_id: sid, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }; if (kind !== 'scene' && kind !== 'thread') delete (created as Row).type; if (kind !== 'scene' && kind !== 'chapter') delete (created as Row).status; if (!['scene', 'chapter', 'act', 'beat', 'thread'].includes(kind)) delete (created as Row).sort_key; list.push(created); return out(created, kind) }
     }
     if (!row) throw new Error(t('This item no longer exists.'))
     if (action === 'brief') return brief(s, id)
@@ -160,6 +182,6 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
       deleteEntity(s, kind, id)
       return
     }
-    throw new Error(t('Available with a free account'))
-  }, method !== 'GET')
+    throw unavailable()
+  }, method !== 'GET', sid)
 }

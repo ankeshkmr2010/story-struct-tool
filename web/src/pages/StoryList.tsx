@@ -13,6 +13,7 @@ import { ContinueCard, OpenItemsPanel, StatusChip, WeekPanel, coverTint } from '
 import { statusLabel, useGoals } from '../components/Goals'
 import { CoverDialog, coverPosition } from '../components/Covers'
 import { uploadStoryImage } from '../api/client'
+import { createPrivateStory, PrivateShelf } from '../components/PrivateLibrary'
 
 type SortMode = 'mine' | 'edited' | 'title'
 const SORT_KEY = 'storytool-library-sort'
@@ -109,6 +110,13 @@ export default function StoryList() {
   }
   const newTitle = useRef<HTMLInputElement>(null)
 
+  // Private library: a private story is created in this browser only and opened straight away.
+  const [keepPrivate, setKeepPrivate] = useState(false)
+  const [shelf, setShelf] = useState(0)
+  const createLocal = useMutation({
+    mutationFn: () => createPrivateStory(title, startMode),
+    onSuccess: id => { setTitle(''); setShelf(n => n + 1); navigate(`/stories/${id}`) },
+  })
   const create = useMutation({
     mutationFn: () => api.createStory({ title, authoring_mode: startMode }),
     onSuccess: () => {
@@ -256,12 +264,13 @@ export default function StoryList() {
           <label key={mode} className="lib-start-card"><input type="radio" name="start-mode" checked={startMode === mode} onChange={() => setStartMode(mode)} /><span><strong>{label}</strong><small>{hint}</small></span></label>
         ))}
         <p className="lib-start-note">{t('You can change this later in the story settings, or show all tools at any time.')}</p>
+        <label className="lib-start-private"><input type="checkbox" checked={keepPrivate} onChange={event => setKeepPrivate(event.target.checked)} /><span><strong>{t('Keep it private')}</strong> {t('Only in this browser, never sent to StoryTool’s servers. AI, sharing and server checks are off for private stories.')}</span></label>
       </fieldset>
       <form
         className="library-create mt-2 flex gap-2"
         onSubmit={(e) => {
           e.preventDefault()
-          if (title.trim()) create.mutate()
+          if (title.trim()) { if (keepPrivate) createLocal.mutate(); else create.mutate() }
         }}
       >
         <input
@@ -274,7 +283,7 @@ export default function StoryList() {
         />
         <button
           type="submit"
-          disabled={!title.trim() || create.isPending}
+          disabled={!title.trim() || create.isPending || createLocal.isPending}
           className="rounded bg-slate-900 dark:bg-slate-200 px-4 py-2 text-sm text-white dark:text-slate-950 disabled:opacity-40"
         >
           {t('Create')}
@@ -291,6 +300,8 @@ export default function StoryList() {
           }}
         />
       </form>
+      {createLocal.error && <p role="alert" className="writer-error">{String((createLocal.error as Error).message)}</p>}
+      <PrivateShelf refresh={shelf} />
       {importBackup.isError && <p role="alert" className="mt-2 text-sm text-red-700 dark:text-red-300">{errorText(importBackup.error)}</p>}
       </>}
 

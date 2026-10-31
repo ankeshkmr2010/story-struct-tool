@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { errorText } from '../api/errors'
 import { besideUrl, openBeside, type BesideItem, type BesideKind, type BesideTarget } from './beside'
-import { SANDBOX_ID } from '../sandbox/storage'
+import { SANDBOX_ID, isLocalStory } from '../sandbox/storage'
 import { t, tx } from '../i18n'
 
 const KIND_LABELS: Record<BesideKind, string> = { scene: tx('Scene'), character: tx('Character'), location: tx('Place'), glossary_entry: tx('Glossary'), image: tx('Image') }
@@ -16,7 +16,7 @@ function useBesideSources(storyId: string) {
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId) })
   const locations = useQuery({ queryKey: ['locations', storyId], queryFn: () => api.listLocations(storyId) })
   const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId) })
-  const images = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: storyId !== SANDBOX_ID })
+  const images = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: !isLocalStory(storyId) })
   return { scenes, chapters, characters, locations, glossary, images }
 }
 type Sources = ReturnType<typeof useBesideSources>

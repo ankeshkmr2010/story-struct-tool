@@ -53,7 +53,9 @@ import { StructureBoard } from '../components/StructureBoard'
 import { TimelineLanes } from '../components/TimelineLanes'
 import { useStoryLiveUpdates } from '../components/useStoryLiveUpdates'
 import { HelpTip } from '../components/HelpTip'
-import { SANDBOX_ID, FIRST_SCENE, tourEvent, type Sandbox } from '../sandbox/storage'
+import { SANDBOX_ID, FIRST_SCENE, isLocalStory, isPrivateId, tourEvent, type Sandbox } from '../sandbox/storage'
+import { setActivePrivate } from '../sandbox/adapter'
+import { PrivateExportMenu } from '../components/PrivateLibrary'
 import { SandboxHistory } from '../sandbox/History'
 import { getUiLanguage, plural, t, tx, useUiLanguage } from '../i18n'
 import { levelLabel, valueLabel } from '../i18n/server'
@@ -126,9 +128,14 @@ function SavedWorkspace({ storyId }: { storyId: string }) {
 }
 
 export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandboxHistory, initialPosition, syncPosition = false }: { storyId: string; storyMode?: string; sandboxStep?: number; sandboxRun?: number; sandboxHistory?: Sandbox; initialPosition?: WorkspacePlace | null; syncPosition?: boolean }) {
-  const sandbox = storyId === SANDBOX_ID
+  // `tour`: the /try sandbox. `sandbox`: any story answered in the browser (the sandbox or a
+  // private story), so every server feature is off. Private stories keep the normal frame.
+  const tour = storyId === SANDBOX_ID
+  const sandbox = isLocalStory(storyId)
+  const privateStory = isPrivateId(storyId)
+  useEffect(() => { setActivePrivate(privateStory ? storyId : null); return () => setActivePrivate(null) }, [privateStory, storyId])
   const placeholders = usePlaceholders(storyId)
-  const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, enabled: !sandbox })
+  const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, enabled: !tour })
   const placeholderCount = placeholders.data?.findings.length ?? 0
   const openFeedback = useQuery({ queryKey: ['beta-feedback', storyId, 'open'], queryFn: () => api.betaFeedback(storyId), enabled: !sandbox, refetchInterval: 60_000 })
   const [feedbackFocus, setFeedbackFocus] = useState<string | null>(null)
@@ -194,7 +201,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
   // Reference panels sit beside the text in every tab, so looking something up never leaves the page.
   // The panel opens by default (Context in Write, Insights in Design); closing it is remembered for the visit.
   const [refPanel, setRefPanelPref] = useState<RefPanel | null>(() => REF_PANELS.some(([key]) => key === savedSearchContext.refPanel) ? savedSearchContext.refPanel : null)
-  const [panelHidden, setPanelHidden] = useState(() => sandbox || window.matchMedia('(max-width: 1100px)').matches)
+  const [panelHidden, setPanelHidden] = useState(() => tour || window.matchMedia('(max-width: 1100px)').matches)
   const setRefPanel = (key: RefPanel | null) => { if (key) { setRefPanelPref(key); setPanelHidden(false) } else setPanelHidden(true) }
   // Write's reader-comment markers open the matching card in the Feedback panel.
   useEffect(() => {
@@ -566,7 +573,8 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
       {searchParams.get('sandbox_saved') === '1' && <p role="status" className="try-saved">{t('Your Last Lantern is saved.')}{' '}<Link to="/library">{t('Start your own story →')}</Link></p>}
       <header className="ws-bar">
         <Link to="/" className="ws-brand" aria-label={t('StoryTool home')} title={t('StoryTool home')}><img src="/branding/storytool.svg" alt="" width="26" height="26" /></Link>
-        {!sandbox && <Link to="/library" className="ws-back" aria-label={t('All stories')} title={t('All stories')}>‹</Link>}
+        {!tour && <Link to="/library" className="ws-back" aria-label={t('All stories')} title={t('All stories')}>‹</Link>}
+        {privateStory && <span className="ws-private-badge" title={t('Kept only in this browser; never sent to StoryTool’s servers.')}>{t('Private · this browser only')}</span>}
         {!sandbox && coverOf(storyId) && <img className="ws-cover-thumb" src={coverOf(storyId)!} alt="" />}
         <div className="ws-title"><h1>{sandbox ? story.data.title : <Menu label={<><span>{story.data.title}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></>} align="start" triggerClassName="ws-title-button" panelClassName="ws-story-menu"><p className="eyebrow">{t('Switch story')}</p>{(otherStories.data ?? []).filter(item => item.id !== storyId).map(item => <MenuItem key={item.id} onSelect={() => navigate(`/stories/${item.id}`)}>{coverOf(item.id) ? <img className="ws-switch-thumb" src={coverOf(item.id)!} alt="" /> : <span className="ws-switch-thumb" aria-hidden="true" />}{item.title}</MenuItem>)}<MenuItem onSelect={() => navigate('/library')}>{t('All stories →')}</MenuItem></Menu>}</h1>{progress.data && <span>{plural(progress.data.scene_count, '{0} words · {1}/{2} scene drafted', '{0} words · {1}/{2} scenes drafted', progress.data.word_count.toLocaleString(getUiLanguage()), progress.data.drafted_scene_count, progress.data.scene_count)}{storyGoal.data?.goal && ` · ${t('{0}% of goal', storyGoal.data.goal.percent)}`}</span>}</div>
       <div className="story-workspace-tabs" role="tablist" aria-label={t('Story workspace')} onKeyDown={event => {
@@ -590,7 +598,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
           {tab === 'write' && <div className="ws-write-tools" role="group" aria-label={t('Writing tools')}>
             <IconButton label={t('Split view: show a scene, character, place or image beside the manuscript')} onClick={() => openBeside({ kind: 'pick' })}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M12 4v16" /></svg></IconButton>
             <IconButton label={t('Add TK here')} onClick={() => writerAction('tk')}><span className="ws-tk-glyph" aria-hidden="true">TK</span></IconButton>
-            <IconButton label={t('Insert image…')} onClick={() => writerAction('image')}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="m21 17-5-5-9 8" /></svg></IconButton>
+            {!privateStory && <IconButton label={t('Insert image…')} onClick={() => writerAction('image')}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="m21 17-5-5-9 8" /></svg></IconButton>}
             <IconButton label={t('Focus mode')} onClick={() => setWriterFocus(true)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></IconButton>
           </div>}
           <button type="button" className="ui-icon-btn ws-tools-toggle" aria-label={t('More tools')} title={t('More tools')} aria-expanded={toolsOpen} onClick={() => setToolsOpen(open => !open)}>⋯</button>
@@ -604,11 +612,12 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
           {!sandbox && <StorySharing betaButton={showAll || fullChapter} menu betaOpen={openFeedback.data?.length ?? 0} storyId={storyId} title={story.data.title} blurb={story.data.blurb} beforeOpen={() => tab === 'write' ? writerFlush.current() : Promise.resolve(true)} extraItems={<MenuItem onSelect={() => { void openImages() }}>{t('Images')}</MenuItem>} />}
           {/* Export is first-class: the words must always be able to leave. */}
           {!sandbox && <DownloadMenu storyId={storyId} onShowPlaceholders={() => { void openView(PLACEHOLDERS_VIEW) }} />}
+          {privateStory && <PrivateExportMenu storyId={storyId} beforeExport={() => writerFlush.current()} />}
           {/* The site header is hidden while a workspace is open; its links live here. */}
-          {!sandbox && <Menu label="⋯" ariaLabel={t('Site menu')} triggerClassName="share-story-button"><MenuItem onSelect={() => navigate('/library')}>{t('Your stories')}</MenuItem><MenuItem onSelect={() => navigate('/how-to-use')}>{t('How to use')}</MenuItem><MenuItem onSelect={() => navigate('/roadmap')}>{t('Roadmap')}</MenuItem><MenuItem onSelect={() => navigate('/about')}>{t('About')}</MenuItem><MenuItem onSelect={() => navigate('/how-to-use#mcp')}>{t('Connect AI')}</MenuItem><MenuItem onSelect={() => navigate('/feedback')}>{t('Feedback')}</MenuItem></Menu>}
+          {!tour && <Menu label="⋯" ariaLabel={t('Site menu')} triggerClassName="share-story-button"><MenuItem onSelect={() => navigate('/library')}>{t('Your stories')}</MenuItem><MenuItem onSelect={() => navigate('/how-to-use')}>{t('How to use')}</MenuItem><MenuItem onSelect={() => navigate('/roadmap')}>{t('Roadmap')}</MenuItem><MenuItem onSelect={() => navigate('/about')}>{t('About')}</MenuItem><MenuItem onSelect={() => navigate('/how-to-use#mcp')}>{t('Connect AI')}</MenuItem><MenuItem onSelect={() => navigate('/feedback')}>{t('Feedback')}</MenuItem></Menu>}
           {/* Leaving the sandbox keeps it in this browser; save the open line first. */}
-          {sandbox && <button type="button" className="share-story-button" onClick={() => { void writerFlush.current().then(ok => ok ? navigate('/') : setTabError(t('Your line has not saved yet. Retry the save before leaving.'))) }}>{t('Exit')}</button>}
-          {!sandbox && <AccountMenu />}
+          {tour && <button type="button" className="share-story-button" onClick={() => { void writerFlush.current().then(ok => ok ? navigate('/') : setTabError(t('Your line has not saved yet. Retry the save before leaving.'))) }}>{t('Exit')}</button>}
+          {!tour && <AccountMenu />}
         </div>
       </header>
       {goalsOpen && <GoalsDialog storyId={storyId} storyTitle={story.data.title} onClose={() => setGoalsOpen(false)} />}
@@ -642,7 +651,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
           {!sandbox && inTools(CATCHUP_VIEW) && viewItem(CATCHUP_VIEW, t('Catch up'))}
           {inTools(PLACEHOLDERS_VIEW) && viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>{t('Placeholders')}<span className="workspace-nav-badge" aria-label={t('{0} left', placeholderCount)}>{placeholderCount}</span></> : t('Placeholders'))}
           {inTools(HISTORY_VIEW) && viewItem(HISTORY_VIEW, t('History'))}
-          {!sandbox && hiddenTools.length > 0 && <details className="rail-more">
+          {!tour && hiddenTools.length > 0 && <details className="rail-more">
             <summary>{t('More tools')}</summary>
             {hiddenTools.map(tool => <button key={tool.label} type="button" onClick={tool.open}>{tool.label}</button>)}
           </details>}
@@ -667,7 +676,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
             </div>
             {checkTab === 'needs' && <div className="check-needs">
               <p className="writer-help">{t('Gaps in the plan that block the next level, and places where the timeline contradicts itself.')}</p>
-              {sandbox ? <p className="writer-help">{t('Health and continuity checks run on saved stories. Sign in and create a story to see them.')}</p> : health.data ? <HealthPanel health={health.data} level={planLevel.current} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, levelLabel(rung.level, rung.label)]))} onOpenLevel={selectLevel} /> : <p className="writer-help">{t('Loading health…')}</p>}
+              {sandbox ? <p className="writer-help">{privateStory ? t('Health and continuity checks run on StoryTool’s server, so they are off for private stories.') : t('Health and continuity checks run on saved stories. Sign in and create a story to see them.')}</p> : health.data ? <HealthPanel health={health.data} level={planLevel.current} levelNames={Object.fromEntries((ladder.data?.levels ?? []).map(rung => [rung.level, levelLabel(rung.level, rung.label)]))} onOpenLevel={selectLevel} /> : <p className="writer-help">{t('Loading health…')}</p>}
               {!sandbox && <><h3 className="check-subhead">{t('Continuity')}</h3>
               <ContinuityPanel storyId={storyId} /></>}
             </div>}

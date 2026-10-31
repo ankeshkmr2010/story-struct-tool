@@ -1812,3 +1812,17 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 :root[data-theme=dark] :is(.ui-btn, .ui-btn-primary):disabled, :root[data-theme=dark] button[class~="bg-slate-900"]:disabled { background: #2a3546 !important; border-color: #475569 !important; color: #94a3b8 !important; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.ui-btn, .ui-btn-primary):disabled, :root:not([data-theme="light"]) button[class~="bg-slate-900"]:disabled { background: #2a3546 !important; border-color: #475569 !important; color: #94a3b8 !important; } }
 .ws-rail > button:has(> .is-labelled) { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 3px; }
+
+/* Private library (roadmap): stories kept only in this browser. */
+.lib-start-private { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 8px; color: var(--muted); font-size: 13px; }
+.lib-start-private strong { color: var(--ink); }
+.private-shelf { margin-top: 20px; padding: 16px 20px; border: 1px dashed var(--line); border-radius: 14px; background: var(--surface); }
+.private-shelf header h2 { margin: 0; color: var(--ink); font-size: 15px; font-weight: 600; }
+.private-shelf header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.private-shelf ul { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.private-shelf li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.private-shelf li a { display: grid; color: var(--ink); text-decoration: none; }
+.private-shelf li a span { color: var(--muted); font-size: 12px; }
+.private-shelf li button { color: var(--muted); font-size: 12px; }
+.private-shelf li button.is-confirming { color: var(--danger, #b42318); font-weight: 600; }
+.ws-private-badge { padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--muted); font-size: 11px; white-space: nowrap; }

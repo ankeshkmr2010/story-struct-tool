@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api, type HintReading } from '../api/client'
 import { errorText } from '../api/errors'
-import { SANDBOX_ID } from '../sandbox/storage'
+import { isLocalStory } from '../sandbox/storage'
 import { ReadingFeedback } from './ReadingFeedback'
 import { t } from '../i18n'
 
@@ -30,7 +30,7 @@ export function LiveWritingHints({ storyId, sceneId, sceneTitle, content, curren
     observer.observe(writer)
     return () => { window.removeEventListener('scroll', align, true); window.removeEventListener('resize', align); observer.disconnect() }
   }, [docked])
-  const sandbox = storyId === SANDBOX_ID
+  const sandbox = isLocalStory(storyId)
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId), enabled: sandbox })
   const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId), enabled: sandbox })
   const personalChecks = useQuery({ queryKey: ['validators', 0], queryFn: () => api.listValidators(0), enabled: !sandbox })

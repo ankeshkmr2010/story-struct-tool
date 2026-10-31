@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, uploadStoryImage, type ImageAttachment, type ImageDescription, type ImageLibrary, type StoryImage } from '../api/client'
 import { errorText } from '../api/errors'
-import { SANDBOX_ID } from '../sandbox/storage'
+import { isLocalStory } from '../sandbox/storage'
 import { flushWriter } from './writerDraft'
 import { plural, t } from '../i18n'
 
@@ -155,8 +155,8 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
 export function ReferenceImages({ storyId, entity, entityId, hideGallery = false }: { storyId: string; entity: ImageAttachment['entity']; entityId: string; hideGallery?: boolean }) {
   const [open, setOpen] = useState(false)
   const qc = useQueryClient()
-  const library = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: storyId !== SANDBOX_ID })
-  if (storyId === SANDBOX_ID) return null
+  const library = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: !isLocalStory(storyId) })
+  if (isLocalStory(storyId)) return null
   const images = library.data?.images.filter(image => !image.archived && image.attachments.some(a => a.entity === entity && a.id === entityId)) ?? []
   return <div className="reference-images">
     <div className="reference-images-list">{!hideGallery && images.map(image => <div key={image.id}><ImageFigure image={image} /><button type="button" onClick={async () => {
@@ -173,8 +173,8 @@ export function ReadOnlyReferenceImages({ images, entity, entityId }: { images: 
 }
 
 export function SceneImages({ storyId, sceneId }: { storyId: string; sceneId: string }) {
-  const library = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: storyId !== SANDBOX_ID })
-  if (storyId === SANDBOX_ID) return null
+  const library = useQuery({ queryKey: ['images', storyId], queryFn: () => api.imageLibrary(storyId), enabled: !isLocalStory(storyId) })
+  if (isLocalStory(storyId)) return null
   const images = library.data?.images.filter(image => !image.archived && image.uses.some(use => use.entity === 'scene' && use.id === sceneId)) ?? []
   return <section className="scene-images" aria-label={t('Scene images')}>
     <Link to={`/stories/${storyId}/images?scene=${sceneId}`} className="underline underline-offset-4">{t('Images for this scene{0} →', library.data ? ` (${images.length})` : '')}</Link>
