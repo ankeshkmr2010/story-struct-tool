@@ -89,6 +89,7 @@ const tabs = [
   [tx('Read'), tx('Read across chapters by page or by scroll, like a book.'), '/landing/tab-read.webp', tx('Read tab')],
   [tx('Images'), tx('Place illustrations in the prose and keep reference art by your plan.'), '/landing/tab-images.webp', tx('Images tab')],
   [tx('Search'), tx('Find any name, phrase or idea across your story.'), '/landing/tab-search.webp', tx('Search tab')],
+  [tx('Dialogue voice'), tx('Hear when two characters sound alike, with their own lines as evidence.'), '/landing/tab-voice.webp', tx('Dialogue voice check: Sherlock Holmes and Mr. Merryweather flagged as worth a look')],
   [tx('Beta readers'), tx('Share a frozen draft with invited readers, or open a public showcase.'), '/landing/tab-beta.webp', tx('Beta readers tab')],
   [tx('Import & export'), tx('Bring in Word or Scrivener. Leave as Word, EPUB, PDF or Markdown.'), '/landing/tab-export.webp', tx('Import and export tab')],
 ] as const
