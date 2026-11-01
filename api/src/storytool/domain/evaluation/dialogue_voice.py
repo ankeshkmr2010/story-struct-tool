@@ -144,12 +144,21 @@ def _names(g: StoryGraph) -> dict[str, UUID]:
     return {name: next(iter(ids)) for name, ids in variants.items() if len(ids) == 1}
 
 
-def _mentioned(text: str, names: dict[str, UUID]) -> set[UUID]:
-    return {
-        character
-        for name, character in names.items()
-        if re.search(rf"(?<!\w){re.escape(name)}(?!\w)", text)
-    }
+def _speakers(outside: str, names: dict[str, UUID]) -> set[UUID]:
+    """Characters the narration makes the speaker: tagged ("Maya said", "said Maya") or the
+    subject opening an action sentence ("Maya shrugged."). A name that is only possessive or an
+    object ("on Maya's head", "he told Maya") does not count, so a pronoun-led line stays open."""
+    tagged: set[UUID] = set()
+    subjects: set[UUID] = set()
+    for name, character in names.items():
+        n = rf"(?<!\w){re.escape(name)}(?![\w'’])"  # noqa: RUF001
+        if re.search(
+            rf"{n},?\s+(?:\w+ly\s+)?{SPEECH.pattern}", outside, re.IGNORECASE
+        ) or re.search(rf"\b(?!told\b){SPEECH.pattern}\s+{n}", outside, re.IGNORECASE):
+            tagged.add(character)
+        if re.search(rf"(?:^|\x00|[.!?…]\s)\s*{n}", outside):
+            subjects.add(character)
+    return tagged or subjects
 
 
 def extract(g: StoryGraph) -> list[Line]:
@@ -162,9 +171,10 @@ def extract(g: StoryGraph) -> list[Line]:
             quotes = list(QUOTES.finditer(visible))
             if not quotes:
                 continue
-            outside = QUOTES.sub(" ", visible)
-            mentioned = _mentioned(outside, names)
-            speaker = next(iter(mentioned)) if len(mentioned) == 1 else None
+            # \x00 marks where a quote was, so the narration after it starts a sentence.
+            outside = QUOTES.sub("\x00", visible)
+            speakers = _speakers(outside, names)
+            speaker = next(iter(speakers)) if len(speakers) == 1 else None
             for match in quotes:
                 text = next(group for group in match.groups() if group is not None).strip()
                 if not WORD.search(text):
@@ -183,10 +193,7 @@ def extract(g: StoryGraph) -> list[Line]:
                             excerpt=excerpt_around(paragraph, start, end),
                         ),
                         paragraph_text=paragraph,
-                        # A tag or a single named character in the paragraph settles it.
-                        speaker=speaker
-                        if speaker and (SPEECH.search(outside) or outside.strip())
-                        else None,
+                        speaker=speaker,
                     )
                 )
     return lines

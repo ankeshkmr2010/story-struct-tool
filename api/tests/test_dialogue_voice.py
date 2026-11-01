@@ -34,12 +34,15 @@ def graph(*paragraphs: str, names: tuple[str, ...] = ("Maya", "Finn")) -> StoryG
     return StoryGraph(story=story, chapters=(chapter,), scenes=(scene,), characters=cast)
 
 
-def test_speakers_come_from_tags_and_single_names_and_are_never_guessed() -> None:
+def test_speakers_come_from_tags_and_named_subjects_and_are_never_guessed() -> None:
     g = graph(
         "'Bring the rope,' she said.",
         "'Go now,' said Maya.",
         "Finn shrugged. “I don’t know.”",  # noqa: RUF001
         "“Then we wait,” Maya told Finn.",
+        "“That is a pity. I am fond of the flute.” He put his hand on Finn's head.",
+        "“Look,” whispered Finn to Maya.",
+        "Maya's brother laughed. “Not again.”",
     )
     by_name = {c.id: c.name for c in g.characters}
     lines = [(line.text, by_name.get(line.speaker)) for line in extract(g)]
@@ -47,7 +50,10 @@ def test_speakers_come_from_tags_and_single_names_and_are_never_guessed() -> Non
         ("Bring the rope,", None),
         ("Go now,", "Maya"),
         ("I don’t know.", "Finn"),  # noqa: RUF001
-        ("Then we wait,", None),
+        ("Then we wait,", "Maya"),
+        ("That is a pity. I am fond of the flute.", None),
+        ("Look,", "Finn"),
+        ("Not again.", None),
     ]
 
 
