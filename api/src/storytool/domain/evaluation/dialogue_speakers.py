@@ -26,6 +26,8 @@ class DialogueLineOut(BaseModel):
     scene_id: UUID
     scene_title: str
     paragraph: int
+    find: str
+    """The quote as written, marks included, to locate it in Write."""
     text: str
     speaker_id: UUID | None
     speaker: str | None
@@ -134,6 +136,7 @@ class DialogueController(Controller):
                     scene_id=line.scene_id,
                     scene_title=titles.get(line.scene_id, ""),
                     paragraph=line.passage.paragraph,
+                    find=line.passage.find,
                     text=line.text,
                     speaker_id=line.speaker if line.source else None,
                     speaker=names.get(line.speaker) if line.source and line.speaker else None,

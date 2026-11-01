@@ -8,6 +8,8 @@ import { errorText } from '../api/errors'
 import { plural, t, tx } from '../i18n'
 import { serverText } from '../i18n/server'
 import { CraftTerm, craftPlain } from './CraftTerm'
+import { DialogueSpeakers } from './DialogueSpeakers'
+import { isLocalStory } from '../sandbox/storage'
 
 /**
  * Evaluate: on-demand craft checks, separate from the live health findings. Pick an
@@ -540,6 +542,7 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
             <button type="button" className="share-story-button" disabled={!selected.ready || refineVoice.isPending} onClick={() => refineVoice.mutate()}>{refineVoice.isPending ? t('Reading…') : t('Run with the shared reader')}</button>
             {refineVoice.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(refineVoice.error)}</p>}
           </>}
+          {selected.id === 'dialogue_voice' && !isLocalStory(storyId) && <DialogueSpeakers storyId={storyId} shared={!!noticer.data?.shared} onOpenPassage={onOpenPassage} />}
         </section>
 
         {reader.data && selected && usesReader && <SceneReaderResults key={selected.id} storyId={storyId} reading={reader.data} check={selected.id} onOpenPassage={onOpenPassage} onOpenScene={id => { const scene = scenes.data?.find(scene => scene.id === id); if (scene) onOpenScene({ id, chapter_id: scene.chapter_id ?? null }) }} />}

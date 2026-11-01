@@ -74,6 +74,11 @@ export type Beat = S['BeatOut']
 export type Thread = S['ThreadOut']
 export type Evaluator = S['EvaluatorOut']
 export type Evaluation = S['EvaluationOut']
+// Hand-written until the API types are regenerated (npm run gen:api).
+export type DialogueLine = { line_id: string; scene_id: string; scene_title: string; paragraph: number; find: string; text: string; speaker_id: string | null; speaker: string | null; source: string | null }
+export type DialogueList = { total: number; attributed: number; lines: DialogueLine[]; characters: Record<string, string> }
+export type DialoguePopulate = { total: number; by_code: number; by_reader: number; empty: number; removed: number }
+export type DialogueSet = { updated: number; cleared: number; stale: string[] }
 export type CraftReading = S['CraftReading']
 export type HintReading = S['HintReading']
 export type WritingValidator = S['ValidatorOut']
@@ -405,6 +410,9 @@ export const api = {
   listEvaluators: (id: string) => request<Evaluator[]>(`/api/stories/${id}/evaluations`),
   runEvaluator: (id: string, evaluatorId: string) => request<Evaluation>(`/api/stories/${id}/evaluations/${evaluatorId}`),
   refineDialogueVoice: (id: string) => post<Evaluation>(`/api/stories/${id}/evaluations/dialogue_voice/shared-reader`),
+  listDialogue: (id: string, onlyEmpty = false) => request<DialogueList>(`/api/stories/${id}/dialogue?only_empty=${onlyEmpty}&limit=500`),
+  populateDialogue: (id: string, useReader: boolean) => post<DialoguePopulate>(`/api/stories/${id}/dialogue/populate`, { use_reader: useReader }),
+  setDialogueSpeakers: (id: string, lines: { line_id: string; text: string; character_id: string | null }[]) => post<DialogueSet>(`/api/stories/${id}/dialogue/speakers`, { lines }),
   listEvaluationReports: (id: string, evaluatorId: string) => request<EvaluationReport[]>(`/api/stories/${id}/evaluations/${evaluatorId}/reports`),
   runAIReview: (id: string, evaluatorId: string, connectionId: string) => post<EvaluationReport>(`/api/stories/${id}/evaluations/${evaluatorId}/ai-review`, { connection_id: connectionId }),
   createThread: (id: string, body: { type: string; title?: string; sort_key?: number }) =>
