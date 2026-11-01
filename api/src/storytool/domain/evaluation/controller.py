@@ -210,27 +210,30 @@ class EvaluationController(Controller):
             visual=result.visual,
         )
 
-    @post("/dialogue_voice/reader", summary="Dialogue voice, refined by the shared reader")
+    @post("/{evaluator_id:str}/shared-reader", summary="Dialogue voice with the shared reader")
     async def dialogue_voice_reader(
-        self, request: Request, db_session: AsyncSession, story_id: UUID
+        self, request: Request, db_session: AsyncSession, story_id: UUID, evaluator_id: str
     ) -> EvaluationOut:
         """Like running Dialogue voice, but the shared reader also names the speakers of
         untagged lines and double-checks each close pair. Sends only dialogue and scene text."""
         from storytool.config import get_settings
         from storytool.domain.decisions.providers import shared_provider
         from storytool.domain.decisions.service import Actor, DecisionService
-        from storytool.domain.evaluation.dialogue_voice import refine_with_reader
+        from storytool.domain.evaluation.dialogue_voice import prepare, refine_with_reader
 
+        if evaluator_id != "dialogue_voice":
+            raise NotFoundException(detail="Only Dialogue voice runs with the shared reader here")
         settings = get_settings()
         if not settings.shared_reader_available:
             raise ClientException(detail="The site-provided scene reader is not configured yet")
-        graph = await self._graph(db_session, story_id)
+        # Copy what the reader needs into plain values first: the commit below expires the
+        # graph's ORM objects, and reloading them inside async code fails.
+        data = prepare(await self._graph(db_session, story_id))
         provider, model = shared_provider()
         service = DecisionService(db_session, Actor.user(actor(request)), provider)
-        # The graph holds plain values; release the read transaction before remote calls.
-        await db_session.commit()
+        await db_session.commit()  # No transaction held across the remote calls.
         result = await refine_with_reader(
-            graph, service, model, settings.decision_evaluation_confidence
+            data, service, model, settings.decision_evaluation_confidence
         )
         return EvaluationOut(
             story_id=story_id,

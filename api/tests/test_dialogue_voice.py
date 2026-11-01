@@ -9,7 +9,12 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from storytool.domain.cast.models import Character
-from storytool.domain.evaluation.dialogue_voice import extract, refine_with_reader, run_check
+from storytool.domain.evaluation.dialogue_voice import (
+    extract,
+    prepare,
+    refine_with_reader,
+    run_check,
+)
 from storytool.domain.graph import StoryGraph
 from storytool.domain.narrative.models import Chapter, Scene
 from storytool.domain.story.models import Story
@@ -118,7 +123,7 @@ def test_reader_attributes_untagged_lines_and_can_soften_a_pair() -> None:
             answer = SimpleNamespace(choice=str(finn.id), confidence=0.8, noul=None)
             return SimpleNamespace(answers={key: answer for key in questions})
 
-    result = asyncio.run(refine_with_reader(g, Reader(), "jev", 0.6))
+    result = asyncio.run(refine_with_reader(prepare(g), Reader(), "jev", 0.6))
     assert result.visual["by_reader"] == 12
     flagged = [f for f in result.findings if f.code == "dialogue.similar_voices"]
     assert len(flagged) == 1 and flagged[0].uncertain

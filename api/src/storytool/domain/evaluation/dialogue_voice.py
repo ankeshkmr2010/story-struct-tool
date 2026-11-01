@@ -278,10 +278,11 @@ def _quote(line: Line) -> str:
 
 
 def compare(
-    g: StoryGraph, lines: list[Line], confirmed: dict[frozenset[UUID], float] | None = None
+    names: dict[UUID, str],
+    lines: list[Line],
+    confirmed: dict[frozenset[UUID], float] | None = None,
 ) -> EvaluationResult:
     """Findings for close pairs. `confirmed` holds the reader's chance that a pair is distinct."""
-    names = {c.id: c.name for c in g.characters}
     voices: dict[UUID, Voice] = {}
     for line in lines:
         if line.speaker in names:
@@ -363,26 +364,43 @@ def _missing(g: StoryGraph) -> list[str]:
 
 
 def run_check(g: StoryGraph) -> EvaluationResult:
-    return compare(g, extract(g))
+    return compare({c.id: c.name for c in g.characters}, extract(g))
+
+
+@dataclass
+class Prepared:
+    """Everything the shared-reader pass needs, as plain values: the caller releases its database
+    transaction before the remote calls, and ORM objects cannot be read after that."""
+
+    names: dict[UUID, str]
+    lines: list[Line]
+    cast: dict[UUID, set[UUID]]
+    scene_text: dict[UUID, str]
+
+
+def prepare(g: StoryGraph) -> Prepared:
+    return Prepared(
+        names={c.id: c.name for c in g.characters},
+        lines=extract(g),
+        cast={scene: set(ids) for scene, ids in g.characters_in_scene().items()},
+        scene_text={scene.id: scene.content or "" for scene in g.scenes},
+    )
 
 
 async def refine_with_reader(
-    g: StoryGraph, service: Any, model: str, threshold: float
+    data: Prepared, service: Any, model: str, threshold: float
 ) -> EvaluationResult:
     """The deterministic result, with the shared reader attributing untagged lines (one call per
     scene, kept above `threshold`) and judging each close pair as distinct voices or not."""
     from storytool.domain.decisions.types import Choice, Noul
 
-    lines = extract(g)
-    names = {c.id: c.name for c in g.characters}
-    cast = g.characters_in_scene()
-    scenes = {scene.id: scene for scene in g.scenes}
+    lines, names = data.lines, data.names
     by_scene: dict[UUID, list[Line]] = {}
     for line in lines:
         if line.speaker is None:
             by_scene.setdefault(line.scene_id, []).append(line)
     for scene_id, pending in by_scene.items():
-        options = {str(c): names[c] for c in cast.get(scene_id, set()) if c in names}
+        options = {str(c): names[c] for c in data.cast.get(scene_id, set()) if c in names}
         if len(options) < 2:
             continue
         options["unclear"] = "The text does not make the speaker clear"
@@ -399,7 +417,7 @@ async def refine_with_reader(
         }
         result = await service.evaluate(
             model=model,
-            state={"scene": (scenes[scene_id].content or "")[:20000]},
+            state={"scene": data.scene_text.get(scene_id, "")[:20000]},
             questions=questions,
         )
         for index, line in enumerate(pending[:40]):
@@ -410,13 +428,13 @@ async def refine_with_reader(
                 and (answer.confidence or 0) >= threshold
             ):
                 line.speaker, line.by_reader = UUID(answer.choice), True
-    first = compare(g, lines)
+    first = compare(names, lines)
     confirmed: dict[frozenset[UUID], float] = {}
     voices: dict[UUID, list[Line]] = {}
     for line in lines:
         if line.speaker in names:
             voices.setdefault(line.speaker, []).append(line)
-    by_name = {c.name: c.id for c in g.characters}
+    by_name = {name: key for key, name in names.items()}
     for pair in first.visual["pairs"]:
         a, b = by_name[pair["a"]], by_name[pair["b"]]
         result = await service.evaluate(
@@ -443,7 +461,7 @@ async def refine_with_reader(
         answer = result.answers.get("distinct")
         if answer and answer.noul is not None:
             confirmed[frozenset({a, b})] = answer.noul
-    return compare(g, lines, confirmed)
+    return compare(names, lines, confirmed)
 
 
 DIALOGUE_VOICE = register(
