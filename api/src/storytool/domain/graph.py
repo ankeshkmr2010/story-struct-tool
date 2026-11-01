@@ -55,6 +55,8 @@ class StoryGraph:
     character_mentions: tuple[tuple[UUID, UUID], ...] = field(default_factory=tuple)
     """(scene_id, character_id) for mentions the author has not rejected. Continuity rules
     need to know who was where, which only this can tell them."""
+    dialogue_speakers: tuple[tuple[UUID, str, int, UUID, str], ...] = field(default_factory=tuple)
+    """(scene_id, quote text, occurrence, character_id, source): stored speakers of quotes."""
 
     # ------------------------------------------------------------- lookups
 

@@ -15,7 +15,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.ai.commands import ENTITIES, LINKS, json_value, restore_value
 from storytool.domain.ai.models import AIRun, StoryObservation
-from storytool.domain.narrative.models import Annotation, SceneRevision, Suggestion
+from storytool.domain.narrative.models import (
+    Annotation,
+    DialogueSpeaker,
+    SceneRevision,
+    Suggestion,
+)
 from storytool.domain.narrative.prose import count_words
 from storytool.domain.story.image_models import StoryImage
 from storytool.domain.versioning.models import StoryVersion
@@ -26,6 +31,7 @@ EXTRAS: dict[str, Any] = {
     "annotation": Annotation.__table__,
     "scene_revision": SceneRevision.__table__,
     "suggestion": Suggestion.__table__,
+    "dialogue_speaker": DialogueSpeaker.__table__,
 }
 AUDIT = {"created_at", "updated_at", "sa_orm_sentinel", "word_count"}
 ADMIN = {"user_id", "parent_story_id", "deleted_at"}

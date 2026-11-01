@@ -22,7 +22,13 @@ from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from storytool.domain.cast.models import Arc, Character, Relationship
-from storytool.domain.narrative.models import Chapter, Scene, SceneCharacterMention, Suggestion
+from storytool.domain.narrative.models import (
+    Chapter,
+    DialogueSpeaker,
+    Scene,
+    SceneCharacterMention,
+    Suggestion,
+)
 from storytool.domain.story.image_models import StoryImage
 from storytool.domain.structure.models import Thread, event_character
 
@@ -143,6 +149,7 @@ async def merge(db: AsyncSession, story_id: UUID, source_id: UUID, target_id: UU
         Arc.character_id,
         Thread.owner_character_id,
         Suggestion.character_id,
+        DialogueSpeaker.character_id,
     ):
         await db.execute(
             update(column.class_).where(column == source_id).values({column.key: target_id})

@@ -121,6 +121,11 @@ class Line:
     paragraph_text: str
     speaker: UUID | None = None
     by_reader: bool = False
+    occurrence: int = 1
+    """Which occurrence of this exact text in the scene: with scene and text, the stored key."""
+    source: str | None = None
+    """Where a stored speaker came from (code, reader, agent, author); None when not stored."""
+    confidence: float | None = None
 
 
 @dataclass
@@ -164,8 +169,15 @@ def _speakers(outside: str, names: dict[str, UUID]) -> set[UUID]:
 def extract(g: StoryGraph) -> list[Line]:
     """Every quoted line in reading order, attributed where the text makes the speaker clear."""
     names = _names(g)
+    cast = {c.id for c in g.characters}
+    stored = {
+        (scene, text, occurrence): (character, source)
+        for scene, text, occurrence, character, source in g.dialogue_speakers
+        if character in cast
+    }
     lines: list[Line] = []
     for scene in g.scenes_in_reading_order():
+        seen: dict[str, int] = {}
         for number, (offset, paragraph) in enumerate(paragraph_spans(scene.content), start=1):
             visible = visible_text(paragraph)
             quotes = list(QUOTES.finditer(visible))
@@ -180,6 +192,8 @@ def extract(g: StoryGraph) -> list[Line]:
                 if not WORD.search(text):
                     continue
                 start, end = match.span()
+                seen[text] = occurrence = seen.get(text, 0) + 1
+                character, source = stored.get((scene.id, text, occurrence), (speaker, None))
                 lines.append(
                     Line(
                         scene_id=scene.id,
@@ -193,7 +207,10 @@ def extract(g: StoryGraph) -> list[Line]:
                             excerpt=excerpt_around(paragraph, start, end),
                         ),
                         paragraph_text=paragraph,
-                        speaker=speaker,
+                        # A stored speaker wins; else the tag or named-subject rule.
+                        speaker=character,
+                        occurrence=occurrence,
+                        source=source,
                     )
                 )
     return lines
@@ -410,12 +427,10 @@ def prepare(g: StoryGraph) -> Prepared:
     )
 
 
-async def refine_with_reader(
-    data: Prepared, service: Any, model: str, threshold: float
-) -> EvaluationResult:
-    """The deterministic result, with the shared reader attributing untagged lines (one call per
-    scene, kept above `threshold`) and judging each close pair as distinct voices or not."""
-    from storytool.domain.decisions.types import Choice, Noul
+async def attribute_with_reader(data: Prepared, service: Any, model: str, threshold: float) -> None:
+    """The shared reader names the speakers of lines that have none: one call per scene, an
+    answer kept only at `threshold` confidence or above. Sets speaker, by_reader, confidence."""
+    from storytool.domain.decisions.types import Choice
 
     lines, names = data.lines, data.names
     by_scene: dict[UUID, list[Line]] = {}
@@ -451,6 +466,18 @@ async def refine_with_reader(
                 and (answer.confidence or 0) >= threshold
             ):
                 line.speaker, line.by_reader = UUID(answer.choice), True
+                line.confidence = answer.confidence
+
+
+async def refine_with_reader(
+    data: Prepared, service: Any, model: str, threshold: float
+) -> EvaluationResult:
+    """The deterministic result, with the shared reader attributing untagged lines (one call per
+    scene, kept above `threshold`) and judging each close pair as distinct voices or not."""
+    from storytool.domain.decisions.types import Noul
+
+    await attribute_with_reader(data, service, model, threshold)
+    lines, names = data.lines, data.names
     first = compare(names, lines)
     confirmed: dict[frozenset[UUID], float] = {}
     voices: dict[UUID, list[Line]] = {}

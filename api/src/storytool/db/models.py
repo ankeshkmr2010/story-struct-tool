@@ -19,6 +19,7 @@ from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.narrative.models import (
     Annotation,
     Chapter,
+    DialogueSpeaker,
     Scene,
     SceneCharacterMention,
     SceneRevision,
@@ -76,6 +77,7 @@ __all__ = (
     "DecisionCache",
     "DecisionFeedback",
     "DecisionValidator",
+    "DialogueSpeaker",
     "EvaluationReport",
     "Event",
     "FieldAuthorship",

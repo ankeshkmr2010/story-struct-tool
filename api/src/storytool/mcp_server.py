@@ -1258,6 +1258,48 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         query = urlencode({"name": old_name, "replacement": new_name})
         return await call(ctx, f"/name-uses?{query}", story_id=story_id)
 
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True))
+    async def list_dialogue(
+        ctx: Context,
+        only_empty: bool = False,
+        scene_id: UUID | None = None,
+        offset: int = 0,
+        limit: int = 200,
+        story_id: UUID | None = None,
+    ) -> dict[str, Any]:
+        """Every quoted line in reading order with its stored speaker (empty until someone sets
+        it) and source: code, reader, agent or author. only_empty lists the lines still needing
+        a speaker. `characters` maps the ids you can choose. Up to 500 per page. Needs
+        prose:read."""
+        from urllib.parse import urlencode
+
+        query = {"only_empty": str(only_empty).lower(), "offset": offset, "limit": limit}
+        if scene_id:
+            query["scene_id"] = str(scene_id)
+        return await call(ctx, f"/dialogue?{urlencode(query)}", story_id=story_id)
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def populate_dialogue_speakers(
+        ctx: Context, use_reader: bool = False, story_id: UUID | None = None
+    ) -> dict[str, Any]:
+        """Fill empty speakers: lines with a speech tag ("said Maya") or a named subject
+        ("Maya shrugged.") first; with use_reader the shared reader also names speakers, kept
+        only at high confidence. Never changes a speaker already set; drops speakers of quotes
+        no longer in the text. Returns counts; the rest stay empty for attribute_dialogue."""
+        return await call(
+            ctx, "/dialogue/populate", "POST", {"use_reader": use_reader}, story_id=story_id
+        )
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def attribute_dialogue(
+        ctx: Context, lines: list[dict[str, Any]], story_id: UUID | None = None
+    ) -> dict[str, Any]:
+        """Set who speaks quoted lines from list_dialogue: [{line_id, text, character_id}],
+        up to 500; character_id null clears it. `text` must match the listed line, so changed
+        lines come back in `stale` (list again and retry). Only attribute when the scene makes
+        the speaker clear; leave a line empty rather than guess."""
+        return await call(ctx, "/dialogue/speakers", "POST", {"lines": lines}, story_id=story_id)
+
     @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
     async def submit_evaluation_report(
         ctx: Context,

@@ -19,6 +19,7 @@ from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.graph import StoryGraph
 from storytool.domain.narrative.models import (
     Chapter,
+    DialogueSpeaker,
     Scene,
     SceneCharacterMention,
     chapter_beat,
@@ -100,6 +101,7 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
     scene_threads: tuple[tuple[UUID, UUID, bool], ...] = ()
     scene_arc_advances: tuple[tuple[UUID, UUID], ...] = ()
     character_mentions: tuple[tuple[UUID, UUID], ...] = ()
+    dialogue_speakers: tuple[tuple[UUID, str, int, UUID, str], ...] = ()
     if scene_ids:
         rows = await session.execute(
             select(scene_beat.c.scene_id, scene_beat.c.beat_id).where(
@@ -132,6 +134,14 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
         )
         character_mentions = tuple((r.scene_id, r.character_id) for r in rows)
 
+        rows = await session.execute(
+            select(DialogueSpeaker).where(DialogueSpeaker.scene_id.in_(scene_ids))
+        )
+        dialogue_speakers = tuple(
+            (r.scene_id, r.quote_text, r.occurrence, r.character_id, r.source)
+            for r in rows.scalars()
+        )
+
     language = story.language
     if language is None and story.user_id is not None:
         language = await session.scalar(select(User.language).where(User.id == story.user_id))
@@ -158,6 +168,7 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
         scene_threads=scene_threads,
         scene_arc_advances=scene_arc_advances,
         character_mentions=character_mentions,
+        dialogue_speakers=dialogue_speakers,
     )
 
 

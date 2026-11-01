@@ -230,6 +230,27 @@ class SceneCharacterMention(StoryToolBase):
     __table_args__ = (UniqueConstraint("scene_id", "character_id", name="one_per_pair"),)
 
 
+class DialogueSpeaker(StoryToolBase):
+    """Who speaks one quoted line of a scene. No row means nobody has said yet.
+
+    Anchored by the quote's text and which occurrence of that text it is in the scene, not by
+    offsets, so edits elsewhere in the scene keep it; a reworded quote loses its speaker.
+    `source`: code (speech tag or named subject), reader (the shared reader, with its
+    confidence), agent (an MCP client) or author. The passes only fill lines without a row.
+    """
+
+    __tablename__ = "dialogue_speaker"
+
+    scene_id: Mapped[UUID] = mapped_column(ForeignKey("scene.id", ondelete="CASCADE"), index=True)
+    quote_text: Mapped[str] = mapped_column(EncryptedText)
+    occurrence: Mapped[int] = mapped_column(Integer, default=1)
+    character_id: Mapped[UUID] = mapped_column(
+        ForeignKey("character.id", ondelete="CASCADE"), index=True
+    )
+    source: Mapped[str] = mapped_column(String(10))
+    confidence: Mapped[float | None] = mapped_column(Float, default=None)
+
+
 class Suggestion(StoryToolBase):
     """A dismissible nudge.
 

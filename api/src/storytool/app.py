@@ -33,6 +33,7 @@ from storytool.domain.decisions.hint_controller import (
 from storytool.domain.decisions.providers import decisions_lifespan
 from storytool.domain.decisions.validators import ValidatorController
 from storytool.domain.evaluation.controller import EvaluationController
+from storytool.domain.evaluation.dialogue_speakers import DialogueController
 from storytool.domain.glossary import GlossaryController
 from storytool.domain.narrative.controller import ChapterController, SceneController
 from storytool.domain.narrative.prose_controller import (
@@ -148,6 +149,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             TimelineController,
             StoryAnalysisController,
             EvaluationController,
+            DialogueController,
             RenameController,
             CharacterMergeController,
             PublicShoutoutController,

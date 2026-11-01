@@ -134,3 +134,15 @@ def test_reader_attributes_untagged_lines_and_can_soften_a_pair() -> None:
     flagged = [f for f in result.findings if f.code == "dialogue.similar_voices"]
     assert len(flagged) == 1 and flagged[0].uncertain
     assert "two distinct voices" in flagged[0].message
+
+
+def test_a_stored_speaker_wins_over_the_rule_and_is_keyed_by_text_and_occurrence() -> None:
+    g = graph("“Go.” said Maya.", "“Go.” said Maya.")
+    maya, finn = (c.id for c in g.characters)
+    scene = g.scenes[0].id
+    g = replace(g, dialogue_speakers=((scene, "Go.", 2, finn, "agent"),))
+    lines = extract(g)
+    assert [(line.speaker, line.source, line.occurrence) for line in lines] == [
+        (maya, None, 1),
+        (finn, "agent", 2),
+    ]
