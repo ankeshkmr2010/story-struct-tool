@@ -1263,19 +1263,22 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         ctx: Context,
         only_empty: bool = False,
         scene_id: UUID | None = None,
+        character_id: UUID | None = None,
         offset: int = 0,
         limit: int = 200,
         story_id: UUID | None = None,
     ) -> dict[str, Any]:
         """Every quoted line in reading order with its stored speaker (empty until someone sets
         it) and source: code, reader, agent or author. only_empty lists the lines still needing
-        a speaker. `characters` maps the ids you can choose. Up to 500 per page. Needs
-        prose:read."""
+        a speaker; character_id lists one character's lines. `characters` maps the ids you can
+        choose. Up to 500 per page. Needs prose:read."""
         from urllib.parse import urlencode
 
         query = {"only_empty": str(only_empty).lower(), "offset": offset, "limit": limit}
         if scene_id:
             query["scene_id"] = str(scene_id)
+        if character_id:
+            query["character_id"] = str(character_id)
         return await call(ctx, f"/dialogue?{urlencode(query)}", story_id=story_id)
 
     @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))

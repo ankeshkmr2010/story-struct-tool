@@ -13,6 +13,7 @@ import { ReferenceImages } from './StoryImages'
 import { plural, t } from '../i18n'
 import { CraftTerm } from './CraftTerm'
 import { TeachEmpty } from './TeachEmpty'
+import { CharacterLines } from './DialogueSpeakers'
 
 const ROLES = ['protagonist', 'antagonist', 'mentor', 'foil', 'supporting', 'minor'] as const
 const ARC_TYPES = ['positive', 'negative', 'flat'] as const
@@ -27,7 +28,7 @@ const ARC_TYPES = ['positive', 'negative', 'flat'] as const
  * `arc_type: flat` is worth setting deliberately: it tells the suggestion engine that this
  * character is *meant* not to change, so it stops asking for an arc.
  */
-export function CharactersPanel({ storyId }: { storyId: string }) {
+export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; onOpenPassage?: (id: string, find: string, paragraph: number) => void }) {
   const qc = useQueryClient()
   const [name, setName] = useState('')
 
@@ -210,6 +211,7 @@ export function CharactersPanel({ storyId }: { storyId: string }) {
                   />
                 </div>
               </details>
+              <CharacterLines storyId={storyId} characterId={character.id} onOpenPassage={onOpenPassage} />
 
               {!character.completeness.is_complete && (
                 <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-300">

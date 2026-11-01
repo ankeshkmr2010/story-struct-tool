@@ -114,6 +114,7 @@ class DialogueController(Controller):
         story_id: UUID,
         only_empty: bool = False,
         scene_id: UUID | None = None,
+        character_id: UUID | None = None,
         offset: int = 0,
         limit: int = 200,
     ) -> DialogueOut:
@@ -124,7 +125,9 @@ class DialogueController(Controller):
         chosen = [
             (line_id, line)
             for line_id, line in lines.items()
-            if (scene_id is None or line.scene_id == scene_id) and not (only_empty and line.source)
+            if (scene_id is None or line.scene_id == scene_id)
+            and (character_id is None or (line.source and line.speaker == character_id))
+            and not (only_empty and line.source)
         ]
         return DialogueOut(
             total=len(lines),

@@ -725,7 +725,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
           )}
 
           {level === 2 && <EventsPanel storyId={storyId} />}
-          {level === 3 && <CharactersPanel storyId={storyId} />}
+          {level === 3 && <CharactersPanel storyId={storyId} onOpenPassage={openPassage} />}
           {level === 4 && <ActsPanel storyId={storyId} framework={story.data.structure_framework} />}
           {level === 5 && <BeatsPanel storyId={storyId} framework={story.data.structure_framework} />}
           {level === 6 && <ThreadsPanel storyId={storyId} />}
@@ -843,7 +843,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
                 </div>
               )}
 
-              {selectedScene && <SceneDetails key={selectedScene.id} storyId={storyId} scene={selectedScene} onDeleted={() => setSceneId(null)} />}
+              {selectedScene && <SceneDetails key={selectedScene.id} storyId={storyId} scene={selectedScene} onDeleted={() => setSceneId(null)} onOpenPassage={openPassage} />}
 
               {/* Prose is written in Write only; Design keeps the scene's plan. */}
               {selectedScene && <button type="button" className="share-story-button mt-4" onClick={() => { void changeTab('write').then(ok => { if (ok) setWriterScene({ id: selectedScene.id, at: Date.now() }) }) }}>{t('Open in Write →')}</button>}

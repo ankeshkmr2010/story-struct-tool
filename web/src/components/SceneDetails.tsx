@@ -10,7 +10,7 @@ import { Chip, Field, InlineNumber, InlineSelect, InlineText } from './fields'
  * Every scene field and link. With `essentials` (Write's Context panel) the fields a writer
  * reaches for mid-draft stay in view and everything else folds under More details and links.
  */
-export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: { storyId: string; scene: Scene; onDeleted: () => void; essentials?: boolean }) {
+export function SceneDetails({ storyId, scene, onDeleted, essentials = false, onOpenPassage }: { storyId: string; scene: Scene; onDeleted: () => void; essentials?: boolean; onOpenPassage?: (id: string, find: string, paragraph: number) => void }) {
   const detailed = useDetailedStatuses()
   const qc = useQueryClient()
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
@@ -68,7 +68,7 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false }: 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{pov}{place}</div>
       {goal}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{valueFrom}{valueTo}</div>
-    </section>}{arcCards}{linkedThreads.length > 0 && <div className="ws-card"><h4>{t('Threads')}</h4>{linkedThreads.map((thread) => <p key={thread.id}>{thread.title || t('Untitled thread')}{thread.mice && <span className="ws-card-note"> · {thread.mice}</span>}</p>)}</div>}<div className="scene-details-actions"><SceneDelete storyId={storyId} scene={scene} onDeleted={() => { onDeleted(); refresh() }} /></div><SceneImages storyId={storyId} sceneId={scene.id} /><details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+    </section>}{arcCards}{linkedThreads.length > 0 && <div className="ws-card"><h4>{t('Threads')}</h4>{linkedThreads.map((thread) => <p key={thread.id}>{thread.title || t('Untitled thread')}{thread.mice && <span className="ws-card-note"> · {thread.mice}</span>}</p>)}</div>}<div className="scene-details-actions"><SceneDelete storyId={storyId} scene={scene} onDeleted={() => { onDeleted(); refresh() }} /></div><SceneImages storyId={storyId} sceneId={scene.id} /><SceneDialogue storyId={storyId} sceneId={scene.id} onOpenPassage={onOpenPassage} /><details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
       <summary className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-950">
         <span>{essentials ? t('More details and links') : t('Scene details and links')}</span>
         <span className="truncate text-xs font-normal text-slate-400">{t('Draft: {0} · {1} words', statusName(shownStatus(scene, detailed)), scene.word_count)}</span>
@@ -111,3 +111,4 @@ import { ReferenceImages, SceneImages } from './StoryImages'
 import { t } from '../i18n'
 import { DETAILED, SIMPLE, shownStatus, statusName, storedStatus, useDetailedStatuses } from './sceneStatus'
 import { CraftTerm } from './CraftTerm'
+import { SceneDialogue } from './DialogueSpeakers'

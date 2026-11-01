@@ -410,7 +410,7 @@ export const api = {
   listEvaluators: (id: string) => request<Evaluator[]>(`/api/stories/${id}/evaluations`),
   runEvaluator: (id: string, evaluatorId: string) => request<Evaluation>(`/api/stories/${id}/evaluations/${evaluatorId}`),
   refineDialogueVoice: (id: string) => post<Evaluation>(`/api/stories/${id}/evaluations/dialogue_voice/shared-reader`),
-  listDialogue: (id: string, onlyEmpty = false) => request<DialogueList>(`/api/stories/${id}/dialogue?only_empty=${onlyEmpty}&limit=500`),
+  listDialogue: (id: string, filter: { onlyEmpty?: boolean; sceneId?: string; characterId?: string } = {}) => request<DialogueList>(`/api/stories/${id}/dialogue?${new URLSearchParams({ only_empty: String(!!filter.onlyEmpty), limit: '500', ...(filter.sceneId ? { scene_id: filter.sceneId } : {}), ...(filter.characterId ? { character_id: filter.characterId } : {}) })}`),
   populateDialogue: (id: string, useReader: boolean) => post<DialoguePopulate>(`/api/stories/${id}/dialogue/populate`, { use_reader: useReader }),
   setDialogueSpeakers: (id: string, lines: { line_id: string; text: string; character_id: string | null }[]) => post<DialogueSet>(`/api/stories/${id}/dialogue/speakers`, { lines }),
   listEvaluationReports: (id: string, evaluatorId: string) => request<EvaluationReport[]>(`/api/stories/${id}/evaluations/${evaluatorId}/reports`),

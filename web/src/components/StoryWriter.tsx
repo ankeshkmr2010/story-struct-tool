@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import CodeMirror from '@uiw/react-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, keymap } from '@codemirror/view'
-import { api, type Chapter, type Scene, type StoryImage } from '../api/client'
+import { api, type Chapter, type DialogueLine, type Scene, type StoryImage } from '../api/client'
 import { errorText } from '../api/errors'
 import { orderChapters, orderScenes } from '../api/ordering'
 import { ChapterBriefCard } from './ChapterBriefCard'
@@ -21,6 +21,7 @@ import { ImageInsertionPicker } from './ImageInsertionPicker'
 import { LiveWritingHints } from './LiveWritingHints'
 import { readerComments } from './readerComments'
 import { writerPlaceholders } from './writerPlaceholders'
+import { writerSpeakers } from './writerSpeakers'
 import { openBeside, type BesideItem } from './beside'
 import { getUiLanguage, plural, t } from '../i18n'
 import { GoalBar, StoryGoalCard } from './Goals'
@@ -269,6 +270,13 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
   const characters = useQuery({ queryKey: ['characters', storyId], queryFn: () => api.listCharacters(storyId) })
   const locations = useQuery({ queryKey: ['locations', storyId], queryFn: () => api.listLocations(storyId) })
   const glossary = useQuery({ queryKey: ['glossary', storyId], queryFn: () => api.listGlossary(storyId) })
+  // Speaker chips on quotes: the stored speaker of each line, picked from a small menu.
+  const dialogue = useQuery({ queryKey: ['dialogue', storyId, scene?.id ?? '', '', false], queryFn: () => api.listDialogue(storyId, { sceneId: scene!.id }), enabled: !!scene && !isLocalStory(storyId) })
+  const [speakerPick, setSpeakerPick] = useState<{ line: DialogueLine; x: number; y: number } | null>(null)
+  const setSpeaker = useMutation({
+    mutationFn: ({ line, character }: { line: DialogueLine; character: string | null }) => api.setDialogueSpeakers(storyId, [{ line_id: line.line_id, text: line.text, character_id: character }]),
+    onSuccess: () => { setSpeakerPick(null); void qc.invalidateQueries({ queryKey: ['dialogue', storyId] }) },
+  })
   // Right-clicking a defined name offers to open it beside the manuscript.
   const nameAt = (editor: EditorView, at: number | null): Named | null => {
     if (at === null) return null
@@ -299,6 +307,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     if (snapshot) lastCheckpoint.current = Date.now()
     qc.setQueryData(['content', storyId, current.id], { scene_id: current.id, content: text, word_count: proseWords(text) })
     void qc.invalidateQueries({ queryKey: ['placeholders', storyId] })
+    void qc.invalidateQueries({ queryKey: ['dialogue', storyId] })
     if (!createdAnnounced.current) { createdAnnounced.current = true; onCreated?.(current, text) }
     refresh()
   }) }, [draft, storyId, prefix, createScene, qc, onCreated, refresh])
@@ -411,6 +420,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       writerImages(images.data?.images ?? [], setPreviewImage),
       readerComments(comments),
       writerPlaceholders,
+      writerSpeakers(dialogue.data?.lines ?? [], dialogue.data?.characters ?? {}, (line, x, y) => setSpeakerPick({ line, x, y })),
       // Typing / on an empty line opens the writing actions at the caret (usability phase 2, item 7).
       EditorView.inputHandler.of((editor, from, to, text) => {
         if (text !== '/' || from !== to || editor.state.doc.lineAt(from).text.trim() !== '') return false
@@ -470,6 +480,15 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     }} />}
     </div>
     {previewImage && <ImagePreview url={previewImage.url} alt={previewImage.alt} caption={previewImage.caption} onClose={() => { setPreviewImage(null); view.current?.focus() }} />}
+    {speakerPick && <div className="writer-context-menu" role="dialog" aria-label={t('Who speaks this line?')} style={{ left: Math.max(8, Math.min(speakerPick.x, window.innerWidth - 208)), top: Math.max(8, Math.min(speakerPick.y + 4, window.innerHeight - 140)) }} onKeyDown={event => { if (event.key === 'Escape') { setSpeakerPick(null); view.current?.focus() } }}>
+      <p>{t('Who speaks this line?')}</p>
+      <select autoFocus aria-label={t('Speaker')} value={speakerPick.line.speaker_id ?? ''} disabled={setSpeaker.isPending} onChange={event => setSpeaker.mutate({ line: speakerPick.line, character: event.target.value || null })} className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900">
+        <option value="">{t('Nobody yet')}</option>
+        {Object.entries(dialogue.data?.characters ?? {}).sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+      </select>
+      {setSpeaker.error && <p role="alert">{errorText(setSpeaker.error)}</p>}
+      <button type="button" onClick={() => { setSpeakerPick(null); view.current?.focus() }}>{t('Close')}</button>
+    </div>}
     {selectionChip && !context && <button type="button" className="writer-selection-chip" aria-label={t('Writing actions for selection')} title={t('Writing actions (or right-click)')} style={{ left: Math.max(8, Math.min(selectionChip.x + 4, window.innerWidth - 48)), top: Math.max(8, Math.min(selectionChip.y + 6, window.innerHeight - 40)) }} onMouseDown={event => event.preventDefault()} onClick={() => { const editor = view.current; if (editor) openContext(editor, selectionChip.x, selectionChip.y + 6, false); setSelectionChip(null) }}>⋯</button>}
     {context && <div ref={menu} className="writer-context-menu" role="menu" aria-label={t('Writing actions')} style={{ left: Math.max(8, Math.min(context.x, window.innerWidth - 208)), top: Math.max(8, Math.min(context.y, window.innerHeight - 284)) }} onKeyDown={event => {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
