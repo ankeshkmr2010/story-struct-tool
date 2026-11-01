@@ -399,6 +399,8 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
   const overview = !chosen
   const selected = overview ? undefined : evaluators.data?.find((item) => item.id === chosen) ?? evaluators.data?.[0]
   const run = useMutation({ mutationFn: (id: string) => api.runEvaluator(storyId, id), onSuccess: (result) => setResults((current) => ({ ...current, [result.evaluator_id]: result })) })
+  // Dialogue voice: the shared reader names speakers of untagged lines and double-checks pairs.
+  const refineVoice = useMutation({ mutationFn: () => api.refineDialogueVoice(storyId), onSuccess: (result) => setResults((current) => ({ ...current, [result.evaluator_id]: result })) })
   const usesReader = selected && READER_CHECKS.includes(selected.id)
   const shown = selected ? results[selected.id] ?? null : null
   // Run all: every ready outline check, plus one shared-reader pass that serves all prose checks.
@@ -533,6 +535,11 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
             {run.isPending ? t('Running…') : usesReader ? t('Run outline-only check') : shown ? t('Run again') : t('Run')}
           </button>}
           {run.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(run.error)}</p>}
+          {selected.id === 'dialogue_voice' && noticer.data?.shared && <>
+            <p className="writer-help">{t('The shared reader can name the speakers of lines without a speech tag and double-check each pair. It reads the scene text; no personal AI key is needed.')}</p>
+            <button type="button" className="share-story-button" disabled={!selected.ready || refineVoice.isPending} onClick={() => refineVoice.mutate()}>{refineVoice.isPending ? t('Reading…') : t('Run with the shared reader')}</button>
+            {refineVoice.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(refineVoice.error)}</p>}
+          </>}
         </section>
 
         {reader.data && selected && usesReader && <SceneReaderResults key={selected.id} storyId={storyId} reading={reader.data} check={selected.id} onOpenPassage={onOpenPassage} onOpenScene={id => { const scene = scenes.data?.find(scene => scene.id === id); if (scene) onOpenScene({ id, chapter_id: scene.chapter_id ?? null }) }} />}

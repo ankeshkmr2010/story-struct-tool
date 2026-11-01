@@ -210,6 +210,37 @@ class EvaluationController(Controller):
             visual=result.visual,
         )
 
+    @post("/dialogue_voice/reader", summary="Dialogue voice, refined by the shared reader")
+    async def dialogue_voice_reader(
+        self, request: Request, db_session: AsyncSession, story_id: UUID
+    ) -> EvaluationOut:
+        """Like running Dialogue voice, but the shared reader also names the speakers of
+        untagged lines and double-checks each close pair. Sends only dialogue and scene text."""
+        from storytool.config import get_settings
+        from storytool.domain.decisions.providers import shared_provider
+        from storytool.domain.decisions.service import Actor, DecisionService
+        from storytool.domain.evaluation.dialogue_voice import refine_with_reader
+
+        settings = get_settings()
+        if not settings.shared_reader_available:
+            raise ClientException(detail="The site-provided scene reader is not configured yet")
+        graph = await self._graph(db_session, story_id)
+        provider, model = shared_provider()
+        service = DecisionService(db_session, Actor.user(actor(request)), provider)
+        # The graph holds plain values; release the read transaction before remote calls.
+        await db_session.commit()
+        result = await refine_with_reader(
+            graph, service, model, settings.decision_evaluation_confidence
+        )
+        return EvaluationOut(
+            story_id=story_id,
+            evaluator_id="dialogue_voice",
+            ready=True,
+            missing=[],
+            findings=[EvaluationFindingOut.of(f) for f in result.findings],
+            visual=result.visual,
+        )
+
     @post("/scene-reader", summary="Read cached scene evidence for craft checks")
     async def scene_reader(
         self, request: Request, db_session: AsyncSession, story_id: UUID
