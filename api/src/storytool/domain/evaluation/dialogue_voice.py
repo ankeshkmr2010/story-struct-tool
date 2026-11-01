@@ -31,7 +31,9 @@ from storytool.domain.prose_scan import Passage, excerpt_around, paragraph_spans
 
 MIN_LINES = 10
 FLAG = 0.88
-NEAR = 0.82
+# Below this a pair is not shown at all; on real stories the shared reader heard pairs under it
+# as distinct voices, so they were noise.
+NEAR = 0.85
 QUOTES = re.compile(
     r"“([^”\n]+)”"
     r"|\"([^\"\n]+)\""
@@ -267,9 +269,23 @@ def reasons(a: dict[str, Any], b: dict[str, Any]) -> list[str]:
         out.append(f"both repeat “{shared[0]}”")
     if abs(a["questions"] - b["questions"]) < 0.08 and min(a["questions"], b["questions"]) >= 0.2:
         out.append("both ask a lot of questions")
-    if abs(a["contractions"] - b["contractions"]) < 0.02:
-        out.append("the same mix of contractions")
+    # Only a habit worth naming when both are unusual: most characters contract at similar rates.
+    rates = (a["contractions"], b["contractions"])
+    if min(rates) >= 0.08:
+        out.append("both use a lot of contractions")
+    elif max(rates) <= 0.005:
+        out.append("neither uses contractions")
     return out or ["very similar everyday words and rhythm"]
+
+
+def typical(lines: list[Line]) -> Line:
+    """A line that shows the voice: 8+ words near their usual length, else the longest."""
+    sized = sorted(lines, key=lambda line: len(WORD.findall(line.text)))
+    usual = len(WORD.findall(sized[len(sized) // 2].text))
+    full = [line for line in lines if len(WORD.findall(line.text)) >= 8]
+    if not full:
+        return sized[-1]
+    return min(full, key=lambda line: abs(len(WORD.findall(line.text)) - max(usual, 8)))
 
 
 def _quote(line: Line) -> str:
@@ -306,7 +322,7 @@ def compare(
             why = reasons(profiles[a.character_id], profiles[b.character_id])
             message = (
                 f"{a.name} and {b.name} sound alike: {'; '.join(why)}. "
-                f"{a.name}: “{_quote(a.lines[0])}” {b.name}: “{_quote(b.lines[0])}”"
+                f"{a.name}: “{_quote(typical(a.lines))}” {b.name}: “{_quote(typical(b.lines))}”"
             )
             if distinct is not None and distinct > 0.4:
                 message += (
@@ -319,7 +335,7 @@ def compare(
                     message=message,
                     entity_type="character",
                     entity_id=a.character_id,
-                    passage=a.lines[0].passage,
+                    passage=typical(a.lines).passage,
                     uncertain=uncertain,
                 )
             )
