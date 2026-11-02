@@ -5,6 +5,7 @@ import { api, type ProductFeedbackInput } from '../api/client'
 import { errorText } from '../api/errors'
 import { ReaderCalibration } from '../components/ReaderCalibration'
 import { FirstRunStats } from '../components/FirstRunStats'
+import { AccessAdmin } from '../components/AccessAdmin'
 import { t } from '../i18n'
 
 export default function Feedback() {
@@ -51,6 +52,7 @@ export default function Feedback() {
           ] as const).map(([label, count]) => <div key={label} className="rounded-lg border border-[var(--line)] p-4"><dt className="text-xs text-[var(--muted)]">{label}</dt><dd className="mt-2 text-2xl font-semibold">{count}</dd></div>)}</dl>}
         </section>
         <FirstRunStats />
+        <AccessAdmin />
         <section className="mt-12" aria-labelledby="feedback-title">
           <h2 className="text-xl font-semibold">{t('Guided sandbox funnel')}</h2>
           <p className="writer-help">{t('Unique browsers per milestone; signup means a new account from a browser that started the sandbox. Targets: tour completion >50% and signup >15%.')}</p>

@@ -58,6 +58,11 @@ export type BetaFeedback = S['BetaFeedbackOut']
 export type BetaPoll = S['PollOut']
 export type BetaPollInput = S['PollIn']
 export type SearchHit = S['SearchHit']
+export type AccessCatalogueItem = S['AccessCatalogueItem']
+export type AccessTier = S['AccessTierOut']
+export type AccessTierInput = S['AccessTierIn']
+export type AccessAccount = S['AccessAccountOut']
+export type AccessAccountInput = S['AccessAccountIn']
 export type SearchPage = S['SearchPage']
 // A story section; the whole-story 'all' scope is LibrarySearchContext.
 export type SearchContext = Exclude<operations['ApiStoriesStoryIdSearchSearch']['parameters']['query']['context'], 'all'>
@@ -323,6 +328,13 @@ export const api = {
   createShoutout: (body: ShoutoutInput) => post<Shoutout>('/api/admin/shoutouts', body),
   updateShoutout: (id: string, body: Partial<ShoutoutInput> & { sort_key?: number }) => patch<Shoutout>(`/api/admin/shoutouts/${id}`, body),
   deleteShoutout: (id: string) => request<void>(`/api/admin/shoutouts/${id}`, { method: 'DELETE' }),
+  accessCatalogue: () => request<AccessCatalogueItem[]>('/api/admin/access/catalogue'),
+  accessTiers: () => request<AccessTier[]>('/api/admin/access/tiers'),
+  createAccessTier: (body: AccessTierInput) => post<AccessTier>('/api/admin/access/tiers', body),
+  updateAccessTier: (id: string, body: Partial<AccessTierInput>) => patch<AccessTier>(`/api/admin/access/tiers/${id}`, body),
+  deleteAccessTier: (id: string) => request<void>(`/api/admin/access/tiers/${id}`, { method: 'DELETE' }),
+  findAccessAccounts: (email: string) => request<AccessAccount[]>(`/api/admin/access/accounts?email=${encodeURIComponent(email)}`),
+  setAccountAccess: (userId: string, body: AccessAccountInput) => request<AccessAccount>(`/api/admin/access/accounts/${userId}`, { method: 'PUT', body: JSON.stringify(body) }),
   googleLogin: (credential: string) => post<AuthUser>('/api/auth/google', { credential }),
   logout: () => post<{ signed_out: boolean }>('/api/auth/logout'),
 
