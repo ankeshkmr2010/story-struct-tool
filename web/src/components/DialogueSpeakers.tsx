@@ -4,6 +4,7 @@ import { api, type DialogueLine, type DialogueList } from '../api/client'
 import { errorText } from '../api/errors'
 import { isLocalStory } from '../sandbox/storage'
 import { t, tx } from '../i18n'
+import { FeatureLock } from './FeatureLock'
 
 const SOURCE: Record<string, string> = { code: tx('from the text'), reader: tx('shared reader'), agent: tx('AI agent'), author: tx('you') }
 type OpenPassage = (id: string, find: string, paragraph: number) => void
@@ -89,8 +90,8 @@ export function DialogueSpeakers({ storyId, shared, onOpenPassage }: {
       <div className="mt-2 space-y-3">
         <p className="writer-help">{t('Every quoted line starts empty. Fill from the text uses speech tags (“said Maya”) and lines that start with a character’s name; the shared reader also names speakers it is sure of. Neither changes a speaker you or an agent set.')}</p>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className="share-story-button" disabled={fill.isPending} onClick={() => fill.mutate(false)}>{fill.isPending && !fill.variables ? t('Filling…') : t('Fill from the text')}</button>
-          {shared && <button type="button" className="share-story-button" disabled={fill.isPending} onClick={() => fill.mutate(true)}>{fill.isPending && fill.variables ? t('Reading…') : t('Fill with the shared reader')}</button>}
+          <button type="button" className="share-story-button" disabled={fill.isPending} onClick={() => fill.mutate(false)}>{fill.isPending && !fill.variables ? t('Filling…') : t('Fill from the text')}<FeatureLock feature="dialogue_speakers" /></button>
+          {shared && <button type="button" className="share-story-button" disabled={fill.isPending} onClick={() => fill.mutate(true)}>{fill.isPending && fill.variables ? t('Reading…') : t('Fill with the shared reader')}<FeatureLock feature="dialogue_speakers" /></button>}
           <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={onlyEmpty} onChange={event => setOnlyEmpty(event.target.checked)} />{t('Only lines without a speaker')}</label>
         </div>
         {fill.data && <p className="text-sm">{t('Filled {0} from the text and {1} by the shared reader; {2} still empty.', fill.data.by_code, fill.data.by_reader, fill.data.empty)}</p>}
@@ -115,7 +116,7 @@ export function SceneDialogue({ storyId, sceneId, onOpenPassage }: { storyId: st
     <details className="mt-4 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900" onToggle={event => setOpen(event.currentTarget.open)}>
       <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200">{data ? t('Dialogue ({0} of {1} lines have a speaker)', set, data.lines.length) : t('Dialogue')}</summary>
       <div className="space-y-2 border-t border-slate-100 dark:border-slate-800 p-3">
-        <button type="button" className="share-story-button" disabled={fill.isPending} onClick={() => fill.mutate(false)}>{fill.isPending ? t('Filling…') : t('Fill from the text')}</button>
+        <button type="button" className="share-story-button" disabled={fill.isPending} onClick={() => fill.mutate(false)}>{fill.isPending ? t('Filling…') : t('Fill from the text')}<FeatureLock feature="dialogue_speakers" /></button>
         {fill.error && <p role="alert" className={alert}>{errorText(fill.error)}</p>}
         {lines.error && <p role="alert" className={alert}>{errorText(lines.error)}</p>}
         {data && data.lines.length === 0 && <p className="text-sm">{t('No quoted lines in this scene yet.')}</p>}

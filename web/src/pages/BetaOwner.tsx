@@ -5,6 +5,7 @@ import { api, type BetaRound } from '../api/client'
 import { errorText } from '../api/errors'
 import { BetaPollsSection } from './BetaPolls'
 import { plural, t } from '../i18n'
+import { FeatureLock } from '../components/FeatureLock'
 
 export default function BetaOwner() {
   const { storyId = '' } = useParams()
@@ -29,7 +30,7 @@ export default function BetaOwner() {
       <label className="flex gap-2 text-sm"><input type="checkbox" checked={all} onChange={e => setAll(e.target.checked)} disabled={publish.isPending} />{t('Include all chapters')}</label>
       {!all && <fieldset className="space-y-2"><legend className="mb-2 text-sm">{t('Choose chapters')}</legend>{chapters.data?.map(c => <label key={c.id} className="flex gap-2 text-sm"><input type="checkbox" checked={selected.includes(c.id)} onChange={e => setSelected(e.target.checked ? [...selected, c.id] : selected.filter(id => id !== c.id))} disabled={publish.isPending} />{c.title || t('Chapter {0}', String(c.number))}</label>)}</fieldset>}
       <label className="flex gap-2 text-sm"><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} disabled={publish.isPending} />{t('Automatically admit signed-in readers with the link')}</label><p className="text-xs text-[var(--muted)]">{t('Otherwise, link visitors request your approval. No email is sent automatically. The deadline is guidance, not a reading lock.')}</p>
-      <button type="submit" className="sharing-primary" disabled={publish.isPending || !title.trim() || (!all && !selected.length)}>{publish.isPending ? t('Publishing…') : t('Publish saved draft')}</button>
+      <button type="submit" className="sharing-primary" disabled={publish.isPending || !title.trim() || (!all && !selected.length)}>{publish.isPending ? t('Publishing…') : t('Publish saved draft')}<FeatureLock feature="beta_readers" /></button>
       {publish.error && <p role="alert" className="writer-error">{errorText(publish.error)}</p>}
     </form>
     {(rounds.error || chapters.error) && <p role="alert" className="writer-error">{errorText(rounds.error ?? chapters.error)}</p>}

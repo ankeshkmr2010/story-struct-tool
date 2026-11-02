@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type OutlineMatch } from '../api/client'
 import { errorText } from '../api/errors'
 import { t } from '../i18n'
+import { FeatureLock } from './FeatureLock'
 
 const reasonLabels: Record<string, string> = {
   no_summary: 'no summary',
@@ -63,7 +64,7 @@ export function OutlineCatchup({ storyId, onOpenInbox }: { storyId: string; onOp
         </div>
         {data.pending_scenes > 0 && <>
           <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? t('Copied') : t('Copy prompt for your agent')}</button>
-          <button type="button" disabled={!connection || run.isPending} title={connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => run.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{run.isPending ? t('Asking the assistant…') : t('Ask the assistant')}</button>
+          <button type="button" disabled={!connection || run.isPending} title={connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => run.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{run.isPending ? t('Asking the assistant…') : t('Ask the assistant')}<FeatureLock feature="ai.assistant" /></button>
         </>}
       </div>
       {data.pending_scenes > 0 && (

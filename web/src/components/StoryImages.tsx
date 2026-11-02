@@ -6,6 +6,7 @@ import { errorText } from '../api/errors'
 import { isLocalStory } from '../sandbox/storage'
 import { flushWriter } from './writerDraft'
 import { plural, t } from '../i18n'
+import { FeatureLock } from './FeatureLock'
 
 const megabytes = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
 
@@ -118,7 +119,7 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
     <div className="story-images-grid">{visible.map(image => <button type="button" key={image.id} disabled={busy} aria-pressed={selected?.id === image.id} onClick={() => { setSelected(image); setFile(null); setPreview(''); setDescription(image); setError(null); setNotice(''); showEditor() }}><img src={image.url} alt={image.alt || image.name} loading="lazy" /><span>{image.name}</span>{page && <><small>{image.caption || t('No caption')}</small><small>{[plural(image.manuscript_uses, '{0} placement', '{0} placements', image.manuscript_uses), plural(image.attachments.length, '{0} reference', '{0} references', image.attachments.length)].join(' · ')}</small><span>{t('Edit details & uses →')}</span></>}</button>)}</div>
     {library.data && !active.length && <p className="writer-help">{sceneFilter ? t('No images used in this scene yet. Insert one in Write or attach a reference in Scene Design.') : t('No images yet. Upload an illustration, map or reference image.')}</p>}
     {page && library.data && active.length > 0 && visible.length === 0 && <p role="status">{t('No images in this filter. Choose All images to see your library.')}</p>}
-    <label className="story-image-upload">{t('Upload an image')}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || !library.data || library.data.retained_count >= library.data.max_images || library.data.retained_bytes >= library.data.max_story_bytes} onChange={event => { chooseFile(event.target.files?.[0]); event.target.value = '' }} /></label>
+    <label className="story-image-upload">{t('Upload an image')}<FeatureLock feature="images" /><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || !library.data || library.data.retained_count >= library.data.max_images || library.data.retained_bytes >= library.data.max_story_bytes} onChange={event => { chooseFile(event.target.files?.[0]); event.target.value = '' }} /></label>
     {(selected || file) && <form ref={editor} onSubmit={event => { event.preventDefault(); void save(false) }}>
       {page && <h3 className="text-lg font-semibold">{file ? t('Upload image') : selected?.name}</h3>}
       <ImageFigure image={{ url: preview || selected?.url, alt: description.alt, caption: description.caption }} />
@@ -129,12 +130,12 @@ export function StoryImagePicker({ storyId, target, onSelect, onClose, page = fa
       {!description.alt.trim() && <p id={altHelpId} className="writer-help">{t('A short description helps screen-reader users and makes your EPUB more accessible. Optional, but recommended.')}</p>}
       <label>{t('Caption')}<textarea value={description.caption} maxLength={1000} disabled={busy} onChange={event => setDescription({ ...description, caption: event.target.value })} /></label>
       {busy && <p role="status">{file ? progress < 100 ? progress === 0 ? t('Preparing image for upload…') : t('Uploading… {0}%', progress) : t('Validating and saving…') : t('Saving…')} {file && <button type="button" onClick={() => upload.current?.abort()}>{t('Cancel upload')}</button>}</p>}
-      <div className="story-images-actions"><button type="submit" className="share-story-button" disabled={busy}>{file ? t('Upload') : t('Save details')}</button>{onSelect && <button type="button" className="share-story-button" disabled={busy} onClick={() => { void save(true) }}>{target ? t('Attach image') : t('Insert image')}</button>}
+      <div className="story-images-actions"><button type="submit" className="share-story-button" disabled={busy}>{file ? t('Upload') : t('Save details')}{file && <FeatureLock feature="images" />}</button>{onSelect && <button type="button" className="share-story-button" disabled={busy} onClick={() => { void save(true) }}>{target ? t('Attach image') : t('Insert image')}</button>}
       {page && selected && selected.role !== 'cover' && <button type="button" className="share-story-button" disabled={busy} onClick={async () => {
         setBusy(true); setError(null)
         try { const updated = await api.setCover(storyId, { role: 'cover', image_id: selected.id, focus_x: 0.5, focus_y: 0.5, show_public: false }); if (updated) setSelected(updated); setNotice(t('Set as the story’s cover.')); void qc.invalidateQueries({ queryKey: ['images', storyId] }); void qc.invalidateQueries({ queryKey: ['library-overview'] }) }
         catch (failure) { setError(errorText(failure)) } finally { setBusy(false) }
-      }}>{t('Set as cover')}</button>}
+      }}>{t('Set as cover')}<FeatureLock feature="images" /></button>}
       {selected && <button type="button" disabled={busy} onClick={async () => {
         setBusy(true); setError(null)
         try {

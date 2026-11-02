@@ -9,6 +9,7 @@ import { serverText } from '../i18n/server'
 import { HabitGoalForm } from '../components/Goals'
 import { useGuide } from '../components/guide'
 import { ConnectWizard } from '../components/ConnectWizard'
+import { FeatureLock } from '../components/FeatureLock'
 
 function AuthorNameSettings() {
   const qc = useQueryClient()
@@ -147,7 +148,7 @@ export default function UserSettings() {
         <details className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-700">
           <summary className="cursor-pointer text-sm font-semibold">{t('Manual tokens for other clients')}</summary>
           <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">{t('For clients that require a bearer token, create a seven-day token for one story. It includes structure and prose access, edits and whole-story restores. Set Authorization to Bearer followed by the token in your client\'s local configuration. Other stories and provider keys stay private.')}</p>
-        <div className="mt-4 flex flex-wrap gap-3"><select aria-label={t('Story for external agent')} value={storyId} onChange={(event) => setStoryId(event.target.value)} className="min-w-0 max-w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-2 text-sm"><option value="">{t('Choose a story')}</option>{stories.data?.map((story) => <option key={story.id} value={story.id}>{story.title}</option>)}</select><button type="button" disabled={!storyId || createToken.isPending} onClick={() => createToken.mutate()} className="rounded-md bg-slate-900 dark:bg-slate-200 px-3 py-2 text-sm text-white dark:text-slate-950 disabled:opacity-40">{t('Create agent token')}</button></div>
+        <div className="mt-4 flex flex-wrap gap-3"><select aria-label={t('Story for external agent')} value={storyId} onChange={(event) => setStoryId(event.target.value)} className="min-w-0 max-w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-2 text-sm"><option value="">{t('Choose a story')}</option>{stories.data?.map((story) => <option key={story.id} value={story.id}>{story.title}</option>)}</select><button type="button" disabled={!storyId || createToken.isPending} onClick={() => createToken.mutate()} className="rounded-md bg-slate-900 dark:bg-slate-200 px-3 py-2 text-sm text-white dark:text-slate-950 disabled:opacity-40">{t('Create agent token')}<FeatureLock feature="mcp" /></button></div>
         {revealedToken && (
           <div className="mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-3">
             <p className="text-xs leading-5 text-amber-900 dark:text-amber-300">{t('Available until you leave or refresh this page. Copy it into your agent\'s local environment as STORYTOOL_AGENT_TOKEN. Keep it out of prompts and source control.')}</p>

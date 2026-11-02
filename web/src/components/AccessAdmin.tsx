@@ -41,7 +41,7 @@ function TierEditor({ features, tiers }: { features: AccessCatalogueItem[]; tier
   const [name, setName] = useState('')
   const [deleting, setDeleting] = useState(false)
   const tier = tiers.find(row => row.id === selected) ?? tiers[0]
-  const refresh = () => void queryClient.invalidateQueries({ queryKey: ['access-tiers'] })
+  const refresh = () => { void queryClient.invalidateQueries({ queryKey: ['access-tiers'] }); void queryClient.invalidateQueries({ queryKey: ['my-access'] }) }
   const create = useMutation({
     mutationFn: () => api.createAccessTier({
       name: name.trim(),
@@ -97,6 +97,7 @@ function TierEditor({ features, tiers }: { features: AccessCatalogueItem[]; tier
 
 function AccountEditor({ features, tiers }: { features: AccessCatalogueItem[]; tiers: AccessTier[] }) {
   const [email, setEmail] = useState('')
+  const queryClient = useQueryClient()
   const [account, setAccount] = useState<AccessAccount | null>(null)
   const search = useMutation({ mutationFn: () => api.findAccessAccounts(email.trim()) })
   const save = useMutation({
@@ -104,7 +105,7 @@ function AccountEditor({ features, tiers }: { features: AccessCatalogueItem[]; t
       tier_id: account!.tier_id, tier_expires_at: account!.tier_expires_at, features: account!.features,
       limits: account!.limits, note: account!.note, ...change,
     }),
-    onSuccess: setAccount,
+    onSuccess: (row) => { setAccount(row); void queryClient.invalidateQueries({ queryKey: ['my-access'] }) },
   })
   const setOverride = (key: string, value: boolean | null) => {
     const next = { ...account!.features }

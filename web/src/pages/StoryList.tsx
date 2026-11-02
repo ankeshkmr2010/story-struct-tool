@@ -14,6 +14,7 @@ import { statusLabel, useGoals } from '../components/Goals'
 import { CoverDialog, coverPosition } from '../components/Covers'
 import { uploadStoryImage } from '../api/client'
 import { createPrivateStory, PrivateShelf } from '../components/PrivateLibrary'
+import { FeatureLock } from '../components/FeatureLock'
 
 type SortMode = 'mine' | 'edited' | 'title'
 const SORT_KEY = 'storytool-library-sort'
@@ -214,7 +215,7 @@ export default function StoryList() {
         {story.prose_imported && <button type="button" className="mt-2 text-xs text-[var(--accent)] underline" onClick={() => { setPromptStory(story); setImportOpen(true) }}>{t('Import prompts →')}</button>}
       </div>
       <div className="story-card-actions"><StorySharing storyId={story.id} title={story.title} blurb={story.blurb} betaOpen={feedbackCounts.data?.[story.id] ?? 0} />{/* Delete stays one step away so it is not as prominent as Share. */}<Menu label="⋯" ariaLabel={t('More actions for {0}', story.title)} triggerClassName="ui-btn ui-btn-ghost ui-btn-sm">
-        <MenuItem onSelect={() => setCoverFor(story)}>{t('Cover…')}</MenuItem>
+        <MenuItem onSelect={() => setCoverFor(story)}>{t('Cover…')}<FeatureLock feature="images" /></MenuItem>
         <MenuItem onSelect={() => arrange.mutate([[story.id, { pinned: !card?.pinned }]])}>{card?.pinned ? t('Unpin') : t('Pin to top')}</MenuItem>
         {movable && index > 0 && <MenuItem onSelect={() => moveCard(story.id, index - 1)}>{t('Move earlier')}</MenuItem>}
         {movable && index < count - 1 && <MenuItem onSelect={() => moveCard(story.id, index + 1)}>{t('Move later')}</MenuItem>}
@@ -238,10 +239,10 @@ export default function StoryList() {
       <div className="page-heading lib-heading"><h1>{showTrash ? t('Trash') : t('Your stories')}</h1><div className="lib-heading-actions">{!showTrash && <>
         <Menu label={importBackup.isPending || importOpen ? t('Importing…') : t('Import')} ariaLabel={t('More ways to start a story')} triggerClassName="ui-btn ui-btn-secondary">
           <MenuItem disabled={importBackup.isPending || importOpen} title={t('Restore a StoryTool backup file as a new story')} onSelect={() => backupInput.current?.click()}>{t('From backup…')}</MenuItem>
-          <MenuItem disabled={importBackup.isPending || importOpen} title={t('Import a Word manuscript and choose how it splits')} onSelect={() => { setPromptStory(null); setImportFormat('docx'); setImportOpen(true) }}>{t('From Word (.docx)…')}</MenuItem>
-          <MenuItem disabled={importBackup.isPending || importOpen} title={t('Import a zipped .scriv project: Draft folders become chapters, documents become scenes')} onSelect={() => { setPromptStory(null); setImportFormat('scrivener'); setImportOpen(true) }}>{t('From Scrivener (.zip)…')}</MenuItem>
-          <MenuItem disabled={importBackup.isPending || importOpen} title={t('Import a Markdown or plain-text manuscript')} onSelect={() => { setPromptStory(null); setImportFormat('text'); setImportOpen(true) }}>{t('From Markdown or text…')}</MenuItem>
-          <MenuItem disabled={importBackup.isPending || importOpen} title={t('Import a DRM-free EPUB book')} onSelect={() => { setPromptStory(null); setImportFormat('epub'); setImportOpen(true) }}>{t('From EPUB…')}</MenuItem>
+          <MenuItem disabled={importBackup.isPending || importOpen} title={t('Import a Word manuscript and choose how it splits')} onSelect={() => { setPromptStory(null); setImportFormat('docx'); setImportOpen(true) }}>{t('From Word (.docx)…')}<FeatureLock feature="import" /></MenuItem>
+          <MenuItem disabled={importBackup.isPending || importOpen} title={t('Import a zipped .scriv project: Draft folders become chapters, documents become scenes')} onSelect={() => { setPromptStory(null); setImportFormat('scrivener'); setImportOpen(true) }}>{t('From Scrivener (.zip)…')}<FeatureLock feature="import" /></MenuItem>
+          <MenuItem disabled={importBackup.isPending || importOpen} title={t('Import a Markdown or plain-text manuscript')} onSelect={() => { setPromptStory(null); setImportFormat('text'); setImportOpen(true) }}>{t('From Markdown or text…')}<FeatureLock feature="import" /></MenuItem>
+          <MenuItem disabled={importBackup.isPending || importOpen} title={t('Import a DRM-free EPUB book')} onSelect={() => { setPromptStory(null); setImportFormat('epub'); setImportOpen(true) }}>{t('From EPUB…')}<FeatureLock feature="import" /></MenuItem>
         </Menu>
         <Link to="/goals" className="ui-btn ui-btn-secondary">{goals.data?.settings.daily_words ? `◎ ${t('Goals')} · ${goals.data.today_words.toLocaleString(getUiLanguage())} / ${goals.data.settings.daily_words.toLocaleString(getUiLanguage())}` : `◎ ${t('Goals')}`}</Link>
         <button type="button" className="ui-btn ui-btn-primary" onClick={() => { newTitle.current?.focus(); newTitle.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }) }}>{t('+ New story')}</button>

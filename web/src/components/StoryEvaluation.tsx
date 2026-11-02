@@ -10,6 +10,7 @@ import { serverText } from '../i18n/server'
 import { CraftTerm, craftPlain } from './CraftTerm'
 import { DialogueSpeakers } from './DialogueSpeakers'
 import { isLocalStory } from '../sandbox/storage'
+import { FeatureLock } from './FeatureLock'
 
 /**
  * Evaluate: on-demand craft checks, separate from the live health findings. Pick an
@@ -126,7 +127,7 @@ function MiceInputs({ storyId, onOpenInbox }: { storyId: string; onOpenInbox: ()
       </ul>
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? t('Copied') : t('Copy prompt for your agent')}</button>
-        <button type="button" disabled={!connection || ask.isPending} title={connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? t('Asking the assistant…') : t('Ask the assistant')}</button>
+        <button type="button" disabled={!connection || ask.isPending} title={connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? t('Asking the assistant…') : t('Ask the assistant')}<FeatureLock feature="ai.assistant" /></button>
       </div>
       {!connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.')}</p>}
       {ask.isSuccess && <p className="mt-2 text-xs">{t('Proposal ready.')}{' '}<button type="button" className="underline" onClick={onOpenInbox}>{t('Review it in Agent changes →')}</button></p>}
@@ -191,7 +192,7 @@ function ReviewInputs({ storyId, evaluatorId, ready, onOpenInbox }: {
       <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{t('Ask an AI to propose missing inputs from your story. Accept them in Agent changes, then return here to run the AI review. Existing inputs are preserved.')}</p>
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? t('Copied') : t('Copy prompt for your agent')}</button>
-        <button type="button" disabled={!connection || ask.isPending} title={connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? t('Asking the assistant…') : t('Ask the assistant')}</button>
+        <button type="button" disabled={!connection || ask.isPending} title={connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? t('Asking the assistant…') : t('Ask the assistant')}<FeatureLock feature="ai.assistant" /></button>
       </div>
       {!connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.')}</p>}
       {ask.isSuccess && <p className="mt-2 text-xs">{t('Proposal ready.')}{' '}<button type="button" className="underline" onClick={onOpenInbox}>{t('Review it in Agent changes →')}</button></p>}
@@ -270,7 +271,7 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => void copy()} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600">{copied ? t('Copied') : t('Copy prompt for your agent')}</button>
-        <button type="button" disabled={!ready || !connection || ask.isPending} title={!ready ? t('Fill in the missing inputs above first') : connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? t('Reviewing…') : t('Ask the assistant')}</button>
+        <button type="button" disabled={!ready || !connection || ask.isPending} title={!ready ? t('Fill in the missing inputs above first') : connection ? undefined : t('Connect Claude or OpenAI in the assistant first')} onClick={() => ask.mutate()} className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{ask.isPending ? t('Reviewing…') : t('Ask the assistant')}<FeatureLock feature="ai.review" /></button>
         <button type="button" onClick={() => void reports.refetch()} className="rounded-md px-3 py-1.5 text-xs underline">{t('Check for new reports')}</button>
       </div>
       {ready && !connection && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('Ask the assistant needs Claude or OpenAI connected in the Assistant panel. Copy prompt works with any agent.')}</p>}
@@ -285,7 +286,7 @@ function AIReview({ storyId, evaluatorId, evaluatorName, ready, onOpenScene, onO
           {report.stale && <div role="status" className="rounded-md bg-amber-100 p-3 text-sm text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
             <p>{t('Story edited since this review. Re-run?')}</p>
             <div className="mt-2 flex flex-wrap gap-3">
-              {connection && <button type="button" disabled={!ready || ask.isPending} title={!ready ? t('Fill in the missing inputs above first') : undefined} onClick={() => ask.mutate()} className="underline disabled:opacity-40">{ask.isPending ? t('Reviewing…') : t('Re-run with the assistant')}</button>}
+              {connection && <button type="button" disabled={!ready || ask.isPending} title={!ready ? t('Fill in the missing inputs above first') : undefined} onClick={() => ask.mutate()} className="underline disabled:opacity-40">{ask.isPending ? t('Reviewing…') : t('Re-run with the assistant')}<FeatureLock feature="ai.review" /></button>}
               <button type="button" onClick={() => void copy()} className="underline">{copied ? t('Copied') : t('Copy re-run prompt for your agent')}</button>
             </div>
           </div>}
@@ -507,7 +508,7 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
               onClick={() => setChosen(item.id)}
               className="eval-check"
             >
-              <span>{checkName(item.name, false)}</span>{item.missing.length > 0 && <small>{t('Needs inputs')}</small>}
+              <span>{checkName(item.name, false)}<FeatureLock feature={`check.${item.id}`} /></span>{item.missing.length > 0 && <small>{t('Needs inputs')}</small>}
             </button>
           ))}
         </div>
@@ -525,7 +526,7 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
           )}
           {selected.id === 'mice_nesting' && <MiceInputs storyId={storyId} onOpenInbox={onOpenInbox} />}
           {(selected.id === 'value_shift' || selected.id === 'misbelief_midpoint') && <ReviewInputs key={selected.id} storyId={storyId} evaluatorId={selected.id} ready={selected.ready} onOpenInbox={onOpenInbox} />}
-          {usesReader && <><p className="writer-help">{t('Run reads saved scene prose with the shared reader; no personal AI key is needed. Outline inputs below remain useful for deeper reviews.')}</p><button type="button" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950" disabled={reader.isPending || !noticer.data?.shared || !scenes.data?.some(scene => scene.word_count > 0)} onClick={() => reader.mutate()}>{reader.isPending ? t('Reading scene evidence…') : reader.data ? t('Run again') : t('Run')}</button></>}
+          {usesReader && <><p className="writer-help">{t('Run reads saved scene prose with the shared reader; no personal AI key is needed. Outline inputs below remain useful for deeper reviews.')}</p><button type="button" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950" disabled={reader.isPending || !noticer.data?.shared || !scenes.data?.some(scene => scene.word_count > 0)} onClick={() => reader.mutate()}>{reader.isPending ? t('Reading scene evidence…') : reader.data ? t('Run again') : t('Run')}<FeatureLock feature="shared_reader" /></button></>}
           {usesReader && !noticer.isPending && !noticer.data?.shared && <p className="writer-help">{t('The shared scene reader is not configured yet. Available outline checks and your own AI reviews remain below.')}</p>}
           {reader.error && <p role="alert">{errorText(reader.error)}</p>}
           {selected.kind === 'deterministic' && <button
@@ -539,7 +540,7 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
           {run.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(run.error)}</p>}
           {selected.id === 'dialogue_voice' && noticer.data?.shared && <>
             <p className="writer-help">{t('The shared reader can name the speakers of lines without a speech tag and double-check each pair. It reads the scene text; no personal AI key is needed.')}</p>
-            <button type="button" className="share-story-button" disabled={!selected.ready || refineVoice.isPending} onClick={() => refineVoice.mutate()}>{refineVoice.isPending ? t('Reading…') : t('Run with the shared reader')}</button>
+            <button type="button" className="share-story-button" disabled={!selected.ready || refineVoice.isPending} onClick={() => refineVoice.mutate()}>{refineVoice.isPending ? t('Reading…') : t('Run with the shared reader')}<FeatureLock feature="shared_reader" /></button>
             {refineVoice.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(refineVoice.error)}</p>}
           </>}
           {selected.id === 'dialogue_voice' && !isLocalStory(storyId) && <DialogueSpeakers storyId={storyId} shared={!!noticer.data?.shared} onOpenPassage={onOpenPassage} />}

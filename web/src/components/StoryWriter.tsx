@@ -30,6 +30,7 @@ import { GoalBar, StoryGoalCard } from './Goals'
 import { dotStatus, shownStatus, statusName, useDetailedStatuses } from './sceneStatus'
 import { WRITER_ACTION_EVENT, type WriterAction } from './writerActions'
 import { FirstUseTip } from './FirstUseTip'
+import { FeatureLock } from './FeatureLock'
 
 /** The passage Write's top-bar buttons act on: the one last focused. */
 let lastWriter: object | null = null
@@ -532,8 +533,8 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       </> : <>
       <button type="button" role="menuitem" onClick={addPlaceholder}>{t('Add TK here')}</button>
       {context.hasSelection && scene && !isLocalStory(storyId) && <>
-        <button type="button" role="menuitem" onClick={() => { void markSetup('setup') }}>{t('Mark as setup')}</button>
-        <button type="button" role="menuitem" onClick={() => { void markSetup('payoff') }}>{t('Mark as payoff')}</button>
+        <button type="button" role="menuitem" onClick={() => { void markSetup('setup') }}>{t('Mark as setup')}<FeatureLock feature="setups" /></button>
+        <button type="button" role="menuitem" onClick={() => { void markSetup('payoff') }}>{t('Mark as payoff')}<FeatureLock feature="setups" /></button>
       </>}
       {context.named && <button type="button" role="menuitem" onClick={() => { openBeside(context.named!.item); setContext(null) }}>{t('Open {0} beside', context.named.label)}</button>}
       <button type="button" role="menuitem" onClick={() => { openBeside({ kind: 'pick' }); setContext(null) }}>{t('Open scene beside…')}</button>

@@ -3,12 +3,13 @@ import { api } from '../api/client'
 import { Dialog } from '../ui/Dialog'
 import { Menu, MenuLink } from '../ui/Menu'
 import { t, tx } from '../i18n'
+import { FeatureLock } from './FeatureLock'
 
 const ITEMS = [
-  { label: tx('Manuscript (.docx)'), help: tx('For Word or Google Docs'), href: api.manuscriptDocxUrl },
-  { label: tx('Submission manuscript (.pdf)'), help: tx('Double-spaced; optional appendices below'), href: api.manuscriptPdfUrl },
-  { label: tx('E-book (.epub)'), help: tx('For Apple Books, Kobo and Kindle (via Send to Kindle)'), href: api.manuscriptEpubUrl },
-  { label: tx('Web page (.html)'), help: tx('Opens in any browser'), href: api.manuscriptHtmlUrl },
+  { label: tx('Manuscript (.docx)'), help: tx('For Word or Google Docs'), href: api.manuscriptDocxUrl, feature: 'export.formatted' },
+  { label: tx('Submission manuscript (.pdf)'), help: tx('Double-spaced; optional appendices below'), href: api.manuscriptPdfUrl, feature: 'export.formatted' },
+  { label: tx('E-book (.epub)'), help: tx('For Apple Books, Kobo and Kindle (via Send to Kindle)'), href: api.manuscriptEpubUrl, feature: 'export.formatted' },
+  { label: tx('Web page (.html)'), help: tx('Opens in any browser'), href: api.manuscriptHtmlUrl, feature: 'export.formatted' },
   { label: tx('Manuscript (.md)'), help: tx('Includes an image folder in a ZIP when needed'), href: api.manuscriptUrl },
   { label: tx('Plain text (.txt)'), help: tx('No formatting at all'), href: api.manuscriptTextUrl },
   { label: tx('Full backup (.json)'), help: tx('Everything, including notes and revisions. Restore it from your library.'), href: api.backupUrl, backup: true },
@@ -31,7 +32,7 @@ export function DownloadMenu({ storyId, onShowPlaceholders }: { storyId: string;
   <Menu label={t('Export ▾')} triggerClassName="share-story-button" panelClassName="download-menu-panel">
     {ITEMS.map(item => {
       const href = withCover(item.href === api.manuscriptPdfUrl ? api.manuscriptPdfUrl(storyId, appendices) : item.href(storyId))
-      return <MenuLink key={item.label} href={href} onClick={'backup' in item ? undefined : event => { void checkPlaceholders(event, href) }}><strong>{t(item.label)}</strong><span>{item.help && t(item.help)}</span></MenuLink>
+      return <MenuLink key={item.label} href={href} onClick={'backup' in item ? undefined : event => { void checkPlaceholders(event, href) }}><strong>{t(item.label)}{'feature' in item && item.feature && <FeatureLock feature={item.feature} />}</strong><span>{item.help && t(item.help)}</span></MenuLink>
     })}
     <label className="flex items-center gap-1.5 border-t border-[var(--line)] p-3 text-xs"><input type="checkbox" checked={coverPage} onChange={event => setCoverPage(event.target.checked)} />{t('Open Word and PDF with the cover page')}</label>
     <fieldset className="border-t border-[var(--line)] p-3 text-xs"><legend className="px-1">{t('PDF appendices (optional)')}</legend>

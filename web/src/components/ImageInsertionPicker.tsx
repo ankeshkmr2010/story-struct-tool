@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, uploadStoryImage, type StoryImage } from '../api/client'
 import { errorText } from '../api/errors'
 import { t } from '../i18n'
+import { FeatureLock } from './FeatureLock'
 
 export function ImageInsertionPicker({ storyId, anchor, onInsert, onClose, sampleImages }: {
   storyId: string; anchor: { x: number; y: number }; onInsert: (image: StoryImage) => Promise<void>; onClose: () => void; sampleImages?: StoryImage[]
@@ -45,7 +46,7 @@ export function ImageInsertionPicker({ storyId, anchor, onInsert, onClose, sampl
     <p className="writer-help">{t('Your writing position is kept. Choose an image to insert it.')}</p>
     {error && <p role="alert" className="writer-error">{error}</p>}
     {!uploading ? <>
-      {!sampleImages && <button type="button" className="share-story-button" disabled={busy || !library.data || library.data.retained_count >= library.data.max_images || library.data.retained_bytes >= library.data.max_story_bytes} onClick={() => setUploading(true)}>{t('Upload new image')}</button>}
+      {!sampleImages && <button type="button" className="share-story-button" disabled={busy || !library.data || library.data.retained_count >= library.data.max_images || library.data.retained_bytes >= library.data.max_story_bytes} onClick={() => setUploading(true)}>{t('Upload new image')}<FeatureLock feature="images" /></button>}
       {library.isPending && !sampleImages && <p role="status">{t('Loading images…')}</p>}
       {library.isError && !sampleImages && <p role="alert">{errorText(library.error)} <button type="button" onClick={() => { void library.refetch() }}>{t('Retry')}</button></p>}
       {(sampleImages || library.data) && !assets.length && <p>{t('No saved images yet. Upload one above.')}</p>}
@@ -72,7 +73,7 @@ export function ImageInsertionPicker({ storyId, anchor, onInsert, onClose, sampl
       <label>{t('Description (alt text)')}<input aria-describedby={!alt.trim() ? altHelpId : undefined} placeholder={t('Describe what the image shows')} maxLength={500} value={alt} disabled={busy} onChange={event => setAlt(event.target.value)} /></label>
       {!alt.trim() && <p id={altHelpId} className="writer-help">{t('A short description helps screen-reader users and makes your EPUB more accessible. Optional, but recommended.')}</p>}
       <label>{t('Caption')}<textarea maxLength={1000} value={caption} disabled={busy} onChange={event => setCaption(event.target.value)} /></label>
-      <div className="story-images-actions"><button type="submit" disabled={busy || !file || !name.trim()}>{t('Upload & insert')}</button><button type="button" disabled={busy} onClick={() => setUploading(false)}>{t('Saved images')}</button>{busy && <button type="button" onClick={() => cancel.current?.abort()}>{t('Cancel upload')}</button>}</div>
+      <div className="story-images-actions"><button type="submit" disabled={busy || !file || !name.trim()}>{t('Upload & insert')}<FeatureLock feature="images" /></button><button type="button" disabled={busy} onClick={() => setUploading(false)}>{t('Saved images')}</button>{busy && <button type="button" onClick={() => cancel.current?.abort()}>{t('Cancel upload')}</button>}</div>
       {busy && <p role="status">{progress < 100 ? progress === 0 ? t('Preparing image for upload…') : t('Uploading… {0}%', progress) : t('Validating and saving…')}</p>}
     </form>}
   </div>

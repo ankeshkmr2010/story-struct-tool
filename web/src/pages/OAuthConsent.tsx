@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { errorText } from '../api/errors'
 import { t, tx } from '../i18n'
+import { FeatureLock } from '../components/FeatureLock'
 
 const scopeLabels: Record<string, string> = {
   'story:read': tx('Read structure, characters, timeline, and story findings'),
@@ -57,7 +58,7 @@ export default function OAuthConsent() {
       </div>
       <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">{t('{0} Provider keys and other users’ stories stay private. Access lasts up to 30 days and can be revoked in Settings. Text you share goes to the connected AI client.', library ? t('This connection can access all active stories in your account, including stories created later.') : t('This connection can access only the selected story.'))}</p>
       {decide.isError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{errorText(decide.error)}</p>}
-      <div className="mt-5 flex flex-wrap justify-end gap-3"><button type="button" disabled={decide.isPending} onClick={() => decide.mutate(true)} className="rounded border border-slate-300 px-4 py-2 text-sm dark:border-slate-600">{t('Cancel')}</button><button type="button" disabled={!storyId || decide.isPending || !(readerRound ? requested.includes('beta:read') : requested.includes('story:read'))} onClick={() => decide.mutate(false)} className="rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{decide.isPending ? t('Connecting…') : t('Allow connection')}</button></div>
+      <div className="mt-5 flex flex-wrap justify-end gap-3"><button type="button" disabled={decide.isPending} onClick={() => decide.mutate(true)} className="rounded border border-slate-300 px-4 py-2 text-sm dark:border-slate-600">{t('Cancel')}</button><button type="button" disabled={!storyId || decide.isPending || !(readerRound ? requested.includes('beta:read') : requested.includes('story:read'))} onClick={() => decide.mutate(false)} className="rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950">{decide.isPending ? t('Connecting…') : t('Allow connection')}<FeatureLock feature="mcp" /></button></div>
     </section>}
   </main>
 }

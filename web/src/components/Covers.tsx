@@ -4,6 +4,7 @@ import { api, type StoryImage } from '../api/client'
 import { errorText } from '../api/errors'
 import { StoryImagePicker } from './StoryImages'
 import { getUiLanguage, t } from '../i18n'
+import { FeatureLock } from './FeatureLock'
 
 type Role = 'cover' | 'jacket'
 
@@ -63,7 +64,7 @@ export function CoverManager({ storyId, title, blurb, wordCount }: { storyId: st
       <div className="cover-controls">
         <h4>{t('Front cover')}</h4>
         <div className="cover-actions">
-          <button type="button" className="ui-btn ui-btn-secondary ui-btn-sm" onClick={() => setPicking('cover')}>{cover ? t('Change cover') : t('Choose or upload')}</button>
+          <button type="button" className="ui-btn ui-btn-secondary ui-btn-sm" onClick={() => setPicking('cover')}>{cover ? t('Change cover') : t('Choose or upload')}<FeatureLock feature="images" /></button>
           {cover && <button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" onClick={() => setCover.mutate({ role: 'cover', image_id: null })}>{t('Remove')}</button>}
         </div>
         {cover && <>
@@ -81,7 +82,7 @@ export function CoverManager({ storyId, title, blurb, wordCount }: { storyId: st
         <h4>{t('Jacket (optional)')}</h4>
         <p className="writer-help">{t('The full wrap a printer wants: back, spine and front in one image.')}</p>
         <div className="cover-actions">
-          <button type="button" className="ui-btn ui-btn-secondary ui-btn-sm" onClick={() => setPicking('jacket')}>{jacket ? t('Change jacket') : t('Choose or upload')}</button>
+          <button type="button" className="ui-btn ui-btn-secondary ui-btn-sm" onClick={() => setPicking('jacket')}>{jacket ? t('Change jacket') : t('Choose or upload')}<FeatureLock feature="images" /></button>
           {jacket && <button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" onClick={() => setCover.mutate({ role: 'jacket', image_id: null })}>{t('Remove')}</button>}
           {(jacket || cover) && <button type="button" className="ui-btn ui-btn-ghost ui-btn-sm" onClick={() => setPreview(true)}>{t('Preview jacket')}</button>}
         </div>
