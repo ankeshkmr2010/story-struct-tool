@@ -42,6 +42,8 @@ from storytool.domain.narrative.prose_controller import (
     SceneProseController,
 )
 from storytool.domain.noticing.controller import NoticingController
+from storytool.domain.plans.controller import AdminAccessController, MyAccessController
+from storytool.domain.plans.middleware import PlanAccessMiddleware
 from storytool.domain.rename import RenameController
 from storytool.domain.search.controller import LibrarySearchController, SearchController
 from storytool.domain.search.semantic import search_lifespan
@@ -152,6 +154,8 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             EvaluationController,
             DialogueController,
             SetupController,
+            MyAccessController,
+            AdminAccessController,
             RenameController,
             CharacterMergeController,
             PublicShoutoutController,
@@ -203,7 +207,12 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             DefineMiddleware(
                 StoryAccessMiddleware,
                 db_config=cast(SQLAlchemyAsyncConfig, plugin.config[0]),
-            )
+            ),
+            # Inside StoryAccessMiddleware, so the account is known (MCP included).
+            DefineMiddleware(
+                PlanAccessMiddleware,
+                db_config=cast(SQLAlchemyAsyncConfig, plugin.config[0]),
+            ),
         ],
         debug=settings.debug,
         openapi_config=OpenAPIConfig(

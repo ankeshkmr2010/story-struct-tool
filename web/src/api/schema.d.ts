@@ -2052,6 +2052,197 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The features and limits the signed-in account has */
+        get: operations["ApiMeAccessMyAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/access/groups/{group_id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an existing account by email */
+        post: operations["ApiAdminAccessGroupsGroupIdMembersAddMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/access/catalogue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every feature and limit a tier can set */
+        get: operations["ApiAdminAccessCatalogueCatalogue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/access/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All account groups with their members */
+        get: operations["ApiAdminAccessGroupsListGroups"];
+        put?: never;
+        /** Add an account group */
+        post: operations["ApiAdminAccessGroupsCreateGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/access/tiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All tiers, cheapest first */
+        get: operations["ApiAdminAccessTiersListTiers"];
+        put?: never;
+        /** Add a tier */
+        post: operations["ApiAdminAccessTiersCreateTier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/access/groups/{group_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a group; its members keep their own access */
+        delete: operations["ApiAdminAccessGroupsGroupIdDeleteGroup"];
+        options?: never;
+        head?: never;
+        /** Change a group's name, tier, seats or end date */
+        patch: operations["ApiAdminAccessGroupsGroupIdUpdateGroup"];
+        trace?: never;
+    };
+    "/api/admin/access/tiers/{tier_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a tier; its accounts fall back */
+        delete: operations["ApiAdminAccessTiersTierIdDeleteTier"];
+        options?: never;
+        head?: never;
+        /** Change a tier (features and limits replace) */
+        patch: operations["ApiAdminAccessTiersTierIdUpdateTier"];
+        trace?: never;
+    };
+    "/api/admin/access/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Find accounts by email, with their access */
+        get: operations["ApiAdminAccessAccountsFindAccounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/access/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent changes to tiers, groups and accounts */
+        get: operations["ApiAdminAccessHistoryHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/access/groups/{group_id}/members/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a member */
+        delete: operations["ApiAdminAccessGroupsGroupIdMembersUserIdRemoveMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/access/accounts/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set an account's tier, end date and overrides */
+        put: operations["ApiAdminAccessAccountsUserIdSetAccount"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/name-uses": {
         parameters: {
             query?: never;
@@ -3534,6 +3725,157 @@ export interface components {
         AIReviewRequest: {
             /** Format: uuid */
             connection_id: string;
+        };
+        /** AccessAccountIn */
+        AccessAccountIn: {
+            tier_id?: string | null;
+            tier_expires_at?: string | null;
+            features?: {
+                [key: string]: boolean;
+            };
+            limits?: {
+                [key: string]: number | null;
+            };
+            note?: string | null;
+        };
+        /** AccessAccountOut */
+        AccessAccountOut: {
+            /** Format: uuid */
+            user_id: string;
+            email: string;
+            name: string | null;
+            tier_id: string | null;
+            tier_expires_at: string | null;
+            features: {
+                [key: string]: boolean;
+            };
+            limits: {
+                [key: string]: number | null;
+            };
+            note: string | null;
+            groups: string[];
+            effective: components["schemas"]["AccessOut"];
+        };
+        /** AccessCatalogueItem */
+        AccessCatalogueItem: {
+            key: string;
+            name: string;
+            description: string;
+            kind: string;
+            default?: number | null;
+        };
+        /** AccessChangeOut */
+        AccessChangeOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            actor_id: string | null;
+            subject: string;
+            subject_id: string | null;
+            change: {
+                [key: string]: unknown;
+            };
+        };
+        /** AccessGroupIn */
+        AccessGroupIn: {
+            name: string;
+            tier_id?: string | null;
+            seats?: number | null;
+            expires_at?: string | null;
+            note?: string | null;
+        };
+        /** AccessGroupOut */
+        AccessGroupOut: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            tier_id: string | null;
+            seats: number | null;
+            expires_at: string | null;
+            note: string | null;
+            members: components["schemas"]["AccessMemberOut"][];
+        };
+        /** AccessGroupPatch */
+        AccessGroupPatch: {
+            name?: string | null;
+            tier_id?: string | null;
+            seats?: number | null;
+            expires_at?: string | null;
+            note?: string | null;
+        };
+        /** AccessMemberIn */
+        AccessMemberIn: {
+            email: string;
+            /** @default member */
+            role: string;
+        };
+        /** AccessMemberOut */
+        AccessMemberOut: {
+            /** Format: uuid */
+            user_id: string;
+            email: string;
+            role: string;
+        };
+        /** AccessOut */
+        AccessOut: {
+            features: {
+                [key: string]: boolean;
+            };
+            limits: {
+                [key: string]: number | null;
+            };
+            tiers: components["schemas"]["AccessTierRef"][];
+        };
+        /** AccessTierIn */
+        AccessTierIn: {
+            key: string;
+            name: string;
+            description?: string | null;
+            /** @default 0 */
+            rank: number;
+            /** @default false */
+            is_default: boolean;
+            features?: {
+                [key: string]: boolean;
+            };
+            limits?: {
+                [key: string]: number | null;
+            };
+        };
+        /** AccessTierOut */
+        AccessTierOut: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            name: string;
+            description: string | null;
+            rank: number;
+            is_default: boolean;
+            features: {
+                [key: string]: boolean;
+            };
+            limits: {
+                [key: string]: number | null;
+            };
+        };
+        /** AccessTierPatch */
+        AccessTierPatch: {
+            name?: string | null;
+            description?: string | null;
+            rank?: number | null;
+            is_default?: boolean | null;
+            features?: {
+                [key: string]: boolean;
+            } | null;
+            limits?: {
+                [key: string]: number | null;
+            } | null;
+        };
+        /** AccessTierRef */
+        AccessTierRef: {
+            key: string;
+            name: string;
         };
         /** AccountOut */
         AccountOut: {
@@ -11686,6 +12028,508 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SetupsOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiMeAccessMyAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessOut"];
+                };
+            };
+        };
+    };
+    ApiAdminAccessGroupsGroupIdMembersAddMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessMemberIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessGroupOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminAccessCatalogueCatalogue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessCatalogueItem"][];
+                };
+            };
+        };
+    };
+    ApiAdminAccessGroupsListGroups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessGroupOut"][];
+                };
+            };
+        };
+    };
+    ApiAdminAccessGroupsCreateGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessGroupIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessGroupOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminAccessTiersListTiers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTierOut"][];
+                };
+            };
+        };
+    };
+    ApiAdminAccessTiersCreateTier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessTierIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTierOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminAccessGroupsGroupIdDeleteGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminAccessGroupsGroupIdUpdateGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessGroupPatch"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessGroupOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminAccessTiersTierIdDeleteTier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminAccessTiersTierIdUpdateTier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessTierPatch"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTierOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminAccessAccountsFindAccounts: {
+        parameters: {
+            query?: {
+                email?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessAccountOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminAccessHistoryHistory: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessChangeOut"][];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminAccessGroupsGroupIdMembersUserIdRemoveMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiAdminAccessAccountsUserIdSetAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessAccountIn"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessAccountOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

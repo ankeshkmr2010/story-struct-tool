@@ -29,6 +29,13 @@ from storytool.domain.narrative.models import (
     scene_beat,
     scene_thread,
 )
+from storytool.domain.plans.models import (
+    AccessChange,
+    AccessTier,
+    AccountAccess,
+    AccountGroup,
+    AccountGroupMember,
+)
 from storytool.domain.search.models import SearchChunk, SearchIndex
 from storytool.domain.site.feedback import ProductFeedback
 from storytool.domain.site.first_run import ToolUse
@@ -59,6 +66,11 @@ from storytool.domain.world.models import Location
 __all__ = (
     "AIConnection",
     "AIRun",
+    "AccessChange",
+    "AccessTier",
+    "AccountAccess",
+    "AccountGroup",
+    "AccountGroupMember",
     "Act",
     "AgentToken",
     "Annotation",
