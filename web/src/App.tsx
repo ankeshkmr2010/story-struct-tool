@@ -17,6 +17,7 @@ import About from './pages/About'
 import Pricing from './pages/Pricing'
 import Privacy from './pages/Privacy'
 import Feedback from './pages/Feedback'
+import Admin from './pages/Admin'
 import { api } from './api/client'
 import UserSettings from './pages/UserSettings'
 import GoalsPage from './pages/Goals'
@@ -36,7 +37,7 @@ const PAGE_TITLES: [RegExp, string][] = [
   [/^\/$/, tx('StoryTool — Your novel’s memory, for you and your AI')], [/^\/try/, tx('Try StoryTool')], [/^\/how-to-use/, tx('How to use · StoryTool')],
   [/^\/roadmap/, tx('Roadmap · StoryTool')], [/^\/thanks/, tx('Shoutouts · StoryTool')], [/^\/about/, tx('About the developer · StoryTool')], [/^\/pricing/, tx('Pricing · StoryTool')],
   [/^\/privacy/, tx('Privacy · StoryTool')], [/^\/library/, tx('Your stories · StoryTool')], [/^\/settings/, tx('Settings · StoryTool')], [/^\/goals/, tx('Writing goals · StoryTool')],
-  [/^\/checks/, tx('Writing checks · StoryTool')], [/^\/feedback/, tx('Feedback · StoryTool')], [/^\/oauth/, tx('Connect AI · StoryTool')],
+  [/^\/checks/, tx('Writing checks · StoryTool')], [/^\/feedback/, tx('Feedback · StoryTool')], [/^\/admin/, tx('Admin · StoryTool')], [/^\/oauth/, tx('Connect AI · StoryTool')],
   [/^\/stories\/[^/]+\/images/, tx('Images · StoryTool')], [/^\/stories\/[^/]+\/beside/, tx('Beside · StoryTool')], [/^\/stories\/[^/]+\/beta/, tx('Beta readers · StoryTool')],
   [/^\/stories\/[^/]+\/polls/, tx('Reader polls · StoryTool')], [/^\/stories\//, tx('Story · StoryTool')], [/^\/shared\//, tx('Shared story · StoryTool')],
   [/^\/beta\//, tx('Beta manuscript · StoryTool')], [/^\/showcase\//, tx('Showcase · StoryTool')],
@@ -82,6 +83,7 @@ export default function App() {
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/checks" element={<WritingChecks />} />
         <Route path="/feedback" element={<Feedback />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/oauth/consent" element={<OAuthConsent />} />
         <Route path="/stories/:storyId" element={<StoryWorkspace />} />
         <Route path="/stories/:storyId/images" element={<StoryImagesPage />} />

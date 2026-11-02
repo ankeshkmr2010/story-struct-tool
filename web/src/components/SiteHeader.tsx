@@ -49,6 +49,7 @@ export function SiteHeader({ headerRef, sandbox, compact }: { headerRef: Ref<HTM
   const { theme, toggle } = useTheme()
   const { language, current, choose } = useLanguageChoice(!sandbox)
   const me = useQuery({ queryKey: ['me'], queryFn: api.currentUser, retry: false, enabled: !sandbox })
+  const admin = useQuery({ queryKey: ['admin-status'], queryFn: api.adminStatus, enabled: !!me.data })
   const logout = useLogout()
   const languageMenu = useDropdown()
   const accountMenu = useDropdown()
@@ -95,6 +96,7 @@ export function SiteHeader({ headerRef, sandbox, compact }: { headerRef: Ref<HTM
             <div className="sh-menu-head" role="none"><strong>{me.data.name ?? t('Your account')}</strong><span>{me.data.email}</span></div>
             <Link role="menuitem" to="/settings">{icon(<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></>)}{t('Settings')}</Link>
             <Link role="menuitem" to="/checks">{icon(<path d="m5 12 4 4 10-10" />)}{t('Writing checks')}</Link>
+            {admin.data?.is_admin && <Link role="menuitem" to="/admin">{icon(<path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z" />)}{t('Admin')}</Link>}
             <hr />
             <button type="button" role="menuitem" onClick={() => logout.mutate()} disabled={logout.isPending}>{icon(<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />)}{logout.isPending ? t('Signing out…') : t('Sign out')}</button>
             {logout.isError && <p role="alert">{t('Could not sign out. Try again.')}</p>}
