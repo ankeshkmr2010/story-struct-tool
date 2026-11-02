@@ -210,3 +210,40 @@ async def test_version_three_trashes_unedited_old_examples_and_adds_the_demo(
     base = f"/api/stories/{demo['id']}"
     assert len((await client.get(f"{base}/scenes")).json()) == 6
     assert (await client.get(f"{base}/versions")).json()
+
+
+async def test_demo_comes_with_speakers_and_older_copies_get_them_at_version_four(
+    client: AsyncTestClient,
+    engine: AsyncEngine,
+) -> None:
+    from sqlalchemy import delete
+
+    from storytool.domain.narrative.models import DialogueSpeaker
+
+    user_id = UUID((await client.get("/api/auth/me")).json()["id"])
+    await provision(engine, user_id)
+    demo = next(s for s in (await client.get("/api/stories")).json() if s["title"] == DEMO)
+    base = f"/api/stories/{demo['id']}/dialogue"
+    seeded = (await client.get(base)).json()
+    assert (seeded["total"], seeded["attributed"]) == (238, 231)
+    scene_ids = list({line["scene_id"] for line in seeded["lines"]})
+    async with AsyncSession(engine) as session:
+        # A copy seeded before speakers existed, with one line the author already set.
+        await session.execute(
+            delete(DialogueSpeaker).where(DialogueSpeaker.scene_id.in_(scene_ids))
+        )
+        user = await session.get(User, user_id)
+        user.examples_seed_version = 3
+        await session.commit()
+    first = seeded["lines"][0]
+    watson = next(k for k, v in seeded["characters"].items() if "Watson" in v)
+    await client.post(
+        f"{base}/speakers",
+        json={
+            "lines": [{"line_id": first["line_id"], "text": first["text"], "character_id": watson}]
+        },
+    )
+    await provision(engine, user_id)
+    filled = (await client.get(base)).json()
+    assert filled["attributed"] == 231
+    assert (filled["lines"][0]["speaker_id"], filled["lines"][0]["source"]) == (watson, "author")

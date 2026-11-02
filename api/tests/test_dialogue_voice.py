@@ -146,3 +146,23 @@ def test_a_stored_speaker_wins_over_the_rule_and_is_keyed_by_text_and_occurrence
         (maya, None, 1),
         (finn, "agent", 2),
     ]
+
+
+def test_reader_asks_about_every_line_of_a_long_scene_in_batches_of_40() -> None:
+    from storytool.domain.evaluation.dialogue_voice import attribute_with_reader
+
+    g = graph(*[f"“Line number {n} of the long talk.”" for n in range(95)])
+    g = replace(g, character_mentions=tuple((g.scenes[0].id, c.id) for c in g.characters))
+    maya = g.characters[0]
+    calls = []
+
+    class Reader:
+        async def evaluate(self, *, model, state, questions):
+            calls.append(len(questions))
+            answer = SimpleNamespace(choice=str(maya.id), confidence=0.9)
+            return SimpleNamespace(answers={key: answer for key in questions})
+
+    data = prepare(g)
+    asyncio.run(attribute_with_reader(data, Reader(), "jev", 0.6))
+    assert calls == [40, 40, 15]
+    assert all(line.speaker == maya.id for line in data.lines)

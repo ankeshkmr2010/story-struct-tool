@@ -428,8 +428,9 @@ def prepare(g: StoryGraph) -> Prepared:
 
 
 async def attribute_with_reader(data: Prepared, service: Any, model: str, threshold: float) -> None:
-    """The shared reader names the speakers of lines that have none: one call per scene, an
-    answer kept only at `threshold` confidence or above. Sets speaker, by_reader, confidence."""
+    """The shared reader names the speakers of lines that have none: one call per 40 lines of a
+    scene, an answer kept only at `threshold` confidence or above. Sets speaker, by_reader,
+    confidence."""
     from storytool.domain.decisions.types import Choice
 
     lines, names = data.lines, data.names
@@ -442,31 +443,34 @@ async def attribute_with_reader(data: Prepared, service: Any, model: str, thresh
         if len(options) < 2:
             continue
         options["unclear"] = "The text does not make the speaker clear"
-        questions = {
-            f"line{index}": Choice(
-                instructions=(
-                    f"Who speaks this quoted line in the scene: “{line.text[:300]}”? Use only the "
-                    "scene text: speech tags, who was addressed, turn-taking. If it is not clear, "
-                    "answer unclear."
-                ),
-                criteria=options,
+        # 40 lines per call; a long scene takes several calls rather than leaving lines out.
+        for start in range(0, len(pending), 40):
+            batch = pending[start : start + 40]
+            questions = {
+                f"line{index}": Choice(
+                    instructions=(
+                        f"Who speaks this quoted line in the scene: “{line.text[:300]}”? Use only "
+                        "the scene text: speech tags, who was addressed, turn-taking. If it is not "
+                        "clear, answer unclear."
+                    ),
+                    criteria=options,
+                )
+                for index, line in enumerate(batch)
+            }
+            result = await service.evaluate(
+                model=model,
+                state={"scene": data.scene_text.get(scene_id, "")[:20000]},
+                questions=questions,
             )
-            for index, line in enumerate(pending[:40])
-        }
-        result = await service.evaluate(
-            model=model,
-            state={"scene": data.scene_text.get(scene_id, "")[:20000]},
-            questions=questions,
-        )
-        for index, line in enumerate(pending[:40]):
-            answer = result.answers.get(f"line{index}")
-            if (
-                answer
-                and answer.choice not in (None, "unclear")
-                and (answer.confidence or 0) >= threshold
-            ):
-                line.speaker, line.by_reader = UUID(answer.choice), True
-                line.confidence = answer.confidence
+            for index, line in enumerate(batch):
+                answer = result.answers.get(f"line{index}")
+                if (
+                    answer
+                    and answer.choice not in (None, "unclear")
+                    and (answer.confidence or 0) >= threshold
+                ):
+                    line.speaker, line.by_reader = UUID(answer.choice), True
+                    line.confidence = answer.confidence
 
 
 async def refine_with_reader(
