@@ -22,6 +22,8 @@ from storytool.domain.narrative.models import (
     DialogueSpeaker,
     Scene,
     SceneCharacterMention,
+    SetupLink,
+    SetupMark,
     chapter_beat,
     scene_arc_advance,
     scene_beat,
@@ -102,6 +104,8 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
     scene_arc_advances: tuple[tuple[UUID, UUID], ...] = ()
     character_mentions: tuple[tuple[UUID, UUID], ...] = ()
     dialogue_speakers: tuple[tuple[UUID, str, int, UUID, str], ...] = ()
+    setup_marks: tuple[tuple[UUID, UUID, str, str, int, str | None, str], ...] = ()
+    setup_links: tuple[tuple[UUID, UUID, str], ...] = ()
     if scene_ids:
         rows = await session.execute(
             select(scene_beat.c.scene_id, scene_beat.c.beat_id).where(
@@ -142,6 +146,21 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
             for r in rows.scalars()
         )
 
+        marks = (
+            await session.scalars(select(SetupMark).where(SetupMark.scene_id.in_(scene_ids)))
+        ).all()
+        setup_marks = tuple(
+            (m.id, m.scene_id, m.kind, m.quote_text, m.occurrence, m.label, m.status)
+            for m in marks
+        )
+        if marks:
+            rows = await session.execute(
+                select(SetupLink.setup_id, SetupLink.payoff_id, SetupLink.status).where(
+                    SetupLink.setup_id.in_([m.id for m in marks])
+                )
+            )
+            setup_links = tuple((r.setup_id, r.payoff_id, r.status) for r in rows)
+
     language = story.language
     if language is None and story.user_id is not None:
         language = await session.scalar(select(User.language).where(User.id == story.user_id))
@@ -169,6 +188,8 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
         scene_arc_advances=scene_arc_advances,
         character_mentions=character_mentions,
         dialogue_speakers=dialogue_speakers,
+        setup_marks=setup_marks,
+        setup_links=setup_links,
     )
 
 

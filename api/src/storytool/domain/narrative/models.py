@@ -251,6 +251,42 @@ class DialogueSpeaker(StoryToolBase):
     confidence: Mapped[float | None] = mapped_column(Float, default=None)
 
 
+class SetupMark(StoryToolBase):
+    """A passage the author marks as a setup or a payoff (`kind`).
+
+    Anchored like `DialogueSpeaker`: the marked text and which occurrence of it in the scene, so
+    edits elsewhere keep it; reworded text loses it, and the check says so. `source`: author or
+    agent. An agent's mark starts `suggested` and counts only once the author accepts it.
+    """
+
+    __tablename__ = "setup_mark"
+
+    scene_id: Mapped[UUID] = mapped_column(ForeignKey("scene.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(7))
+    quote_text: Mapped[str] = mapped_column(EncryptedText)
+    occurrence: Mapped[int] = mapped_column(Integer, default=1)
+    label: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    source: Mapped[str] = mapped_column(String(10))
+    status: Mapped[str] = mapped_column(String(10), default="active")
+
+
+class SetupLink(StoryToolBase):
+    """A setup paid off by a payoff. A setup can have several payoffs and a payoff can answer
+    several setups. Same `source`/`status` rule as `SetupMark`."""
+
+    __tablename__ = "setup_link"
+    __table_args__ = (UniqueConstraint("setup_id", "payoff_id", name="one_link_per_pair"),)
+
+    setup_id: Mapped[UUID] = mapped_column(
+        ForeignKey("setup_mark.id", ondelete="CASCADE"), index=True
+    )
+    payoff_id: Mapped[UUID] = mapped_column(
+        ForeignKey("setup_mark.id", ondelete="CASCADE"), index=True
+    )
+    source: Mapped[str] = mapped_column(String(10))
+    status: Mapped[str] = mapped_column(String(10), default="active")
+
+
 class Suggestion(StoryToolBase):
     """A dismissible nudge.
 

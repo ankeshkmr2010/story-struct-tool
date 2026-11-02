@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import CodeMirror from '@uiw/react-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView, keymap } from '@codemirror/view'
-import { api, type Chapter, type DialogueLine, type Scene, type StoryImage } from '../api/client'
+import { api, type Chapter, type DialogueLine, type Scene, type SetupKind, type SetupMark, type StoryImage } from '../api/client'
 import { errorText } from '../api/errors'
 import { orderChapters, orderScenes } from '../api/ordering'
 import { ChapterBriefCard } from './ChapterBriefCard'
@@ -22,6 +22,8 @@ import { LiveWritingHints } from './LiveWritingHints'
 import { readerComments } from './readerComments'
 import { writerPlaceholders } from './writerPlaceholders'
 import { writerSpeakers } from './writerSpeakers'
+import { writerSetups } from './writerSetups'
+import { SetupMarkMenu } from './SetupMarks'
 import { openBeside, type BesideItem } from './beside'
 import { getUiLanguage, plural, t } from '../i18n'
 import { GoalBar, StoryGoalCard } from './Goals'
@@ -37,12 +39,15 @@ type Named = { label: string; item: BesideItem }
 const imageMarkdown = (image: StoryImage) => `![${image.alt.replace(/[\]\n]/g, ' ')}](storytool-image:${image.id})`
 const proseWords = (text: string) => text.replace(/!\[[^\]\n]*\]\(storytool-image:[0-9a-fA-F-]{36}\)/g, '').trim().split(/\s+/).filter(Boolean).length
 
-export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusChange, contextSlot, hintsSlot, liveHints, initialChapter, onChapterChange }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number; find?: string; paragraph?: number } | null; focus: boolean; onFocusChange: (focus: boolean) => void; contextSlot?: HTMLElement | null; hintsSlot?: HTMLElement | null; liveHints: boolean; initialChapter?: string | null; onChapterChange?: (id: string) => void }) {
+export function StoryWriter({ storyId, registerFlush, openScene: opened, focus, onFocusChange, contextSlot, hintsSlot, liveHints, initialChapter, onChapterChange }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number; find?: string; paragraph?: number } | null; focus: boolean; onFocusChange: (focus: boolean) => void; contextSlot?: HTMLElement | null; hintsSlot?: HTMLElement | null; liveHints: boolean; initialChapter?: string | null; onChapterChange?: (id: string) => void }) {
   const qc = useQueryClient()
   const me = useQuery({ queryKey: [storyId === SANDBOX_ID ? 'sandbox-me' : 'me'], queryFn: api.currentUser })
   // Write has no toolbar, so say once where its actions live; dismissing it is remembered.
   const chapters = useQuery({ queryKey: ['chapters', storyId], queryFn: () => api.listChapters(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
+  // A setup/payoff chip opens its linked mark, here in Write, like Open in Write does.
+  const [jump, setJump] = useState<{ id: string; at: number; find?: string; paragraph?: number } | null>(null)
+  const openMark = (mark: SetupMark) => { if (mark.found && mark.find) setJump({ id: mark.scene_id, at: Date.now(), find: mark.find, paragraph: mark.paragraph ?? undefined }) }
   const prefix = `storytool-writer:${me.data?.id}:${storyId}:`
   const positionKey = `storytool-writing-position:${storyId}`
   const [selectedId, setSelectedId] = useState<string | null>(() => {
@@ -94,6 +99,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
   // Waits for scenes to load, since Write may mount with the request (Design → Open in Write).
   const handledScene = useRef(0)
   useEffect(() => {
+    const openScene = jump && (!opened || jump.at > opened.at) ? jump : opened
     const scene = openScene && openScene.at !== handledScene.current && scenes.data?.find(item => item.id === openScene.id)
     if (!scene) return
     handledScene.current = openScene.at
@@ -115,7 +121,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
       }
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openScene, scenes.data])
+  }, [opened, jump, scenes.data])
   const chooseChapter = async (id: string) => {
     if (!await flushWriter(prefix)) { setError(t('Your draft is still here. Resolve the save error before switching chapters.')); return false }
     setError(null); remember(id)
@@ -203,7 +209,7 @@ export function StoryWriter({ storyId, registerFlush, openScene, focus, onFocusC
           <p className="writer-help">{t('Write freely. Scene names and structure can come later.')}</p>
         </header>
         {!unfiled && chapter && <div className="writer-chapter-extras" key={`top-${chapter.id}`}><ChapterExtra label={t('Epigraph')} add={t('Add epigraph')} value={chapter.epigraph} placeholder={t('Opening quote')} onSave={async epigraph => { await api.updateChapter(storyId, chapter.id, { epigraph }); refresh() }} /><ChapterExtra label={t('Opening note')} add={t('Add opening note')} value={chapter.opening_note} placeholder={t('Opening flavour text')} onSave={async opening_note => { await api.updateChapter(storyId, chapter.id, { opening_note }); refresh() }} /></div>}
-        {chapterScenes.map((scene, index) => <Passage key={scene.id} {...{ storyId, prefix, scene, hintsSlot }} onFocusMode={() => onFocusChange(true)} liveHints={liveHints && contextScene?.id === scene.id} separator={index > 0} focus={focusTarget === scene.id} onFocus={() => setActiveScene(scene.id)} refresh={refresh} />)}
+        {chapterScenes.map((scene, index) => <Passage key={scene.id} {...{ storyId, prefix, scene, hintsSlot }} onOpenMark={openMark} onFocusMode={() => onFocusChange(true)} liveHints={liveHints && contextScene?.id === scene.id} separator={index > 0} focus={focusTarget === scene.id} onFocus={() => setActiveScene(scene.id)} refresh={refresh} />)}
         {chapterScenes.length === 0 && <Passage onFocusMode={() => onFocusChange(true)} key={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} {...{ storyId, prefix }} draftKey={`blank:${chapter?.id ?? (unfiled ? 'unfiled' : 'new')}`} focus={focusTarget === 'blank'} createScene={createScene} onCreated={onCreated} onFocus={() => {}} refresh={refresh} />}
         {!unfiled && chapter && <div className="writer-chapter-extras" key={`end-${chapter.id}`}><ChapterExtra label={t('Closing note')} add={t('Add closing note')} value={chapter.closing_note} placeholder={t('Closing flavour text')} onSave={async closing_note => { await api.updateChapter(storyId, chapter.id, { closing_note }); refresh() }} /></div>}
         <div className="writer-continuation">
@@ -234,18 +240,19 @@ function SaveState({ storyId }: { storyId: string }) {
   return <>{status === 'error' ? t('Not saved') : status === 'saving' ? t('Saving…') : status === 'unsaved' ? t('Unsaved changes') : t('Saved')}</>
 }
 
-function Passage({ storyId, prefix, scene, draftKey, separator = false, focus = false, liveHints = false, hintsSlot, createScene, onCreated, onFocus, onFocusMode, refresh }: {
+function Passage({ storyId, prefix, scene, draftKey, separator = false, focus = false, liveHints = false, hintsSlot, createScene, onCreated, onFocus, onFocusMode, onOpenMark, refresh }: {
   onFocusMode?: () => void
+  onOpenMark?: (mark: SetupMark) => void
   storyId: string; prefix: string; scene?: Scene; draftKey?: string; separator?: boolean; focus?: boolean; liveHints?: boolean; hintsSlot?: HTMLElement | null
   createScene?: () => Promise<Scene>; onCreated?: (scene: Scene, content: string) => void; onFocus: () => void; refresh: () => void
 }) {
   const content = useQuery({ queryKey: ['content', storyId, scene?.id], queryFn: () => api.getContent(storyId, scene!.id), enabled: Boolean(scene) })
   if (scene && content.isPending) return <p className="writer-help">{t('Loading passage…')}</p>
   if (content.isError) return <p role="alert" className="writer-error">{errorText(content.error)} <button type="button" onClick={() => { void content.refetch() }}>{t('Retry')}</button></p>
-  return <PassageEditor {...{ storyId, prefix, scene, draftKey, separator, focus, liveHints, hintsSlot, createScene, onCreated, onFocus, onFocusMode, refresh }} initial={content.data?.content ?? ''} />
+  return <PassageEditor {...{ storyId, prefix, scene, draftKey, separator, focus, liveHints, hintsSlot, createScene, onCreated, onFocus, onFocusMode, onOpenMark, refresh }} initial={content.data?.content ?? ''} />
 }
 
-function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, focus, liveHints, hintsSlot, createScene, onCreated, onFocus, onFocusMode, refresh }: Parameters<typeof Passage>[0] & { initial: string }) {
+function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, focus, liveHints, hintsSlot, createScene, onCreated, onFocus, onFocusMode, onOpenMark, refresh }: Parameters<typeof Passage>[0] & { initial: string }) {
   const qc = useQueryClient()
   const { theme } = useTheme()
   const view = useRef<EditorView | null>(null)
@@ -277,6 +284,24 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     mutationFn: ({ line, character }: { line: DialogueLine; character: string | null }) => api.setDialogueSpeakers(storyId, [{ line_id: line.line_id, text: line.text, character_id: character }]),
     onSuccess: () => { setSpeakerPick(null); void qc.invalidateQueries({ queryKey: ['dialogue', storyId] }) },
   })
+  // Setups and payoffs marked in this scene; flags about them live in Checks only.
+  const setups = useQuery({ queryKey: ['setups', storyId], queryFn: () => api.listSetups(storyId), enabled: !!scene && !isLocalStory(storyId) })
+  const [setupPick, setSetupPick] = useState<{ mark: SetupMark; x: number; y: number } | null>(null)
+  const markSetup = async (kind: SetupKind) => {
+    const editor = view.current
+    if (!editor || !scene) return
+    const { from, to } = editor.state.selection.main
+    const text = editor.state.sliceDoc(from, to)
+    try {
+      if (!await draft.flush()) throw new Error(t('Save your writing before marking it.'))
+      if (!text.trim() || /\n\s*\n/.test(text)) throw new Error(t('Select text within one paragraph to mark it.'))
+      const mark = await api.markSetup(storyId, { scene_id: scene.id, kind, text, start: from })
+      await qc.invalidateQueries({ queryKey: ['setups', storyId] })
+      setContext(null)
+      const coords = editor.coordsAtPos(from)
+      setSetupPick({ mark, x: coords?.left ?? 20, y: coords?.bottom ?? 100 })
+    } catch (error) { setClipboardError(errorText(error)) }
+  }
   // Right-clicking a defined name offers to open it beside the manuscript.
   const nameAt = (editor: EditorView, at: number | null): Named | null => {
     if (at === null) return null
@@ -308,6 +333,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
     qc.setQueryData(['content', storyId, current.id], { scene_id: current.id, content: text, word_count: proseWords(text) })
     void qc.invalidateQueries({ queryKey: ['placeholders', storyId] })
     void qc.invalidateQueries({ queryKey: ['dialogue', storyId] })
+    void qc.invalidateQueries({ queryKey: ['setups', storyId] })
     if (!createdAnnounced.current) { createdAnnounced.current = true; onCreated?.(current, text) }
     refresh()
   }) }, [draft, storyId, prefix, createScene, qc, onCreated, refresh])
@@ -421,6 +447,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       readerComments(comments),
       writerPlaceholders,
       writerSpeakers(dialogue.data?.lines ?? [], dialogue.data?.characters ?? {}, (line, x, y) => setSpeakerPick({ line, x, y })),
+      writerSetups((setups.data?.marks ?? []).filter(mark => mark.scene_id === scene?.id), (mark, x, y) => setSetupPick({ mark, x, y })),
       // Typing / on an empty line opens the writing actions at the caret (usability phase 2, item 7).
       EditorView.inputHandler.of((editor, from, to, text) => {
         if (text !== '/' || from !== to || editor.state.doc.lineAt(from).text.trim() !== '') return false
@@ -489,6 +516,7 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
       {setSpeaker.error && <p role="alert">{errorText(setSpeaker.error)}</p>}
       <button type="button" onClick={() => { setSpeakerPick(null); view.current?.focus() }}>{t('Close')}</button>
     </div>}
+    {setupPick && setups.data && <SetupMarkMenu key={setupPick.mark.id} storyId={storyId} mark={setups.data.marks.find(mark => mark.id === setupPick.mark.id) ?? setupPick.mark} data={setups.data} x={setupPick.x} y={setupPick.y} onClose={() => { setSetupPick(null); view.current?.focus() }} onOpen={mark => { setSetupPick(null); onOpenMark?.(mark) }} />}
     {selectionChip && !context && <button type="button" className="writer-selection-chip" aria-label={t('Writing actions for selection')} title={t('Writing actions (or right-click)')} style={{ left: Math.max(8, Math.min(selectionChip.x + 4, window.innerWidth - 48)), top: Math.max(8, Math.min(selectionChip.y + 6, window.innerHeight - 40)) }} onMouseDown={event => event.preventDefault()} onClick={() => { const editor = view.current; if (editor) openContext(editor, selectionChip.x, selectionChip.y + 6, false); setSelectionChip(null) }}>⋯</button>}
     {context && <div ref={menu} className="writer-context-menu" role="menu" aria-label={t('Writing actions')} style={{ left: Math.max(8, Math.min(context.x, window.innerWidth - 208)), top: Math.max(8, Math.min(context.y, window.innerHeight - 284)) }} onKeyDown={event => {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -503,6 +531,10 @@ function PassageEditor({ storyId, prefix, scene, draftKey, initial, separator, f
         {onFocusMode && <button type="button" role="menuitem" onClick={() => { removeSlash(context.slash); setContext(null); onFocusMode() }}>{t('Focus mode')}</button>}
       </> : <>
       <button type="button" role="menuitem" onClick={addPlaceholder}>{t('Add TK here')}</button>
+      {context.hasSelection && scene && !isLocalStory(storyId) && <>
+        <button type="button" role="menuitem" onClick={() => { void markSetup('setup') }}>{t('Mark as setup')}</button>
+        <button type="button" role="menuitem" onClick={() => { void markSetup('payoff') }}>{t('Mark as payoff')}</button>
+      </>}
       {context.named && <button type="button" role="menuitem" onClick={() => { openBeside(context.named!.item); setContext(null) }}>{t('Open {0} beside', context.named.label)}</button>}
       <button type="button" role="menuitem" onClick={() => { openBeside({ kind: 'pick' }); setContext(null) }}>{t('Open scene beside…')}</button>
       {!isPrivateId(storyId) && <button type="button" role="menuitem" onClick={() => { const anchor = context; setContext(null); if (storyId === SANDBOX_ID) window.dispatchEvent(new Event('storytool-try-images')); else setImageAnchor(anchor) }}>{t('Insert image…')}</button>}

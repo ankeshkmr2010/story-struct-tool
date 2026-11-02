@@ -254,6 +254,8 @@ class StoryAccessMiddleware:
                             or (suffix.startswith("/versions/") and suffix.endswith("/restore"))
                             # Who speaks each quoted line: stored speaker links only.
                             or suffix in {"/dialogue/populate", "/dialogue/speakers"}
+                            # Suggested setups, payoffs and links; the author accepts them.
+                            or suffix in {"/setups/marks", "/setups/links"}
                             # An AI review report: stored beside the story, never edits it.
                             or (
                                 suffix.startswith("/evaluations/")
@@ -348,6 +350,8 @@ class StoryAccessMiddleware:
                     or suffix in {"/ai/runs", "/ai/observations", "/ai/catchup"}
                     or suffix == "/dialogue"
                     or suffix.startswith("/dialogue/")
+                    or suffix == "/setups"
+                    or suffix.startswith("/setups/")
                     or (
                         suffix.startswith("/evaluations/")
                         and suffix.endswith("/reports")

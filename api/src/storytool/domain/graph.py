@@ -57,6 +57,12 @@ class StoryGraph:
     need to know who was where, which only this can tell them."""
     dialogue_speakers: tuple[tuple[UUID, str, int, UUID, str], ...] = field(default_factory=tuple)
     """(scene_id, quote text, occurrence, character_id, source): stored speakers of quotes."""
+    setup_marks: tuple[tuple[UUID, UUID, str, str, int, str | None, str], ...] = field(
+        default_factory=tuple
+    )
+    """(id, scene_id, kind, quote text, occurrence, label, status): marked setups and payoffs."""
+    setup_links: tuple[tuple[UUID, UUID, str], ...] = field(default_factory=tuple)
+    """(setup_id, payoff_id, status): which payoff pays off which setup."""
 
     # ------------------------------------------------------------- lookups
 

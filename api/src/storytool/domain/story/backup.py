@@ -37,6 +37,8 @@ from storytool.domain.story.timeline_controller import story_timeline
 from storytool.domain.versioning.service import ADMIN, EXTRAS, checkpoint, full_state, restore_state
 
 BACKUP_FORMAT = "storytool-backup"
+# Extra tables whose ids other rows point at, so they are remapped like entities on import.
+MAPPED = {"story_image", "setup_mark"}
 MAX_BACKUP_BYTES = 200 * 1024 * 1024
 
 
@@ -54,11 +56,13 @@ def rehome(state: dict[str, Any], story_id: UUID, *, strict: bool = False,
     state = copy.deepcopy(state)
     identifiers = {row["id"]: str(uuid7()) for kind in ENTITIES for row in state[kind]}
     identifiers.update(image_ids or {r["id"]: str(uuid7()) for r in state.get("story_image", [])})
+    # Setup links point at marks, so marks keep a mapped id too.
+    identifiers.update({r["id"]: str(uuid7()) for r in state.get("setup_mark", [])})
     identifiers[state["story"][0]["id"]] = str(story_id)
     for kind, table in tables().items():
         for row in state.get(kind, []):
             if "id" in row:
-                row["id"] = identifiers[row["id"]] if kind in ENTITIES or kind == "story_image" else str(uuid7())
+                row["id"] = identifiers[row["id"]] if kind in ENTITIES or kind in MAPPED else str(uuid7())
             for column in table.c:
                 value = row.get(column.name)
                 if not column.foreign_keys or value is None:
@@ -102,7 +106,7 @@ def validated_state(payload: Any) -> dict[str, Any]:
             extra = set(row) - columns
             if extra:
                 raise ValueError(f"Unknown {kind} fields: " + ", ".join(sorted(extra)))
-            if kind in ENTITIES or kind == "story_image":
+            if kind in ENTITIES or kind in MAPPED:
                 if not isinstance(row.get("id"), str) or row["id"] in seen:
                     raise ValueError(f"Every {kind} needs a unique id")
                 seen.add(row["id"])

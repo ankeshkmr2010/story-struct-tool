@@ -1794,6 +1794,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/evaluations/{evaluator_id}/shared-reader": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dialogue voice with the shared reader */
+        post: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdSharedReaderDialogueVoiceReader"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/evaluations/{evaluator_id}/package": {
         parameters: {
             query?: never;
@@ -1891,6 +1908,144 @@ export interface paths {
         put?: never;
         /** Read cached scene evidence for craft checks */
         post: operations["ApiStoriesStoryIdEvaluationsSceneReaderSceneReader"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/dialogue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quoted lines and who speaks each (empty until set) */
+        get: operations["ApiStoriesStoryIdDialogueListDialogue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/dialogue/populate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fill empty speakers from the text, optionally the shared reader */
+        post: operations["ApiStoriesStoryIdDialoguePopulatePopulate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/dialogue/speakers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set or clear who speaks given lines */
+        post: operations["ApiStoriesStoryIdDialogueSpeakersSetSpeakers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/setups/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Link a setup to a payoff (an agent's link is suggested) */
+        post: operations["ApiStoriesStoryIdSetupsLinksCreateLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/setups/marks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a passage as a setup or a payoff (an agent's mark is suggested) */
+        post: operations["ApiStoriesStoryIdSetupsMarksCreateMark"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/setups/links/{link_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a link (the marks stay) */
+        delete: operations["ApiStoriesStoryIdSetupsLinksLinkIdDeleteLink"];
+        options?: never;
+        head?: never;
+        /** Accept a suggested link */
+        patch: operations["ApiStoriesStoryIdSetupsLinksLinkIdUpdateLink"];
+        trace?: never;
+    };
+    "/api/stories/{story_id}/setups/marks/{mark_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a mark and its links */
+        delete: operations["ApiStoriesStoryIdSetupsMarksMarkIdDeleteMark"];
+        options?: never;
+        head?: never;
+        /** Change a mark's kind or label, or accept it */
+        patch: operations["ApiStoriesStoryIdSetupsMarksMarkIdUpdateMark"];
+        trace?: never;
+    };
+    "/api/stories/{story_id}/setups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Marked setups and payoffs, and the links between them */
+        get: operations["ApiStoriesStoryIdSetupsListSetups"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4116,6 +4271,28 @@ export interface components {
             outcome: "accepted" | "dismissed";
             rubric_version?: string | null;
         };
+        /** DialogueLineOut */
+        DialogueLineOut: {
+            line_id: string;
+            /** Format: uuid */
+            scene_id: string;
+            scene_title: string;
+            paragraph: number;
+            find: string;
+            text: string;
+            speaker_id: string | null;
+            speaker: string | null;
+            source: string | null;
+        };
+        /** DialogueOut */
+        DialogueOut: {
+            total: number;
+            attributed: number;
+            lines: components["schemas"]["DialogueLineOut"][];
+            characters: {
+                [key: string]: string;
+            };
+        };
         /** DisclosureOut */
         DisclosureOut: {
             story_title: string;
@@ -4552,6 +4729,29 @@ export interface components {
         LibraryOverviewOut: {
             cards: components["schemas"]["CardOut"][];
         };
+        /** LinkIn */
+        LinkIn: {
+            /** Format: uuid */
+            setup_id: string;
+            /** Format: uuid */
+            payoff_id: string;
+        };
+        /** LinkOut */
+        LinkOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            setup_id: string;
+            /** Format: uuid */
+            payoff_id: string;
+            source: string;
+            status: string;
+        };
+        /** LinkPatch */
+        LinkPatch: {
+            /** @constant */
+            status: "active";
+        };
         /** LinksOut */
         LinksOut: {
             beat_ids: string[];
@@ -4601,6 +4801,42 @@ export interface components {
             character_ids: string[];
             first_story_time: number | null;
             last_story_time: number | null;
+        };
+        /** MarkIn */
+        MarkIn: {
+            /** Format: uuid */
+            scene_id: string;
+            /** @enum {string} */
+            kind: "setup" | "payoff";
+            text: string;
+            start?: number | null;
+            occurrence?: number | null;
+            label?: string | null;
+        };
+        /** MarkOut */
+        MarkOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            scene_id: string;
+            scene_title: string;
+            kind: string;
+            text: string;
+            occurrence: number;
+            label: string | null;
+            source: string;
+            status: string;
+            found: boolean;
+            paragraph: number | null;
+            find: string | null;
+        };
+        /** MarkPatch */
+        MarkPatch: {
+            /** @enum {null|string} */
+            kind?: "setup" | "payoff" | null;
+            label?: string | null;
+            /** @enum {null|string} */
+            status?: "active" | null;
         };
         /** MemberOut */
         MemberOut: {
@@ -4875,6 +5111,19 @@ export interface components {
             total: number;
             counts: number[];
             answers: components["schemas"]["PollAnswerOut"][];
+        };
+        /** PopulateIn */
+        PopulateIn: {
+            /** @default false */
+            use_reader: boolean;
+        };
+        /** PopulateOut */
+        PopulateOut: {
+            total: number;
+            by_code: number;
+            by_reader: number;
+            empty: number;
+            removed: number;
         };
         /**
          * PovStyle
@@ -5401,6 +5650,11 @@ export interface components {
             /** @default false */
             indexing: boolean;
         };
+        /** SetupsOut */
+        SetupsOut: {
+            marks: components["schemas"]["MarkOut"][];
+            links: components["schemas"]["LinkOut"][];
+        };
         /** ShareInput */
         ShareInput: {
             recipient_email: string;
@@ -5530,6 +5784,22 @@ export interface components {
             thread_count: number;
             chapter_count: number;
             scene_count: number;
+        };
+        /** SpeakerIn */
+        SpeakerIn: {
+            line_id: string;
+            text: string;
+            character_id?: string | null;
+        };
+        /** SpeakersIn */
+        SpeakersIn: {
+            lines: components["schemas"]["SpeakerIn"][];
+        };
+        /** SpeakersOut */
+        SpeakersOut: {
+            updated: number;
+            cleared: number;
+            stale: string[];
         };
         /** SprintIn */
         SprintIn: {
@@ -5828,7 +6098,7 @@ export interface components {
         /** ToolOpenIn */
         ToolOpenIn: {
             /** @enum {string} */
-            tool: "write" | "read" | "level-1" | "level-2" | "level-3" | "level-4" | "level-5" | "level-6" | "level-7" | "level-8" | "structure" | "timeline" | "places" | "glossary" | "check" | "grid" | "pacing" | "agent-changes" | "catch-up" | "placeholders" | "history";
+            tool: "write" | "read" | "level-1" | "level-2" | "level-3" | "level-4" | "level-5" | "level-6" | "level-7" | "level-8" | "structure" | "timeline" | "places" | "glossary" | "check" | "grid" | "pacing" | "agent-changes" | "catch-up" | "placeholders" | "setups" | "history";
         };
         /** ToolOut */
         ToolOut: {
@@ -10727,6 +10997,44 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdEvaluationsEvaluatorIdSharedReaderDialogueVoiceReader: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                evaluator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdEvaluationsEvaluatorIdPackageGetPackage: {
         parameters: {
             query?: {
@@ -10982,6 +11290,402 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CraftReading"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdDialogueListDialogue: {
+        parameters: {
+            query?: {
+                only_empty?: boolean;
+                scene_id?: string | null;
+                character_id?: string | null;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DialogueOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdDialoguePopulatePopulate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PopulateIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PopulateOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdDialogueSpeakersSetSpeakers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpeakersIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeakersOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSetupsLinksCreateLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSetupsMarksCreateMark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarkOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSetupsLinksLinkIdDeleteLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSetupsLinksLinkIdUpdateLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkPatch"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSetupsMarksMarkIdDeleteMark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                mark_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSetupsMarksMarkIdUpdateMark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                mark_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkPatch"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdSetupsListSetups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupsOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */

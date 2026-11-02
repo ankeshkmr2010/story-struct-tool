@@ -1303,6 +1303,47 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         the speaker clear; leave a line empty rather than guess."""
         return await call(ctx, "/dialogue/speakers", "POST", {"lines": lines}, story_id=story_id)
 
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True))
+    async def list_setups(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
+        """Setups and payoffs marked in the prose, in reading order, and the links between them
+        (a setup can have several payoffs). status: active (the author's or accepted) or
+        suggested (waiting for the author). found=false: the marked text was reworded.
+        Needs prose:read."""
+        return await call(ctx, "/setups", story_id=story_id)
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def suggest_setup_mark(
+        ctx: Context,
+        scene_id: UUID,
+        kind: Literal["setup", "payoff"],
+        text: str,
+        occurrence: int = 1,
+        label: str | None = None,
+        story_id: UUID | None = None,
+    ) -> dict[str, Any]:
+        """Suggest marking a passage as a setup or a payoff. `text` is copied exactly from one
+        paragraph of read_scene_prose; occurrence says which appearance of it in the scene.
+        label: a short name ("the gun on the wall"). The author accepts or removes it; never
+        claim it is marked until list_setups shows status active."""
+        body = {
+            "scene_id": str(scene_id),
+            "kind": kind,
+            "text": text,
+            "occurrence": occurrence,
+            "label": label,
+        }
+        return await call(ctx, "/setups/marks", "POST", body, story_id=story_id)
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def suggest_setup_link(
+        ctx: Context, setup_id: UUID, payoff_id: UUID, story_id: UUID | None = None
+    ) -> dict[str, Any]:
+        """Suggest that a payoff pays off a setup, both ids from list_setups or
+        suggest_setup_mark. Accepting the link also accepts its two marks. Suggest only pairs
+        the prose clearly connects."""
+        body = {"setup_id": str(setup_id), "payoff_id": str(payoff_id)}
+        return await call(ctx, "/setups/links", "POST", body, story_id=story_id)
+
     @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
     async def submit_evaluation_report(
         ctx: Context,

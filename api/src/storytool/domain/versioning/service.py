@@ -19,6 +19,8 @@ from storytool.domain.narrative.models import (
     Annotation,
     DialogueSpeaker,
     SceneRevision,
+    SetupLink,
+    SetupMark,
     Suggestion,
 )
 from storytool.domain.narrative.prose import count_words
@@ -32,9 +34,22 @@ EXTRAS: dict[str, Any] = {
     "scene_revision": SceneRevision.__table__,
     "suggestion": Suggestion.__table__,
     "dialogue_speaker": DialogueSpeaker.__table__,
+    # Marks before links: restore inserts in this order.
+    "setup_mark": SetupMark.__table__,
+    "setup_link": SetupLink.__table__,
 }
 AUDIT = {"created_at", "updated_at", "sa_orm_sentinel", "word_count"}
 ADMIN = {"user_id", "parent_story_id", "deleted_at"}
+
+
+def extra_condition(kind: str, table: Any, story_id: UUID, scene_ids: list[UUID]) -> Any:
+    """Which rows of an EXTRAS table belong to the story: by story, by scene, or (links
+    between marks) by the setup's scene."""
+    if kind in {"suggestion", "story_image"}:
+        return table.c.story_id == story_id
+    if kind == "setup_link":
+        return table.c.setup_id.in_(select(SetupMark.id).where(SetupMark.scene_id.in_(scene_ids)))
+    return table.c.scene_id.in_(scene_ids)
 
 
 async def full_state(db: AsyncSession, story_id: UUID) -> dict[str, Any]:
@@ -71,11 +86,7 @@ async def full_state(db: AsyncSession, story_id: UUID) -> dict[str, Any]:
             key=lambda row: json.dumps(row, sort_keys=True),
         )
     for kind, table in EXTRAS.items():
-        condition = (
-            table.c.story_id == story_id
-            if kind in {"suggestion", "story_image"}
-            else table.c.scene_id.in_(identifiers["scene"])
-        )
+        condition = extra_condition(kind, table, story_id, identifiers["scene"])
         rows = (
             (await db.execute(select(table).where(condition).order_by(table.c.id))).mappings().all()
         )
@@ -258,10 +269,8 @@ async def restore_state(db: AsyncSession, story_id: UUID, state: dict[str, Any])
         raise ValueError("Invalid story version")
     current = await full_state(db, story_id)
     for kind, table in EXTRAS.items():
-        condition = (
-            table.c.story_id == story_id
-            if kind in {"suggestion", "story_image"}
-            else table.c.scene_id.in_([UUID(s["id"]) for s in current["scene"]])
+        condition = extra_condition(
+            kind, table, story_id, [UUID(s["id"]) for s in current["scene"]]
         )
         await db.execute(delete(table).where(condition))
     await db.execute(delete(StoryObservation).where(StoryObservation.story_id == story_id))

@@ -6,6 +6,7 @@ from storytool.domain.evaluation import (  # noqa: F401
     misbelief_midpoint,
     prose_checks,
     scene_rhythm,
+    setup_marks,
     value_shift,
 )
 from storytool.domain.evaluation.engine import all_evaluators, get_evaluator, reads_prose

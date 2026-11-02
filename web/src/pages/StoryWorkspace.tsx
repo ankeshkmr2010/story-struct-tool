@@ -25,6 +25,7 @@ import { ProposalInbox } from '../components/ProposalInbox'
 import { OutlineCatchup } from '../components/OutlineCatchup'
 import { StoryEvaluation } from '../components/StoryEvaluation'
 import { PlaceholderList } from '../components/PlaceholderList'
+import { SetupMarksPanel } from '../components/SetupMarks'
 import { usePlaceholders } from '../components/usePlaceholders'
 import { BesidePanel } from '../components/BesidePanel'
 import { RenameDialog } from '../components/RenameDialog'
@@ -108,8 +109,10 @@ const STRUCTURE_VIEW = 111
 const TIMELINE_VIEW = 112
 const PLACES_VIEW = 113
 const GLOSSARY_VIEW = 114
+// Marked setups and payoffs (roadmap: Setups and payoffs); in Tools once something is marked.
+const SETUPS_VIEW = 115
 // Names the first-run measures use for each Design page.
-const TOOL_NAMES: Record<number, string> = { [INBOX_VIEW]: 'agent-changes', [GRID_VIEW]: 'grid', [CATCHUP_VIEW]: 'catch-up', [HISTORY_VIEW]: 'history', [EVALUATE_VIEW]: 'check', [PLACEHOLDERS_VIEW]: 'placeholders', [PACING_VIEW]: 'pacing', [STRUCTURE_VIEW]: 'structure', [TIMELINE_VIEW]: 'timeline', [PLACES_VIEW]: 'places', [GLOSSARY_VIEW]: 'glossary' }
+const TOOL_NAMES: Record<number, string> = { [INBOX_VIEW]: 'agent-changes', [GRID_VIEW]: 'grid', [CATCHUP_VIEW]: 'catch-up', [HISTORY_VIEW]: 'history', [EVALUATE_VIEW]: 'check', [PLACEHOLDERS_VIEW]: 'placeholders', [SETUPS_VIEW]: 'setups', [PACING_VIEW]: 'pacing', [STRUCTURE_VIEW]: 'structure', [TIMELINE_VIEW]: 'timeline', [PLACES_VIEW]: 'places', [GLOSSARY_VIEW]: 'glossary' }
 
 // One docked side panel; which tabs it offers depends on the mode (Context and Hints belong to Write).
 type RefPanel = 'context' | 'hints' | 'cast' | 'insights' | 'feedback' | 'placeholders' | 'timeline' | 'places' | 'glossary' | 'assistant'
@@ -152,7 +155,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
   const [savedSearchContext] = useState(() => {
     try { return localStorage.getItem(`storytool-search-open:${storyId}`) === 'true' ? JSON.parse(localStorage.getItem(`storytool-search-context:${storyId}`) || '{}') : {} } catch { return {} }
   })
-  const [level, setLevel] = useState(() => linkedView() ?? initialPosition?.level ?? ([1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW, PLACEHOLDERS_VIEW, PACING_VIEW, STRUCTURE_VIEW, TIMELINE_VIEW, PLACES_VIEW, GLOSSARY_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1))
+  const [level, setLevel] = useState(() => linkedView() ?? initialPosition?.level ?? ([1, 2, 3, 4, 5, 6, 7, 8, INBOX_VIEW, GRID_VIEW, CATCHUP_VIEW, HISTORY_VIEW, EVALUATE_VIEW, PLACEHOLDERS_VIEW, SETUPS_VIEW, PACING_VIEW, STRUCTURE_VIEW, TIMELINE_VIEW, PLACES_VIEW, GLOSSARY_VIEW].includes(savedSearchContext.level) ? savedSearchContext.level as number : 1))
   // Levels 1-8 are the Plan; ids from 104 up are full-width Design pages (Grid, History, …).
   const isView = level >= INBOX_VIEW
   const planLevel = useRef(1)
@@ -373,7 +376,9 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
   const fullChapter = (chapters.data ?? []).some(chapter => { const own = (scenes.data ?? []).filter(scene => scene.chapter_id === chapter.id); return own.length > 0 && own.every(isDrafted) })
   const baseViews = viewMode === 'pantser' ? [PLACES_VIEW] : viewMode === 'hybrid' ? [STRUCTURE_VIEW, PLACES_VIEW, EVALUATE_VIEW] : [STRUCTURE_VIEW, PLACES_VIEW, GLOSSARY_VIEW, EVALUATE_VIEW, GRID_VIEW]
   const unlocked = (view: number) => (view === TIMELINE_VIEW && sceneTotal >= 5) || (view === PACING_VIEW && sceneTotal >= 10)
-  const shows = (view: number) => showAll || baseViews.includes(view) || unlocked(view) || (view === INBOX_VIEW && pendingRuns > 0) || level === view
+  const setups = useQuery({ queryKey: ['setups', storyId], queryFn: () => api.listSetups(storyId), enabled: !sandbox && !privateStory })
+  const setupCount = setups.data?.marks.length ?? 0
+  const shows = (view: number) => view === SETUPS_VIEW && (sandbox || privateStory) ? false : showAll || baseViews.includes(view) || unlocked(view) || (view === INBOX_VIEW && pendingRuns > 0) || (view === SETUPS_VIEW && setupCount > 0) || level === view
   // First-run measures (usability phase 4): which tools a writer opens, once per browser session.
   useEffect(() => {
     if (sandbox) return
@@ -395,6 +400,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
   const hiddenTools = [
     [STRUCTURE_VIEW, t('Structure')], [TIMELINE_VIEW, t('Timeline')], [PLACES_VIEW, t('Places')], [GLOSSARY_VIEW, t('Glossary')], [EVALUATE_VIEW, t('Check my story')],
     [GRID_VIEW, t('Grid')], [PACING_VIEW, t('Pacing')], [INBOX_VIEW, t('Agent changes')], [CATCHUP_VIEW, t('Catch up')], [PLACEHOLDERS_VIEW, t('Placeholders')], [HISTORY_VIEW, t('History')],
+    ...(sandbox || privateStory ? [] : [[SETUPS_VIEW, t('Setups and payoffs')]]),
   ].filter(([view]) => !shows(view as number)).map(([view, label]) => ({ label: label as string, open: () => { void openView(view as number) } }))
 
   const [chapterId, setChapterId] = useState<string | null>(initialPosition?.chapter_id ?? null)
@@ -646,12 +652,13 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
           {shows(EVALUATE_VIEW) && <h2>{t('Review')}</h2>}
           {shows(EVALUATE_VIEW) && <button type="button" aria-current={level === EVALUATE_VIEW ? 'page' : undefined} onClick={() => { setCheckTab('needs'); setLevel(EVALUATE_VIEW) }}>{t('Check my story')}{(health.data?.warning_count ?? 0) > 0 && <span className="workspace-nav-badge is-labelled">{t('{0} to fix', health.data?.warning_count)}</span>}</button>}
           {/* Tools is collapsed by default; the open tool stays visible while collapsed. */}
-          {[GRID_VIEW, PACING_VIEW, INBOX_VIEW, CATCHUP_VIEW, PLACEHOLDERS_VIEW, HISTORY_VIEW].some(shows) && <h2><button type="button" className="rail-group-toggle" aria-expanded={railTools} onClick={() => setRailTools(open => !open)}>{t('Tools')}</button></h2>}
+          {[GRID_VIEW, PACING_VIEW, INBOX_VIEW, CATCHUP_VIEW, PLACEHOLDERS_VIEW, SETUPS_VIEW, HISTORY_VIEW].some(shows) && <h2><button type="button" className="rail-group-toggle" aria-expanded={railTools} onClick={() => setRailTools(open => !open)}>{t('Tools')}</button></h2>}
           {inTools(GRID_VIEW) && viewItem(GRID_VIEW, t('Grid'))}
           {inTools(PACING_VIEW) && viewItem(PACING_VIEW, <>{t('Pacing')}{fresh(PACING_VIEW) && <span className="rail-new">{t('New')}</span>}</>)}
           {!sandbox && inTools(INBOX_VIEW) && viewItem(INBOX_VIEW, <>{t('Agent changes')}{pendingRuns > 0 && <span className="workspace-nav-badge" aria-label={t('{0} pending', pendingRuns)}>{pendingRuns}</span>}</>)}
           {!sandbox && inTools(CATCHUP_VIEW) && viewItem(CATCHUP_VIEW, t('Catch up'))}
           {inTools(PLACEHOLDERS_VIEW) && viewItem(PLACEHOLDERS_VIEW, placeholderCount ? <>{t('Placeholders')}<span className="workspace-nav-badge" aria-label={t('{0} left', placeholderCount)}>{placeholderCount}</span></> : t('Placeholders'))}
+          {inTools(SETUPS_VIEW) && viewItem(SETUPS_VIEW, t('Setups and payoffs'))}
           {inTools(HISTORY_VIEW) && viewItem(HISTORY_VIEW, t('History'))}
           {!tour && hiddenTools.length > 0 && <details className="rail-more">
             <summary>{t('More tools')}</summary>
@@ -668,6 +675,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
           {level === PLACES_VIEW && <section className="plan-view"><PlacesPanel storyId={storyId} /></section>}
           {level === GLOSSARY_VIEW && <section className="plan-view"><GlossaryPanel storyId={storyId} /></section>}
           {level === CATCHUP_VIEW && <OutlineCatchup storyId={storyId} onOpenInbox={() => setLevel(INBOX_VIEW)} />}
+          {level === SETUPS_VIEW && !sandbox && !privateStory && <section><h2 className="level-title">{t('Setups and payoffs')}</h2><SetupMarksPanel storyId={storyId} onOpenPassage={openPassage} /></section>}
           {level === PLACEHOLDERS_VIEW && <section><h2 className="level-title">{t('Placeholders')}</h2><PlaceholderList storyId={storyId} beforeEdit={() => writerFlush.current()} onOpen={openPassage} /></section>}
           {level === EVALUATE_VIEW && <section className="plan-view check-story">
             <header className="plan-head"><h2>{t('Check my story')}</h2></header>

@@ -41,6 +41,7 @@ ToolKind = Literal[
     "agent-changes",
     "catch-up",
     "placeholders",
+    "setups",
     "history",
 ]
 # A tool opened in one session only, and not since this long ago, counts as tried and dropped.
