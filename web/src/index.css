@@ -1866,6 +1866,6 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 .backup-nudge-actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .backup-nudge-later { color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
 
-/* Plan access: lock / open lock beside a gated feature (components/FeatureLock.tsx). */
-.feature-lock { display: inline-flex; align-items: center; vertical-align: middle; margin-inline: 0.3em; color: var(--muted); opacity: 0.8; }
-.feature-lock.is-locked { color: var(--ink); opacity: 1; }
+/* Plan access: premium star beside a gated feature (components/FeatureLock.tsx); hollow = locked. */
+.feature-lock { display: inline-flex; align-items: center; vertical-align: middle; margin-inline: 0.3em; color: #c9a227; }
+.feature-lock.is-locked { color: var(--muted); }

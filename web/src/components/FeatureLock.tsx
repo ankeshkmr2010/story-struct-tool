@@ -12,7 +12,7 @@ export function useFeature(feature: string) {
   return useMyAccess().data?.features[feature] !== false
 }
 
-/** A small lock (not in the plan) or open lock (in the plan) beside a gated button. Shown only
+/** A premium star beside a gated button: hollow when the plan does not include it, filled when it does. Shown only
  * once plans are in use for this account: it has a tier, or something is locked for it. */
 export function FeatureLock({ feature, className = '' }: { feature: string; className?: string }) {
   const access = useMyAccess().data
@@ -20,11 +20,10 @@ export function FeatureLock({ feature, className = '' }: { feature: string; clas
   const locked = access.features[feature] === false
   const inUse = access.tiers.length > 0 || Object.values(access.features).some(on => !on)
   if (!inUse) return null
-  const label = locked ? t('Not included in your plan') : t('Included in your plan')
+  const label = locked ? t('Premium: not included in your plan') : t('Premium: included in your plan')
   return <span className={`feature-lock${locked ? ' is-locked' : ''} ${className}`} title={label} role="img" aria-label={label}>
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="5" y="11" width="14" height="10" rx="2" />
-      <path d={locked ? 'M8 11V7a4 4 0 0 1 8 0v4' : 'M8 11V7a4 4 0 0 1 7.5-2'} />
+    <svg width="12" height="12" viewBox="0 0 24 24" fill={locked ? 'none' : 'currentColor'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z" />
     </svg>
   </span>
 }
