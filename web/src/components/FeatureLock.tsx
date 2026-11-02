@@ -20,8 +20,9 @@ export function FeatureLock({ feature, className = '' }: { feature: string; clas
   const locked = access.features[feature] === false
   const inUse = access.tiers.length > 0 || Object.values(access.features).some(on => !on)
   if (!inUse) return null
-  const label = locked ? t('Premium: not included in your plan') : t('Premium: included in your plan')
-  return <span className={`feature-lock${locked ? ' is-locked' : ''} ${className}`} title={label} role="img" aria-label={label}>
+  const label = locked ? t('Premium feature: not included in your plan') : t('Premium: included in your plan')
+  // Hollow stars get a styled hover label (data-tip); filled ones keep the plain title.
+  return <span className={`feature-lock${locked ? ' is-locked' : ''} ${className}`} title={locked ? undefined : label} data-tip={locked ? label : undefined} role="img" aria-label={label}>
     <svg width="12" height="12" viewBox="0 0 24 24" fill={locked ? 'none' : 'currentColor'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z" />
     </svg>

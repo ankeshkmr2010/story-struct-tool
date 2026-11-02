@@ -1868,4 +1868,6 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 
 /* Plan access: premium star beside a gated feature (components/FeatureLock.tsx); hollow = locked. */
 .feature-lock { display: inline-flex; align-items: center; vertical-align: middle; margin-inline: 0.3em; color: #c9a227; }
-.feature-lock.is-locked { color: var(--muted); }
+.feature-lock.is-locked { color: var(--muted); position: relative; cursor: help; }
+.feature-lock.is-locked::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 60; padding: 6px 8px; border-radius: 6px; background: var(--ink); color: var(--page); font: 500 12px/1.2 var(--font-sans); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s; }
+.feature-lock.is-locked:hover::after { opacity: 1; }
