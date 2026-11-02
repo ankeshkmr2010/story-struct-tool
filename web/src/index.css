@@ -1871,3 +1871,6 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 .feature-lock.is-locked { color: var(--muted); position: relative; cursor: help; }
 .feature-lock.is-locked::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 60; padding: 6px 8px; border-radius: 6px; background: var(--ink); color: var(--page); font: 500 12px/1.2 var(--font-sans); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s; }
 .feature-lock.is-locked:hover::after { opacity: 1; }
+/* Check list (Check my story): star pinned to the row edge so names with a subtitle keep their layout. */
+.eval-check:has(.eval-check-star) { position: relative; padding-right: 2rem; }
+.eval-check .eval-check-star { position: absolute; top: 0.85rem; right: 0.6rem; margin: 0; }

@@ -508,7 +508,7 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
               onClick={() => setChosen(item.id)}
               className="eval-check"
             >
-              <span>{checkName(item.name, false)}<FeatureLock feature={`check.${item.id}`} /></span>{item.missing.length > 0 && <small>{t('Needs inputs')}</small>}
+              <span>{checkName(item.name, false)}</span><FeatureLock feature={`check.${item.id}`} className="eval-check-star" />{item.missing.length > 0 && <small>{t('Needs inputs')}</small>}
             </button>
           ))}
         </div>
