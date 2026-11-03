@@ -127,8 +127,8 @@ function renamePlan(from: string, to: string) {
 }
 
 /** GET /name-uses: where an old name still appears, with its replacement (same shape as the server). */
-export function sandboxNameUses(s: Sandbox, name: string, replacement: string) {
-  const plan = renamePlan(name, replacement)
+export function sandboxNameUses(s: Sandbox, name: string, replacement: string, includeParts = true) {
+  const plan = renamePlan(name, replacement).filter(([, , group]) => includeParts || group === 'full')
   const lookup = new Map(plan.map(([find, replace, group]) => [find, { replace, group }]))
   const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const pattern = new RegExp(`(?<![\\p{L}\\p{N}])(?<![-\\u2010])(?:${plan.map(([find]) => escape(find)).join('|')})(?![-\\u2010]?[\\p{L}\\p{N}])`, 'gu')

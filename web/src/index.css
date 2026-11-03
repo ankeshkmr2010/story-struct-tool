@@ -1786,6 +1786,12 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 /* Usability phase 2, item 7: Write's tools in the bar. */
 .ws-write-tools { display: flex; align-items: center; gap: 4px; padding-right: 6px; border-right: 1px solid var(--line); }
 .ws-write-tools .ui-icon-btn { border-color: transparent; border-radius: 50%; }
+@media (max-width: 700px) {
+  .ws-bar-actions { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; gap: 6px; margin-left: 0; }
+  .ws-write-tools { flex: 1 1 auto; }
+  .ws-bar-actions .share-story-button { padding-inline: 8px; }
+  .ws-title > span { white-space: normal; }
+}
 .ws-tk-glyph { font-size: 10px; font-weight: 700; letter-spacing: .04em; }
 
 /* Usability phase 3, item 9: first-hour checklist on the Library. */

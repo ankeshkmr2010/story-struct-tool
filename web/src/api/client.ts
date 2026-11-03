@@ -423,7 +423,7 @@ export const api = {
     request<void>(`/api/stories/${storyId}/beats/${beatId}`, { method: 'DELETE' }),
 
   listThreads: (id: string) => request<Thread[]>(`/api/stories/${id}/threads`).then(orderScenes),
-  readCraftScenes: (storyId: string) => post<CraftReading>(`/api/stories/${storyId}/evaluations/scene-reader`),
+  readCraftScenes: (storyId: string, checkId?: string) => post<CraftReading>(`/api/stories/${storyId}/evaluations/${checkId ? `${encodeURIComponent(checkId)}/` : ''}scene-reader`),
   verifyCraftScenes: (storyId: string, check: string, body: { connection_id: string; scene_ids: string[]; base_fingerprint: string; thread_ids: string[]; character_ids: string[] }) => post<EvaluationReport>(`/api/stories/${storyId}/evaluations/${check}/reader-verify`, body),
   listEvaluators: (id: string) => request<Evaluator[]>(`/api/stories/${id}/evaluations`),
   runEvaluator: (id: string, evaluatorId: string) => request<Evaluation>(`/api/stories/${id}/evaluations/${evaluatorId}`),
@@ -508,7 +508,7 @@ export const api = {
 
   mergePreview: (storyId: string, characterId: string, intoId: string) => request<S['MergePreview']>(`/api/stories/${storyId}/characters/${characterId}/merge-preview?${new URLSearchParams({ into_id: intoId })}`),
   mergeCharacter: (storyId: string, characterId: string, intoId: string) => request<S['MergePreview']>(`/api/stories/${storyId}/characters/${characterId}/merge`, { method: 'POST', body: JSON.stringify({ into_id: intoId }) }),
-  nameUses: (storyId: string, name: string, replacement: string) => request<S['NameUsesOut']>(`/api/stories/${storyId}/name-uses?${new URLSearchParams({ name, replacement })}`),
+  nameUses: (storyId: string, name: string, replacement: string, includeParts = true) => request<S['NameUsesOut']>(`/api/stories/${storyId}/name-uses?${new URLSearchParams({ name, replacement, include_parts: String(includeParts) })}`),
   listRevisions: (storyId: string, sceneId: string) =>
     request<SceneRevision[]>(`/api/stories/${storyId}/scenes/${sceneId}/revisions`),
   snapshot: (storyId: string, sceneId: string, label?: string) =>

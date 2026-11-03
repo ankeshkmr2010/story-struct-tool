@@ -54,8 +54,10 @@ def replacement_plan(old: str, new: str) -> list[tuple[str, str, str]]:
     return sorted(variants, key=lambda item: -len(item[0]))
 
 
-def name_uses(g: StoryGraph, old: str, new: str) -> list[dict]:
+def name_uses(g: StoryGraph, old: str, new: str, *, include_parts: bool = True) -> list[dict]:
     plan = replacement_plan(old, new)
+    if not include_parts:
+        plan = [item for item in plan if item[2] == "full"]
     if not plan:
         return []
     lookup = {find: (replace, group) for find, replace, group in plan}
@@ -101,7 +103,12 @@ class RenameController(Controller):
 
     @get(summary="Where an old name still appears in the prose, with its replacement")
     async def uses(
-        self, db_session: AsyncSession, story_id: UUID, name: str, replacement: str
+        self,
+        db_session: AsyncSession,
+        story_id: UUID,
+        name: str,
+        replacement: str,
+        include_parts: bool = True,
     ) -> NameUsesOut:
         if not name.strip() or not replacement.strip():
             raise ClientException(detail="Both the old and the new name are needed")
@@ -111,5 +118,8 @@ class RenameController(Controller):
         return NameUsesOut(
             name=name,
             replacement=replacement,
-            uses=[NameUseOut(**use) for use in name_uses(graph, name, replacement)],
+            uses=[
+                NameUseOut(**use)
+                for use in name_uses(graph, name, replacement, include_parts=include_parts)
+            ],
         )

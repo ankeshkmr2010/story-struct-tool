@@ -244,15 +244,24 @@ class EvaluationController(Controller):
             visual=result.visual,
         )
 
-    @post("/scene-reader", summary="Read cached scene evidence for craft checks")
+    @post(
+        ["/scene-reader", "/{evaluator_id:str}/scene-reader"],
+        summary="Read cached scene evidence for craft checks",
+    )
     async def scene_reader(
-        self, request: Request, db_session: AsyncSession, story_id: UUID
+        self,
+        request: Request,
+        db_session: AsyncSession,
+        story_id: UUID,
+        evaluator_id: str | None = None,
     ) -> "CraftReading":
         from storytool.config import get_settings
         from storytool.domain.decisions.providers import shared_provider
         from storytool.domain.decisions.service import Actor, DecisionService
-        from storytool.domain.evaluation.scene_reader import SceneInput, read_scenes
+        from storytool.domain.evaluation.scene_reader import CHECKS, SceneInput, read_scenes
 
+        if evaluator_id is not None and evaluator_id not in CHECKS:
+            raise NotFoundException(detail="Unknown scene-reader check")
         settings = get_settings()
         if not settings.shared_reader_available:
             raise ClientException(detail="The site-provided scene reader is not configured yet")
@@ -305,6 +314,15 @@ class EvaluationController(Controller):
         )
         result.base_fingerprint = base
         result.stale = fingerprint(await snapshot(db_session, story_id)) != base
+        if evaluator_id is not None:
+            result.findings = [f for f in result.findings if f.check == evaluator_id]
+            result.check_missing = {
+                key: value for key, value in result.check_missing.items() if key == evaluator_id
+            }
+            if evaluator_id not in {"mice_nesting", "setups_payoffs"}:
+                result.spans = []
+            if evaluator_id != "misbelief_midpoint":
+                result.curves = []
         return result
 
     @post(

@@ -40,7 +40,7 @@ function toDraft(row: WritingValidator): Draft {
 }
 
 function toDefinition(d: Draft, preview = false): ValidatorDefinition {
-  let instructions = d.question.trim()
+  let instructions = d.goal === 'problem' ? d.question.trim() : ''
   if (d.goal === 'count') instructions = `Are there more than ${d.limit} named characters meeting this criterion? ${d.countCriteria}`
   if (d.goal === 'comparison') instructions = `Compare ${d.first} with ${d.second}. Does this mismatch occur: ${d.relationship}?`
   const type = d.goal === 'problem' ? d.type : 'noul'
@@ -120,7 +120,7 @@ export default function WritingChecks() {
   const openForm = (row: WritingValidator | null, template?: typeof templates[number], discard = false) => {
     if (busy || (dirty && !discard && !window.confirm(t('Discard unsaved changes to this check?')))) return
     setConfirmReset(false)
-    const next = row ? toDraft(row) : { ...blankDraft(), ...template }
+    const next = row ? toDraft(row) : { ...blankDraft(), ...Object.fromEntries(Object.entries(template ?? {}).filter(([, value]) => value !== undefined)) }
     setSelected(row); setDraft(next); setBaseline(JSON.stringify(row || !template ? next : blankDraft())); setMessage(''); save.reset(); change.reset(); latest.reset(); preview.reset()
     window.requestAnimationFrame(() => document.getElementById('check-name')?.focus())
   }

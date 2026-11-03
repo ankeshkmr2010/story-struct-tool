@@ -121,13 +121,13 @@ export function ChapterBriefCard({ brief }: { brief: ChapterBrief }) {
               {t('{0} scene{1}', brief.scenes.length, brief.scenes.length === 1 ? '' : t('s'))}
               {brief.placeholder_scene_count > 0 && (
                 <span className="text-slate-500 dark:text-slate-400">
-                  {t('{0}· {1} placeholder{2}', ' ', brief.placeholder_scene_count, brief.placeholder_scene_count === 1 ? '' : t('s'))}
+                  {t(' · {0} with incomplete structure', brief.placeholder_scene_count)}
                 </span>
               )}
               <ul className="mt-1.5 space-y-0.5">
                 {brief.scenes.map((scene) => (
                   <li key={scene.scene_id} className="flex items-center gap-2 text-xs">
-                    <span className={scene.is_complete ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'}>
+                    <span title={scene.is_complete ? t('Structure complete') : t('Structure incomplete')} aria-label={scene.is_complete ? t('Structure complete') : t('Structure incomplete')} className={scene.is_complete ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'}>
                       {scene.is_complete ? '✓' : '○'}
                     </span>
                     <span className="text-slate-700 dark:text-slate-200">{scene.title ?? t('untitled')}</span>

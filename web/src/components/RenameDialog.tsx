@@ -16,18 +16,19 @@ import { t } from '../i18n'
 export function RenameDialog({ storyId, beforeEdit }: { storyId: string; beforeEdit: () => Promise<boolean> }) {
   const qc = useQueryClient()
   const [rename, setRename] = useState<Rename | null>(null)
-  const [skipped, setSkipped] = useState<Set<number>>(new Set())
+  const [selection, setSelection] = useState<Record<number, boolean>>({})
   const [keepAlias, setKeepAlias] = useState(false)
   useEffect(() => {
-    const offer = (event: Event) => { setRename((event as CustomEvent<Rename>).detail); setSkipped(new Set()); setKeepAlias(false) }
+    const offer = (event: Event) => { setRename((event as CustomEvent<Rename>).detail); setSelection({}); setKeepAlias(false) }
     window.addEventListener(OFFER_RENAME_EVENT, offer)
     return () => window.removeEventListener(OFFER_RENAME_EVENT, offer)
   }, [])
-  const uses = useQuery({ queryKey: ['name-uses', storyId, rename?.from, rename?.to], queryFn: () => api.nameUses(storyId, rename!.from, rename!.to), enabled: rename !== null, staleTime: 0 })
+  const uses = useQuery({ queryKey: ['name-uses', storyId, rename?.kind, rename?.from, rename?.to], queryFn: () => api.nameUses(storyId, rename!.from, rename!.to, rename!.kind !== 'glossary_entry'), enabled: rename !== null, staleTime: 0 })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId), enabled: rename !== null })
   const list = uses.data?.uses ?? []
   const groups = [...new Set(list.map(use => `${use.passage.find} → ${use.replacement}`))]
-  const kept = list.filter((_, index) => !skipped.has(index))
+  const isSelected = (index: number) => selection[index] ?? list[index].group === 'full'
+  const kept = list.filter((_, index) => isSelected(index))
 
   const apply = useMutation({
     mutationFn: async () => {
@@ -48,20 +49,20 @@ export function RenameDialog({ storyId, beforeEdit }: { storyId: string; beforeE
 
   const open = rename !== null && (uses.isPending || uses.isError || list.length > 0)
   const close = () => { if (!apply.isPending) setRename(null) }
-  const toggle = (indexes: number[], on: boolean) => setSkipped(current => { const next = new Set(current); for (const index of indexes) { if (on) next.delete(index); else next.add(index) } return next })
+  const toggle = (indexes: number[], on: boolean) => setSelection(current => ({ ...current, ...Object.fromEntries(indexes.map(index => [index, on])) }))
   const title = (sceneId: string) => scenes.data?.find(scene => scene.id === sceneId)?.title || t('Untitled scene')
 
   return <Dialog open={open} onClose={close} title={rename ? t('Update the prose: {0} → {1}', rename.from, rename.to) : t('Update the prose')} className="rename-dialog">
     {uses.isPending ? <p className="writer-help">{t('Looking for “{0}” in the prose…', rename?.from)}</p>
       : uses.isError ? <p role="alert">{errorText(uses.error)}</p>
       : rename && <>
-        <p className="writer-help">{t('The {0} is renamed. “{1}” still appears {2} {3} in {4} {5}. Untick any to leave as written; each changed scene is snapshotted first.', rename.kind === 'character' ? t('character') : rename.kind === 'location' ? t('place') : t('glossary term'), rename.from, list.length, list.length === 1 ? t('time') : t('times'), new Set(list.map(use => use.passage.scene_id)).size, new Set(list.map(use => use.passage.scene_id)).size === 1 ? t('scene') : t('scenes'))}</p>
+        <p className="writer-help">{t('The {0} is renamed. Review {2} possible replacements in {4} {5}. Complete names start selected; words on their own need your selection. Each changed scene is snapshotted first.', rename.kind === 'character' ? t('character') : rename.kind === 'location' ? t('place') : t('glossary term'), rename.from, list.length, list.length === 1 ? t('time') : t('times'), new Set(list.map(use => use.passage.scene_id)).size, new Set(list.map(use => use.passage.scene_id)).size === 1 ? t('scene') : t('scenes'))}</p>
         {groups.map(group => {
           const indexes = list.flatMap((use, index) => `${use.passage.find} → ${use.replacement}` === group ? [index] : [])
-          const all = indexes.every(index => !skipped.has(index))
+          const all = indexes.every(index => isSelected(index))
           return <section key={group} className="rename-group">
             <label className="rename-group-head"><input type="checkbox" checked={all} onChange={event => toggle(indexes, event.target.checked)} /> <strong>{group}</strong> <span>({indexes.length}{list[indexes[0]].group === 'part' ? t(', on its own') : ''})</span></label>
-            <ul>{indexes.map(index => <li key={index}><label><input type="checkbox" checked={!skipped.has(index)} onChange={event => toggle([index], event.target.checked)} /> <span className="rename-scene">{title(list[index].passage.scene_id)}</span> {list[index].passage.excerpt}</label></li>)}</ul>
+            <ul>{indexes.map(index => <li key={index}><label><input type="checkbox" checked={isSelected(index)} onChange={event => toggle([index], event.target.checked)} /> <span className="rename-scene">{title(list[index].passage.scene_id)}</span> {list[index].passage.excerpt}</label></li>)}</ul>
           </section>
         })}
         {rename.kind !== 'location' && <label className="rename-alias"><input type="checkbox" checked={keepAlias} onChange={event => setKeepAlias(event.target.checked)} />{' '}{t('Keep “{0}” as an alias{1}', rename.from, rename.kind === 'character' ? t(' (some characters may still call them that)') : '')}</label>}

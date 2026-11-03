@@ -10,7 +10,7 @@ import { serverText } from '../i18n/server'
 import { CraftTerm, craftPlain } from './CraftTerm'
 import { DialogueSpeakers } from './DialogueSpeakers'
 import { isLocalStory } from '../sandbox/storage'
-import { FeatureLock } from './FeatureLock'
+import { FeatureLock, useMyAccess } from './FeatureLock'
 
 /**
  * Evaluate: on-demand craft checks, separate from the live health findings. Pick an
@@ -396,11 +396,14 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
   const evaluators = useQuery({ queryKey: ['evaluators', storyId], queryFn: () => api.listEvaluators(storyId) })
   const scenes = useQuery({ queryKey: ['scenes', storyId], queryFn: () => api.listScenes(storyId) })
   const noticer = useQuery({ queryKey: ['noticer'], queryFn: api.noticerInfo })
-  const reader = useMutation({ mutationFn: () => api.readCraftScenes(storyId) })
+  const access = useMyAccess()
+  const allows = (key: string) => access.data?.features[key] !== false
+  const reader = useMutation({ mutationFn: (checkId?: string) => api.readCraftScenes(storyId, checkId) })
   const [chosen, setChosen] = useState<string | null>(null)
   const [results, setResults] = useState<Record<string, Evaluation>>({})
   const overview = !chosen
   const selected = overview ? undefined : evaluators.data?.find((item) => item.id === chosen) ?? evaluators.data?.[0]
+  const reading = reader.variables === undefined || reader.variables === selected?.id ? reader.data : undefined
   const run = useMutation({ mutationFn: (id: string) => api.runEvaluator(storyId, id), onSuccess: (result) => setResults((current) => ({ ...current, [result.evaluator_id]: result })) })
   // Dialogue voice: the shared reader names speakers of untagged lines and double-checks pairs.
   const refineVoice = useMutation({ mutationFn: () => api.refineDialogueVoice(storyId), onSuccess: (result) => setResults((current) => ({ ...current, [result.evaluator_id]: result })) })
@@ -409,10 +412,10 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
   // Run all: every ready outline check, plus one shared-reader pass that serves all prose checks.
   const runAll = useMutation({
     mutationFn: async () => {
-      const ready = (evaluators.data ?? []).filter((item) => item.kind === 'deterministic' && item.ready)
+      const ready = (evaluators.data ?? []).filter((item) => item.kind === 'deterministic' && item.ready && allows(`check.${item.id}`))
       const [outline] = await Promise.all([
         Promise.all(ready.map((item) => api.runEvaluator(storyId, item.id))),
-        noticer.data?.shared ? reader.mutateAsync().catch(() => null) : null,
+        noticer.data?.shared && allows('shared_reader') && READER_CHECKS.every(id => allows(`check.${id}`)) ? reader.mutateAsync(undefined).catch(() => null) : null,
       ])
       setResults(Object.fromEntries(outline.map((result) => [result.evaluator_id, result])))
     },
@@ -513,7 +516,10 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
           ))}
         </div>
         <div className="eval-main">
-        {overview && <EvaluationOverview evaluators={evaluators.data} results={results} reading={reader.data} readerShared={!!noticer.data?.shared} running={runAll.isPending} onRunAll={() => runAll.mutate()} onOpen={setChosen} error={runAll.error ?? reader.error} />}
+        {overview && <>
+          {evaluators.data?.some(item => !allows(`check.${item.id}`)) && <p className="writer-help">{t('Run all skips checks outside your plan. Run included prose checks individually when the full shared-reader batch is unavailable.')}</p>}
+          <EvaluationOverview evaluators={evaluators.data} results={results} reading={reader.variables === undefined ? reader.data : undefined} readerShared={!!noticer.data?.shared} running={runAll.isPending} onRunAll={() => runAll.mutate()} onOpen={setChosen} error={runAll.error ?? reader.error} />
+        </>}
         {selected && <>
         <section className="space-y-4 rounded-lg border border-slate-200 p-5 dark:border-slate-700">
           <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{selected.description}</p>
@@ -526,27 +532,28 @@ export function StoryEvaluation({ storyId, beforeEdit = async () => true, onOpen
           )}
           {selected.id === 'mice_nesting' && <MiceInputs storyId={storyId} onOpenInbox={onOpenInbox} />}
           {(selected.id === 'value_shift' || selected.id === 'misbelief_midpoint') && <ReviewInputs key={selected.id} storyId={storyId} evaluatorId={selected.id} ready={selected.ready} onOpenInbox={onOpenInbox} />}
-          {usesReader && <><p className="writer-help">{t('Run reads saved scene prose with the shared reader; no personal AI key is needed. Outline inputs below remain useful for deeper reviews.')}</p><button type="button" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950" disabled={reader.isPending || !noticer.data?.shared || !scenes.data?.some(scene => scene.word_count > 0)} onClick={() => reader.mutate()}>{reader.isPending ? t('Reading scene evidence…') : reader.data ? t('Run again') : t('Run')}<FeatureLock feature="shared_reader" /></button></>}
+          {usesReader && <><p className="writer-help">{t('Run reads saved scene prose with the shared reader; no personal AI key is needed. Outline inputs below remain useful for deeper reviews.')}</p><button type="button" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950" disabled={reader.isPending || !allows('shared_reader') || !allows(`check.${selected.id}`) || !noticer.data?.shared || !scenes.data?.some(scene => scene.word_count > 0)} onClick={() => reader.mutate(selected.id)}>{reader.isPending ? t('Reading scene evidence…') : reading ? t('Run again') : t('Run')}<FeatureLock feature="shared_reader" requires={[`check.${selected.id}`]} /></button></>}
           {usesReader && !noticer.isPending && !noticer.data?.shared && <p className="writer-help">{t('The shared scene reader is not configured yet. Available outline checks and your own AI reviews remain below.')}</p>}
           {reader.error && <p role="alert">{errorText(reader.error)}</p>}
           {selected.kind === 'deterministic' && <button
             type="button"
-            disabled={!selected.ready || run.isPending}
+            disabled={!selected.ready || run.isPending || !allows(`check.${selected.id}`)}
             onClick={() => run.mutate(selected.id)}
             className={usesReader ? 'share-story-button' : 'rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-200 dark:text-slate-950'}
           >
             {run.isPending ? t('Running…') : usesReader ? t('Run outline-only check') : shown ? t('Run again') : t('Run')}
+            <FeatureLock feature={`check.${selected.id}`} />
           </button>}
           {run.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(run.error)}</p>}
           {selected.id === 'dialogue_voice' && noticer.data?.shared && <>
             <p className="writer-help">{t('The shared reader can name the speakers of lines without a speech tag and double-check each pair. It reads the scene text; no personal AI key is needed.')}</p>
-            <button type="button" className="share-story-button" disabled={!selected.ready || refineVoice.isPending} onClick={() => refineVoice.mutate()}>{refineVoice.isPending ? t('Reading…') : t('Run with the shared reader')}<FeatureLock feature="shared_reader" /></button>
+            <button type="button" className="share-story-button" disabled={!selected.ready || refineVoice.isPending || !allows('shared_reader') || !allows(`check.${selected.id}`)} onClick={() => refineVoice.mutate()}>{refineVoice.isPending ? t('Reading…') : t('Run with the shared reader')}<FeatureLock feature="shared_reader" requires={[`check.${selected.id}`]} /></button>
             {refineVoice.error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{errorText(refineVoice.error)}</p>}
           </>}
           {selected.id === 'dialogue_voice' && !isLocalStory(storyId) && <DialogueSpeakers storyId={storyId} shared={!!noticer.data?.shared} onOpenPassage={onOpenPassage} />}
         </section>
 
-        {reader.data && selected && usesReader && <SceneReaderResults key={selected.id} storyId={storyId} reading={reader.data} check={selected.id} onOpenPassage={onOpenPassage} onOpenScene={id => { const scene = scenes.data?.find(scene => scene.id === id); if (scene) onOpenScene({ id, chapter_id: scene.chapter_id ?? null }) }} />}
+        {reading && selected && usesReader && allows(`check.${selected.id}`) && <SceneReaderResults key={selected.id} storyId={storyId} reading={reading} check={selected.id} onOpenPassage={onOpenPassage} onOpenScene={id => { const scene = scenes.data?.find(scene => scene.id === id); if (scene) onOpenScene({ id, chapter_id: scene.chapter_id ?? null }) }} />}
         {shown && (
           <section className="space-y-4" aria-label={t('Results')}>
             <h3 className="text-lg font-semibold">{t('Results')}</h3>

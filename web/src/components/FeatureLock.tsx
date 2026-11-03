@@ -14,10 +14,10 @@ export function useFeature(feature: string) {
 
 /** A premium star beside a gated button: hollow when the plan does not include it, filled when it does. Shown only
  * once plans are in use for this account: it has a tier, or something is locked for it. */
-export function FeatureLock({ feature, className = '' }: { feature: string; className?: string }) {
+export function FeatureLock({ feature, requires = [], className = '' }: { feature: string; requires?: string[]; className?: string }) {
   const access = useMyAccess().data
   if (!access) return null
-  const locked = access.features[feature] === false
+  const locked = [feature, ...requires].some(key => access.features[key] === false)
   const inUse = access.tiers.length > 0 || Object.values(access.features).some(on => !on)
   if (!inUse) return null
   const label = locked ? t('Premium feature: not included in your plan') : t('Premium: included in your plan')

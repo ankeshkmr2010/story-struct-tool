@@ -120,7 +120,7 @@ export async function sandboxRequest(path: string, init?: RequestInit): Promise<
     if (collection === 'authorship') return s.edits.slice().reverse().map(edit => ({ entity_type: 'scene', entity_id: edit.scene_id, field: 'content', actor_label: 'You', origin: 'author', action: 'update', created_at: edit.created_at }))
     if (collection === 'ai' || collection === 'suggestions') return []
     if (collection === 'evaluations' && method === 'GET') return sandboxEvaluation(s, id)
-    if (collection === 'name-uses') return sandboxNameUses(s, url.searchParams.get('name') ?? '', url.searchParams.get('replacement') ?? '')
+    if (collection === 'name-uses') return sandboxNameUses(s, url.searchParams.get('name') ?? '', url.searchParams.get('replacement') ?? '', url.searchParams.get('include_parts') !== 'false')
     if (collection === 'locations' && id === 'usage') return rows(s, 'location').map(place => {
       const scenes = rows(s, 'scene').filter(scene => scene.location_id === place.id)
       const times = scenes.map(scene => scene.story_time_ordinal).filter((time): time is number => typeof time === 'number')

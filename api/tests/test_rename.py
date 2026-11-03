@@ -62,3 +62,15 @@ def test_nothing_to_do_for_blank_or_unchanged_names() -> None:
     assert replacement_plan("Maya", "Maya") == []
     assert replacement_plan("", "Kate") == []
     assert replacement_plan("Dr. Watson", "Dr. Holmes")[-1][0] != "Dr."
+
+
+def test_glossary_rename_does_not_offer_words_from_unrelated_place_names() -> None:
+    g = graph("Beacon Quay is quiet. Beacon watch arrived. BEACON WATCH left.")
+    uses = name_uses(g, "Beacon watch", "Harbour watch", include_parts=False)
+    assert [(u["passage"].find, u["replacement"], u["group"]) for u in uses] == [
+        ("Beacon watch", "Harbour watch", "full"),
+        ("BEACON WATCH", "HARBOUR WATCH", "full"),
+    ]
+    assert (
+        name_uses(graph("Beacon Quay"), "Beacon watch", "Harbour watch", include_parts=False) == []
+    )

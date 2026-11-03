@@ -1,5 +1,7 @@
 """Pure tests for access tiers: combining tiers and overrides, and which requests need what."""
 
+import pytest
+
 from storytool.domain.plans.catalogue import creates_story, feature_keys, features_for
 from storytool.domain.plans.service import TierData, _set_keys, combine, granting_tiers
 
@@ -56,6 +58,78 @@ def test_story_creating_requests() -> None:
     assert creates_story("POST", "/api/backups/import")
     assert not creates_story("POST", "/api/imports/docx/uploads")
     assert not creates_story("GET", "/api/stories")
+
+
+@pytest.mark.parametrize("delegated", [False, True])
+@pytest.mark.parametrize(
+    "suffix",
+    ["", "/shared-reader", "/scene-reader", "/ai-review", "/reader-verify", "/package", "/reports"],
+)
+def test_every_check_execution_path_requires_the_check(delegated: bool, suffix: str) -> None:
+    method = "GET" if suffix in {"", "/package", "/reports"} else "POST"
+    needed = features_for(method, S + "/evaluations/continuity" + suffix, delegated=delegated)
+    assert "check.continuity" in needed
+    assert ("mcp" in needed) == delegated
+    if suffix in {"/scene-reader", "/shared-reader"}:
+        assert "shared_reader" in needed
+
+
+def test_batch_reader_cannot_bypass_individual_check_locks() -> None:
+    from storytool.domain.evaluation.scene_reader import CHECKS
+
+    needed = features_for("POST", S + "/evaluations/scene-reader", delegated=True)
+    assert set(needed) == {"mcp", "shared_reader", *(f"check.{key}" for key in CHECKS)}
+
+
+@pytest.mark.parametrize("delegated", [False, True])
+async def test_locked_check_refused_before_execution(monkeypatch, delegated: bool) -> None:
+    from contextlib import asynccontextmanager
+    from types import SimpleNamespace
+
+    from storytool.domain.plans import middleware
+
+    class Session:
+        async def scalars(self, query):
+            return []
+
+    @asynccontextmanager
+    async def session():
+        yield Session()
+
+    async def restricted(db):
+        return {"check.continuity"}
+
+    async def access(db, user_id):
+        return combine([], {"check.continuity": False})
+
+    async def execution(scope, receive, send):
+        pytest.fail("Locked check reached execution/provider")
+
+    monkeypatch.setattr(middleware, "restricted_keys", restricted)
+    monkeypatch.setattr(middleware, "resolve", access)
+    guard = middleware.PlanAccessMiddleware(execution, SimpleNamespace(get_session=session))
+    messages = []
+
+    async def send(message):
+        messages.append(message)
+
+    for suffix in ["/continuity", "/continuity/scene-reader", "/scene-reader"]:
+        messages.clear()
+        await guard(
+            {
+                "type": "http",
+                "method": "GET" if suffix == "/continuity" else "POST",
+                "path": S + "/evaluations" + suffix,
+                "state": {
+                    "storytool_user_id": "qa",
+                    "storytool_write_origin": "mcp" if delegated else "browser",
+                },
+            },
+            None,
+            send,
+        )
+        assert messages[0]["status"] == 403
+        assert b'"feature": "check.continuity"' in messages[1]["body"]
 
 
 def test_restricted_keys_and_granting_tiers() -> None:

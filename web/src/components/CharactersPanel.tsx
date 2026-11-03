@@ -41,6 +41,7 @@ export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; o
   // Any change here can move readiness, health, and the suggestion engine.
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ['characters', storyId] })
+    void qc.invalidateQueries({ queryKey: ['dialogue', storyId] })
     void qc.invalidateQueries({ queryKey: ['ladder', storyId] })
     void qc.invalidateQueries({ queryKey: ['health', storyId] })
     void qc.invalidateQueries({ queryKey: ['suggestions', storyId] })

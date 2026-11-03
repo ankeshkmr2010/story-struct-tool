@@ -1914,6 +1914,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/evaluations/{evaluator_id}/scene-reader": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read cached scene evidence for craft checks */
+        post: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/dialogue": {
         parameters: {
             query?: never;
@@ -11651,6 +11668,44 @@ export interface operations {
             };
         };
     };
+    ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                evaluator_id: string | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CraftReading"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
     ApiStoriesStoryIdDialogueListDialogue: {
         parameters: {
             query?: {
@@ -12554,6 +12609,7 @@ export interface operations {
             query: {
                 name: string;
                 replacement: string;
+                include_parts?: boolean;
             };
             header?: never;
             path: {

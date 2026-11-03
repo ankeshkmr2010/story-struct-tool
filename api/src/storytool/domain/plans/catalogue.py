@@ -52,8 +52,12 @@ _ROUTES: tuple[tuple[str, frozenset[str], re.Pattern[str]], ...] = tuple(
     (feature, frozenset(methods.split()), re.compile(pattern))
     for feature, methods, pattern in (
         ("ai.assistant", "POST", _STORY + r"/ai/propose"),
-        ("ai.review", "POST", _STORY + r"/evaluations/[^/]+/ai-review"),
-        ("shared_reader", "POST", _STORY + r"/evaluations/(?:[^/]+/shared-reader|scene-reader)"),
+        ("ai.review", "POST", _STORY + r"/evaluations/[^/]+/(?:ai-review|reader-verify)"),
+        (
+            "shared_reader",
+            "POST",
+            _STORY + r"/evaluations/(?:[^/]+/(?:shared-reader|scene-reader)|scene-reader)",
+        ),
         ("beta_readers", "POST", r"/api/beta/manage/[0-9a-fA-F-]{36}/rounds"),
         ("sharing", "PUT", _STORY + r"/shares"),
         ("showcase", "PUT POST", _STORY + r"/showcase(?:/rotate)?"),
@@ -64,7 +68,11 @@ _ROUTES: tuple[tuple[str, frozenset[str], re.Pattern[str]], ...] = tuple(
         ("dialogue_speakers", "POST", _STORY + r"/dialogue/(?:populate|speakers)"),
     )
 )
-_CHECK = re.compile(_STORY + r"/evaluations/([a-z0-9_]+)")
+_CHECK = re.compile(
+    _STORY
+    + r"/evaluations/([a-z0-9_]+)"
+    r"(?:/(?:ai-review|reader-verify|shared-reader|scene-reader|package|reports))?"
+)
 # Requests that create a story, for `stories.max`.
 _CREATES_STORY = re.compile(
     r"/api/stories|/api/backups/import|/api/imports/(?!uploads$)[a-z0-9]+"
@@ -104,10 +112,13 @@ def features_for(method: str, path: str, *, delegated: bool) -> list[str]:
         if method in methods and pattern.fullmatch(path):
             needed.append(feature)
             break
-    else:
-        check = _CHECK.fullmatch(path)
-        if method == "GET" and check:
-            needed.append(f"check.{check.group(1)}")
+    check = _CHECK.fullmatch(path)
+    if method in {"GET", "POST"} and check:
+        needed.append(f"check.{check.group(1).removeprefix('reader_')}")
+    if method == "POST" and path.endswith("/evaluations/scene-reader"):
+        from storytool.domain.evaluation.scene_reader import CHECKS
+
+        needed.extend(f"check.{key}" for key in sorted(CHECKS))
     return needed
 
 
