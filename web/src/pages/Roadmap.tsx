@@ -68,7 +68,7 @@ export default function Roadmap() {
       <div className="flex gap-3"><button type="submit" className="rounded bg-[var(--button)] px-4 py-2 text-sm text-[var(--button-ink)]">{save.isPending ? t('Saving…') : t('Save item')}</button><button type="button" onClick={cancel} className="text-sm underline">{t('Cancel')}</button>{editing !== 'new' && <button type="button" onClick={() => { if (editing && window.confirm(t('Delete {0} from the roadmap?', draft.title))) remove.mutate(editing) }} className="ml-auto text-sm text-red-700 underline dark:text-red-300">{t('Delete')}</button>}</div>
     </fieldset>
   </form>
-  // Audit release a7c2d5e9b304 records the fixes and moves shipped prose links to Delivered.
+  // Release b8d3e6f0c415 records persistent library access to manuscript import prompts.
   // Keep the timeline database-backed so admins can continue editing these entries.
   const items = roadmap.data ?? []
   const upcoming = items.filter(item => item.status !== 'delivered')

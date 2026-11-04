@@ -21,6 +21,7 @@ from storytool.domain.story.authorship import FieldAuthorship
 from storytool.domain.story.models import Story
 from storytool.domain.story.schemas import StoryCreate, StoryOut, StoryPurge, StoryUpdate
 from storytool.domain.story.services import StoryService
+from storytool.domain.story.story_import import ADAPTERS
 
 
 async def provide_stories(db_session: AsyncSession) -> AsyncGenerator[StoryService, None]:
@@ -59,13 +60,19 @@ class StoryController(Controller):
                 .group_by(Scene.story_id)
             )
             words = {story_id: int(total) for story_id, total in rows.all()}
-            imported_ids = set(await db_session.scalars(
-                select(FieldAuthorship.story_id).where(
-                    FieldAuthorship.story_id.in_([record.id for record in records]),
-                    FieldAuthorship.origin == "import",
-                    FieldAuthorship.actor_label == "Imported Word prose",
-                ).distinct()
-            ))
+            imported_ids = set(
+                await db_session.scalars(
+                    select(FieldAuthorship.story_id)
+                    .where(
+                        FieldAuthorship.story_id.in_([record.id for record in records]),
+                        FieldAuthorship.origin == "import",
+                        FieldAuthorship.actor_label.in_(
+                            [f"Imported {adapter.label}" for adapter in ADAPTERS.values()]
+                        ),
+                    )
+                    .distinct()
+                )
+            )
         return [
             StoryOut.model_validate(record).model_copy(
                 update={
