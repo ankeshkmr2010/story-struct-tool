@@ -3525,5 +3525,12 @@
  "What happens to them here?": "Que lui arrive-t-il ici ?",
  "Add a scene": "Ajouter une scène",
  "+ Add a scene…": "+ Ajouter une scène…",
- "Character arcs": "Arcs des personnages"
+ "Character arcs": "Arcs des personnages",
+ "Reading this after you save…": "Lecture après l’enregistrement…",
+ "Live design hints for Design fields you save": "Indices en direct pour les champs de Concevoir que vous enregistrez",
+ "About two seconds after you save a Design field, the shared reader reads that item and notes appear under the field. Your own checks set to Design fields run too. Nothing is changed.": "Environ deux secondes après l’enregistrement d’un champ de Concevoir, le lecteur partagé lit cet élément et les notes apparaissent sous le champ. Vos propres vérifications pour les champs de Concevoir s’exécutent aussi. Rien n’est modifié.",
+ "Design fields (Live design hints)": "Champs de Concevoir (indices de conception en direct)",
+ "Design levels to read (none ticked means all)": "Niveaux de Concevoir à lire (aucun coché signifie tous)",
+ "Runs about two seconds after you save a field on these levels, and shows under that field. It reads the item's fields, not your prose.": "S’exécute environ deux secondes après l’enregistrement d’un champ à ces niveaux et s’affiche sous ce champ. Lit les champs de l’élément, pas votre prose.",
+ "Scene cards": "Fiches de scène"
 }

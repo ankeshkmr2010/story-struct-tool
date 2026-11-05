@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { DeleteButton, InlineText } from './fields'
+import { DesignHintItem } from './DesignHints'
 import { offerRename } from './rename'
 import { TeachEmpty } from './TeachEmpty'
 
@@ -92,8 +93,9 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
           const used = usageFor(location.id)
           return (
             <li key={location.id} id={`search-location-${location.id}`} className="py-2.5 scroll-mt-4">
+              <DesignHintItem storyId={storyId} level="location" id={location.id}>
               <div className="flex items-baseline gap-2">
-                <div className="min-w-0 flex-1"><InlineText value={location.name} placeholder={t('Place name')} onSave={async (name) => { await update.mutateAsync({ id: location.id, body: { name } }); offerRename({ kind: 'location', id: location.id, from: location.name, to: name ?? '' }) }} className="font-medium" /></div>
+                <div className="min-w-0 flex-1"><InlineText value={location.name} placeholder={t('Place name')} hint="name" onSave={async (name) => { await update.mutateAsync({ id: location.id, body: { name } }); offerRename({ kind: 'location', id: location.id, from: location.name, to: name ?? '' }) }} className="font-medium" /></div>
                 {used && used.scene_count > 0 ? (
                   <span className="text-xs text-slate-500 dark:text-slate-400">
                     {t('{0} scene{1}', used.scene_count, used.scene_count === 1 ? '' : t('s'))}
@@ -109,9 +111,10 @@ export function PlacesPanel({ storyId }: { storyId: string }) {
                 )}
                 <DeleteButton onConfirm={() => remove.mutate(location.id)} what="place" />
               </div>
-              <label className="mt-1 block text-[10px] uppercase text-slate-400">{t('Description')}<InlineText value={location.description} placeholder={t('Describe the place')} onSave={(description) => update.mutateAsync({ id: location.id, body: { description } })} multiline /></label>
+              <label className="mt-1 block text-[10px] uppercase text-slate-400">{t('Description')}<InlineText value={location.description} placeholder={t('Describe the place')} hint="description" onSave={(description) => update.mutateAsync({ id: location.id, body: { description } })} multiline /></label>
               <ReferenceImages storyId={storyId} entity="location" entityId={location.id} />
-              <label className="mt-1 block text-[10px] uppercase text-slate-400">{t('Atmosphere')}<InlineText value={location.atmosphere_notes} placeholder={t('What does it feel like?')} onSave={(atmosphere_notes) => update.mutateAsync({ id: location.id, body: { atmosphere_notes } })} multiline /></label>
+              <label className="mt-1 block text-[10px] uppercase text-slate-400">{t('Atmosphere')}<InlineText value={location.atmosphere_notes} placeholder={t('What does it feel like?')} hint="atmosphere_notes" onSave={(atmosphere_notes) => update.mutateAsync({ id: location.id, body: { atmosphere_notes } })} multiline /></label>
+              </DesignHintItem>
             </li>
           )
         })}

@@ -473,6 +473,8 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         Keep examples separate from advice; highlight defaults to contributing sentences.
         Trigger must match the question type. Advice is user-authored, never generated.
         Definitions start disabled unless enabled; enabled checks run in saved-story hints.
+        input_scope=design reads a saved Design item's fields instead of prose (Live design
+        hints); design_levels limits it to levels such as character or scene (empty = all).
         """
         return await call(ctx, "/validators", "POST", validator.model_dump(mode="json"))
 

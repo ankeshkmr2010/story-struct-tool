@@ -44,6 +44,7 @@ _FEATURES = (
     Feature("export.formatted", "Formatted export", "Export as Word, PDF, EPUB or HTML."),
     Feature("setups", "Setups and payoffs", "Mark setups and payoffs, and link them."),
     Feature("dialogue_speakers", "Dialogue speakers", "Fill in or set who speaks each line."),
+    Feature("design_hints", "Live design hints", "Notes on Design fields after you save them."),
 )
 _LIMITS = (Limit("stories.max", "Stories", "Active stories an account can own.", None),)
 
@@ -66,6 +67,7 @@ _ROUTES: tuple[tuple[str, frozenset[str], re.Pattern[str]], ...] = tuple(
         ("export.formatted", "GET", _STORY + r"/manuscript\.(?:docx|pdf|epub|html)"),
         ("setups", "POST", _STORY + r"/setups/(?:marks|links)"),
         ("dialogue_speakers", "POST", _STORY + r"/dialogue/(?:populate|speakers)"),
+        ("design_hints", "POST", _STORY + r"/design-hints"),
     )
 )
 _CHECK = re.compile(

@@ -3551,5 +3551,12 @@
  "What happens to them here?": "O que acontece com ele aqui?",
  "Add a scene": "Adicionar uma cena",
  "+ Add a scene…": "+ Adicionar uma cena…",
- "Character arcs": "Arcos de personagem"
+ "Character arcs": "Arcos de personagem",
+ "Reading this after you save…": "Será lido depois de salvar…",
+ "Live design hints for Design fields you save": "Dicas ao vivo para os campos de Planejar que você salva",
+ "About two seconds after you save a Design field, the shared reader reads that item and notes appear under the field. Your own checks set to Design fields run too. Nothing is changed.": "Cerca de dois segundos depois de salvar um campo de Planejar, o leitor compartilhado lê esse item e as notas aparecem abaixo do campo. Suas próprias verificações para campos de Planejar também rodam. Nada é alterado.",
+ "Design fields (Live design hints)": "Campos de Planejar (dicas de planejamento ao vivo)",
+ "Design levels to read (none ticked means all)": "Níveis de Planejar a ler (nenhum marcado significa todos)",
+ "Runs about two seconds after you save a field on these levels, and shows under that field. It reads the item's fields, not your prose.": "Roda cerca de dois segundos depois de salvar um campo nesses níveis e aparece abaixo desse campo. Lê os campos do item, não a sua prosa.",
+ "Scene cards": "Fichas de cena"
 }

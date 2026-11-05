@@ -47,7 +47,8 @@ class DecisionLabelIn(BaseModel):
             str,
             Field(
                 max_length=40,
-                pattern=r"^(?:hints-v[1-4]|craft-v[12]|hints-custom-v[12]-r[1-9]\d{0,9})$",
+                pattern=r"^(?:hints-v[1-4]|craft-v[12]|hints-custom-v[12]-r[1-9]\d{0,9}"
+                r"|design-v1|design-custom-v1-r[1-9]\d{0,9})$",
             ),
         ]
         | None
@@ -56,7 +57,10 @@ class DecisionLabelIn(BaseModel):
     @field_validator("check_code")
     @classmethod
     def known_check(cls, value: str) -> str:
-        if value not in CHECKS:
+        from storytool.domain.decisions.design_hints import CHECKS as DESIGN
+
+        design = {f"design.{c.key}" for checks in DESIGN.values() for c in checks}
+        if value not in CHECKS and value not in design:
             if not value.startswith("hint.custom."):
                 raise ValueError("Unknown feedback check")
             identifier = value.removeprefix("hint.custom.")
@@ -101,6 +105,7 @@ async def save_label(db: AsyncSession, actor: Actor, data: DecisionLabelIn) -> N
         if validator is None or data.rubric_version not in {
             f"hints-custom-v1-r{validator.version}",
             f"hints-custom-v2-r{validator.version}",
+            f"design-custom-v1-r{validator.version}",
         }:
             raise ClientException(
                 status_code=409,
@@ -122,7 +127,14 @@ async def save_label(db: AsyncSession, actor: Actor, data: DecisionLabelIn) -> N
             ),
         )
     row = rows[0]
-    family = "hints" if data.check_code.startswith("hint.") else "craft"
+    family = (
+        "design"
+        if data.check_code.startswith("design.")
+        or (data.rubric_version or "").startswith("design-")
+        else "hints"
+        if data.check_code.startswith("hint.")
+        else "craft"
+    )
     version = data.rubric_version or f"{family}-v1"
     if not version.startswith(family + "-"):
         raise ClientException(detail="Feedback rubric does not match this check")

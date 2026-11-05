@@ -72,7 +72,22 @@ class ValidatorDefinition(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     schema_version: Literal[1, 2] = 1
     name: str = Field(min_length=1, max_length=200)
-    input_scope: Literal["sentence", "paragraph", "scene"] = "paragraph"
+    input_scope: Literal["sentence", "paragraph", "scene", "design"] = "paragraph"
+    """`design` reads a saved Design item (Live design hints) instead of prose."""
+    design_levels: list[
+        Literal[
+            "story",
+            "character",
+            "act",
+            "beat",
+            "thread",
+            "chapter",
+            "scene",
+            "location",
+            "glossary_entry",
+        ]
+    ] = Field(default_factory=list, max_length=9)
+    """For `design` checks: the Design levels it reads; empty means every level."""
     question: Question
     trigger: Annotated[NoulTrigger | ChoiceTrigger | ScoreTrigger, Field(discriminator="type")]
     minimum_probability: Probability = 0.8
@@ -260,7 +275,10 @@ class ValidatorController(Controller):
         now = datetime.now(UTC)
         row = ValidatorOut(
             id=uuid5(NAMESPACE_URL, f"{user_id}:{digest}"),
-            definition=data.definition,
+            # A Design-field check previews on the sample as one whole passage.
+            definition=data.definition
+            if data.definition.input_scope != "design"
+            else data.definition.model_copy(update={"input_scope": "scene"}),
             enabled=True,
             version=1,
             definition_hash=digest,

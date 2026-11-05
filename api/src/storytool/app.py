@@ -21,6 +21,7 @@ from storytool.domain.cast.controller import (
 )
 from storytool.domain.cast.merge import CharacterMergeController
 from storytool.domain.decisions.beta_triage import BetaTriageController
+from storytool.domain.decisions.design_hints import DesignHintsController
 from storytool.domain.decisions.feedback import (
     DecisionCalibrationController,
     DecisionFeedbackController,
@@ -155,6 +156,7 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             EvaluationController,
             DialogueController,
             SetupController,
+            DesignHintsController,
             CharacterStateController,
             MyAccessController,
             AdminAccessController,

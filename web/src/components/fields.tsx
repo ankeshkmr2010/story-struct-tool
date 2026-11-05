@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { t } from '../i18n'
+import { useDesignHint } from './DesignHints'
 
 /**
  * Inline editing primitives.
@@ -39,14 +40,18 @@ export function InlineText({
   onSave,
   multiline = false,
   className = '',
+  hint,
 }: {
   value: string | null
   placeholder: string
   onSave: (value: string | null) => Promise<unknown> | void
   multiline?: boolean
   className?: string
+  /** The saved field's name, for Live design hints inside a DesignHintItem. */
+  hint?: string
 }) {
-  const { state, save } = useSaver(onSave)
+  const design = useDesignHint(hint)
+  const { state, save } = useSaver(async (next: string | null) => { await onSave(next); design?.saved() })
   const original = value ?? ''
   const field = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
   const focusedValue = useRef(original)
@@ -87,6 +92,7 @@ export function InlineText({
       {state === 'error' && (
         <span className="absolute -top-3 right-0 text-[10px] text-red-600 dark:text-red-300">{t('save failed')}</span>
       )}
+      {design?.notes}
     </span>
   )
 }
@@ -97,6 +103,7 @@ export function InlineSelect({
   onSave,
   placeholder = t('— not set —'),
   highlight = false,
+  hint,
 }: {
   value: string | null
   options: readonly (string | { value: string; label: string })[]
@@ -104,8 +111,11 @@ export function InlineSelect({
   placeholder?: string
   /** Draws attention when set, e.g. the protagonist among the cast. */
   highlight?: boolean
+  /** The saved field's name, for Live design hints inside a DesignHintItem. */
+  hint?: string
 }) {
-  const { state, save } = useSaver(onSave)
+  const design = useDesignHint(hint, false)
+  const { state, save } = useSaver(async (next: string | null) => { await onSave(next); design?.saved() })
   return (
     <span className="relative inline-block">
       <select

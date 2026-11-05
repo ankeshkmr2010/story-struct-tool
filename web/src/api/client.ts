@@ -10,6 +10,8 @@ import { t } from '../i18n'
 type S = components['schemas']
 
 export type Story = S['StoryOut']
+export type DesignHintReading = S['DesignHintReading']
+export type DesignHintLevel = S['DesignHintInput']['entity_type']
 export type StoryCreate = S['StoryCreate']
 export type StoryUpdate = S['StoryUpdate']
 export type GlossaryEntry = S['GlossaryOut']
@@ -224,6 +226,7 @@ export const api = {
   deleteValidator: (id: string, version: number) => request<{ deleted_id: string }>(`/api/validators/${id}?expected_version=${version}`, { method: 'DELETE' }),
   recordDecisionFeedback: (storyId: string, body: DecisionLabel) => post<void>(storyId === '00000000-0000-4000-8000-000000000001' ? '/api/site/try/hints/feedback' : '/api/decisions/feedback', body),
   decisionCalibration: () => request<S['CalibrationOut'][]>('/api/admin/decisions/calibration'),
+  designHints: (storyId: string, body: { entity_type: DesignHintLevel; entity_id: string; field: string }, signal: AbortSignal) => request<DesignHintReading>(`/api/stories/${storyId}/design-hints`, { method: 'POST', body: JSON.stringify(body), signal }),
   writingHints: (storyId: string, sceneId: string, content: string, knownNames: string[], signal: AbortSignal) => request<HintReading>(storyId === '00000000-0000-4000-8000-000000000001' ? '/api/site/try/hints' : `/api/stories/${storyId}/scenes/${sceneId}/hints`, { method: 'POST', body: JSON.stringify({ content, known_names: knownNames.slice(0, 255), known_names_complete: knownNames.length <= 255 }), signal }),
   imageLibrary: (id: string) => request<ImageLibrary>(`/api/stories/${id}/images`),
   setCover: (id: string, body: S['CoverIn']) => request<StoryImage | null>(`/api/stories/${id}/images/cover`, { method: 'PUT', body: JSON.stringify(body) }),

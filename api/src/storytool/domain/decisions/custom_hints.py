@@ -85,6 +85,7 @@ async def read_custom_hints(
     if not paragraphs:
         return [], [], []
     hints, messages, observations = [], [], []
+    rows = [row for row in rows if row.definition.input_scope != "design"]
     if len(rows) > 20:
         messages.append(
             "Only the first 20 enabled personal checks were included. Disable some to run others."

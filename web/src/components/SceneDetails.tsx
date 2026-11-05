@@ -3,6 +3,7 @@ import { api, type Scene } from '../api/client'
 import { OriginSummary } from './AuthorshipPanel'
 import { SceneDelete } from './SceneDelete'
 import { Chip, Field, InlineNumber, InlineSelect, InlineText } from './fields'
+import { DesignHintItem } from './DesignHints'
 
 
 
@@ -47,10 +48,10 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false, on
 
   const pov = <Field label={t('POV character')}><InlineSelect value={scene.pov_character_id} options={(characters.data ?? []).map((character) => ({ value: character.id, label: character.name }))} onSave={save('pov_character_id')} /></Field>
   const place = <Field label={t('Place')}><InlineSelect value={scene.location_id} options={(locations.data ?? []).map((location) => ({ value: location.id, label: location.name }))} onSave={save('location_id')} /></Field>
-  const summary = <Field label={t('Summary')}><InlineText value={scene.summary} placeholder={t('What happens?')} onSave={save('summary')} multiline /></Field>
-  const goal = <Field label={t('Goal')}><InlineText value={scene.goal} placeholder={t('What does the POV character want?')} onSave={save('goal')} multiline /></Field>
-  const valueFrom = <Field label={<CraftTerm id="value_from" />}><InlineText value={scene.emotional_value_from} placeholder={t('from')} onSave={save('emotional_value_from')} /></Field>
-  const valueTo = <Field label={<CraftTerm id="value_to" />}><InlineText value={scene.emotional_value_to} placeholder={t('to')} onSave={save('emotional_value_to')} /></Field>
+  const summary = <Field label={t('Summary')}><InlineText value={scene.summary} placeholder={t('What happens?')} hint="summary" onSave={save('summary')} multiline /></Field>
+  const goal = <Field label={t('Goal')}><InlineText value={scene.goal} placeholder={t('What does the POV character want?')} hint="goal" onSave={save('goal')} multiline /></Field>
+  const valueFrom = <Field label={<CraftTerm id="value_from" />}><InlineText value={scene.emotional_value_from} placeholder={t('from')} hint="emotional_value_from" onSave={save('emotional_value_from')} /></Field>
+  const valueTo = <Field label={<CraftTerm id="value_to" />}><InlineText value={scene.emotional_value_to} placeholder={t('to')} hint="emotional_value_to" onSave={save('emotional_value_to')} /></Field>
 
   // Write's Context: where this scene sits in each linked arc, and the threads it advances.
   const arcCards = essentials ? (arcs.data ?? []).flatMap((arc, index) => {
@@ -63,7 +64,7 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false, on
   const linkedThreads = essentials ? (threads.data ?? []).filter((thread) => links.data?.thread_ids.includes(thread.id)) : []
 
   return (
-    <div>{essentials && <section className="scene-essentials" aria-label={t('Scene essentials')}>
+    <DesignHintItem storyId={storyId} level="scene" id={scene.id}><div>{essentials && <section className="scene-essentials" aria-label={t('Scene essentials')}>
       {summary}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{pov}{place}</div>
       {goal}
@@ -80,22 +81,22 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false, on
       </div>
       <ReferenceImages storyId={storyId} entity="scene" entityId={scene.id} hideGallery />
       <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <Field label={t('Title')}><InlineText value={scene.title} placeholder={t('Scene title')} onSave={save('title')} /></Field>
+        <Field label={t('Title')}><InlineText value={scene.title} placeholder={t('Scene title')} hint="title" onSave={save('title')} /></Field>
         <Field label={t('Chapter')}><InlineSelect value={scene.chapter_id} options={(chapters.data ?? []).map((chapter) => ({ value: chapter.id, label: `${chapter.number}. ${chapter.title ?? t('Untitled')}` }))} onSave={save('chapter_id')} /></Field>
         <Field label={t('Type')}><InlineSelect value={scene.type} options={['scene', 'sequel']} onSave={save('type')} /></Field>
         <Field label={t('Draft status')}><InlineSelect value={shownStatus(scene, detailed)} options={(detailed ? DETAILED : SIMPLE).map(value => ({ value, label: statusName(value) }))} onSave={value => save('status')(value ? storedStatus(String(value), scene) : value)} /></Field>
         {!essentials && <>{pov}{place}</>}
         <Field label={t('Story time')}><InlineNumber value={scene.story_time_ordinal} onSave={save('story_time_ordinal')} /></Field>
-        <Field label={t('Time label')}><InlineText value={scene.time_label} placeholder={t('e.g. next morning')} onSave={save('time_label')} /></Field>
+        <Field label={t('Time label')}><InlineText value={scene.time_label} placeholder={t('e.g. next morning')} hint="time_label" onSave={save('time_label')} /></Field>
         <Field label={t('Flashback')}><InlineSelect value={String(scene.is_flashback)} options={[{ value: 'true', label: t('Yes') }, { value: 'false', label: t('No') }]} onSave={(v) => update.mutateAsync({ is_flashback: v === 'true' })} /></Field>
       </div>
       <div className="mt-2 space-y-2">
         <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">{t('The completeness badge follows your filled details. Choose Draft status yourself: placeholder → outlined → drafted → revised.')}</p>
         {!essentials && <>{summary}{goal}</>}
-        <Field label={t('Conflict')}><InlineText value={scene.conflict} placeholder={t('What opposes them?')} onSave={save('conflict')} multiline /></Field>
+        <Field label={t('Conflict')}><InlineText value={scene.conflict} placeholder={t('What opposes them?')} hint="conflict" onSave={save('conflict')} multiline /></Field>
         <OriginSummary storyId={storyId} entityId={scene.id} entityType="scene" />
-        <Field label={t('Private scene notes')}><InlineText value={scene.notes} placeholder={t('Notes belong here; summary describes the scene')} onSave={save('notes')} multiline /></Field>
-        <Field label={t('Outcome')}><InlineText value={scene.outcome} placeholder={t('What changes?')} onSave={save('outcome')} multiline /></Field>
+        <Field label={t('Private scene notes')}><InlineText value={scene.notes} placeholder={t('Notes belong here; summary describes the scene')} hint="notes" onSave={save('notes')} multiline /></Field>
+        <Field label={t('Outcome')}><InlineText value={scene.outcome} placeholder={t('What changes?')} hint="outcome" onSave={save('outcome')} multiline /></Field>
       </div>
       {!essentials && <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">{valueFrom}{valueTo}</div>}
       <div className="mt-4 space-y-3 border-t border-slate-100 dark:border-slate-800 pt-3">
@@ -104,7 +105,7 @@ export function SceneDetails({ storyId, scene, onDeleted, essentials = false, on
         {stages.length > 0 && <div><h4 className="field-label"><CraftTerm id="arc_stage" label={t('Steps in a character’s change')} /></h4><div className="mt-1 flex flex-wrap gap-2">{stages.map((stage) => <label key={stage.id} className="text-xs"><input type="checkbox" checked={links.data?.arc_stage_ids.includes(stage.id) ?? false} onChange={(event) => toggle.mutate({ kind: 'stage', id: stage.id, checked: event.target.checked })} /> {stage.owner}: {stage.label}</label>)}</div></div>}
       </div>
       </div>
-    </details></div>
+    </details></div></DesignHintItem>
   )
 }
 import { ReferenceImages, SceneImages } from './StoryImages'

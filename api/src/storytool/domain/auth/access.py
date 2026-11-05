@@ -530,6 +530,7 @@ class StoryAccessMiddleware:
                             "/scene-reader",
                             "/reader-verify",
                             "/hints",
+                            "/design-hints",
                         )
                     )
                 ):

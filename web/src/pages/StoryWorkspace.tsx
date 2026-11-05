@@ -16,6 +16,8 @@ import { OPEN_FEEDBACK_EVENT } from '../components/readerComments'
 import { CharactersPanel } from '../components/CharactersPanel'
 import { ActsPanel, BeatsPanel, EventsPanel, ThreadsPanel } from '../components/StructurePanels'
 import { AddForm, Chip, DeleteButton, InlineNumber, InlineSelect, InlineText } from '../components/fields'
+import { DesignHintItem, setDesignHintsOn, useDesignHintsOn } from '../components/DesignHints'
+import { FeatureLock } from '../components/FeatureLock'
 import { SceneDetails } from '../components/SceneDetails'
 import { StoryTimeline } from '../components/StoryTimeline'
 import { AuthoringAssistant } from '../components/AuthoringAssistant'
@@ -218,7 +220,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
   const [searchParams] = useSearchParams()
   const handledSearchTarget = useRef('')
   const navigate = useNavigate()
-  const panelTabs = REF_PANELS.map(([key, label]): [RefPanel, string] => [key, t(label)]).filter(([key]) => key === 'context' || key === 'hints' || key === 'cast' ? tab === 'write' : key === 'placeholders' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' || key === 'feedback' ? !sandbox : true)
+  const panelTabs = REF_PANELS.map(([key, label]): [RefPanel, string] => [key, t(label)]).filter(([key]) => key === 'hints' ? tab === 'write' || (tab === 'design' && !sandbox) : key === 'context' || key === 'cast' ? tab === 'write' : key === 'placeholders' ? tab === 'write' : key === 'insights' ? tab === 'design' && !sandbox : key === 'assistant' || key === 'feedback' ? !sandbox : true)
   const modePanel: RefPanel | null = tab === 'write' ? 'context' : tab === 'design' && !sandbox ? 'insights' : null
   const preferredPanel = panelTabs.some(([key]) => key === refPanel) ? refPanel : modePanel
   const activePanel = panelHidden ? null : preferredPanel
@@ -241,6 +243,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
   const hasPanel = Boolean(activePanel) || Boolean(beside)
   const [writerFocus, setWriterFocus] = useState(false)
   const [liveHints, setLiveHints] = useState(false)
+  const designHints = useDesignHintsOn()
   const [contextSlot, setContextSlot] = useState<HTMLElement | null>(null)
   const [hintsSlot, setHintsSlot] = useState<HTMLElement | null>(null)
   const selectPanel = (key: RefPanel) => { setRefPanel(key); if (key === 'context') { setSearchOpen(false); if (sandbox) tourEvent('context') } }
@@ -709,11 +712,12 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
           </div>}
           {level === 1 && (
             <Panel title={t('Premise')} hint={t('The story\'s starting point and settings.')} help={t('The premise is the core idea: who wants what, what stands in the way, and why it matters. Every later level builds on it.')}>
+              <DesignHintItem storyId={storyId} level="story" id={storyId}>
               <div className="space-y-5">
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Title')}</span><InlineText value={story.data.title} placeholder={t('Story title')} onSave={(title) => updateStory.mutateAsync({ title })} /></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Blurb · shown to readers')}</span><InlineText value={story.data.blurb} placeholder={t('A reader-facing pitch for your story')} onSave={(blurb) => updateStory.mutateAsync({ blurb })} multiline /></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Premise')}</span><InlineText value={story.data.premise} placeholder={t('What is this story?')} onSave={(premise) => updateStory.mutateAsync({ premise })} multiline /></label>
-                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Genre')}</span><InlineText value={story.data.genre} placeholder={t('Genre')} onSave={(genre) => updateStory.mutateAsync({ genre })} /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Title')}</span><InlineText value={story.data.title} placeholder={t('Story title')} hint="title" onSave={(title) => updateStory.mutateAsync({ title })} /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Blurb · shown to readers')}</span><InlineText value={story.data.blurb} placeholder={t('A reader-facing pitch for your story')} hint="blurb" onSave={(blurb) => updateStory.mutateAsync({ blurb })} multiline /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Premise')}</span><InlineText value={story.data.premise} placeholder={t('What is this story?')} hint="premise" onSave={(premise) => updateStory.mutateAsync({ premise })} multiline /></label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Genre')}</span><InlineText value={story.data.genre} placeholder={t('Genre')} hint="genre" onSave={(genre) => updateStory.mutateAsync({ genre })} /></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Point of view')}</span><HelpTip label={t('point of view')}>{t('Whose eyes the reader sees the story through.{0}', choiceList(localized(POV_OPTIONS)))}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.pov_style} options={localized(POV_OPTIONS)} onSave={(pov_style) => updateStory.mutateAsync({ pov_style })} /></span><span className="help-text mt-1 block">{describe(localized(POV_OPTIONS), story.data.pov_style)}</span></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Framework')}</span><HelpTip label={t('a framework')}>{t('The story shape used to seed your acts and beats. You can change any of them afterwards.{0}', choiceList(localized(FRAMEWORK_OPTIONS)))}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.structure_framework} options={localized(FRAMEWORK_OPTIONS)} onSave={(structure_framework) => updateStory.mutateAsync({ structure_framework })} /></span><span className="help-text mt-1 block">{describe(localized(FRAMEWORK_OPTIONS), story.data.structure_framework)}</span></label>
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Mode')}</span><HelpTip label={t('mode')}>{t('How much the plan guides you. It only changes what is flagged; nothing is ever blocked.{0}', choiceList(localized(MODE_OPTIONS)))}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.authoring_mode} options={localized(MODE_OPTIONS)} onSave={(authoring_mode) => updateStory.mutateAsync({ authoring_mode })} /></span><span className="help-text mt-1 block">{describe(localized(MODE_OPTIONS), story.data.authoring_mode)}</span></label>
@@ -721,12 +725,13 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
                 <label className="block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Language')}</span><HelpTip label={t('language')}>{t('The spelling convention for this story. Smart consistency in Check my story flags spellings from the other variety (colour in a US story, color in a UK one). Leave it on the default to follow your account setting.')}</HelpTip><span className="mt-1 block max-w-xs"><InlineSelect value={story.data.language} options={LANGUAGES.map(language => ({ value: language.id, label: t(language.label) }))} placeholder={t('Account default ({0})', languageLabel(me.data?.language))} onSave={(language) => updateStory.mutateAsync({ language: language as StoryUpdate['language'] })} /></span></label>
               </div>
               <details className="mt-5 rounded border border-slate-200 p-3 dark:border-slate-700"><summary className="cursor-pointer text-sm font-medium">{t('World, style, theme, and notes')}</summary><div className="mt-3 space-y-3">
-                <label className="block text-xs"><span className="field-label">{t('World rules')}</span>{' '}{t('(one per line)')}<InlineText value={story.data.world_rules?.join('\n') ?? null} placeholder={t('What is possible in this world?')} onSave={value => updateStory.mutateAsync({ world_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
-                <label className="block text-xs"><span className="field-label">{t('Style rules')}</span>{' '}{t('(one per line)')}<InlineText value={story.data.style_rules?.join('\n') ?? null} placeholder={t('Voice, tense, prose constraints')} onSave={value => updateStory.mutateAsync({ style_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
-                <label className="block text-xs"><span className="field-label">{t('Thematic statement')}</span><InlineText value={story.data.thematic_statement} placeholder={t('What does this story explore?')} onSave={thematic_statement => updateStory.mutateAsync({ thematic_statement })} multiline /></label>
-                <label className="block text-xs"><span className="field-label">{t('Motifs')}</span>{' '}{t('(one per line)')}<InlineText value={story.data.motifs?.join('\n') ?? null} placeholder={t('Recurring images or ideas')} onSave={value => updateStory.mutateAsync({ motifs: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
-                <label className="block text-xs"><span className="field-label">{t('Private story notes')}</span><InlineText value={story.data.notes} placeholder={t('Reference and working notes; keep the premise one sentence')} onSave={notes => updateStory.mutateAsync({ notes })} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('World rules')}</span>{' '}{t('(one per line)')}<InlineText value={story.data.world_rules?.join('\n') ?? null} placeholder={t('What is possible in this world?')} hint="world_rules" onSave={value => updateStory.mutateAsync({ world_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Style rules')}</span>{' '}{t('(one per line)')}<InlineText value={story.data.style_rules?.join('\n') ?? null} placeholder={t('Voice, tense, prose constraints')} hint="style_rules" onSave={value => updateStory.mutateAsync({ style_rules: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Thematic statement')}</span><InlineText value={story.data.thematic_statement} placeholder={t('What does this story explore?')} hint="thematic_statement" onSave={thematic_statement => updateStory.mutateAsync({ thematic_statement })} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Motifs')}</span>{' '}{t('(one per line)')}<InlineText value={story.data.motifs?.join('\n') ?? null} placeholder={t('Recurring images or ideas')} hint="motifs" onSave={value => updateStory.mutateAsync({ motifs: value?.split('\n').map(item => item.trim()).filter(Boolean) ?? [] })} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Private story notes')}</span><InlineText value={story.data.notes} placeholder={t('Reference and working notes; keep the premise one sentence')} hint="notes" onSave={notes => updateStory.mutateAsync({ notes })} multiline /></label>
               </div></details>
+              </DesignHintItem>
               {!sandbox && <details className="mt-3"><summary className="field-label cursor-pointer">{t('Cover')}</summary><div className="mt-2"><CoverManager storyId={storyId} title={story.data.title} blurb={story.data.blurb} wordCount={progress.data?.word_count ?? 0} /></div></details>}
               {!sandbox && <details className="mt-3"><summary className="field-label cursor-pointer">{t('Goal')}</summary><div className="mt-2"><StoryGoalForm storyId={storyId} /></div></details>}
             </Panel>
@@ -762,6 +767,7 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
                     <span>{t('Chapter details')}</span>
                     <span className="truncate text-xs font-normal text-slate-400">{t('Draft: {0} · {1}', chapter.status, chapter.title ?? t('Untitled'))}</span>
                   </summary>
+                  <DesignHintItem storyId={storyId} level="chapter" id={chapter.id}>
                   <div className="border-t border-slate-100 dark:border-slate-800 p-3">
                   <div className="flex items-center justify-between">
                     <h3 className="section-title">{t('Structure')}</h3>
@@ -769,16 +775,17 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Number')}</span><InlineNumber value={chapter.number} min={1} onSave={(number) => updateChapter.mutateAsync({ number })} /></label>
-                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Title')}</span><InlineText value={chapter.title} placeholder={t('Chapter title')} onSave={(title) => updateChapter.mutateAsync({ title })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Title')}</span><InlineText value={chapter.title} placeholder={t('Chapter title')} hint="title" onSave={(title) => updateChapter.mutateAsync({ title })} /></label>
                     <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Act')}</span><InlineSelect value={chapter.act_id} options={(acts.data ?? []).map((act) => ({ value: act.id, label: `${act.number}. ${act.title ?? t('Untitled')}` }))} onSave={(act_id) => updateChapter.mutateAsync({ act_id })} /></label>
                     <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('POV character')}</span><InlineSelect value={chapter.pov_character_id} options={(characters.data ?? []).map((character) => ({ value: character.id, label: character.name }))} onSave={(pov_character_id) => updateChapter.mutateAsync({ pov_character_id })} /></label>
                     <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Draft status')}</span><InlineSelect value={chapter.status} options={['placeholder', 'outlined', 'drafted', 'revised'].map(value => ({ value, label: valueLabel(value) }))} onSave={(status) => updateChapter.mutateAsync({ status })} /></label>
-                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Emotional shift from')}</span><InlineText value={chapter.emotional_shift_from} placeholder={t('from')} onSave={(emotional_shift_from) => updateChapter.mutateAsync({ emotional_shift_from })} /></label>
-                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Emotional shift to')}</span><InlineText value={chapter.emotional_shift_to} placeholder={t('to')} onSave={(emotional_shift_to) => updateChapter.mutateAsync({ emotional_shift_to })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Emotional shift from')}</span><InlineText value={chapter.emotional_shift_from} placeholder={t('from')} hint="emotional_shift_from" onSave={(emotional_shift_from) => updateChapter.mutateAsync({ emotional_shift_from })} /></label>
+                    <label className="text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Emotional shift to')}</span><InlineText value={chapter.emotional_shift_to} placeholder={t('to')} hint="emotional_shift_to" onSave={(emotional_shift_to) => updateChapter.mutateAsync({ emotional_shift_to })} /></label>
                   </div>
-                  {(['epigraph', 'opening_note', 'closing_note'] as const).map(field => <label key={field} className="mt-2 block text-xs text-slate-500 dark:text-slate-400">{field === 'epigraph' ? t('Epigraph') : field === 'opening_note' ? t('Opening note') : t('Closing note')}<InlineText value={chapter[field]} placeholder={t('Optional reader-facing chapter text')} onSave={value => updateChapter.mutateAsync({ [field]: value })} multiline /></label>)}
-                  <label className="mt-2 block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Summary')}</span><InlineText value={chapter.summary} placeholder={t('What does this chapter do?')} onSave={(summary) => updateChapter.mutateAsync({ summary })} multiline /></label>
+                  {(['epigraph', 'opening_note', 'closing_note'] as const).map(field => <label key={field} className="mt-2 block text-xs text-slate-500 dark:text-slate-400">{field === 'epigraph' ? t('Epigraph') : field === 'opening_note' ? t('Opening note') : t('Closing note')}<InlineText value={chapter[field]} placeholder={t('Optional reader-facing chapter text')} hint={field} onSave={value => updateChapter.mutateAsync({ [field]: value })} multiline /></label>)}
+                  <label className="mt-2 block text-xs text-slate-500 dark:text-slate-400"><span className="field-label">{t('Summary')}</span><InlineText value={chapter.summary} placeholder={t('What does this chapter do?')} hint="summary" onSave={(summary) => updateChapter.mutateAsync({ summary })} multiline /></label>
                   </div>
+                  </DesignHintItem>
                 </details>
               )}
 
@@ -874,8 +881,10 @@ export function Workspace({ storyId, storyMode, sandboxStep, sandboxRun, sandbox
         </div>
         {activePanel === 'context' && <div ref={setContextSlot} />}
         {activePanel === 'hints' && <div className="ws-hints">
-          <label className="ws-hints-toggle"><input type="checkbox" checked={liveHints} onChange={event => setLiveHints(event.target.checked)} />{' '}{t('Live hints for the scene you are writing')}</label>
-          <p className="writer-help">{t('The shared reader reads only the current scene, about two seconds after you stop typing. Hints never change your prose.')}</p>
+          {tab === 'write' && <><label className="ws-hints-toggle"><input type="checkbox" checked={liveHints} onChange={event => setLiveHints(event.target.checked)} />{' '}{t('Live hints for the scene you are writing')}</label>
+          <p className="writer-help">{t('The shared reader reads only the current scene, about two seconds after you stop typing. Hints never change your prose.')}</p></>}
+          {!sandbox && <><label className="ws-hints-toggle"><input type="checkbox" checked={designHints} onChange={event => setDesignHintsOn(event.target.checked)} />{' '}{t('Live design hints for Design fields you save')}<FeatureLock feature="design_hints" /></label>
+          <p className="writer-help">{t('About two seconds after you save a Design field, the shared reader reads that item and notes appear under the field. Your own checks set to Design fields run too. Nothing is changed.')}</p></>}
           <div ref={setHintsSlot} />
         </div>}
         {activePanel === 'insights' && <div className="ws-card check-summary">

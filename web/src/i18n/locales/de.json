@@ -3541,5 +3541,13 @@
  "What happens to them here?": "Was passiert hier mit ihnen?",
  "Add a scene": "Szene hinzufügen",
  "+ Add a scene…": "+ Szene hinzufügen…",
- "Character arcs": "Figurenbögen"
+ "Character arcs": "Figurenbögen",
+ "Reading this after you save…": "Wird nach dem Speichern gelesen…",
+ "Live design hints for Design fields you save": "Live-Hinweise für Entwurfsfelder, die du speicherst",
+ "About two seconds after you save a Design field, the shared reader reads that item and notes appear under the field. Your own checks set to Design fields run too. Nothing is changed.": "Etwa zwei Sekunden nachdem du ein Entwurfsfeld gespeichert hast, liest der gemeinsame Leser diesen Eintrag, und Hinweise erscheinen unter dem Feld. Deine eigenen Prüfungen für Entwurfsfelder laufen ebenfalls. Nichts wird geändert.",
+ "Design fields (Live design hints)": "Entwurfsfelder (Live-Entwurfshinweise)",
+ "Design levels to read (none ticked means all)": "Zu lesende Entwurfsebenen (keine Auswahl bedeutet alle)",
+ "Runs about two seconds after you save a field on these levels, and shows under that field. It reads the item's fields, not your prose.": "Läuft etwa zwei Sekunden nachdem du ein Feld auf diesen Ebenen gespeichert hast und erscheint unter diesem Feld. Gelesen werden die Felder des Eintrags, nicht deine Prosa.",
+ "Beats": "Beats",
+ "Scene cards": "Szenenkarten"
 }

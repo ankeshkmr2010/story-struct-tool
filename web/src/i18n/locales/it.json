@@ -3547,5 +3547,12 @@
  "What happens to them here?": "Cosa gli succede qui?",
  "Add a scene": "Aggiungi una scena",
  "+ Add a scene…": "+ Aggiungi una scena…",
- "Character arcs": "Archi dei personaggi"
+ "Character arcs": "Archi dei personaggi",
+ "Reading this after you save…": "Lettura dopo il salvataggio…",
+ "Live design hints for Design fields you save": "Suggerimenti dal vivo per i campi di Progetta che salvi",
+ "About two seconds after you save a Design field, the shared reader reads that item and notes appear under the field. Your own checks set to Design fields run too. Nothing is changed.": "Circa due secondi dopo il salvataggio di un campo di Progetta, il lettore condiviso legge quell’elemento e le note compaiono sotto il campo. Vengono eseguiti anche i tuoi controlli per i campi di Progetta. Non viene modificato nulla.",
+ "Design fields (Live design hints)": "Campi di Progetta (suggerimenti di progetto dal vivo)",
+ "Design levels to read (none ticked means all)": "Livelli di Progetta da leggere (nessuno selezionato significa tutti)",
+ "Runs about two seconds after you save a field on these levels, and shows under that field. It reads the item's fields, not your prose.": "Viene eseguito circa due secondi dopo il salvataggio di un campo a questi livelli e compare sotto quel campo. Legge i campi dell’elemento, non la tua prosa.",
+ "Scene cards": "Schede scena"
 }

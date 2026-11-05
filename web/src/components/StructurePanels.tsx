@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { AddForm, Chip, DeleteButton, Field, InlineNumber, InlineSelect, InlineText } from './fields'
+import { DesignHintItem } from './DesignHints'
 import { HelpTip } from './HelpTip'
 import { t } from '../i18n'
 import { CraftTerm } from './CraftTerm'
@@ -100,19 +101,21 @@ export function ActsPanel({ storyId, framework }: { storyId: string; framework: 
       <ul className="mt-4 space-y-3">
         {acts.data?.map((act) => (
           <li key={act.id} id={`search-act-${act.id}`} className="scroll-mt-4 rounded border border-slate-200 dark:border-slate-700 p-3">
+            <DesignHintItem storyId={storyId} level="act" id={act.id}>
             <div className="flex items-center gap-2">
               <InlineNumber value={act.number} min={1} onSave={(v) => save(act.id, 'number', v)} />
-              <div className="min-w-0 flex-1"><InlineText value={act.title} placeholder={t('act title')} onSave={(v) => save(act.id, 'title', v)} className="section-title" /></div>
+              <div className="min-w-0 flex-1"><InlineText value={act.title} placeholder={t('act title')} hint="title" onSave={(v) => save(act.id, 'title', v)} className="section-title" /></div>
               <Chip complete={act.completeness.is_complete} missing={act.completeness.missing} />
               <DeleteButton onConfirm={() => remove.mutate(act.id)} what="act" />
             </div>
-            <div className="mt-2"><Field label={t('Summary')}><InlineText value={act.summary} placeholder={t('What changes across this act?')} onSave={(v) => save(act.id, 'summary', v)} multiline /></Field></div>
+            <div className="mt-2"><Field label={t('Summary')}><InlineText value={act.summary} placeholder={t('What changes across this act?')} hint="summary" onSave={(v) => save(act.id, 'summary', v)} multiline /></Field></div>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Field label={t('Emotional shift from')}><InlineText value={act.emotional_shift_from} placeholder={t('from')} onSave={(v) => save(act.id, 'emotional_shift_from', v)} /></Field>
-              <Field label={t('Emotional shift to')}><InlineText value={act.emotional_shift_to} placeholder={t('to')} onSave={(v) => save(act.id, 'emotional_shift_to', v)} /></Field>
+              <Field label={t('Emotional shift from')}><InlineText value={act.emotional_shift_from} placeholder={t('from')} hint="emotional_shift_from" onSave={(v) => save(act.id, 'emotional_shift_from', v)} /></Field>
+              <Field label={t('Emotional shift to')}><InlineText value={act.emotional_shift_to} placeholder={t('to')} hint="emotional_shift_to" onSave={(v) => save(act.id, 'emotional_shift_to', v)} /></Field>
               <Field label={t('Opening turning point')}><InlineSelect value={act.opening_turning_point_id} options={eventOptions} onSave={(v) => save(act.id, 'opening_turning_point_id', v)} /></Field>
               <Field label={t('Closing turning point')}><InlineSelect value={act.closing_turning_point_id} options={eventOptions} onSave={(v) => save(act.id, 'closing_turning_point_id', v)} /></Field>
             </div>
+            </DesignHintItem>
           </li>
         ))}
       </ul>
@@ -150,13 +153,15 @@ export function BeatsPanel({ storyId, framework }: { storyId: string; framework:
       <ul className="mt-4 space-y-3">
         {beats.data?.map((beat) => (
           <li key={beat.id} id={`search-beat-${beat.id}`} className="scroll-mt-4 rounded border border-slate-200 dark:border-slate-700 p-3">
+            <DesignHintItem storyId={storyId} level="beat" id={beat.id}>
             <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1"><InlineText value={beat.label} placeholder={t('beat label')} onSave={(v) => save(beat.id, 'label', v)} className="section-title" /></div>
+              <div className="min-w-0 flex-1"><InlineText value={beat.label} placeholder={t('beat label')} hint="label" onSave={(v) => save(beat.id, 'label', v)} className="section-title" /></div>
               <Chip complete={beat.completeness.is_complete} missing={beat.completeness.missing} />
               <DeleteButton onConfirm={() => remove.mutate(beat.id)} what="beat" />
             </div>
             <div className="mt-2"><Field label={t('Act')}><InlineSelect value={beat.act_id} options={(acts.data ?? []).map((act) => ({ value: act.id, label: `${act.number}. ${act.title ?? t('Untitled')}` }))} onSave={(v) => save(beat.id, 'act_id', v)} /></Field></div>
-            <div className="mt-2"><Field label={t('Description')}><InlineText value={beat.description} placeholder={t('What must happen?')} onSave={(v) => save(beat.id, 'description', v)} multiline /></Field></div>
+            <div className="mt-2"><Field label={t('Description')}><InlineText value={beat.description} placeholder={t('What must happen?')} hint="description" onSave={(v) => save(beat.id, 'description', v)} multiline /></Field></div>
+            </DesignHintItem>
           </li>
         ))}
       </ul>
@@ -185,15 +190,17 @@ export function ThreadsPanel({ storyId }: { storyId: string }) {
       <ul className="mt-4 space-y-3">
         {threads.data?.map((thread) => (
           <li key={thread.id} id={`search-thread-${thread.id}`} className="scroll-mt-4 rounded border border-slate-200 dark:border-slate-700 p-3">
+            <DesignHintItem storyId={storyId} level="thread" id={thread.id}>
             <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1"><InlineText value={thread.title} placeholder={t('thread title')} onSave={(v) => save(thread.id, 'title', v)} className="section-title" /></div>
+              <div className="min-w-0 flex-1"><InlineText value={thread.title} placeholder={t('thread title')} hint="title" onSave={(v) => save(thread.id, 'title', v)} className="section-title" /></div>
               <Chip complete={thread.completeness.is_complete} missing={thread.completeness.missing} />
               <DeleteButton onConfirm={() => remove.mutate(thread.id)} what="thread" />
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Field label={t('Storyline type')}><InlineSelect value={thread.type} options={TYPE_OPTIONS} onSave={(v) => save(thread.id, 'type', v)} /></Field>
+              <Field label={t('Storyline type')}><InlineSelect value={thread.type} options={TYPE_OPTIONS} hint="type" onSave={(v) => save(thread.id, 'type', v)} /></Field>
               <Field label={t('Owner')}><InlineSelect value={thread.owner_character_id} options={(characters.data ?? []).map((c) => ({ value: c.id, label: c.name }))} onSave={(v) => save(thread.id, 'owner_character_id', v)} /></Field>
             </div>
+            </DesignHintItem>
           </li>
         ))}
       </ul>

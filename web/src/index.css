@@ -1880,3 +1880,9 @@ main :is(input, select, textarea)[class~="rounded"][class~="border"] { border-ra
 /* Check list (Check my story): star pinned to the row edge so names with a subtitle keep their layout. */
 .eval-check:has(.eval-check-star) { position: relative; padding-right: 2rem; }
 .eval-check .eval-check-star { position: absolute; top: 0.85rem; right: 0.6rem; margin: 0; }
+
+/* Live design hints: compact notes under a Design field (components/DesignHints.tsx). */
+.design-hint { margin-top: 4px; padding: 6px 8px; font-size: 12px; }
+.design-hint p { margin-bottom: 4px; }
+.design-hint-status { margin-top: 2px; font-size: 11px; }
+.design-hint-rest { margin-top: 6px; }

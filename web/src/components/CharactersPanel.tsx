@@ -15,6 +15,7 @@ import { CraftTerm } from './CraftTerm'
 import { TeachEmpty } from './TeachEmpty'
 import { CharacterLines } from './DialogueSpeakers'
 import { CharacterScenes } from './CharacterScenes'
+import { DesignHintItem } from './DesignHints'
 
 const ROLES = ['protagonist', 'antagonist', 'mentor', 'foil', 'supporting', 'minor'] as const
 const ARC_TYPES = ['positive', 'negative', 'flat'] as const
@@ -126,11 +127,13 @@ export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; o
           const set = patch(character.id)
           return (
             <li key={character.id} id={`character-${character.id}`} className="scroll-mt-4 rounded-md border border-slate-200 dark:border-slate-700 p-2.5">
+              <DesignHintItem storyId={storyId} level="character" id={character.id}>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="min-w-[9rem] flex-1">
                   <InlineText
                     value={character.name}
                     placeholder={t('name')}
+                    hint="name"
                     onSave={async (name) => { await set('name')(name); offerRename({ kind: 'character', id: character.id, from: character.name, to: name ?? '' }) }}
                     className="section-title"
                   />
@@ -139,6 +142,7 @@ export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; o
                   value={character.role}
                   options={ROLES}
                   onSave={set('role')}
+                  hint="role"
                   placeholder={t('— role —')}
                   highlight={character.role === 'protagonist'}
                 />
@@ -146,6 +150,7 @@ export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; o
                   value={character.arc_type}
                   options={ARC_TYPES}
                   onSave={set('arc_type')}
+                  hint="arc_type"
                   placeholder={t('— arc —')}
                 />
                 <Chip complete={character.completeness.is_complete} missing={character.completeness.missing} />
@@ -157,10 +162,10 @@ export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; o
               <OriginSummary storyId={storyId} entityId={character.id} entityType="character" />
               <ReferenceImages storyId={storyId} entity="character" entityId={character.id} />
               <div className="mt-3 space-y-2">
-                <label className="block text-xs"><span className="field-label">{t('Description')}</span><InlineText value={character.description} placeholder={t('Who are they?')} onSave={set('description')} multiline /></label>
-                <label className="block text-xs"><span className="field-label">{t('Aliases')}</span>{' '}{t('(one per line)')}<InlineText value={character.aliases?.join('\n') ?? null} placeholder={t('Other names or titles')} onSave={value => set('aliases')(value ? value.split('\n').map(item => item.trim()).filter(Boolean) : [])} multiline /></label>
-                <label className="block text-xs"><span className="field-label">{t('Relation to the protagonist')}</span><InlineText value={character.relation_to_protagonist} placeholder={t('How are they connected?')} onSave={set('relation_to_protagonist')} multiline /></label>
-                <label className="block text-xs"><span className="field-label">{t('Private notes')}</span><InlineText value={character.notes} placeholder={t('Working notes')} onSave={set('notes')} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Description')}</span><InlineText value={character.description} placeholder={t('Who are they?')} hint="description" onSave={set('description')} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Aliases')}</span>{' '}{t('(one per line)')}<InlineText value={character.aliases?.join('\n') ?? null} placeholder={t('Other names or titles')} hint="aliases" onSave={value => set('aliases')(value ? value.split('\n').map(item => item.trim()).filter(Boolean) : [])} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Relation to the protagonist')}</span><InlineText value={character.relation_to_protagonist} placeholder={t('How are they connected?')} hint="relation_to_protagonist" onSave={set('relation_to_protagonist')} multiline /></label>
+                <label className="block text-xs"><span className="field-label">{t('Private notes')}</span><InlineText value={character.notes} placeholder={t('Working notes')} hint="notes" onSave={set('notes')} multiline /></label>
                 <p className="writer-help">{t('Want and need are required for a protagonist, antagonist, or positive/negative arc. Supporting and minor characters can stay simple. Wounds and misbeliefs are optional.')}</p>
               </div>
               <div className="mt-1.5 grid grid-cols-2 gap-2">
@@ -172,6 +177,7 @@ export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; o
                     value={character.want}
                     placeholder={t('what they are chasing')}
                     onSave={set('want')}
+                    hint="want"
                   />
                 </label>
                 <label className="block">
@@ -182,6 +188,7 @@ export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; o
                     value={character.need}
                     placeholder={t('what would actually help')}
                     onSave={set('need')}
+                    hint="need"
                   />
                 </label>
               </div>
@@ -196,6 +203,7 @@ export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; o
                     value={character.wound}
                     placeholder={t('wound — the formative injury')}
                     onSave={set('wound')}
+                    hint="wound"
                     multiline
                   />
                   <span className="field-label"><CraftTerm id="misbelief" /></span>
@@ -203,12 +211,14 @@ export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; o
                     value={character.misbelief}
                     placeholder={t('misbelief — the lie they believe')}
                     onSave={set('misbelief')}
+                    hint="misbelief"
                     multiline
                   />
                   <InlineText
                     value={character.voice_notes}
                     placeholder={t('voice notes')}
                     onSave={set('voice_notes')}
+                    hint="voice_notes"
                     multiline
                   />
                 </div>
@@ -233,6 +243,7 @@ export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; o
                   {t('+ Define an arc')}
                 </button>
               )}
+              </DesignHintItem>
             </li>
           )
         })}

@@ -2069,6 +2069,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stories/{story_id}/design-hints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read one Design item for advisory hints after a field is saved */
+        post: operations["ApiStoriesStoryIdDesignHintsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stories/{story_id}/character-states/{state_id}": {
         parameters: {
             query?: never;
@@ -4666,6 +4683,45 @@ export interface components {
             outcome: "accepted" | "dismissed";
             rubric_version?: string | null;
         };
+        /** DesignHint */
+        DesignHint: {
+            code: string;
+            field: string;
+            message: string;
+            action: string;
+            probability: number;
+            evidence_keys?: string[];
+            rubric_version: string;
+            /**
+             * @default builtin
+             * @enum {string}
+             */
+            kind: "builtin" | "custom";
+        };
+        /** DesignHintInput */
+        DesignHintInput: {
+            /** @enum {string} */
+            entity_type: "story" | "character" | "act" | "beat" | "thread" | "chapter" | "scene" | "location" | "glossary_entry";
+            /** Format: uuid */
+            entity_id: string;
+            field: string;
+        };
+        /** DesignHintReading */
+        DesignHintReading: {
+            entity_type: string;
+            /** Format: uuid */
+            entity_id: string;
+            field: string;
+            content_hash: string;
+            hints?: components["schemas"]["DesignHint"][];
+            unavailable?: string | null;
+            model?: string | null;
+            /**
+             * @default design-v1
+             * @constant
+             */
+            rubric_version: "design-v1";
+        };
         /** DialogueLineOut */
         DialogueLineOut: {
             line_id: string;
@@ -6609,7 +6665,8 @@ export interface components {
              * @default paragraph
              * @enum {string}
              */
-            input_scope: "sentence" | "paragraph" | "scene";
+            input_scope: "sentence" | "paragraph" | "scene" | "design";
+            design_levels?: ("story" | "character" | "act" | "beat" | "thread" | "chapter" | "scene" | "location" | "glossary_entry")[];
             question: components["schemas"]["Question"];
             trigger: components["schemas"]["NoulTrigger"] | components["schemas"]["ChoiceTrigger"] | components["schemas"]["ScoreTrigger"];
             /** @default 0.8 */
@@ -12166,6 +12223,47 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SetupsOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdDesignHintsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignHintInput"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignHintReading"];
                 };
             };
             /** @description Bad request syntax or unsupported method */
