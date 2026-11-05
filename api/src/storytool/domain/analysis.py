@@ -19,6 +19,7 @@ from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.graph import StoryGraph
 from storytool.domain.narrative.models import (
     Chapter,
+    CharacterSceneState,
     DialogueSpeaker,
     Scene,
     SceneCharacterMention,
@@ -106,6 +107,7 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
     dialogue_speakers: tuple[tuple[UUID, str, int, UUID, str], ...] = ()
     setup_marks: tuple[tuple[UUID, UUID, str, str, int, str | None, str], ...] = ()
     setup_links: tuple[tuple[UUID, UUID, str], ...] = ()
+    character_states: tuple[tuple[UUID, UUID, str | None, str | None, str], ...] = ()
     if scene_ids:
         rows = await session.execute(
             select(scene_beat.c.scene_id, scene_beat.c.beat_id).where(
@@ -146,12 +148,18 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
             for r in rows.scalars()
         )
 
+        rows = await session.execute(
+            select(CharacterSceneState).where(CharacterSceneState.scene_id.in_(scene_ids))
+        )
+        character_states = tuple(
+            (r.scene_id, r.character_id, r.misbelief, r.want, r.status) for r in rows.scalars()
+        )
+
         marks = (
             await session.scalars(select(SetupMark).where(SetupMark.scene_id.in_(scene_ids)))
         ).all()
         setup_marks = tuple(
-            (m.id, m.scene_id, m.kind, m.quote_text, m.occurrence, m.label, m.status)
-            for m in marks
+            (m.id, m.scene_id, m.kind, m.quote_text, m.occurrence, m.label, m.status) for m in marks
         )
         if marks:
             rows = await session.execute(
@@ -189,6 +197,7 @@ async def load_graph(session: AsyncSession, story: Story) -> StoryGraph:
         character_mentions=character_mentions,
         dialogue_speakers=dialogue_speakers,
         setup_marks=setup_marks,
+        character_states=character_states,
         setup_links=setup_links,
     )
 

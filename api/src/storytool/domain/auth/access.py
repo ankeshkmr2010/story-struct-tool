@@ -256,6 +256,8 @@ class StoryAccessMiddleware:
                             or suffix in {"/dialogue/populate", "/dialogue/speakers"}
                             # Suggested setups, payoffs and links; the author accepts them.
                             or suffix in {"/setups/marks", "/setups/links"}
+                            # Suggested per-scene character states; the author accepts them.
+                            or suffix == "/character-states"
                             # An AI review report: stored beside the story, never edits it.
                             or (
                                 suffix.startswith("/evaluations/")

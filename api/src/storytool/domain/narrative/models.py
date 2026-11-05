@@ -337,3 +337,23 @@ class Suggestion(StoryToolBase):
             postgresql_nulls_not_distinct=True,
         ),
     )
+
+
+class CharacterSceneState(StoryToolBase):
+    """Where one character's arc stands in one scene: the misbelief stage (holds, doubts,
+    tested, lets_go, relapses), what happened to the want (pursued, blocked, won, given_up) and
+    a note. Empty by default. `source`/`status` follow `SetupMark`: an agent's state starts
+    `suggested` and counts only once the author accepts it."""
+
+    __tablename__ = "character_scene_state"
+    __table_args__ = (UniqueConstraint("scene_id", "character_id", name="one_state_per_scene"),)
+
+    scene_id: Mapped[UUID] = mapped_column(ForeignKey("scene.id", ondelete="CASCADE"), index=True)
+    character_id: Mapped[UUID] = mapped_column(
+        ForeignKey("character.id", ondelete="CASCADE"), index=True
+    )
+    misbelief: Mapped[str | None] = mapped_column(String(10), default=None)
+    want: Mapped[str | None] = mapped_column(String(10), default=None)
+    note: Mapped[str | None] = mapped_column(EncryptedText, default=None)
+    source: Mapped[str] = mapped_column(String(10))
+    status: Mapped[str] = mapped_column(String(10), default="active")

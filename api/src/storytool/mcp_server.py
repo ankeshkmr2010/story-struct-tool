@@ -1344,6 +1344,37 @@ def build_mcp(db_config: SQLAlchemyAsyncConfig, get_app: Callable[[], ASGIApp]) 
         body = {"setup_id": str(setup_id), "payoff_id": str(payoff_id)}
         return await call(ctx, "/setups/links", "POST", body, story_id=story_id)
 
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True))
+    async def list_character_states(ctx: Context, story_id: UUID | None = None) -> dict[str, Any]:
+        """Each character's recorded state per scene, in reading order: misbelief stage
+        (holds, doubts, tested, lets_go, relapses), want (pursued, blocked, won, given_up) and a
+        note. status: active (the author's or accepted) or suggested (waiting for the author).
+        scenes: placed scenes in reading order with the characters who appear in each."""
+        return await call(ctx, "/character-states", story_id=story_id)
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    async def suggest_character_state(
+        ctx: Context,
+        scene_id: UUID,
+        character_id: UUID,
+        misbelief: Literal["holds", "doubts", "tested", "lets_go", "relapses"] | None = None,
+        want: Literal["pursued", "blocked", "won", "given_up"] | None = None,
+        note: str | None = None,
+        story_id: UUID | None = None,
+    ) -> dict[str, Any]:
+        """Suggest where a character stands in one scene: their misbelief stage and how their
+        want is going, with a short note citing what happens. Base it on the scene, not a
+        guess. The author accepts or removes it; an author's own state can't be replaced.
+        Never claim it is recorded until list_character_states shows status active."""
+        body = {
+            "scene_id": str(scene_id),
+            "character_id": str(character_id),
+            "misbelief": misbelief,
+            "want": want,
+            "note": note,
+        }
+        return await call(ctx, "/character-states", "POST", body, story_id=story_id)
+
     @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
     async def submit_evaluation_report(
         ctx: Context,

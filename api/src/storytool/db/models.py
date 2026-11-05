@@ -19,6 +19,7 @@ from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.narrative.models import (
     Annotation,
     Chapter,
+    CharacterSceneState,
     DialogueSpeaker,
     Scene,
     SceneCharacterMention,
@@ -85,6 +86,7 @@ __all__ = (
     "BetaVote",
     "Chapter",
     "Character",
+    "CharacterSceneState",
     "DecisionBudget",
     "DecisionCache",
     "DecisionFeedback",

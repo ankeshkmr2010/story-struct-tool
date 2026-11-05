@@ -63,6 +63,10 @@ class StoryGraph:
     """(id, scene_id, kind, quote text, occurrence, label, status): marked setups and payoffs."""
     setup_links: tuple[tuple[UUID, UUID, str], ...] = field(default_factory=tuple)
     """(setup_id, payoff_id, status): which payoff pays off which setup."""
+    character_states: tuple[tuple[UUID, UUID, str | None, str | None, str], ...] = field(
+        default_factory=tuple
+    )
+    """(scene_id, character_id, misbelief, want, status): scene-by-scene arc states."""
 
     # ------------------------------------------------------------- lookups
 

@@ -69,7 +69,7 @@ const SENTENCES = [
   tx('Consider a chapter grouping for the next stretch of writing.'),
   tx('Give the next scene a concrete purpose or change.'),
   // Evaluator names (api/src/storytool/domain/evaluation)
-  tx('Setups and payoffs'), tx('Marked setups and payoffs'), tx('Prose continuity'), tx('MICE thread nesting'), tx('Misbelief at midpoint'),
+  tx('Setups and payoffs'), tx('Marked setups and payoffs'), tx('Character arcs'), tx('Prose continuity'), tx('MICE thread nesting'), tx('Misbelief at midpoint'),
   tx('TK placeholders'), tx('Smart consistency'), tx('Scene and sequel rhythm'), tx('Value shift versus prose'),
   // Change authors (api/src/storytool/db/plugin.py)
   tx('Author'), tx('External MCP client'), tx('Framework scaffold'), tx('Undo applied changes'), tx('App assistant ({0})'),

@@ -1,6 +1,7 @@
 """Importing the package registers every evaluator."""
 
 from storytool.domain.evaluation import (  # noqa: F401
+    character_arcs,
     dialogue_voice,
     mice_nesting,
     misbelief_midpoint,

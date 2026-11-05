@@ -17,6 +17,7 @@ from storytool.domain.ai.commands import ENTITIES, LINKS, json_value, restore_va
 from storytool.domain.ai.models import AIRun, StoryObservation
 from storytool.domain.narrative.models import (
     Annotation,
+    CharacterSceneState,
     DialogueSpeaker,
     SceneRevision,
     SetupLink,
@@ -37,6 +38,7 @@ EXTRAS: dict[str, Any] = {
     # Marks before links: restore inserts in this order.
     "setup_mark": SetupMark.__table__,
     "setup_link": SetupLink.__table__,
+    "character_scene_state": CharacterSceneState.__table__,
 }
 AUDIT = {"created_at", "updated_at", "sa_orm_sentinel", "word_count"}
 ADMIN = {"user_id", "parent_story_id", "deleted_at"}

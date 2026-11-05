@@ -14,6 +14,7 @@ import { plural, t } from '../i18n'
 import { CraftTerm } from './CraftTerm'
 import { TeachEmpty } from './TeachEmpty'
 import { CharacterLines } from './DialogueSpeakers'
+import { CharacterScenes } from './CharacterScenes'
 
 const ROLES = ['protagonist', 'antagonist', 'mentor', 'foil', 'supporting', 'minor'] as const
 const ARC_TYPES = ['positive', 'negative', 'flat'] as const
@@ -213,6 +214,7 @@ export function CharactersPanel({ storyId, onOpenPassage }: { storyId: string; o
                 </div>
               </details>
               <CharacterLines storyId={storyId} characterId={character.id} onOpenPassage={onOpenPassage} />
+              <CharacterScenes storyId={storyId} characterId={character.id} />
 
               {!character.completeness.is_complete && (
                 <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-300">

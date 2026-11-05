@@ -1897,23 +1897,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/stories/{story_id}/evaluations/{evaluator_id}/scene-reader": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Read cached scene evidence for craft checks */
-        post: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/stories/{story_id}/evaluations/scene-reader": {
         parameters: {
             query?: never;
@@ -1925,6 +1908,23 @@ export interface paths {
         put?: never;
         /** Read cached scene evidence for craft checks */
         post: operations["ApiStoriesStoryIdEvaluationsSceneReaderSceneReader"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/evaluations/{evaluator_id}/scene-reader": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read cached scene evidence for craft checks */
+        post: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2063,6 +2063,42 @@ export interface paths {
         get: operations["ApiStoriesStoryIdSetupsListSetups"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/character-states/{state_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a character's state for a scene */
+        delete: operations["ApiStoriesStoryIdCharacterStatesStateIdDeleteState"];
+        options?: never;
+        head?: never;
+        /** Accept a suggested character state */
+        patch: operations["ApiStoriesStoryIdCharacterStatesStateIdAcceptState"];
+        trace?: never;
+    };
+    "/api/stories/{story_id}/character-states": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Each character's recorded misbelief and want, scene by scene */
+        get: operations["ApiStoriesStoryIdCharacterStatesListStates"];
+        put?: never;
+        /** Record a character's state in a scene (an agent's state is suggested) */
+        post: operations["ApiStoriesStoryIdCharacterStatesUpsertState"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5928,6 +5964,13 @@ export interface components {
             status: string;
             sort_key: number;
         };
+        /** SceneRef */
+        SceneRef: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            characters: string[];
+        };
         /** SceneRevisionOut */
         SceneRevisionOut: {
             /** Format: uuid */
@@ -6180,6 +6223,45 @@ export interface components {
             target_words: number | null;
             words: number;
             ended_at: string | null;
+        };
+        /** StateIn */
+        StateIn: {
+            /** Format: uuid */
+            scene_id: string;
+            /** Format: uuid */
+            character_id: string;
+            /** @enum {null|string} */
+            misbelief?: "holds" | "doubts" | "tested" | "lets_go" | "relapses" | null;
+            /** @enum {null|string} */
+            want?: "pursued" | "blocked" | "won" | "given_up" | null;
+            note?: string | null;
+        };
+        /** StateOut */
+        StateOut: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            scene_id: string;
+            scene_title: string;
+            /** Format: uuid */
+            character_id: string;
+            character_name: string;
+            misbelief: string | null;
+            want: string | null;
+            note: string | null;
+            source: string;
+            status: string;
+            position: number | null;
+        };
+        /** StatePatch */
+        StatePatch: {
+            /** @constant */
+            status: "active";
+        };
+        /** StatesOut */
+        StatesOut: {
+            states: components["schemas"]["StateOut"][];
+            scenes: components["schemas"]["SceneRef"][];
         };
         /** StoryActivityOut */
         StoryActivityOut: {
@@ -11632,13 +11714,12 @@ export interface operations {
             };
         };
     };
-    ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader: {
+    ApiStoriesStoryIdEvaluationsSceneReaderSceneReader: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 story_id: string;
-                evaluator_id: string | null;
             };
             cookie?: never;
         };
@@ -11670,12 +11751,13 @@ export interface operations {
             };
         };
     };
-    ApiStoriesStoryIdEvaluationsSceneReaderSceneReader: {
+    ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 story_id: string;
+                evaluator_id: string | null;
             };
             cookie?: never;
         };
@@ -12084,6 +12166,160 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SetupsOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdCharacterStatesStateIdDeleteState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                state_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, nothing follows */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdCharacterStatesStateIdAcceptState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+                state_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatePatch"];
+            };
+        };
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdCharacterStatesListStates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatesOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiStoriesStoryIdCharacterStatesUpsertState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                story_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StateIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StateOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */
