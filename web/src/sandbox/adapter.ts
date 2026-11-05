@@ -2,10 +2,11 @@ import { isPrivateId, PRIVATE_PREFIX, rows, SANDBOX_ID, transact, type Row, type
 import { replacesMostOf, sandboxEvaluation, sandboxNameUses } from './checks'
 import { foldAccents } from '../components/languages'
 import { t } from '../i18n'
+import { countWords } from '../wordCount'
 
 const kinds: Record<string, string> = { characters: 'character', relationships: 'relationship', arcs: 'arc', stages: 'arc_stage', acts: 'act', beats: 'beat', threads: 'thread', chapters: 'chapter', scenes: 'scene', events: 'event', locations: 'location', glossary: 'glossary_entry' }
 const required: Record<string, string[]> = { story: ['title', 'premise'], character: ['name', 'role', 'want', 'need'], arc: ['resolution'], arc_stage: ['label'], act: ['summary'], beat: ['label'], thread: ['type'], chapter: ['title'], scene: ['summary', 'goal', 'conflict', 'outcome'], event: ['label'], location: ['name'], glossary_entry: ['term'] }
-const wordCount = (content: unknown) => String(content ?? '').trim().split(/\s+/).filter(Boolean).length
+const wordCount = (content: unknown) => countWords(String(content ?? ''))
 const sorted = (items: Row[]) => [...items].sort((a, b) => Number(a.sort_key ?? 0) - Number(b.sort_key ?? 0) || String(a.id).localeCompare(String(b.id)))
 function out(row: Row, kind: string) {
   const missing = (required[kind] ?? []).filter(field => !row[field])

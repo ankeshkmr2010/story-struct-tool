@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from storytool.domain.narrative.prose import count_words
 from storytool.domain.story.import_model import (
     ImportAdapter,
     ImportedChapter,
@@ -50,7 +51,7 @@ class Block:
 
     @property
     def words(self) -> int:
-        return len(self.text.split())
+        return count_words(self.text)
 
 
 class BlockPlan(BaseModel):

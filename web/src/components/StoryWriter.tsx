@@ -31,6 +31,7 @@ import { dotStatus, shownStatus, statusName, useDetailedStatuses } from './scene
 import { WRITER_ACTION_EVENT, type WriterAction } from './writerActions'
 import { FirstUseTip } from './FirstUseTip'
 import { FeatureLock } from './FeatureLock'
+import { countWords } from '../wordCount'
 
 /** The passage Write's top-bar buttons act on: the one last focused. */
 let lastWriter: object | null = null
@@ -38,7 +39,7 @@ let lastWriter: object | null = null
 type Named = { label: string; item: BesideItem }
 
 const imageMarkdown = (image: StoryImage) => `![${image.alt.replace(/[\]\n]/g, ' ')}](storytool-image:${image.id})`
-const proseWords = (text: string) => text.replace(/!\[[^\]\n]*\]\(storytool-image:[0-9a-fA-F-]{36}\)/g, '').trim().split(/\s+/).filter(Boolean).length
+const proseWords = countWords
 
 export function StoryWriter({ storyId, registerFlush, openScene: opened, focus, onFocusChange, contextSlot, hintsSlot, liveHints, initialChapter, onChapterChange }: { storyId: string; registerFlush: (flush: () => Promise<boolean>) => void; openScene?: { id: string; at: number; find?: string; paragraph?: number } | null; focus: boolean; onFocusChange: (focus: boolean) => void; contextSlot?: HTMLElement | null; hintsSlot?: HTMLElement | null; liveHints: boolean; initialChapter?: string | null; onChapterChange?: (id: string) => void }) {
   const qc = useQueryClient()
