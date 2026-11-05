@@ -17,7 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from storytool.db.base import StoryToolBase
 from storytool.domain.narrative.models import Chapter, Scene
-from storytool.domain.narrative.prose import save_scene_content
+from storytool.domain.narrative.prose import count_words, save_scene_content
 from storytool.domain.site.funnel import record_milestone
 from storytool.domain.story.authorship import record_changes
 from storytool.domain.story.docx_import import DOCX
@@ -218,14 +218,14 @@ def _preview(imported: ImportedStory, limit: int = 400) -> PreviewOut:
     return PreviewOut(
         chapter_count=len(imported.chapters),
         scene_count=len(scenes),
-        word_count=sum(len(scene.prose.split()) for scene in scenes),
+        word_count=sum(count_words(scene.prose) for scene in scenes),
         chapters=[
             PreviewChapter(
                 title=chapter.title,
                 scenes=[
                     PreviewScene(
                         title=scene.title,
-                        words=len(scene.prose.split()),
+                        words=count_words(scene.prose),
                         summary=scene.summary,
                         has_notes=bool(scene.notes),
                     )

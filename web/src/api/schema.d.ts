@@ -1897,23 +1897,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/stories/{story_id}/evaluations/scene-reader": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Read cached scene evidence for craft checks */
-        post: operations["ApiStoriesStoryIdEvaluationsSceneReaderSceneReader"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/stories/{story_id}/evaluations/{evaluator_id}/scene-reader": {
         parameters: {
             query?: never;
@@ -1925,6 +1908,23 @@ export interface paths {
         put?: never;
         /** Read cached scene evidence for craft checks */
         post: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/evaluations/scene-reader": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read cached scene evidence for craft checks */
+        post: operations["ApiStoriesStoryIdEvaluationsSceneReaderSceneReader"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2048,7 +2048,7 @@ export interface paths {
         delete: operations["ApiStoriesStoryIdSetupsMarksMarkIdDeleteMark"];
         options?: never;
         head?: never;
-        /** Change a mark's kind or label, or accept it */
+        /** Change a mark's kind, label or quoted text, or accept it */
         patch: operations["ApiStoriesStoryIdSetupsMarksMarkIdUpdateMark"];
         trace?: never;
     };
@@ -5194,6 +5194,7 @@ export interface components {
             /** @enum {null|string} */
             kind?: "setup" | "payoff" | null;
             label?: string | null;
+            text?: string | null;
             /** @enum {null|string} */
             status?: "active" | null;
         };
@@ -11631,12 +11632,13 @@ export interface operations {
             };
         };
     };
-    ApiStoriesStoryIdEvaluationsSceneReaderSceneReader: {
+    ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 story_id: string;
+                evaluator_id: string | null;
             };
             cookie?: never;
         };
@@ -11668,13 +11670,12 @@ export interface operations {
             };
         };
     };
-    ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader: {
+    ApiStoriesStoryIdEvaluationsSceneReaderSceneReader: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 story_id: string;
-                evaluator_id: string | null;
             };
             cookie?: never;
         };

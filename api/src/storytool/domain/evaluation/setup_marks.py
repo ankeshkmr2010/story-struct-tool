@@ -214,6 +214,8 @@ class MarkIn(BaseModel):
 class MarkPatch(BaseModel):
     kind: Kind | None = None
     label: str | None = Field(default=None, max_length=200)
+    text: str | None = Field(default=None, min_length=1, max_length=2000)
+    """Re-quote the mark after the passage was reworded (e.g. a rename); must be in the scene."""
     status: Literal["active"] | None = None
     """Accepting a suggested mark; only the author can."""
 
@@ -369,7 +371,9 @@ class SetupController(Controller):
             find=passage.find,
         )
 
-    @patch("/marks/{mark_id:uuid}", summary="Change a mark's kind or label, or accept it")
+    @patch(
+        "/marks/{mark_id:uuid}", summary="Change a mark's kind, label or quoted text, or accept it"
+    )
     async def update_mark(
         self,
         request: Request,
@@ -386,6 +390,15 @@ class SetupController(Controller):
             mark.kind = data.kind
         if "label" in fields:
             mark.label = (data.label or "").strip() or None
+        if data.text:
+            scene = await db_session.get(Scene, mark.scene_id)
+            occurrence = mark.occurrence
+            if scene is None or locate(scene, data.text, occurrence) is None:
+                occurrence = 1
+            if scene is None or locate(scene, data.text, occurrence) is None:
+                raise ClientException(detail="That text is not in the scene within one paragraph.")
+            mark.quote_text = data.text
+            mark.occurrence = occurrence
         if data.status:
             mark.status = data.status
 

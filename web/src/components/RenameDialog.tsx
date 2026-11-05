@@ -34,6 +34,13 @@ export function RenameDialog({ storyId, beforeEdit }: { storyId: string; beforeE
     mutationFn: async () => {
       if (!rename) return
       const { stale } = await applyPassageEdits(storyId, kept.map(use => ({ passage: use.passage, replacement: use.replacement })), beforeEdit, t('Rename {0} → {1}', rename.from, rename.to))
+      // Setup and payoff marks quote the prose; re-quote any that contained a renamed passage.
+      const marks = await api.listSetups(storyId).catch(() => null)
+      for (const mark of marks?.marks ?? []) {
+        let text = mark.text
+        for (const use of kept) if (use.passage.scene_id === mark.scene_id && use.passage.find) text = text.split(use.passage.find).join(use.replacement)
+        if (text !== mark.text) await api.updateSetupMark(storyId, mark.id, { text }).catch(() => null)
+      }
       if (keepAlias && rename.kind === 'character') {
         const character = (await api.listCharacters(storyId)).find(item => item.id === rename.id)
         if (character && !(character.aliases ?? []).includes(rename.from)) await api.updateCharacter(storyId, character.id, { aliases: [...(character.aliases ?? []), rename.from] })
@@ -41,7 +48,7 @@ export function RenameDialog({ storyId, beforeEdit }: { storyId: string; beforeE
         const entry = (await api.listGlossary(storyId)).find(item => item.id === rename.id)
         if (entry && !(entry.aliases ?? []).includes(rename.from)) await api.updateGlossaryEntry(storyId, entry.id, { aliases: [...(entry.aliases ?? []), rename.from] })
       }
-      await Promise.all(['content', 'characters', 'glossary', 'placeholders', 'scenes', 'progress'].map(key => qc.invalidateQueries({ queryKey: [key, storyId] })))
+      await Promise.all(['content', 'characters', 'glossary', 'placeholders', 'scenes', 'progress', 'setups'].map(key => qc.invalidateQueries({ queryKey: [key, storyId] })))
       if (stale) throw new Error(`${stale} ${stale === 1 ? 'use' : 'uses'} changed since this list loaded and ${stale === 1 ? 'was' : 'were'} left alone.`)
     },
     onSuccess: () => setRename(null),

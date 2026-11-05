@@ -39,7 +39,8 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
   const act = useMutation({
     mutationFn: ({ id, action, operations }: { id: string; action: 'apply' | 'undo' | 'dismiss'; operations?: number[] }) =>
       action === 'apply' ? api.applyAIRun(storyId, id, operations) : action === 'undo' ? api.undoAIRun(storyId, id) : api.dismissAIRun(storyId, id),
-    onSuccess: refresh,
+    // Show the new status at once; the refetch below can take a while on a large story.
+    onSuccess: (run) => { qc.setQueryData<AIRun[]>(['ai-runs', storyId, 'inbox'], (list) => list?.map((item) => item.id === run.id ? run : item)); refresh() },
   })
 
   const labels = new Map<string, string>()
@@ -47,7 +48,7 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
   Object.entries(context.data?.entities ?? {}).forEach(([kind, items]) => items.forEach((item) => {
     if (typeof item.id !== 'string') return
     rows.set(item.id, item)
-    labels.set(item.id, String(item.name ?? item.title ?? item.label ?? kind.replaceAll('_', ' ')))
+    labels.set(item.id, String(item.name ?? item.title ?? item.term ?? item.label ?? kind.replaceAll('_', ' ')))
   }))
 
   const all = runs.data ?? []
@@ -81,7 +82,7 @@ export function ProposalInbox({ storyId }: { storyId: string }) {
         {shown.map((run) => {
           const open = openId === run.id
           const operations = run.proposal.operations
-          const created = new Map(operations.filter((operation) => operation.op === 'create').map((operation) => [operation.ref, String(operation.data.name ?? operation.data.title ?? operation.data.label ?? operation.entity.replaceAll('_', ' '))]))
+          const created = new Map(operations.filter((operation) => operation.op === 'create').map((operation) => [operation.ref, String(operation.data.name ?? operation.data.title ?? operation.data.term ?? operation.data.label ?? operation.entity.replaceAll('_', ' '))]))
           const label = (value: unknown) => typeof value === 'string' ? labels.get(value) ?? created.get(value) : undefined
           const busy = act.isPending && act.variables?.id === run.id
           const off = skipped[run.id] ?? []
