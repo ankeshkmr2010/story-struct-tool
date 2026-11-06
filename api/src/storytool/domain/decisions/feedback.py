@@ -48,7 +48,7 @@ class DecisionLabelIn(BaseModel):
             Field(
                 max_length=40,
                 pattern=r"^(?:hints-v[1-4]|craft-v[12]|hints-custom-v[12]-r[1-9]\d{0,9}"
-                r"|design-v1|design-custom-v1-r[1-9]\d{0,9})$",
+                r"|design-v[12]|design-custom-v1-r[1-9]\d{0,9})$",
             ),
         ]
         | None

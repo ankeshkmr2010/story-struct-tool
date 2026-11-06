@@ -96,3 +96,13 @@ def test_design_hints_are_a_lockable_feature() -> None:
     story = "/api/stories/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b"
     assert "design_hints" in feature_keys()
     assert features_for("POST", story + "/design-hints", delegated=False) == ["design_hints"]
+
+
+def test_want_and_need_with_the_same_words_are_caught_without_the_reader() -> None:
+    from storytool.domain.decisions.design_hints import same_text
+
+    same = {"item": {"want": "To win the harbour race", "need": "to win the Harbour race."}}
+    different = {"item": {"want": "To win the harbour race", "need": "Forgive her father"}}
+    assert same_text(same, "want", "need")
+    assert not same_text(different, "want", "need")
+    assert not same_text({"item": {"want": "x"}}, "want", "need")
