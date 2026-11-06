@@ -40,7 +40,7 @@ from storytool.domain.story.models import Story
 from storytool.domain.structure.models import Act, Beat, Thread
 from storytool.domain.world.models import Location
 
-RUBRIC = "design-v2"
+RUBRIC = "design-v3"
 DEFAULT_THRESHOLD = 0.6
 """Design notes are short and advisory; a lower bar than prose hints, overridable per check."""
 Level = Literal[
@@ -152,14 +152,6 @@ CHECKS: dict[str, tuple[Check, ...]] = {
             "This beat may not move the story.",
             "Name the event, decision or discovery that happens at this beat.",
         ),
-        _c(
-            "beat_act",
-            "description",
-            ("description", "parent.summary"),
-            "Does this beat contradict the purpose of the act it belongs to (see parent)?",
-            "This beat may not fit its act.",
-            "Check whether the beat belongs in another act, or update the act summary.",
-        ),
     ),
     "thread": (
         _c(
@@ -187,8 +179,7 @@ CHECKS: dict[str, tuple[Check, ...]] = {
             "scene_parts",
             "conflict",
             ("goal",),
-            "Given the goal, is there no opposition at all, in the conflict field or the "
-            "summary, standing in the way of it?",
+            "Settled by code: the scene has a goal and the conflict field is empty.",
             "This scene card may have a goal with nothing in its way.",
             "Name who or what opposes the goal in this scene.",
         ),
@@ -196,18 +187,11 @@ CHECKS: dict[str, tuple[Check, ...]] = {
             "scene_outcome",
             "outcome",
             ("goal", "outcome"),
-            "Does the outcome leave the goal exactly where it started, neither won, lost nor "
-            "complicated?",
+            "Does the outcome leave the scene's goal undecided: not achieved, not failed and "
+            "not made harder? An outcome such as 'still deciding', 'nothing happens yet' or "
+            "'they keep going' counts as yes. A win, a loss, or a win at a cost is no.",
             "The outcome may not resolve or complicate the goal.",
             "Decide whether the goal is won, lost, or won at a cost.",
-        ),
-        _c(
-            "scene_chapter",
-            "summary",
-            ("summary", "parent.summary"),
-            "Does this scene summary contradict its chapter's summary (see parent)?",
-            "This scene card may disagree with its chapter.",
-            "Check which one is current and update the other.",
         ),
     ),
     "location": (
@@ -259,7 +243,7 @@ class DesignHintReading(BaseModel):
     hints: list[DesignHint] = Field(default_factory=list)
     unavailable: str | None = None
     model: str | None = None
-    rubric_version: Literal["design-v2"] = "design-v2"
+    rubric_version: Literal["design-v3"] = "design-v3"
 
 
 def fields_of(row: Any) -> dict[str, Any]:
@@ -283,8 +267,13 @@ def _has(state: dict[str, Any], path: str) -> bool:
     return bool(source.get(name))
 
 
-SAME_TEXT = {"want_need": ("want", "need")}
-"""Checks the code can settle without the reader: the two fields say the same thing."""
+CODE_CHECKS: dict[str, Any] = {
+    "want_need": lambda state: same_text(state, "want", "need"),
+    "scene_parts": lambda state: not _has(state, "conflict"),
+}
+"""Checks the code settles without the reader when the predicate holds."""
+CODE_ONLY = {"scene_parts"}
+"""Checks never sent to the reader (it could not tell them apart reliably)."""
 
 
 def _words(text: str) -> set[str]:
@@ -322,7 +311,8 @@ async def read_design(
     personal: list[ValidatorOut],
 ) -> list[DesignHint]:
     checks = applicable(level, state)
-    obvious = {c.key for c in checks if c.key in SAME_TEXT and same_text(state, *SAME_TEXT[c.key])}
+    obvious = {c.key for c in checks if c.key in CODE_CHECKS and CODE_CHECKS[c.key](state)}
+    skipped = obvious | CODE_ONLY
     custom = [row for row in personal if custom_applies(row, level)]
     questions: dict[str, Question] = {
         c.key: Noul(
@@ -332,7 +322,7 @@ async def read_design(
             "false only for an explicit placeholder such as TBD."
         )
         for c in checks
-        if c.key not in obvious
+        if c.key not in skipped
     }
     for row in custom:
         questions[f"custom_{row.id}"] = Question(
@@ -371,6 +361,8 @@ async def read_design(
     )
     settings = get_settings()
     for c in checks:
+        if c.key in skipped:
+            continue
         answer = reading.answers.get(c.key)
         if answer is None or answer.noul is None:
             continue

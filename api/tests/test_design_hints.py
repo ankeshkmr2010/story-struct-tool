@@ -46,7 +46,7 @@ def test_context_requirements_use_parent_and_story() -> None:
     state = {"level": "beat", "item": {"description": "She lies."}}
     assert [c.key for c in applicable("beat", state)] == ["beat_turn"]
     state["parent"] = {"summary": "Act one"}
-    assert [c.key for c in applicable("beat", state)] == ["beat_turn", "beat_act"]
+    assert [c.key for c in applicable("beat", state)] == ["beat_turn"]
     place = {"level": "location", "item": {"description": "A city"}, "story": {}}
     assert applicable("location", place) == []
     place["story"] = {"world_rules": ["No magic"]}
@@ -106,3 +106,35 @@ def test_want_and_need_with_the_same_words_are_caught_without_the_reader() -> No
     assert same_text(same, "want", "need")
     assert not same_text(different, "want", "need")
     assert not same_text({"item": {"want": "x"}}, "want", "need")
+
+
+def test_scene_without_conflict_is_flagged_by_code_and_parent_checks_are_gone() -> None:
+    import asyncio
+
+    from storytool.domain.decisions.design_hints import read_design
+    from storytool.domain.decisions.types import Result
+
+    asked: list[str] = []
+
+    class Reader:
+        class provider:
+            identity = "test"
+
+        async def evaluate(self, *, model: str, state: dict, questions: dict) -> Result:
+            asked.extend(questions)
+            return Result(model=model, answers={})
+
+    state = {
+        "level": "scene",
+        "item": {"goal": "Reach the boat", "outcome": "Still deciding", "summary": "She walks."},
+        "parent": {"summary": "The boat sinks."},
+    }
+    hints = asyncio.run(read_design(Reader(), "m", "scene", state, "goal", []))  # type: ignore[arg-type]
+    assert [h.code for h in hints] == ["design.scene_parts"]
+    assert hints[0].field == "conflict" and not hints[0].evidence_keys
+    assert asked == ["scene_outcome"]
+
+    asked.clear()
+    state["item"]["conflict"] = "The gate is locked"
+    assert asyncio.run(read_design(Reader(), "m", "scene", state, "goal", [])) == []  # type: ignore[arg-type]
+    assert asked == ["scene_outcome"]
