@@ -192,7 +192,9 @@ class DialogueController(Controller):
             prepared = prepare(g)
             prepared.lines = lines
             provider, model = shared_provider()
-            service = DecisionService(db_session, Actor.user(actor(request)), provider)
+            service = DecisionService(
+                db_session, Actor.user(actor(request)), provider, g.language
+            )
             await db_session.commit()  # No transaction held across the remote calls.
             await attribute_with_reader(
                 prepared, service, model, settings.decision_evaluation_confidence

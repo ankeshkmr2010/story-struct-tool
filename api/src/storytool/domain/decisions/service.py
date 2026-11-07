@@ -42,22 +42,48 @@ def canonical(value: object) -> str:
     return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
 
 
+_LANGUAGE_NAMES = {
+    "fr": "French",
+    "de": "German",
+    "es": "Spanish",
+    "pt-PT": "European Portuguese",
+    "pt-BR": "Brazilian Portuguese",
+    "it": "Italian",
+}
+
+
+def with_language(state: dict, language: str | None) -> dict:
+    """Tell the reader the story's writing language. English stories are sent unchanged."""
+    name = _LANGUAGE_NAMES.get(language or "")
+    if name is None or "writing_language" in state:
+        return state
+    return {
+        "writing_language": f"The story is written in {name}. Read its text as {name}, and "
+        f"quote any evidence exactly as written, in {name}.",
+        **state,
+    }
+
+
 class DecisionUnavailable(Exception):
     """Missing coverage, not an authoring failure; callers retain usable local results."""
 
 
 class DecisionService:
-    def __init__(self, db: AsyncSession, actor: Actor, provider: Provider) -> None:
+    def __init__(
+        self, db: AsyncSession, actor: Actor, provider: Provider, language: str | None = None
+    ) -> None:
         if db.bind is None:
             raise DecisionUnavailable("Database unavailable")
         # Never commit the author's transaction or roll back their edits for derived data.
         self.sessions = async_sessionmaker(db.bind, expire_on_commit=False)
         self.actor = actor
         self.provider = provider
+        self.language = language
 
     async def evaluate(self, *, model: str, state: dict, questions: dict[str, Question]) -> Result:
         if not questions:
             return Result(model=model, answers={})
+        state = with_language(state, self.language)
         state_json = canonical(state)
         scope = canonical(
             {

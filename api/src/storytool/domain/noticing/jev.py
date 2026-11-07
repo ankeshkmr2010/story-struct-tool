@@ -34,6 +34,7 @@ import re
 from dataclasses import replace
 from uuid import UUID
 
+from storytool.domain.decisions.service import with_language
 from storytool.domain.decisions.types import Choice, Noul
 from storytool.domain.enums import DEFAULT_LANGUAGE
 from storytool.domain.noticing.types import (
@@ -228,8 +229,8 @@ class JevNoticer:
             response = await self._client.evaluate(  # type: ignore[attr-defined]
                 model=self._model,
                 # Only the prose. Jev degrades on irrelevant context ("context rot"), so no
-                # other story state is sent.
-                state={"scene": prose},
+                # other story state is sent (only the writing language, for non-English stories).
+                state=with_language({"scene": prose}, language),
                 questions=questions,
             )
         except Exception:

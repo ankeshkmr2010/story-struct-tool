@@ -40,6 +40,7 @@ from storytool.domain.ai.schemas import (
     RunOut,
     TokenRequest,
 )
+from storytool.domain.story.language import story_language
 
 
 class ConflictException(ClientException):
@@ -76,14 +77,14 @@ def actor(request: Request) -> UUID:
     return request.scope["state"]["storytool_user_id"]
 
 
-def catchup_reader(db: AsyncSession, user_id: UUID):
+def catchup_reader(db: AsyncSession, user_id: UUID, language: str | None = None):
     from storytool.config import get_settings
     from storytool.domain.decisions.providers import shared_provider
     from storytool.domain.decisions.service import Actor, DecisionService
     if not get_settings().shared_reader_available:
         return None, ""
     provider, model = shared_provider()
-    return DecisionService(db, Actor.user(user_id), provider), model
+    return DecisionService(db, Actor.user(user_id), provider, language), model
 
 
 def proposal_evidence(proposal: Proposal, context: dict[str, Any]) -> list[dict[str, Any]]:
@@ -265,7 +266,9 @@ class AIController(Controller):
     ) -> dict[str, Any]:
         await owned_story(db_session, story_id, actor(request))
         state = await snapshot(db_session, story_id)
-        reader, reader_model = catchup_reader(db_session, actor(request))
+        reader, reader_model = catchup_reader(
+            db_session, actor(request), await story_language(db_session, story_id)
+        )
         worklist = await catchup_worklist(db_session, story_id, state, limit, reader, reader_model)
         stale = fingerprint(state) != fingerprint(await snapshot(db_session, story_id))
         if stale:
@@ -345,7 +348,9 @@ class AIController(Controller):
         context["conversation"] = conversation
         context["assistant_mode"] = data.mode
         if data.catchup:
-            reader, reader_model = catchup_reader(db_session, user_id)
+            reader, reader_model = catchup_reader(
+                db_session, user_id, await story_language(db_session, story_id)
+            )
             context["reverse_outline"] = await catchup_worklist(
                 db_session, story_id, state, reader=reader, reader_model=reader_model
             )

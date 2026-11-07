@@ -10,12 +10,12 @@ from storytool.domain.search.schemas import SearchPage
 
 
 async def rerank_related(
-    db: AsyncSession, actor: Actor, query: str, page: SearchPage
+    db: AsyncSession, actor: Actor, query: str, page: SearchPage, language: str | None = None
 ) -> SearchPage:
     if not page.items or not get_settings().shared_reader_available:
         return page
     provider, model = shared_provider()
-    service = DecisionService(db, actor, provider)
+    service = DecisionService(db, actor, provider, language)
     state = {
         "query": query,
         "candidates": [

@@ -74,7 +74,10 @@ class StoryAnalysisController(Controller):
         if get_settings().shared_reader_available and graph.story.authoring_mode != "pantser":
             provider, model = shared_provider()
             service = DecisionService(
-                db_session, Actor.user(request.scope["state"]["storytool_user_id"]), provider
+                db_session,
+                Actor.user(request.scope["state"]["storytool_user_id"]),
+                provider,
+                graph.language,
             )
         await db_session.commit()
         levels = await read_nudges(service, model, state)

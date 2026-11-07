@@ -26,6 +26,7 @@ from storytool.domain.decisions.providers import shared_provider
 from storytool.domain.decisions.service import Actor, DecisionService
 from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.narrative.models import Scene
+from storytool.domain.story.language import story_language
 
 _secret = secrets.token_bytes(32)
 _peers: OrderedDict[str, tuple[int, int, int]] = OrderedDict()
@@ -82,14 +83,16 @@ def sandbox_identity(request: Request) -> tuple[str, Cookie | None]:
     return identifier, cookie
 
 
-async def hints(db: AsyncSession, actor: Actor, data: HintInput) -> HintReading:
+async def hints(
+    db: AsyncSession, actor: Actor, data: HintInput, language: str | None = None
+) -> HintReading:
     if not get_settings().shared_reader_available:
         return HintReading(
             content_hash=hashlib.sha256(data.content.encode()).hexdigest(),
             unavailable="The shared reader is not configured yet.",
         )
     provider, model = shared_provider()
-    service = DecisionService(db, actor, provider)
+    service = DecisionService(db, actor, provider, language)
     personal = await enabled_validators(db, actor.user_id) if actor.user_id else []
     await db.commit()  # Release read-only DB connection before the provider request.
     result, (custom, messages, _observations) = await asyncio.gather(
@@ -142,7 +145,10 @@ class WritingHintsController(Controller):
             data.known_names = []
             data.known_names_complete = False
         return await hints(
-            db_session, Actor.user(request.scope["state"]["storytool_user_id"]), data
+            db_session,
+            Actor.user(request.scope["state"]["storytool_user_id"]),
+            data,
+            await story_language(db_session, story_id),
         )
 
 

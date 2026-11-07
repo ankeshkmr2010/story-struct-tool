@@ -14,6 +14,7 @@ from storytool.domain.decisions.providers import shared_provider
 from storytool.domain.decisions.service import Actor, DecisionService, DecisionUnavailable
 from storytool.domain.decisions.types import Choice, Score
 from storytool.domain.story.beta import BetaMessage, BetaThread, owner_round
+from storytool.domain.story.language import story_language
 from storytool.domain.story.sharing import actor
 
 CATEGORIES = {
@@ -89,7 +90,12 @@ class BetaTriageController(Controller):
             result.notice = "The shared reader is not configured yet."
             return result
         provider, model = shared_provider()
-        service = DecisionService(db_session, Actor.user(actor(request)), provider)
+        service = DecisionService(
+            db_session,
+            Actor.user(actor(request)),
+            provider,
+            await story_language(db_session, story_id),
+        )
         await db_session.commit()
         gate = asyncio.Semaphore(8)
         questions = {

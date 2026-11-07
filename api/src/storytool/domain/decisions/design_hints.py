@@ -36,6 +36,7 @@ from storytool.domain.decisions.types import Noul, Question
 from storytool.domain.decisions.validators import ValidatorOut
 from storytool.domain.glossary import GlossaryEntry
 from storytool.domain.narrative.models import Chapter, Scene
+from storytool.domain.story.language import story_language
 from storytool.domain.story.models import Story
 from storytool.domain.structure.models import Act, Beat, Thread
 from storytool.domain.world.models import Location
@@ -464,7 +465,9 @@ class DesignHintsController(Controller):
         actor = Actor.user(request.scope["state"]["storytool_user_id"])
         provider, model = shared_provider()
         result.model = model
-        service = DecisionService(db_session, actor, provider)
+        service = DecisionService(
+            db_session, actor, provider, await story_language(db_session, story_id)
+        )
         personal = await enabled_validators(db_session, actor.user_id) if actor.user_id else []
         await db_session.commit()  # Release the read-only connection before the provider call.
         try:

@@ -14,6 +14,7 @@ from storytool.domain.search.schemas import (
     SearchPage,
 )
 from storytool.domain.search.service import CONTEXTS, FIELDS, allowed_fields, text_search
+from storytool.domain.story.language import story_language
 from storytool.domain.story.models import Story
 
 
@@ -60,7 +61,11 @@ class SearchController(Controller):
             from storytool.domain.decisions.service import Actor
 
             return await rerank_related(
-                db_session, Actor.user(request.scope["state"]["storytool_user_id"]), q, page
+                db_session,
+                Actor.user(request.scope["state"]["storytool_user_id"]),
+                q,
+                page,
+                await story_language(db_session, story_id),
             )
         result = await text_search(db_session, story_id, context, q, field, offset, limit, entity)
         result.semantic_available = get_settings().semantic_search_available

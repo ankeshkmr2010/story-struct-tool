@@ -228,9 +228,12 @@ class EvaluationController(Controller):
             raise ClientException(detail="The site-provided scene reader is not configured yet")
         # Copy what the reader needs into plain values first: the commit below expires the
         # graph's ORM objects, and reloading them inside async code fails.
-        data = prepare(await self._graph(db_session, story_id))
+        graph = await self._graph(db_session, story_id)
+        data = prepare(graph)
         provider, model = shared_provider()
-        service = DecisionService(db_session, Actor.user(actor(request)), provider)
+        service = DecisionService(
+            db_session, Actor.user(actor(request)), provider, graph.language
+        )
         await db_session.commit()  # No transaction held across the remote calls.
         result = await refine_with_reader(
             data, service, model, settings.decision_evaluation_confidence
@@ -300,7 +303,9 @@ class EvaluationController(Controller):
         locations["none"] = "No listed place matches the main action."
         base = fingerprint(await snapshot(db_session, story_id))
         provider, model = shared_provider()
-        service = DecisionService(db_session, Actor.user(actor(request)), provider)
+        service = DecisionService(
+            db_session, Actor.user(actor(request)), provider, graph.language
+        )
         # All scene inputs are plain values before releasing the read transaction.
         await db_session.commit()
         result = await read_scenes(
