@@ -3613,5 +3613,9 @@
  "You have: {0}": "Tienes: {0}",
  "Upgrades are coming soon.": "Las mejoras de plan llegarán pronto.",
  "There are no plans to choose from yet.": "Aún no hay planes para elegir.",
- "Plans · StoryTool": "Planes · StoryTool"
+ "Plans · StoryTool": "Planes · StoryTool",
+ "Back to plans": "Volver a los planes",
+ "← Plans": "← Planes",
+ "Extend {0}": "Ampliar {0}",
+ "This plan is not available.": "Este plan no está disponible."
 }

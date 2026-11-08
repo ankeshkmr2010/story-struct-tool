@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { api, type PlanCheckout, type PlanTier, type PlansList } from '../api/client'
 import { errorText } from '../api/errors'
 import { t } from '../i18n'
 import { Button } from '../ui/primitives'
-import { Dialog } from '../ui/Dialog'
 import { heldLabel, monthsLabel, planDay, useMyPlan } from '../components/YourPlan'
 
 type AnyTier = PlansList['tiers'][number] & Partial<Pick<PlanTier, 'have' | 'adds' | 'raises' | 'loses' | 'blocked' | 'can_buy'>>
@@ -13,7 +12,7 @@ type AnyTier = PlansList['tiers'][number] & Partial<Pick<PlanTier, 'have' | 'add
 const limitText = (value: number | null) => (value === null ? t('unlimited') : String(value))
 
 /** Choose a length, see the end date, go ahead. Payment is a stand-in for now. */
-function UpgradeDialog({ tier, onClose }: { tier: PlanTier; onClose: () => void }) {
+function UpgradeForm({ tier }: { tier: PlanTier }) {
   const qc = useQueryClient()
   const [months, setMonths] = useState(tier.durations[0] ?? 1)
   const [checkout, setCheckout] = useState<PlanCheckout | null>(null)
@@ -26,11 +25,11 @@ function UpgradeDialog({ tier, onClose }: { tier: PlanTier; onClose: () => void 
     },
   })
   const paid = checkout?.status === 'paid'
-  return <Dialog open onClose={onClose} title={t('Upgrade to {0}', tier.name)}>
+  return <>
     {paid
       ? <div className="plan-dialog">
         <p>{t('Done. {0} is yours until {1}.', tier.name, planDay(checkout.ends_at))}</p>
-        <p className="mt-4"><Button variant="primary" onClick={onClose}>{t('Close')}</Button></p>
+        <p className="mt-4 flex gap-2"><Link to="/plans" className="ui-btn ui-btn-primary">{t('Back to plans')}</Link><Link to="/settings#plan" className="ui-btn ui-btn-secondary">{t('Your settings')}</Link></p>
       </div>
       : <div className="plan-dialog">
         <fieldset disabled={!!checkout || start.isPending}>
@@ -53,10 +52,25 @@ function UpgradeDialog({ tier, onClose }: { tier: PlanTier; onClose: () => void 
           </>}
         {(start.error || confirm.error) && <p role="alert" className="mt-3 text-sm">{errorText(start.error ?? confirm.error)}</p>}
       </div>}
-  </Dialog>
+  </>
 }
 
-function TierCard({ tier, signedIn, upgrades, onUpgrade }: { tier: AnyTier; signedIn: boolean; upgrades: PlansList['upgrades']; onUpgrade: () => void }) {
+/** /plans/upgrade/:tierId — the upgrade or extend step on its own page. */
+export function PlanUpgradePage() {
+  const { tierId } = useParams()
+  const plan = useMyPlan()
+  const tier = plan.data?.tiers.find(row => row.id === tierId)
+  return <main className="mx-auto max-w-[1200px] px-5 py-8 sm:px-8">
+    <Link to="/plans" className="text-sm text-slate-500 dark:text-slate-400 hover:underline">{t('← Plans')}</Link>
+    <h1 className="mt-5 text-2xl font-semibold">{tier ? (tier.have === 'subscription' ? t('Extend {0}', tier.name) : t('Upgrade to {0}', tier.name)) : t('Plans')}</h1>
+    {plan.isLoading && <p className="writer-help mt-4">{t('Loading…')}</p>}
+    {plan.error && <p role="alert" className="mt-3 text-sm">{errorText(plan.error)}</p>}
+    {plan.data && !tier && <p className="mt-4">{t('This plan is not available.')}</p>}
+    {plan.data && tier && (plan.data.upgrades === 'off' ? <p className="mt-4">{t('Upgrades are coming soon.')}</p> : <div className="mt-4"><UpgradeForm tier={tier} /></div>)}
+  </main>
+}
+
+function TierCard({ tier, signedIn, upgrades }: { tier: AnyTier; signedIn: boolean; upgrades: PlansList['upgrades'] }) {
   return <li className="plan-card">
     <div className="plan-card-head">
       <h2 className="text-lg font-semibold">{tier.name}</h2>
@@ -79,7 +93,7 @@ function TierCard({ tier, signedIn, upgrades, onUpgrade }: { tier: AnyTier; sign
         : upgrades === 'off'
           ? null
           : tier.can_buy
-            ? <Button variant="primary" size="sm" onClick={onUpgrade}>{tier.have === 'subscription' ? t('Extend') : t('Upgrade')}</Button>
+            ? <Link to={`/plans/upgrade/${tier.id}`} className="ui-btn ui-btn-primary ui-btn-sm">{tier.have === 'subscription' ? t('Extend') : t('Upgrade')}</Link>
             : tier.have ? <span className="writer-help">{t('You already have this plan.')}</span> : null}
     </div>
   </li>
@@ -90,7 +104,6 @@ export default function Plans() {
   const signedIn = me.isSuccess
   const mine = useMyPlan(signedIn)
   const open = useQuery({ queryKey: ['plans'], queryFn: api.plans, enabled: me.isError })
-  const [choosing, setChoosing] = useState<PlanTier | null>(null)
   const data = signedIn ? mine.data : open.data
   const error = signedIn ? mine.error : open.error
   return <main className="mx-auto max-w-[1200px] px-5 py-8 sm:px-8">
@@ -101,8 +114,7 @@ export default function Plans() {
     {error && <p role="alert" className="mt-3 text-sm">{errorText(error)}</p>}
     {data && data.tiers.length === 0 && <p className="writer-help mt-4">{t('There are no plans to choose from yet.')}</p>}
     {data && <ul className="plan-grid mt-6">
-      {(data.tiers as AnyTier[]).map(tier => <TierCard key={tier.id} tier={tier} signedIn={signedIn} upgrades={data.upgrades} onUpgrade={() => setChoosing(tier as PlanTier)} />)}
+      {(data.tiers as AnyTier[]).map(tier => <TierCard key={tier.id} tier={tier} signedIn={signedIn} upgrades={data.upgrades} />)}
     </ul>}
-    {choosing && <UpgradeDialog tier={choosing} onClose={() => setChoosing(null)} />}
   </main>
 }

@@ -15,7 +15,7 @@ import Roadmap from './pages/Roadmap'
 import Shoutouts from './pages/Shoutouts'
 import About from './pages/About'
 import Pricing from './pages/Pricing'
-import Plans from './pages/Plans'
+import Plans, { PlanUpgradePage } from './pages/Plans'
 import Privacy from './pages/Privacy'
 import Feedback from './pages/Feedback'
 import Admin from './pages/Admin'
@@ -82,6 +82,7 @@ export default function App() {
       <Route element={<AuthGate><Outlet /></AuthGate>}>
         <Route path="/library" element={<StoryList />} />
         <Route path="/settings" element={<UserSettings />} />
+        <Route path="/plans/upgrade/:tierId" element={<PlanUpgradePage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/checks" element={<WritingChecks />} />
         <Route path="/feedback" element={<Feedback />} />

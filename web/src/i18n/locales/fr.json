@@ -3572,5 +3572,9 @@
  "You have: {0}": "Vous avez : {0}",
  "Upgrades are coming soon.": "Les changements d’offre arrivent bientôt.",
  "There are no plans to choose from yet.": "Il n’y a pas encore d’offre à choisir.",
- "Plans · StoryTool": "Offres · StoryTool"
+ "Plans · StoryTool": "Offres · StoryTool",
+ "Back to plans": "Retour aux offres",
+ "← Plans": "← Offres",
+ "Extend {0}": "Prolonger {0}",
+ "This plan is not available.": "Cette offre n’est pas disponible."
 }
