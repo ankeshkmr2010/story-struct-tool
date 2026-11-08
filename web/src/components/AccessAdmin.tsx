@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, type AccessAccount, type AccessCatalogueItem, type AccessTier } from '../api/client'
+import { api, type AccessTierInput, type AccessAccount, type AccessCatalogueItem, type AccessTier } from '../api/client'
 import { errorText } from '../api/errors'
 import { t } from '../i18n'
 import { Button, ConfirmInline } from '../ui/primitives'
@@ -30,11 +30,11 @@ export function TiersTab() {
       name: name.trim(),
       key: name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'tier',
       rank: tiers.length ? Math.max(...tiers.map(row => row.rank)) + 10 : 0,
-      is_default: false, features: {}, limits: {},
+      is_default: false, self_serve: false, features: {}, limits: {},
     }),
     onSuccess: () => { setName(''); refresh() },
   })
-  const update = useMutation({ mutationFn: ({ id, is_default }: { id: string; is_default: boolean }) => api.updateAccessTier(id, { is_default }), onSuccess: refresh })
+  const update = useMutation({ mutationFn: ({ id, ...change }: { id: string } & Partial<AccessTierInput>) => api.updateAccessTier(id, change), onSuccess: refresh })
   const remove = useMutation({ mutationFn: (id: string) => api.deleteAccessTier(id), onSuccess: () => { setDeleting(null); refresh() } })
   const error = loadError ?? create.error ?? update.error ?? remove.error
   return <>
@@ -54,6 +54,11 @@ export function TiersTab() {
           <span><strong>{tier.name}</strong> <span className="text-xs text-[var(--muted)]">{t('{0} of {1} features locked', locked, features.length)}</span></span>
           <span className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2"><input type="checkbox" checked={tier.is_default} disabled={update.isPending} onChange={(event) => update.mutate({ id: tier.id, is_default: event.target.checked })} />{t('Default for accounts with no tier')}</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={tier.self_serve} disabled={update.isPending} onChange={(event) => update.mutate({ id: tier.id, self_serve: event.target.checked })} />{t('On the Plans page')}</label>
+            {tier.self_serve && <>
+              <label className="flex items-center gap-2">{t('Price note')}<input key={`price-${tier.price_note ?? ''}`} defaultValue={tier.price_note ?? ''} maxLength={120} placeholder={t('e.g. €5 a month')} className="rounded-md border border-[var(--line)] bg-[var(--surface)] p-1" onBlur={(event) => { const value = event.target.value.trim() || null; if (value !== tier.price_note) update.mutate({ id: tier.id, price_note: value }) }} /></label>
+              <label className="flex items-center gap-2">{t('Months offered')}<input key={`months-${tier.durations.join(',')}`} defaultValue={tier.durations.join(', ')} className="w-28 rounded-md border border-[var(--line)] bg-[var(--surface)] p-1" onBlur={(event) => { const months = [...new Set(event.target.value.split(/[^0-9]+/).map(Number).filter(n => n >= 1 && n <= 120))].sort((a, b) => a - b); if (months.length && months.join(',') !== tier.durations.join(',')) update.mutate({ id: tier.id, durations: months }) }} /></label>
+            </>}
             {deleting === tier.id
               ? <ConfirmInline danger message={t('Delete {0}? Its accounts fall back to the default.', tier.name)} confirmLabel={t('Delete tier')} onConfirm={() => remove.mutate(tier.id)} onCancel={() => setDeleting(null)} />
               : <Button size="sm" variant="ghost" onClick={() => setDeleting(tier.id)}>{t('Delete tier')}</Button>}

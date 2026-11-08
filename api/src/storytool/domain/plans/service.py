@@ -2,9 +2,10 @@
 
 Rules, in order:
 1. Every feature is on and every limit at its catalogue default.
-2. The tiers that apply are the account's own (until it expires) and those of its current
-   groups; with none, the default tier if one is marked. A feature is on if any of them leaves
-   it on; a limit is the most generous of them (None, unlimited, wins).
+2. The tiers that apply are the account's own (until it expires), those of its current
+   groups and of its active self-serve subscriptions; with none, the default tier if one is
+   marked. A feature is on if any of them leaves it on; a limit is the most generous of
+   them (None, unlimited, wins).
 3. The account's own overrides win over any tier.
 
 Most requests need no lookup: a short-lived set of the keys any tier or override restricts says
@@ -12,7 +13,7 @@ whether a request's features could be locked for anyone at all.
 """
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -26,6 +27,7 @@ from storytool.domain.plans.models import (
     AccountAccess,
     AccountGroup,
     AccountGroupMember,
+    Subscription,
 )
 
 RESTRICTED_TTL = 30.0
@@ -38,10 +40,22 @@ class TierData:
     rank: int
     features: dict[str, Any] = field(default_factory=dict)
     limits: dict[str, Any] = field(default_factory=dict)
+    id: UUID | None = None
 
     @classmethod
     def of(cls, tier: AccessTier) -> "TierData":
-        return cls(tier.key, tier.name, tier.rank, dict(tier.features), dict(tier.limits))
+        return cls(tier.key, tier.name, tier.rank, dict(tier.features), dict(tier.limits), tier.id)
+
+
+@dataclass(frozen=True, slots=True)
+class Held:
+    """One reason a tier applies: the account's own, a group's, a subscription or the default."""
+
+    tier_id: UUID
+    source: str
+    """account, group, subscription or default."""
+    ends_at: datetime | None = None
+    group: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +64,9 @@ class Access:
     limits: dict[str, int | None]
     tiers: tuple[TierData, ...]
     """The tiers that applied, highest rank first."""
+    held: tuple[Held, ...] = ()
+    overridden: frozenset[str] = frozenset()
+    """Features the account's own overrides switch off, whatever its tiers include."""
 
     def allows(self, key: str) -> bool:
         return self.features.get(key, True)
@@ -84,11 +101,11 @@ def combine(
 async def resolve(db: AsyncSession, user_id: UUID) -> Access:
     now = datetime.now(UTC)
     own = await db.scalar(select(AccountAccess).where(AccountAccess.user_id == user_id))
-    tier_ids: set[UUID] = set()
+    held: list[Held] = []
     if own and own.tier_id and (own.tier_expires_at is None or own.tier_expires_at > now):
-        tier_ids.add(own.tier_id)
-    group_tiers = await db.scalars(
-        select(AccountGroup.tier_id)
+        held.append(Held(own.tier_id, "account", own.tier_expires_at))
+    groups = await db.execute(
+        select(AccountGroup.tier_id, AccountGroup.expires_at, AccountGroup.name)
         .join(AccountGroupMember, AccountGroupMember.group_id == AccountGroup.id)
         .where(
             AccountGroupMember.user_id == user_id,
@@ -96,16 +113,31 @@ async def resolve(db: AsyncSession, user_id: UUID) -> Access:
             or_(AccountGroup.expires_at.is_(None), AccountGroup.expires_at > now),
         )
     )
-    tier_ids.update(t for t in group_tiers if t)
-    if tier_ids:
-        rows = await db.scalars(select(AccessTier).where(AccessTier.id.in_(tier_ids)))
+    held += [Held(g.tier_id, "group", g.expires_at, g.name) for g in groups if g.tier_id]
+    subscriptions = await db.execute(
+        select(Subscription.tier_id, Subscription.ends_at).where(
+            Subscription.user_id == user_id,
+            Subscription.tier_id.is_not(None),
+            Subscription.status == "active",
+            Subscription.starts_at <= now,
+            Subscription.ends_at > now,
+        )
+    )
+    held += [Held(s.tier_id, "subscription", s.ends_at) for s in subscriptions if s.tier_id]
+    if held:
+        rows = list(
+            await db.scalars(select(AccessTier).where(AccessTier.id.in_({h.tier_id for h in held})))
+        )
     else:
-        rows = await db.scalars(select(AccessTier).where(AccessTier.is_default.is_(True)))
-    return combine(
+        rows = list(await db.scalars(select(AccessTier).where(AccessTier.is_default.is_(True))))
+        held = [Held(row.id, "default") for row in rows]
+    access = combine(
         [TierData.of(row) for row in rows],
         own.features if own else None,
         own.limits if own else None,
     )
+    off = frozenset(k for k, v in ((own.features if own else None) or {}).items() if v is False)
+    return replace(access, held=tuple(held), overridden=off)
 
 
 _restricted: tuple[float, frozenset[str]] = (0.0, frozenset())

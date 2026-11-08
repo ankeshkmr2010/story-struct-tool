@@ -26,6 +26,56 @@ class AccessTier(StoryToolBase):
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
     features: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     limits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
+    self_serve: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    """Listed on the Plans page and open to self-serve upgrades."""
+    price_note: Mapped[str | None] = mapped_column(String(120), default=None)
+    """Shown beside the tier while upgrades are on, e.g. "€5 a month"."""
+    durations: Mapped[list[int]] = mapped_column(
+        JSONB, default=lambda: [1, 3, 6, 12], server_default="[1, 3, 6, 12]"
+    )
+    """Months a self-serve upgrade can last."""
+
+
+class Subscription(StoryToolBase):
+    """A self-serve upgrade: one tier for a period, apart from any tier an admin set.
+    Active while `status` is active and now is before `ends_at`. `provider` records who
+    approved it (stub until a payment vendor exists), so stub grants can be found later."""
+
+    __tablename__ = "subscription"
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("app_user.id", ondelete="CASCADE"), index=True)
+    tier_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("access_tier.id", ondelete="SET NULL"), default=None, index=True
+    )
+    starts_at: Mapped[datetime] = mapped_column(DateTimeUTC(timezone=True))
+    ends_at: Mapped[datetime] = mapped_column(DateTimeUTC(timezone=True))
+    provider: Mapped[str] = mapped_column(String(20))
+    external_id: Mapped[str | None] = mapped_column(String(200), default=None)
+    status: Mapped[str] = mapped_column(String(10), default="active")
+    """active or ended."""
+
+
+class Checkout(StoryToolBase):
+    """One upgrade attempt. Holds what was offered (tier and months) so a later tier edit
+    cannot change it; confirmed once, from pending to paid, before `expires_at`."""
+
+    __tablename__ = "checkout"
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("app_user.id", ondelete="CASCADE"), index=True)
+    tier_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("access_tier.id", ondelete="SET NULL"), default=None
+    )
+    tier_key: Mapped[str] = mapped_column(String(40))
+    tier_name: Mapped[str] = mapped_column(String(80))
+    months: Mapped[int] = mapped_column(Integer)
+    provider: Mapped[str] = mapped_column(String(20))
+    external_id: Mapped[str | None] = mapped_column(String(200), default=None)
+    status: Mapped[str] = mapped_column(String(10), default="pending")
+    """pending or paid."""
+    expires_at: Mapped[datetime] = mapped_column(DateTimeUTC(timezone=True))
+    subscription_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("subscription.id", ondelete="SET NULL"), default=None
+    )
 
 
 class AccountGroup(StoryToolBase):

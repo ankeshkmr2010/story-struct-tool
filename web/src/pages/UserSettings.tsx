@@ -10,6 +10,7 @@ import { HabitGoalForm } from '../components/Goals'
 import { useGuide } from '../components/guide'
 import { ConnectWizard } from '../components/ConnectWizard'
 import { FeatureLock } from '../components/FeatureLock'
+import { YourPlanSettings } from '../components/YourPlan'
 
 function AuthorNameSettings() {
   const qc = useQueryClient()
@@ -124,9 +125,10 @@ export default function UserSettings() {
       <Link to="/library" className="text-sm text-slate-500 dark:text-slate-400 hover:underline">{t('← Your stories')}</Link>
       <h1 className="mt-5 text-2xl font-semibold">{t('Your settings')}</h1>
       <div className="settings-layout">
-        <nav className="settings-nav" aria-label={t('Settings sections')}><a href="#profile">{t('Profile')}</a><a href="#writing-goal">{t('Writing goal')}</a><a href="#statuses">{t('Scene statuses')}</a><a href="#ai-clients">{t('AI clients')}</a><a href="#api-keys">{t('API keys')}</a><Link to="/checks">{t('Writing checks')}</Link></nav>
+        <nav className="settings-nav" aria-label={t('Settings sections')}><a href="#profile">{t('Profile')}</a><a href="#plan">{t('Your plan')}</a><a href="#writing-goal">{t('Writing goal')}</a><a href="#statuses">{t('Scene statuses')}</a><a href="#ai-clients">{t('AI clients')}</a><a href="#api-keys">{t('API keys')}</a><Link to="/checks">{t('Writing checks')}</Link></nav>
         <div className="min-w-0">
       <AuthorNameSettings />
+      <YourPlanSettings />
       <LanguageSettings />
       <StatusSettings />
       <TipSettings />

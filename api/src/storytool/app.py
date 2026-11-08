@@ -46,6 +46,7 @@ from storytool.domain.narrative.prose_controller import (
 from storytool.domain.noticing.controller import NoticingController
 from storytool.domain.plans.controller import AdminAccessController, MyAccessController
 from storytool.domain.plans.middleware import PlanAccessMiddleware
+from storytool.domain.plans.upgrades import MyPlanController, PlansController
 from storytool.domain.rename import RenameController
 from storytool.domain.search.controller import LibrarySearchController, SearchController
 from storytool.domain.search.semantic import search_lifespan
@@ -160,6 +161,8 @@ def create_app(db_plugin: SQLAlchemyPlugin | None = None) -> Litestar:
             CharacterStateController,
             MyAccessController,
             AdminAccessController,
+            PlansController,
+            MyPlanController,
             RenameController,
             CharacterMergeController,
             PublicShoutoutController,

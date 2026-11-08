@@ -72,6 +72,9 @@ class Settings(BaseSettings):
 
     # Comma-separated Google account emails that may edit site content (the /thanks page).
     admin_emails: str = ""
+    # Self-serve upgrades: "off" refuses them; "stub" approves every upgrade without payment
+    # (a stand-in until a payment vendor is connected).
+    self_upgrade: Literal["off", "stub"] = "off"
     mcp_allowed_origins: list[str] = ["https://gemini.google.com"]
 
     @field_validator("database_url")

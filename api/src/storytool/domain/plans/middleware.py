@@ -73,16 +73,18 @@ class PlanAccessMiddleware:
                 if (owned or 0) >= cap:
                     return {
                         "detail": f"Your plan allows {cap} active stories. Move one to Trash "
-                        "or upgrade to add another.",
+                        "or upgrade to add another. See Plans in Settings.",
                         "code": "limit_reached",
+                        "upgrade_url": "/plans",
                         "limit": key,
                         "value": cap,
                     }
             elif not access.allows(key):
                 tiers = [TierData.of(t) for t in await db.scalars(select(AccessTier))]
                 return {
-                    "detail": "This feature is not included in your plan.",
+                    "detail": "This feature is not included in your plan. See Plans in Settings.",
                     "code": "feature_locked",
+                    "upgrade_url": "/plans",
                     "feature": key,
                     "tiers": granting_tiers(tiers, key),
                 }

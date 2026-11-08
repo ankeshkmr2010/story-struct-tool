@@ -15,6 +15,7 @@ import Roadmap from './pages/Roadmap'
 import Shoutouts from './pages/Shoutouts'
 import About from './pages/About'
 import Pricing from './pages/Pricing'
+import Plans from './pages/Plans'
 import Privacy from './pages/Privacy'
 import Feedback from './pages/Feedback'
 import Admin from './pages/Admin'
@@ -35,7 +36,7 @@ const TryLocked = lazy(() => import('./pages/TryStory').then(m => ({ default: m.
 // Browser tab titles by route; story pages refine theirs once the story's title loads.
 const PAGE_TITLES: [RegExp, string][] = [
   [/^\/$/, tx('StoryTool — Your novel’s memory, for you and your AI')], [/^\/try/, tx('Try StoryTool')], [/^\/how-to-use/, tx('How to use · StoryTool')],
-  [/^\/roadmap/, tx('Roadmap · StoryTool')], [/^\/thanks/, tx('Shoutouts · StoryTool')], [/^\/about/, tx('About the developer · StoryTool')], [/^\/pricing/, tx('Pricing · StoryTool')],
+  [/^\/roadmap/, tx('Roadmap · StoryTool')], [/^\/thanks/, tx('Shoutouts · StoryTool')], [/^\/about/, tx('About the developer · StoryTool')], [/^\/pricing/, tx('Pricing · StoryTool')], [/^\/plans/, tx('Plans · StoryTool')],
   [/^\/privacy/, tx('Privacy · StoryTool')], [/^\/library/, tx('Your stories · StoryTool')], [/^\/settings/, tx('Settings · StoryTool')], [/^\/goals/, tx('Writing goals · StoryTool')],
   [/^\/checks/, tx('Writing checks · StoryTool')], [/^\/feedback/, tx('Feedback · StoryTool')], [/^\/admin/, tx('Admin · StoryTool')], [/^\/oauth/, tx('Connect AI · StoryTool')],
   [/^\/stories\/[^/]+\/images/, tx('Images · StoryTool')], [/^\/stories\/[^/]+\/beside/, tx('Beside · StoryTool')], [/^\/stories\/[^/]+\/beta/, tx('Beta readers · StoryTool')],
@@ -75,6 +76,7 @@ export default function App() {
       <Route path="/thanks" element={<Shoutouts />} />
       <Route path="/about" element={<About />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/plans" element={<Plans />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/showcase/:token" element={<Suspense fallback={<p className="p-8">{t('Loading showcase…')}</p>}><StoryShowcase /></Suspense>} />
       <Route element={<AuthGate><Outlet /></AuthGate>}>

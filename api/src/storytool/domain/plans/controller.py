@@ -6,7 +6,7 @@ Admin endpoints need an account in STORYTOOL_ADMIN_EMAILS. Every change is recor
 
 import json
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
 from litestar import Controller, Request, delete, get, patch, post, put
@@ -60,6 +60,11 @@ class AccessTierIn(BaseModel):
     is_default: bool = False
     features: FeatureMap = Field(default_factory=dict)
     limits: LimitMap = Field(default_factory=dict)
+    self_serve: bool = False
+    price_note: str | None = Field(default=None, max_length=120)
+    durations: list[Annotated[int, Field(ge=1, le=120)]] = Field(
+        default_factory=lambda: [1, 3, 6, 12], max_length=12
+    )
 
 
 class AccessTierPatch(BaseModel):
@@ -70,6 +75,11 @@ class AccessTierPatch(BaseModel):
     is_default: bool | None = None
     features: FeatureMap | None = None
     limits: LimitMap | None = None
+    self_serve: bool | None = None
+    price_note: str | None = Field(default=None, max_length=120)
+    durations: list[Annotated[int, Field(ge=1, le=120)]] | None = Field(
+        default=None, max_length=12
+    )
 
 
 class AccessTierOut(BaseModel):
@@ -82,6 +92,9 @@ class AccessTierOut(BaseModel):
     is_default: bool
     features: FeatureMap
     limits: LimitMap
+    self_serve: bool
+    price_note: str | None
+    durations: list[int]
 
 
 class AccessGroupIn(BaseModel):
@@ -241,6 +254,7 @@ class AdminAccessController(Controller):
             raise ClientException(detail=f"A tier with key {data.key!r} already exists")
         if data.is_default:
             await self._clear_default(db_session)
+        data.durations = sorted(set(data.durations or [1, 3, 6, 12]))
         tier = AccessTier(**data.model_dump())
         db_session.add(tier)
         await db_session.flush()
@@ -262,6 +276,8 @@ class AdminAccessController(Controller):
         for name, value in values.items():
             if name in {"features", "limits"} and value is None:
                 value = {}
+            if name == "durations":
+                value = sorted(set(value or [1, 3, 6, 12]))
             setattr(tier, name, value)
         await _record(db_session, request, "tier", tier.id, {"changed": values})
         return AccessTierOut.model_validate(tier)

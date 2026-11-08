@@ -1897,23 +1897,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/stories/{story_id}/evaluations/scene-reader": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Read cached scene evidence for craft checks */
-        post: operations["ApiStoriesStoryIdEvaluationsSceneReaderSceneReader"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/stories/{story_id}/evaluations/{evaluator_id}/scene-reader": {
         parameters: {
             query?: never;
@@ -1925,6 +1908,23 @@ export interface paths {
         put?: never;
         /** Read cached scene evidence for craft checks */
         post: operations["ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stories/{story_id}/evaluations/scene-reader": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read cached scene evidence for craft checks */
+        post: operations["ApiStoriesStoryIdEvaluationsSceneReaderSceneReader"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2307,6 +2307,74 @@ export interface paths {
         /** Set an account's tier, end date and overrides */
         put: operations["ApiAdminAccessAccountsUserIdSetAccount"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plans open to self-serve upgrades, cheapest first */
+        get: operations["ApiPlansPlans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/upgrade/{checkout_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Go ahead with a stub upgrade */
+        post: operations["ApiMeUpgradeCheckoutIdConfirmConfirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your plan: the tiers you have and what each plan would add */
+        get: operations["ApiMePlanMyPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/upgrade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start an upgrade to a plan for some months */
+        post: operations["ApiMeUpgradeStart"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3912,6 +3980,10 @@ export interface components {
             limits?: {
                 [key: string]: number | null;
             };
+            /** @default false */
+            self_serve: boolean;
+            price_note?: string | null;
+            durations?: number[];
         };
         /** AccessTierOut */
         AccessTierOut: {
@@ -3928,6 +4000,9 @@ export interface components {
             limits: {
                 [key: string]: number | null;
             };
+            self_serve: boolean;
+            price_note: string | null;
+            durations: number[];
         };
         /** AccessTierPatch */
         AccessTierPatch: {
@@ -3941,6 +4016,9 @@ export interface components {
             limits?: {
                 [key: string]: number | null;
             } | null;
+            self_serve?: boolean | null;
+            price_note?: string | null;
+            durations?: number[] | null;
         };
         /** AccessTierRef */
         AccessTierRef: {
@@ -4530,6 +4608,20 @@ export interface components {
             aliases?: string[] | null;
             relation_to_protagonist?: string | null;
             notes?: string | null;
+        };
+        /** CheckoutOut */
+        CheckoutOut: {
+            /** Format: uuid */
+            id: string;
+            tier_key: string;
+            tier_name: string;
+            months: number;
+            status: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            redirect_url?: string | null;
         };
         /** ChoiceTrigger */
         ChoiceTrigger: {
@@ -5384,6 +5476,34 @@ export interface components {
             rebalanced: boolean;
             chapter_id?: string | null;
         };
+        /** MyPlanOut */
+        MyPlanOut: {
+            /** @enum {string} */
+            upgrades: "off" | "stub";
+            everything_included: boolean;
+            held: components["schemas"]["PlanHeld"][];
+            tiers: components["schemas"]["MyPlanTier"][];
+        };
+        /** MyPlanTier */
+        MyPlanTier: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            name: string;
+            description: string | null;
+            rank: number;
+            price_note: string | null;
+            durations: number[];
+            includes: components["schemas"]["PlanItem"][];
+            limits: components["schemas"]["PlanLimit"][];
+            /** @enum {null|string} */
+            have: "account" | "group" | "subscription" | "default" | null;
+            adds: components["schemas"]["PlanItem"][];
+            raises: components["schemas"]["PlanLimit"][];
+            loses: components["schemas"]["PlanItem"][];
+            blocked: components["schemas"]["PlanItem"][];
+            can_buy: boolean;
+        };
         /** NameUseOut */
         NameUseOut: {
             passage: components["schemas"]["PassageOut"];
@@ -5486,11 +5606,50 @@ export interface components {
             end: number;
             excerpt: string;
         };
+        /** PlanHeld */
+        PlanHeld: {
+            key: string;
+            name: string;
+            /** @enum {string} */
+            source: "account" | "group" | "subscription" | "default";
+            ends_at: string | null;
+            group?: string | null;
+        };
         /** PlanIn */
         PlanIn: {
             plan?: {
                 [key: string]: unknown;
             };
+        };
+        /** PlanItem */
+        PlanItem: {
+            key: string;
+            name: string;
+        };
+        /** PlanLimit */
+        PlanLimit: {
+            key: string;
+            name: string;
+            value: number | null;
+        };
+        /** PlanTier */
+        PlanTier: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            name: string;
+            description: string | null;
+            rank: number;
+            price_note: string | null;
+            durations: number[];
+            includes: components["schemas"]["PlanItem"][];
+            limits: components["schemas"]["PlanLimit"][];
+        };
+        /** PlansOut */
+        PlansOut: {
+            /** @enum {string} */
+            upgrades: "off" | "stub";
+            tiers: components["schemas"]["PlanTier"][];
         };
         /** PollAnswerOut */
         PollAnswerOut: {
@@ -6616,6 +6775,12 @@ export interface components {
          * @enum {string}
          */
         UiLanguage: "en" | "fr" | "de" | "es" | "pt-BR" | "it";
+        /** UpgradeIn */
+        UpgradeIn: {
+            /** Format: uuid */
+            tier_id: string;
+            months: number;
+        };
         /** UploadOut */
         UploadOut: {
             /** Format: uuid */
@@ -11771,12 +11936,13 @@ export interface operations {
             };
         };
     };
-    ApiStoriesStoryIdEvaluationsSceneReaderSceneReader: {
+    ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 story_id: string;
+                evaluator_id: string | null;
             };
             cookie?: never;
         };
@@ -11808,13 +11974,12 @@ export interface operations {
             };
         };
     };
-    ApiStoriesStoryIdEvaluationsEvaluatorIdSceneReaderSceneReader: {
+    ApiStoriesStoryIdEvaluationsSceneReaderSceneReader: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 story_id: string;
-                evaluator_id: string | null;
             };
             cookie?: never;
         };
@@ -12920,6 +13085,122 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccessAccountOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiPlansPlans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlansOut"];
+                };
+            };
+        };
+    };
+    ApiMeUpgradeCheckoutIdConfirmConfirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                checkout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckoutOut"];
+                };
+            };
+            /** @description Bad request syntax or unsupported method */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status_code: number;
+                        detail: string;
+                        extra?: null | {
+                            [key: string]: unknown;
+                        } | unknown[];
+                    };
+                };
+            };
+        };
+    };
+    ApiMePlanMyPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Request fulfilled, document follows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyPlanOut"];
+                };
+            };
+        };
+    };
+    ApiMeUpgradeStart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpgradeIn"];
+            };
+        };
+        responses: {
+            /** @description Document created, URL follows */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckoutOut"];
                 };
             };
             /** @description Bad request syntax or unsupported method */
