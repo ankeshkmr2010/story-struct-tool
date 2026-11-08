@@ -35,6 +35,7 @@ def frontend_router(directory: Path) -> Router:
             "/thanks",
             "/about",
             "/pricing",
+            "/plans",
             "/privacy",
             "/feedback",
             "/oauth/consent",
